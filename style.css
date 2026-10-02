@@ -152,3 +152,42 @@ input:focus,textarea:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,17
 .object-box{display:flex;gap:9px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fffafd}
 .object-icon{font-size:26px}
 .quick-actions{row-gap:8px}
+
+
+/* v5.1 — visual cleanup: one coherent SVG animation system */
+.lid-svg{
+  fill:#f6f1f4;
+  transform-box:fill-box;
+  transform-origin:center;
+  transform:translateY(-70px) !important;
+  opacity:0;
+  transition:transform .11s ease,opacity .05s linear;
+}
+.robotito.blink .lid-svg{
+  transform:translateY(0) !important;
+  opacity:1;
+}
+.mood-sleepy .lid-svg{
+  transform:translateY(-17px) !important;
+  opacity:.92;
+}
+.cheek,.mood-happy .cheek,.robotito.pet-happy .cheek{
+  transform:none !important;
+  transform-origin:center;
+}
+.robotito.pet-happy .head-group{animation:gentlePet .72s ease-in-out 2}
+@keyframes gentlePet{50%{transform:translateY(2px) rotate(-1.5deg)}}
+
+.tongue-svg{opacity:0;transform-box:fill-box;transform-origin:center;transition:opacity .08s}
+.mouth-line{transform-box:fill-box;transform-origin:center;transition:transform .12s,stroke-width .12s}
+.robotito.eating .tongue-svg{opacity:1}
+.robotito.eating .mouth-line{transform:translateY(4px) scaleY(1.18);stroke-width:4.5}
+.robotito.eating .head-group{animation:eatNod .28s ease-in-out infinite alternate}
+@keyframes eatNod{to{transform:translateY(3px)}}
+
+.robotito.poked .panda-whole{animation:smallRecoil .26s ease 2}
+.robotito.poked .brow{transform:none !important}
+@keyframes smallRecoil{50%{transform:translateX(-7px)}}
+
+.robotito.hugging .arm-left,.robotito.hugging .arm-right,
+.robotito.highfive .arm-right,.robotito.playing .panda-whole{animation:none !important}
