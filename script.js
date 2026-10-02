@@ -280,18 +280,20 @@ function setupSpeechRecognition(){
   const r=new SR();
   r.lang="es-UY";
   r.continuous=true;
-  r.interimResults=false;
+  r.interimResults=true;
   r.maxAlternatives=1;
 
   r.onresult=ev=>{
     const result=ev.results[ev.results.length-1];
-    if(!result.isFinal)return;
     const text=result[0].transcript.trim();
+    if(text) $("#transcript").textContent=result.isFinal?text:text+" …";
+    if(!result.isFinal)return;
     if(!text)return;
     $("#transcript").textContent=text;
     state.lastHeardAt=Date.now();
     state.lastTranscriptAt=Date.now();
     autoRemember(text);
+    if(!state.classMode && state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
     handleSpeech(text);
     if(state.classMode) captureClassLine(text);
   };
@@ -975,22 +977,34 @@ function hungerTick(){
 function inactivityTick(){
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
 
-  if(quietFor>100){
+  if(state.classMode){
+    state.sleeping=false;
+    robot.classList.remove("sleeping");
+    setMood("focused","Robotito está concentrado escuchando la clase.");
+    return;
+  }
+
+  if(quietFor>150){
     if(!state.sleeping) say("Zzz…");
     state.sleeping=true;
     robot.classList.add("sleeping");
     setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
     state.energy=clamp(state.energy+.35,0,100);
-  }else if(quietFor>65){
+  }else if(quietFor>95){
     state.sleeping=false;
     robot.classList.remove("sleeping");
     setMood("sleepy","Robotito está cabeceando de sueño.");
-    state.energy=clamp(state.energy-.08,0,100);
+    state.energy=clamp(state.energy-.05,0,100);
+  }else if(quietFor>45){
+    state.sleeping=false;
+    robot.classList.remove("sleeping");
+    setMood("bored","Robotito se está aburriendo un poquito y mira alrededor.");
+    state.energy=clamp(state.energy-.02,0,100);
   }else{
     if(state.sleeping) say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó? 👀"]));
     state.sleeping=false;
     robot.classList.remove("sleeping");
-    state.energy=clamp(state.energy-.025,0,100);
+    state.energy=clamp(state.energy-.02,0,100);
   }
 }
 
@@ -1144,7 +1158,8 @@ function clockTick(){
 function ambientMood(){
   hungerTick();
   inactivityTick();
-  if(!state.sleeping&&state.hunger<70){
+  if(state.classMode){updateMeters();return;}
+  if(!state.sleeping&&state.hunger<70&&state.emotion!=="bored"){
     if(state.moodScore>=70)setMood("happy");
     else if(state.moodScore<30)setMood("sad");
     else if(!["scared","angry"].includes(state.mood))setMood("calm");
