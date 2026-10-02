@@ -34,6 +34,19 @@ const state = {
   visibleFingers: 0,
   visibleHands: 0,
   lastHandSeenAt: 0,
+  emotion: "calm",
+  classMode: false,
+  classStartedAt: 0,
+  classSubject: "",
+  classLines: load("robotito.classLines.v1", []),
+  speakerOverride: null,
+  recentAudioFeatures: [],
+  voiceProfiles: load("robotito.voiceProfiles.v1", {me:[],teacher:[]}),
+  tasks: load("robotito.tasks.v1", []),
+  tasksSheetUrl: localStorage.getItem("robotito.tasksSheetUrl.v1") || "",
+  tasksSheetGid: localStorage.getItem("robotito.tasksSheetGid.v1") || "",
+  sessionStartedAt: Date.now(),
+  lastTaskReminderAt: 0,
   people: load(KEYS.people, []),
   memories: load(KEYS.memories, []),
   library: load(KEYS.goodreads, []),
@@ -71,10 +84,14 @@ function toast(text){
 }
 
 function setMood(mood, reason=""){
-  ["calm","happy","sad","angry","scared","hungry","sleepy"].forEach(m=>robot.classList.remove("mood-"+m));
+  const base = ["calm","happy","sad","angry","scared","hungry","sleepy"];
+  base.forEach(m=>robot.classList.remove("mood-"+m));
+  const visualMap={curious:"happy",focused:"calm",bored:"sleepy",affectionate:"happy",proud:"happy",confused:"scared",excited:"happy",embarrassed:"sad"};
+  robot.classList.add("mood-"+(visualMap[mood]||mood));
   robot.classList.add("mood-"+mood);
   state.mood=mood;
-  const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño"};
+  state.emotion=mood;
+  const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado"};
   $("#moodLabel").textContent=labels[mood]||mood;
   if(reason) $("#statusText").textContent=reason;
 }
@@ -212,6 +229,10 @@ function setupAudio(stream){
       const high=[...freq.slice(120,260)];
       const avg=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
       const lowE=avg(low), midE=avg(mid), highE=avg(high);
+      const totalE=lowE+midE+highE+1;
+      const centroid=(lowE*1+midE*2+highE*3)/totalE;
+      state.recentAudioFeatures.push({rms,centroid,flat,t:Date.now()});
+      state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
       const flat=spectralFlatness([...freq.slice(4,220)]);
       const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
 
@@ -272,6 +293,7 @@ function setupSpeechRecognition(){
     state.lastTranscriptAt=Date.now();
     autoRemember(text);
     handleSpeech(text);
+    if(state.classMode) captureClassLine(text);
   };
   r.onerror=e=>console.warn("speech",e.error);
   r.onend=()=>{ if(state.started){try{r.start();}catch{}} };
@@ -357,6 +379,231 @@ function answerEasyQuestion(rawText){
   return false;
 }
 
+
+function averageRecentVoiceFeature(){
+  const arr=state.recentAudioFeatures.filter(x=>Date.now()-x.t<2200);
+  if(!arr.length)return {rms:0,centroid:0,flat:0};
+  const avg=k=>arr.reduce((s,x)=>s+x[k],0)/arr.length;
+  return {rms:avg("rms"),centroid:avg("centroid"),flat:avg("flat")};
+}
+function featureDistance(a,b){
+  return Math.abs(a.rms-b.rms)*8 + Math.abs(a.centroid-b.centroid)*1.6 + Math.abs(a.flat-b.flat)*1.2;
+}
+function profileMean(list){
+  if(!list?.length)return null;
+  const avg=k=>list.reduce((s,x)=>s+x[k],0)/list.length;
+  return {rms:avg("rms"),centroid:avg("centroid"),flat:avg("flat")};
+}
+function learnSpeaker(label,feature){
+  if(!feature)return;
+  const arr=state.voiceProfiles[label]||[];
+  arr.push(feature);
+  state.voiceProfiles[label]=arr.slice(-20);
+  save("robotito.voiceProfiles.v1",state.voiceProfiles);
+}
+function classifySpeaker(feature){
+  if(state.speakerOverride){
+    const label=state.speakerOverride;
+    state.speakerOverride=null;
+    learnSpeaker(label,feature);
+    return label;
+  }
+  const me=profileMean(state.voiceProfiles.me);
+  const teacher=profileMean(state.voiceProfiles.teacher);
+  if(me&&teacher) return featureDistance(feature,me)<=featureDistance(feature,teacher)?"me":"teacher";
+  if(me) return featureDistance(feature,me)<.55?"me":"teacher";
+  if(teacher) return featureDistance(feature,teacher)<.55?"teacher":"me";
+  // Until profiles exist, assume classroom speech is the teacher unless Robotito
+  // recognizes the user and the phrase explicitly addresses him.
+  return "teacher";
+}
+function captureClassLine(text){
+  const feature=averageRecentVoiceFeature();
+  const speaker=classifySpeaker(feature);
+  const line={text:text.trim(),speaker,subject:state.classSubject||"Clase",at:Date.now(),feature};
+  state.classLines.push(line);
+  state.classLines=state.classLines.slice(-1000);
+  save("robotito.classLines.v1",state.classLines);
+  if(speaker==="teacher" && state.voiceProfiles.teacher.length<2) learnSpeaker("teacher",feature);
+  renderClassTranscript();
+  $("#speakerPill").classList.remove("hidden");
+  $("#speakerLabel").textContent=speaker==="me"?"vos":"profesora";
+}
+function startClassMode(){
+  if(!state.started){toast("Primero despertá los sentidos.");return;}
+  state.classMode=true;
+  state.classStartedAt=Date.now();
+  state.classSubject=$("#classSubject").value.trim()||"Clase";
+  $("#classBadge").textContent="escuchando";
+  $("#classBadge").classList.add("on");
+  $("#speakerPill").classList.remove("hidden");
+  setMood("focused","Robotito está concentrado escuchando la clase.");
+  say("Modo clase activado. Voy a escuchar y aprender.");
+}
+function stopClassMode(){
+  if(!state.classMode)return;
+  state.classMode=false;
+  $("#classBadge").textContent="apagado";
+  $("#classBadge").classList.remove("on");
+  $("#speakerPill").classList.add("hidden");
+  setMood("proud","Robotito terminó de escuchar la clase y guardó lo que entendió.");
+  say("Listo. Guardé la clase para estudiar después.");
+  summarizeClass();
+}
+function classLinesForSubject(){
+  const subj=normalizeText(state.classSubject||$("#classSubject").value||"");
+  if(!subj)return state.classLines.slice(-250);
+  const matched=state.classLines.filter(l=>normalizeText(l.subject).includes(subj)||subj.includes(normalizeText(l.subject)));
+  return (matched.length?matched:state.classLines).slice(-250);
+}
+function contentWords(text){
+  const stop=new Set(["que","como","para","por","una","uno","unos","unas","del","las","los","con","sin","sobre","esto","esta","este","son","fue","era","hay","muy","mas","pero","porque","cuando","donde","cual","cuales","quien","profesora","clase"]);
+  return normalizeText(text).split(" ").filter(w=>w.length>3&&!stop.has(w));
+}
+function answerFromClass(question){
+  const words=contentWords(question);
+  const lines=classLinesForSubject();
+  const ranked=lines.map(l=>{
+    const norm=normalizeText(l.text);
+    let score=0;
+    words.forEach(w=>{if(norm.includes(w))score+=2;});
+    if(l.speaker==="teacher")score+=.5;
+    return {l,score};
+  }).sort((a,b)=>b.score-a.score);
+  const best=ranked.filter(x=>x.score>0).slice(0,3);
+  if(!best.length)return null;
+  return best.map(x=>x.l.text).join(" ");
+}
+function summarizeClass(){
+  const lines=classLinesForSubject().filter(l=>l.speaker==="teacher");
+  const out=$("#classSummary");
+  if(!lines.length){out.innerHTML='<p class="muted">Todavía no tengo suficientes explicaciones de la profesora guardadas.</p>';return;}
+  const candidates=lines.filter(l=>l.text.length>35).slice(-80);
+  const seen=new Set();
+  const selected=[];
+  for(const l of candidates.reverse()){
+    const key=normalizeText(l.text).split(" ").slice(0,6).join(" ");
+    if(!seen.has(key)){seen.add(key);selected.push(l.text);}
+    if(selected.length>=6)break;
+  }
+  out.innerHTML=selected.reverse().map(t=>'<div class="study-chip">• '+escapeHtml(t)+'</div>').join("");
+}
+function askClass(){
+  const q=$("#classQuestion").value.trim();
+  if(!q)return;
+  robot.classList.add("thinking");setTimeout(()=>robot.classList.remove("thinking"),1200);
+  setMood("curious","Robotito está buscando en lo que aprendió de clase.");
+  const ans=answerFromClass(q);
+  $("#classAnswer").innerHTML=ans?'<div class="study-chip">'+escapeHtml(ans)+'</div>':'<div class="study-chip">No encontré eso en lo que escuché. Puede que no lo haya entendido bien o que todavía no se haya explicado.</div>';
+  say(ans?ans.slice(0,220):"No encontré eso en mis apuntes de clase.",4200);
+}
+function makeFlashcards(){
+  const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"&&l.text.length>30).slice(-8);
+  const out=$("#classAnswer");
+  if(!lines.length){out.innerHTML='<div class="study-chip">Todavía no tengo suficiente material.</div>';return;}
+  out.innerHTML=lines.map((l,i)=>{
+    const words=contentWords(l.text);
+    const topic=words.slice(0,3).join(" ")||"este punto";
+    return '<div class="study-chip"><strong>Pregunta '+(i+1)+':</strong> ¿Qué explicó la profesora sobre '+escapeHtml(topic)+'?<br><span class="muted">Respuesta: '+escapeHtml(l.text)+'</span></div>';
+  }).join("");
+  setMood("proud","Robotito preparó tarjetas para estudiar.");
+}
+function renderClassTranscript(){
+  const root=$("#classTranscript");
+  const lines=classLinesForSubject().slice(-40);
+  if(!lines.length){root.innerHTML='<p class="muted">Todavía no hay frases guardadas.</p>';return;}
+  root.innerHTML=lines.map(l=>'<div class="class-line '+(l.speaker==="me"?"me":"teacher")+'"><span class="speaker-tag">'+(l.speaker==="me"?"VOS":"PROFESORA")+'</span>'+escapeHtml(l.text)+'</div>').join("");
+  root.scrollTop=root.scrollHeight;
+}
+function updateClassDuration(){
+  if(!state.classMode)return;
+  const sec=Math.floor((Date.now()-state.classStartedAt)/1000);
+  $("#classDuration").textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");
+}
+
+function extractSheetId(url){
+  const m=String(url||"").match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m?m[1]:null;
+}
+async function connectTasksSheet(){
+  const url=$("#tasksSheetUrl").value.trim();
+  const gid=$("#tasksSheetGid").value.trim()||"0";
+  const id=extractSheetId(url);
+  if(!id){toast("Ese enlace no parece ser de Google Sheets.");return;}
+  localStorage.setItem("robotito.tasksSheetUrl.v1",url);
+  localStorage.setItem("robotito.tasksSheetGid.v1",gid);
+  state.tasksSheetUrl=url;state.tasksSheetGid=gid;
+  await refreshTasks();
+}
+function csvRows(text){
+  const rows=[];let row=[],field="",q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i],n=text[i+1];
+    if(ch==='"'&&q&&n==='"'){field+='"';i++;}
+    else if(ch==='"')q=!q;
+    else if(ch===","&&!q){row.push(field);field="";}
+    else if((ch==="\n"||ch==="\r")&&!q){if(ch==="\r"&&n==="\n")i++;row.push(field);if(row.some(Boolean))rows.push(row);row=[];field="";}
+    else field+=ch;
+  }
+  if(field||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+function taskDoneValue(v){
+  const s=normalizeText(v);
+  return ["hecho","completo","completado","done","si","sí","true","x","finalizado","entregado"].includes(s);
+}
+async function refreshTasks(){
+  if(!state.tasksSheetUrl){$("#tasksConnectionStatus").textContent="Sin hoja conectada.";return;}
+  const id=extractSheetId(state.tasksSheetUrl), gid=state.tasksSheetGid||"0";
+  if(!id)return;
+  $("#tasksConnectionStatus").textContent="Leyendo la hoja…";
+  try{
+    const res=await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${encodeURIComponent(gid)}`);
+    if(!res.ok)throw new Error("No accesible");
+    const rows=csvRows(await res.text());
+    if(rows.length<2)throw new Error("Vacía");
+    const headers=rows[0].map(h=>normalizeText(h));
+    const findCol=names=>headers.findIndex(h=>names.some(n=>h.includes(n)));
+    const taskCol=findCol(["tarea","actividad","pendiente","trabajo","descripcion","nombre"]);
+    const dueCol=findCol(["fecha","vencimiento","entrega","deadline"]);
+    const statusCol=findCol(["estado","status","hecho","complet"]);
+    const subjectCol=findCol(["materia","asignatura","curso"]);
+    state.tasks=rows.slice(1).map((r,i)=>({
+      task:r[taskCol>=0?taskCol:0]||"",
+      due:dueCol>=0?r[dueCol]||"":"",
+      status:statusCol>=0?r[statusCol]||"":"",
+      subject:subjectCol>=0?r[subjectCol]||"":"",
+      row:i+2
+    })).filter(t=>t.task);
+    save("robotito.tasks.v1",state.tasks);
+    $("#tasksConnectionStatus").textContent=`Conectada: ${state.tasks.length} filas de tareas.`;
+    renderTasks();
+  }catch(e){
+    $("#tasksConnectionStatus").textContent="No pude leerla. La hoja debe estar compartida/publicada para lectura.";
+    renderTasks();
+  }
+}
+function pendingTasks(){
+  return state.tasks.filter(t=>!taskDoneValue(t.status));
+}
+function renderTasks(){
+  const root=$("#tasksList");
+  const tasks=pendingTasks();
+  if(!tasks.length){root.innerHTML='<p class="muted">No veo tareas pendientes.</p>';return;}
+  root.innerHTML=tasks.slice(0,30).map(t=>'<div class="task-row"><strong>'+escapeHtml(t.task)+'</strong><div class="task-meta">'+escapeHtml([t.subject,t.due,t.status].filter(Boolean).join(" · "))+'</div></div>').join("");
+}
+function taskReminderTick(){
+  const elapsed=Date.now()-state.sessionStartedAt;
+  if(elapsed<20*60*1000)return;
+  if(Date.now()-state.lastTaskReminderAt<20*60*1000)return;
+  const tasks=pendingTasks();
+  if(!tasks.length)return;
+  state.lastTaskReminderAt=Date.now();
+  const first=tasks[0];
+  setMood("focused","Robotito te recuerda que tenés cosas pendientes.");
+  say(`Ey, llevamos más de 20 minutos juntos. Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. Una es: ${first.task}`,6000);
+}
+
 function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentPerson;
@@ -375,6 +622,15 @@ function handleSpeech(rawText){
     return;
   }
 
+  if(/(que aprendiste hoy|que aprendiste|que sabes de la clase|explicame la clase)/.test(text)){
+    const ans=answerFromClass(rawText);
+    if(ans){say(ans.slice(0,260),5000);return;}
+    summarizeClass();say("Abrí la pestaña Clase: ahí te dejé lo que pude aprender.",4000);return;
+  }
+  if(state.classLines.length && /^(que|como|por que|porque|cual|cuando|donde)/.test(text)){
+    const ans=answerFromClass(rawText);
+    if(ans){say(ans.slice(0,280),5200);return;}
+  }
   if(answerEasyQuestion(rawText)) return;
 
   const nice=["te quiero","te amo","sos lindo","sos tierno","gracias robotito","que lindo","hermoso","precioso"];
@@ -670,11 +926,30 @@ function petRobot(){
 }
 
 function scareRobot(){
-  setMood("scared","Robotito se asustó.");
+  setMood("scared","Robotito se asustó por un instante.");
   say(sample(["¡AH!","¡No hagas eso! 😳","…casi me da algo."]));
-  setTimeout(()=>ambientMood(),2500);
+  setTimeout(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
 }
 
+function hugRobot(){
+  changeMoodScore(4,state.currentPerson);
+  robot.classList.add("hugging");
+  setMood("affectionate","Robotito recibió un abrazo y está especialmente cariñoso.");
+  say(sample(["Abrazo panda 🐼♡","Ok… este abrazo sí lo acepto.","*te abraza de vuelta*"]));
+  setTimeout(()=>robot.classList.remove("hugging"),1700);
+}
+function highFiveRobot(){
+  robot.classList.add("highfive");
+  setMood("excited","Robotito chocó los cinco.");
+  say(sample(["¡Cinco! ✋","Eso salió bien.","Otra vez 😌"]));
+  setTimeout(()=>robot.classList.remove("highfive"),1300);
+}
+function playRobot(){
+  robot.classList.add("playing");
+  setMood("excited","Robotito está jugando.");
+  say(sample(["¡Jugamos!","Ok, mini recreo 🐼","*saltitos panda*"]));
+  setTimeout(()=>{robot.classList.remove("playing");setMood("calm");},2300);
+}
 function pokeRobot(){
   changeMoodScore(-3,state.currentPerson);
   setMood("angry","Robotito se molestó un poco.");
@@ -896,6 +1171,15 @@ function bindUI(){
     if(e.target.files[0])importGoodreads(e.target.files[0]);
   });
   $("#recommendBtn").addEventListener("click",()=>recommendBook());
+  $("#startClassBtn").addEventListener("click",startClassMode);
+  $("#stopClassBtn").addEventListener("click",stopClassMode);
+  $("#summarizeClassBtn").addEventListener("click",summarizeClass);
+  $("#askClassBtn").addEventListener("click",askClass);
+  $("#flashcardsBtn").addEventListener("click",makeFlashcards);
+  $("#nextMeBtn").addEventListener("click",()=>{state.speakerOverride="me";toast("La próxima frase se aprenderá como tu voz.");});
+  $("#nextTeacherBtn").addEventListener("click",()=>{state.speakerOverride="teacher";toast("La próxima frase se aprenderá como voz de profesora.");});
+  $("#connectTasksBtn").addEventListener("click",connectTasksSheet);
+  $("#refreshTasksBtn").addEventListener("click",refreshTasks);
 
   $$(".tab").forEach(t=>t.addEventListener("click",()=>{
     $$(".tab").forEach(x=>x.classList.remove("active"));
@@ -910,6 +1194,9 @@ function bindUI(){
     const a=btn.dataset.action;
     if(a==="feed")feedRobot(false);
     else if(a==="pet")petRobot();
+    else if(a==="hug")hugRobot();
+    else if(a==="highfive")highFiveRobot();
+    else if(a==="play")playRobot();
     else if(a==="surprise")scareRobot();
     else if(a==="poke")pokeRobot();
   });
@@ -953,11 +1240,19 @@ function init(){
   renderPeople();
   renderMemories();
   updateLibraryStats();
+  $("#tasksSheetUrl").value=state.tasksSheetUrl;
+  $("#tasksSheetGid").value=state.tasksSheetGid;
+  renderTasks();
+  renderClassTranscript();
+  summarizeClass();
   clockTick();
   updateMeters();
   blinkLoop();
   setInterval(clockTick,1000);
+  setInterval(updateClassDuration,1000);
   setInterval(ambientMood,2500);
+  setInterval(taskReminderTick,30000);
+  if(state.tasksSheetUrl) refreshTasks();
 }
 
 document.addEventListener("DOMContentLoaded",init);
