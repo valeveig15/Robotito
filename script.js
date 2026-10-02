@@ -231,9 +231,9 @@ function setupAudio(stream){
       const lowE=avg(low), midE=avg(mid), highE=avg(high);
       const totalE=lowE+midE+highE+1;
       const centroid=(lowE*1+midE*2+highE*3)/totalE;
+      const flat=spectralFlatness([...freq.slice(4,220)]);
       state.recentAudioFeatures.push({rms,centroid,flat,t:Date.now()});
       state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
-      const flat=spectralFlatness([...freq.slice(4,220)]);
       const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
 
       const likelyMusic = rms>.06 && activeBands>=2 && flat>.09 && flat<.66 && midE>19;
