@@ -28,6 +28,8 @@ const state = {
   analyser: null,
   lastDetections: [],
   lastBookRecommendation: null,
+  handNearMouth: false,
+  handsBusy: false,
   people: load(KEYS.people, []),
   memories: load(KEYS.memories, []),
   library: load(KEYS.goodreads, []),
@@ -131,6 +133,7 @@ async function startSenses(){
     camera.srcObject=state.stream;
     await camera.play();
     await loadFaceModels();
+    setupHands();
     setupAudio(state.stream);
     setupSpeechRecognition();
     state.started=true;
@@ -244,6 +247,34 @@ function recognize(det){
   }
 }
 
+function setupHands(){
+  try{
+    if(typeof Hands==="undefined")return;
+    const hands=new Hands({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({maxNumHands:2,modelComplexity:0,minDetectionConfidence:.55,minTrackingConfidence:.5});
+    hands.onResults(results=>{
+      const face=state.lastDetections[0];
+      if(!face||!results.multiHandLandmarks?.length){state.handNearMouth=false;return;}
+      const vw=camera.videoWidth||640, vh=camera.videoHeight||480;
+      const mouth=face.landmarks.getMouth();
+      const mx=mouth.reduce((a,p)=>a+p.x,0)/mouth.length/vw;
+      const my=mouth.reduce((a,p)=>a+p.y,0)/mouth.length/vh;
+      state.handNearMouth=results.multiHandLandmarks.some(hand=>{
+        const tips=[4,8,12,16,20].map(i=>hand[i]);
+        return tips.some(p=>Math.hypot(p.x-mx,p.y-my)<.16);
+      });
+    });
+    const loop=async()=>{
+      if(!state.started||state.handsBusy){setTimeout(loop,450);return;}
+      state.handsBusy=true;
+      try{await hands.send({image:camera});}catch(e){}
+      state.handsBusy=false;
+      setTimeout(loop,450);
+    };
+    loop();
+  }catch(e){console.warn("hands",e);}
+}
+
 function mouthOpenRatio(landmarks){
   try{
     const pts=landmarks.getMouth();
@@ -255,10 +286,10 @@ function mouthOpenRatio(landmarks){
 let eatHits=0;
 function detectEating(det){
   const ratio=mouthOpenRatio(det.landmarks);
-  if(ratio>.18&&state.audioLevel>8)eatHits++;else eatHits=Math.max(0,eatHits-1);
+  if(ratio>.15&&state.handNearMouth)eatHits++;else eatHits=Math.max(0,eatHits-1);
   if(eatHits>4){
     robot.classList.add("eating");
-    if(state.hunger>3) feedRobot(true);
+    feedRobot(true);
     setTimeout(()=>robot.classList.remove("eating"),1600);
     eatHits=0;
   }
