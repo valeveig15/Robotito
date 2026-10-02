@@ -63,7 +63,7 @@ function load(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
   catch { return fallback; }
 }
-function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) { console.warn("storage",e); toast("No pude guardar: el almacenamiento del navegador está lleno."); } }
 function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
 function sample(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function normalizeText(s){
@@ -300,8 +300,13 @@ function setupSpeechRecognition(){
     handleSpeech(text);
     if(state.classMode) captureClassLine(text);
   };
-  r.onerror=e=>console.warn("speech",e.error);
-  r.onend=()=>{ if(state.started){try{r.start();}catch{}} };
+  let speechFails=0;
+  r.onerror=e=>{
+    console.warn("speech",e.error);
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){state.speechBlocked=true;$("#transcript").textContent="El navegador bloqueó el reconocimiento de voz.";}
+    else if(e.error!=="no-speech"&&e.error!=="aborted")speechFails++;
+  };
+  r.onend=()=>{ if(!state.started||state.speechBlocked)return; setTimeout(()=>{try{r.start();}catch{}},Math.min(5000,300+speechFails*700)); };
   try{r.start(); state.recognition=r;}catch{}
 }
 
@@ -824,7 +829,7 @@ function taskReminderTick(){
   say(`Ey, llevamos más de 20 minutos juntos. Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. Una es: ${first.task}`,6000);
 }
 
-function handleSpeech(rawText){
+async function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentPerson;
 
@@ -842,14 +847,30 @@ function handleSpeech(rawText){
     return;
   }
 
-  if(/(que aprendiste hoy|que aprendiste|que sabes de la clase|explicame la clase)/.test(text)){
-    const ans=answerFromClass(rawText);
-    if(ans){say(ans.slice(0,260),5000);return;}
-    summarizeClass();say("Abrí la pestaña Clase: ahí te dejé lo que pude aprender.",4000);return;
+  if(/(que es esto|que objeto es|que estoy mostrando|reconoce este objeto|reconoc[eé] esto)/.test(text)){
+    await detectObjectNow();
+    return;
   }
-  if(state.classLines.length && /^(que|como|por que|porque|cual|cuando|donde)/.test(text)){
-    const ans=answerFromClass(rawText);
-    if(ans){say(ans.slice(0,280),5200);return;}
+
+  if(/(que aprendiste hoy|que aprendiste|que sabes de la clase|explicame la clase|resumime la clase|resume la clase)/.test(text)){
+    const found=answerFromClass(rawText);
+    if(found){
+      const answer=await composeAcademicAnswer(rawText,found.evidence);
+      say(answer.slice(0,320),5600);
+      return;
+    }
+    summarizeClass();
+    say("Abrí la pestaña Clase: ahí te dejé lo que pude recuperar.",4000);
+    return;
+  }
+
+  if((state.classLines.length||state.academicMaterials.length) && /^(que|como|por que|porque|cual|cuando|donde|explica|define)/.test(text)){
+    const found=answerFromClass(rawText);
+    if(found){
+      const answer=await composeAcademicAnswer(rawText,found.evidence);
+      say(answer.slice(0,320),5600);
+      return;
+    }
   }
   if(answerEasyQuestion(rawText)) return;
 
@@ -870,6 +891,7 @@ function handleSpeech(rawText){
 
 async function detectLoop(){
   if(!state.started)return;
+  if(document.hidden){setTimeout(detectLoop,2200);return;}
   try{
     const dets=await faceapi.detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.45}))
       .withFaceLandmarks().withFaceDescriptors();
@@ -1009,7 +1031,7 @@ function setupHands(){
     });
 
     const loop=async()=>{
-      if(!state.started||state.handsBusy){setTimeout(loop,450);return;}
+      if(!state.started||state.handsBusy||document.hidden){setTimeout(loop,450);return;}
       state.handsBusy=true;
       try{await hands.send({image:camera});}catch{}
       state.handsBusy=false;
@@ -1063,7 +1085,7 @@ async function enrollPerson(){
 
   const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
   if(existing){
-    existing.descriptors=samples;
+    existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-10);
     existing.birthday=birthday||existing.birthday;
   }else{
     state.people.push({name,birthday,descriptors:samples,relationship:50,createdAt:Date.now()});
