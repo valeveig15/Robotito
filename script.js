@@ -89,12 +89,12 @@ function toast(text){
 function setMood(mood, reason=""){
   const base = ["calm","happy","sad","angry","scared","hungry","sleepy"];
   base.forEach(m=>robot.classList.remove("mood-"+m));
-  const visualMap={curious:"happy",focused:"calm",bored:"sleepy",affectionate:"happy",proud:"happy",confused:"scared",excited:"happy",embarrassed:"sad"};
+  const visualMap={curious:"happy",focused:"calm",bored:"sleepy",affectionate:"happy",proud:"happy",confused:"scared",excited:"happy",embarrassed:"sad",annoyed:"calm"};
   robot.classList.add("mood-"+(visualMap[mood]||mood));
   robot.classList.add("mood-"+mood);
   state.mood=mood;
   state.emotion=mood;
-  const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado"};
+  const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"};
   $("#moodLabel").textContent=labels[mood]||mood;
   if(reason) $("#statusText").textContent=reason;
 }
@@ -833,6 +833,8 @@ async function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentPerson;
 
+  if(answerEasyQuestion(rawText)) return;
+
   if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
     const last=load(KEYS.lastBook,null);
     say(last?`Ayer te había recomendado “${last.title}”`:"No encuentro una recomendación anterior.");
@@ -872,8 +874,6 @@ async function handleSpeech(rawText){
       return;
     }
   }
-  if(answerEasyQuestion(rawText)) return;
-
   const nice=["te quiero","te amo","sos lindo","sos tierno","gracias robotito","que lindo","hermoso","precioso"];
   const mean=["te odio","sos feo","callate","tonto","molesto","idiota"];
 
@@ -1053,10 +1053,11 @@ function mouthOpenRatio(landmarks){
 let eatHits=0, lastSharedMeal=0;
 function detectEating(det){
   const ratio=mouthOpenRatio(det.landmarks);
-  if(ratio>.15&&state.handNearMouth) eatHits++;
+  if(ratio>.11&&state.handNearMouth) eatHits+=2;
+  else if(state.handNearMouth) eatHits+=1;
   else eatHits=Math.max(0,eatHits-1);
 
-  if(eatHits>4 && Date.now()-lastSharedMeal>45000){
+  if(eatHits>=4 && Date.now()-lastSharedMeal>30000){
     lastSharedMeal=Date.now();
     feedRobot(true);
     eatHits=0;
@@ -1173,31 +1174,12 @@ function scareRobot(){
   setTimeout(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
 }
 
-function hugRobot(){
-  changeMoodScore(4,state.currentPerson);
-  robot.classList.add("hugging");
-  setMood("affectionate","Robotito recibió un abrazo y está especialmente cariñoso.");
-  say(sample(["Abrazo panda 🐼♡","Ok… este abrazo sí lo acepto.","*te abraza de vuelta*"]));
-  setTimeout(()=>robot.classList.remove("hugging"),1700);
-}
-function highFiveRobot(){
-  robot.classList.add("highfive");
-  setMood("excited","Robotito chocó los cinco.");
-  say(sample(["¡Cinco! ✋","Eso salió bien.","Otra vez 😌"]));
-  setTimeout(()=>robot.classList.remove("highfive"),1300);
-}
-function playRobot(){
-  robot.classList.add("playing");
-  setMood("excited","Robotito está jugando.");
-  say(sample(["¡Jugamos!","Ok, mini recreo 🐼","*saltitos panda*"]));
-  setTimeout(()=>{robot.classList.remove("playing");setMood("calm");},2300);
-}
 function pokeRobot(){
-  changeMoodScore(-3,state.currentPerson);
-  setMood("angry","Robotito se molestó un poco.");
+  changeMoodScore(-2,state.currentPerson);
+  setMood("annoyed","Robotito se molestó un poco.");
   animatePoke();
-  say(sample(["Ey 😠","No me pinches.","Eso no era una caricia.","Te estoy mirando…"]));
-  setTimeout(()=>ambientMood(),2500);
+  say(sample(["Ey.","No me pinches.","Eso no era una caricia.","Mmm…"]));
+  setTimeout(()=>setMood("calm","Ya se le pasó."),1200);
 }
 
 function hungerTick(){
@@ -1453,9 +1435,6 @@ function bindUI(){
     const a=btn.dataset.action;
     if(a==="feed")feedRobot(false);
     else if(a==="pet")petRobot();
-    else if(a==="hug")hugRobot();
-    else if(a==="highfive")highFiveRobot();
-    else if(a==="play")playRobot();
     else if(a==="surprise")scareRobot();
     else if(a==="poke")pokeRobot();
   });
@@ -1474,26 +1453,27 @@ function migrateOldData(){
   }
 }
 
-function purgeAAA(){
-  const isAAA=name=>normalizeText(name)==="aaa";
+function purgeNamedPeople(){
+  const blocked=new Set(["aaa","nacho"]);
+  const blockedName=name=>blocked.has(normalizeText(name));
 
-  state.people=state.people.filter(p=>!isAAA(p.name));
-  state.memories=state.memories.filter(m=>!isAAA(m.person));
-  Object.keys(state.greetingHistory).forEach(name=>{if(isAAA(name))delete state.greetingHistory[name];});
+  state.people=state.people.filter(p=>!blockedName(p.name));
+  state.memories=state.memories.filter(m=>!blockedName(m.person));
+  Object.keys(state.greetingHistory).forEach(name=>{if(blockedName(name))delete state.greetingHistory[name];});
 
   save(KEYS.people,state.people);
   save(KEYS.memories,state.memories);
   save(KEYS.greetings,state.greetingHistory);
 
-  const oldPeople=load("robotito.people.v1",[]).filter(p=>!isAAA(p.name));
-  const oldMem=load("robotito.memories.v1",[]).filter(m=>!isAAA(m.person));
+  const oldPeople=load("robotito.people.v1",[]).filter(p=>!blockedName(p.name));
+  const oldMem=load("robotito.memories.v1",[]).filter(m=>!blockedName(m.person));
   save("robotito.people.v1",oldPeople);
   save("robotito.memories.v1",oldMem);
 }
 
 function init(){
   migrateOldData();
-  purgeAAA();
+  purgeNamedPeople();
   bindUI();
   buildMatcher();
   renderPeople();
