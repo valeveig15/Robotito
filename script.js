@@ -31,6 +31,9 @@ const state = {
   lastDetections: [],
   handNearMouth: false,
   handsBusy: false,
+  visibleFingers: 0,
+  visibleHands: 0,
+  lastHandSeenAt: 0,
   people: load(KEYS.people, []),
   memories: load(KEYS.memories, []),
   library: load(KEYS.goodreads, []),
@@ -47,6 +50,9 @@ function load(key, fallback) {
 function save(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
 function sample(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function normalizeText(s){
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[¿?¡!.,;:]/g," ").replace(/\s+/g," ").trim();
+}
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
 function say(text, ms=3000){
@@ -112,12 +118,12 @@ function blinkLoop(){
       setTimeout(()=>robot.classList.remove("blink"),145);
     }
     blinkLoop();
-  },2200+Math.random()*4300);
+  },2300+Math.random()*4200);
 }
 
 function moveEyes(nx,ny){
-  const x=clamp(nx,-1,1)*6.5;
-  const y=clamp(ny,-1,1)*4.5;
+  const x=clamp(nx,-1,1)*5.5;
+  const y=clamp(ny,-1,1)*4;
   $$(".iris").forEach(i=>i.style.transform=`translate(${x}px,${y}px)`);
 }
 
@@ -125,8 +131,8 @@ function followFace(box){
   const vw=camera.videoWidth||640, vh=camera.videoHeight||480;
   const cx=(box.x+box.width/2)/vw;
   const cy=(box.y+box.height/2)/vh;
-  robot.style.left=clamp(20+cx*60,20,80)+"%";
-  robot.style.top=clamp(34+cy*27,34,61)+"%";
+  robot.style.left=clamp(21+cx*58,21,79)+"%";
+  robot.style.top=clamp(37+cy*21,37,58)+"%";
   moveEyes((cx-.5)*2,(cy-.5)*2);
 }
 
@@ -209,19 +215,24 @@ function setupAudio(stream){
       const flat=spectralFlatness([...freq.slice(4,220)]);
       const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
 
-      const likelyMusic = rms>.055 && activeBands>=2 && flat>.08 && flat<.72 && midE>16;
-      const likelyNoise = rms>.045 && (flat>=.72 || activeBands<=1);
+      const likelyMusic = rms>.06 && activeBands>=2 && flat>.09 && flat<.66 && midE>19;
+      const likelyNoise = rms>.05 && (flat>=.72 || activeBands<=1);
 
-      if(likelyMusic){sustainedMusic=Math.min(100,sustainedMusic+1.5); sustainedNoise=Math.max(0,sustainedNoise-1);}
-      else{sustainedMusic=Math.max(0,sustainedMusic-1.2);}
-      if(likelyNoise){sustainedNoise=Math.min(100,sustainedNoise+1.2);} else sustainedNoise=Math.max(0,sustainedNoise-1);
+      if(likelyMusic){
+        sustainedMusic=Math.min(100,sustainedMusic+1.3);
+        sustainedNoise=Math.max(0,sustainedNoise-1);
+      }else{
+        sustainedMusic=Math.max(0,sustainedMusic-1.5);
+      }
+      if(likelyNoise) sustainedNoise=Math.min(100,sustainedNoise+1.1);
+      else sustainedNoise=Math.max(0,sustainedNoise-1);
 
       if(rms<.025){
         state.audioKind="silencio";
         sustainedMusic=Math.max(0,sustainedMusic-2);
-      }else if(sustainedMusic>26){
+      }else if(sustainedMusic>34){
         state.audioKind="música";
-      }else if(sustainedNoise>12){
+      }else if(sustainedNoise>15){
         state.audioKind="ruido";
       }else{
         state.audioKind="sonido";
@@ -229,12 +240,9 @@ function setupAudio(stream){
 
       state.musicConfidence=sustainedMusic;
       $("#heardLabel").textContent=state.audioKind;
-
       if(rms>.04) state.lastHeardAt=Date.now();
 
-      const shouldDance=state.audioKind==="música" && sustainedMusic>32 && !state.sleeping;
-      robot.classList.toggle("dancing",shouldDance);
-
+      robot.classList.toggle("dancing",state.audioKind==="música" && sustainedMusic>42 && !state.sleeping);
       requestAnimationFrame(tick);
     };
     tick();
@@ -247,6 +255,7 @@ function setupSpeechRecognition(){
     $("#transcript").textContent="Tu navegador no ofrece reconocimiento de voz continuo.";
     return;
   }
+
   const r=new SR();
   r.lang="es-UY";
   r.continuous=true;
@@ -262,7 +271,7 @@ function setupSpeechRecognition(){
     state.lastHeardAt=Date.now();
     state.lastTranscriptAt=Date.now();
     autoRemember(text);
-    handleSpeech(text.toLowerCase());
+    handleSpeech(text);
   };
   r.onerror=e=>console.warn("speech",e.error);
   r.onend=()=>{ if(state.started){try{r.start();}catch{}} };
@@ -281,10 +290,95 @@ function autoRemember(text){
   renderMemories();
 }
 
-function handleSpeech(text){
+function answerEasyQuestion(rawText){
+  const text=normalizeText(rawText);
+
+  if(/(como te llamas|cual es tu nombre|quien sos|quien eres)/.test(text)){
+    say(sample(["Me llamo Robotito 🐼","Soy Robotito.","Robotito. Ese soy yo 🐼"]));
+    return true;
+  }
+
+  if(/(yo como me llamo|como me llamo yo|cual es mi nombre|quien soy yo)/.test(text)){
+    if(state.currentPerson) say(sample([
+      `Vos sos ${state.currentPerson}.`,
+      `Te llamás ${state.currentPerson}. Te reconocí.`,
+      `${state.currentPerson} 🐼. Me acuerdo de vos.`
+    ]));
+    else say("Todavía no sé quién sos. Registrá tu cara y después sí me voy a acordar.");
+    return true;
+  }
+
+  if(/(como te va|como estas|como andas|todo bien)/.test(text)){
+    if(state.sleeping) say("Tengo muchísimo sueño… zzz.");
+    else if(state.hunger>=95) say("Tengo tanta hambre que estoy bastante enojado.");
+    else if(state.hunger>=70) say("Estoy bien, pero tengo mucha hambre.");
+    else if(state.mood==="happy"||state.moodScore>=70) say(sample(["¡Muy bien! Estoy contento 🐼","Bien. Hoy estoy de muy buen humor.","Súper bien ♡"]));
+    else if(state.mood==="sad"||state.moodScore<35) say("Más o menos… estoy un poquito triste.");
+    else say(sample(["Bien, tranquilo.","Todo bien por acá 🐼","Bastante bien."]));
+    return true;
+  }
+
+  if(/(tenes hambre|tienes hambre|estas hambriento|cuanta hambre)/.test(text)){
+    if(state.hunger>=95) say("¡Sí! Muchísima. Ya estoy enojado de hambre.");
+    else if(state.hunger>=75) say("Sí. Tengo bastante hambre.");
+    else if(state.hunger>=35) say("Un poquito. Todavía aguanto.");
+    else say("No mucho. Estoy bastante lleno.");
+    return true;
+  }
+
+  if(/(cuantos dedos ves|cuantos dedos estoy mostrando|cuantos dedos hay)/.test(text)){
+    const fresh=Date.now()-state.lastHandSeenAt<2200;
+    if(!fresh||state.visibleHands===0) say("Ahora mismo no veo ninguna mano. Mostrámela bien frente a la cámara.");
+    else if(state.visibleFingers===0) say("Veo una mano, pero no veo ningún dedo levantado.");
+    else say(`Veo ${state.visibleFingers} ${state.visibleFingers===1?"dedo":"dedos"} levantados.`);
+    return true;
+  }
+
+  if(/(que dia es|que fecha es|en que dia estamos)/.test(text)){
+    const d=new Date();
+    say(d.toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));
+    return true;
+  }
+
+  if(/(que hora es|tenes hora|tienes hora)/.test(text)){
+    const d=new Date();
+    say(`Son las ${d.toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"})}.`);
+    return true;
+  }
+
+  if(/(que recuerdas de mi|que te dije|que sabes de mi)/.test(text)){
+    const person=state.currentPerson||"persona no reconocida";
+    const mine=state.memories.filter(m=>m.person===person).slice(-5);
+    if(!mine.length) say("Todavía no tengo recuerdos tuyos.");
+    else say(`Lo último que recuerdo es: “${mine[mine.length-1].text}”`);
+    return true;
+  }
+
+  return false;
+}
+
+function handleSpeech(rawText){
+  const text=normalizeText(rawText);
   const who=state.currentPerson;
-  const nice=["te quiero","te amo","sos lindo","sos tierno","gracias robotito","qué lindo","que lindo","hermoso","precioso"];
-  const mean=["te odio","sos feo","callate","cállate","tonto","molesto","idiota"];
+
+  if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
+    const last=load(KEYS.lastBook,null);
+    say(last?`Ayer te había recomendado “${last.title}”`:"No encuentro una recomendación anterior.");
+    return;
+  }
+
+  if(/(recomendame|recomiendame|recomenda|recomienda).*(libro)/.test(text) || text==="recomendame un libro"){
+    let prompt=rawText.replace(/recom(i|ie)enda(me)?\s+(un\s+)?libro/i,"").trim();
+    if(!prompt) prompt="ficción interesante";
+    $("#bookPrompt").value=prompt;
+    recommendBook(prompt);
+    return;
+  }
+
+  if(answerEasyQuestion(rawText)) return;
+
+  const nice=["te quiero","te amo","sos lindo","sos tierno","gracias robotito","que lindo","hermoso","precioso"];
+  const mean=["te odio","sos feo","callate","tonto","molesto","idiota"];
 
   if(nice.some(x=>text.includes(x))){
     changeMoodScore(4,who);
@@ -295,18 +389,6 @@ function handleSpeech(text){
     changeMoodScore(-5,who);
     setMood("sad","Eso lo dejó un poquito triste.");
     say("…");
-  }
-  if(text.includes("qué día")||text.includes("que dia")){
-    const d=new Date();
-    say(d.toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));
-  }
-  if((text.includes("libro")||text.includes("recomend"))&&text.includes("ayer")){
-    const last=load(KEYS.lastBook,null);
-    say(last?`Ayer te había recomendado “${last.title}”`:"No encuentro una recomendación anterior.");
-  }
-  if(text.includes("qué recuerdas")||text.includes("que recuerdas")||text.includes("qué te dije")||text.includes("que te dije")){
-    const mine=state.memories.filter(m=>m.person===(state.currentPerson||"persona no reconocida")).slice(-3);
-    say(mine.length?`Lo último que recuerdo es: “${mine[mine.length-1].text}”`:"Todavía no tengo recuerdos tuyos.");
   }
 }
 
@@ -324,7 +406,7 @@ async function detectLoop(){
       detectEating(dets[0]);
     }else{
       $("#seenLabel").textContent="a nadie";
-      if(state.currentPerson) state.currentPerson=null;
+      state.currentPerson=null;
     }
   }catch(e){console.warn("vision",e);}
   setTimeout(detectLoop,700);
@@ -343,13 +425,15 @@ function buildMatcher(){
 function greetingFor(p){
   const rel=p.relationship??50;
   let choices;
+
   if(rel>=75){
     choices=[
-      `¡${p.name}! 🥹 Justo quería verte.`,
-      `Mirá quién llegó 💗 Hola, ${p.name}.`,
+      `¡${p.name}! Justo quería verte ♡`,
+      `Mirá quién llegó 🐼 Hola, ${p.name}.`,
       `¡${p.name}! *mini saltito feliz*`,
       `Holaaa, ${p.name} 🐼♡`,
-      `Ah, sos vos. Eso me pone de buen humor.`
+      `Ah, sos vos. Eso me pone de buen humor.`,
+      `¡Volviste, ${p.name}! Me alegra verte.`
     ];
   }else if(rel>=50){
     choices=[
@@ -357,7 +441,8 @@ function greetingFor(p){
       `¡Te reconocí, ${p.name}!`,
       `Ey, ${p.name}. Volviste.`,
       `Hola de nuevo, ${p.name}.`,
-      `Mmm… esa cara la conozco. Hola, ${p.name}.`
+      `Mmm… esa cara la conozco. Hola, ${p.name}.`,
+      `¿Qué tal, ${p.name}?`
     ];
   }else{
     choices=[
@@ -367,6 +452,7 @@ function greetingFor(p){
       `Mmm, ${p.name}… veremos cómo te portás hoy.`
     ];
   }
+
   const last=state.greetingHistory[p.name];
   const filtered=choices.filter(x=>x!==last);
   const chosen=sample(filtered.length?filtered:choices);
@@ -385,8 +471,8 @@ function recognize(det){
 
   const changed=state.currentPerson!==best.label;
   state.currentPerson=best.label;
-
   const lastGreeting=p.lastGreetingAt||0;
+
   if(changed && Date.now()-lastGreeting>25000){
     p.lastGreetingAt=Date.now();
     save(KEYS.people,state.people);
@@ -396,29 +482,62 @@ function recognize(det){
   }
 }
 
+function countExtendedFingers(hand, handedness){
+  let count=0;
+  const pairs=[[8,6],[12,10],[16,14],[20,18]];
+  for(const [tip,pip] of pairs){
+    if(hand[tip].y < hand[pip].y-.025) count++;
+  }
+
+  const isRight=(handedness||"").toLowerCase()==="right";
+  const thumbExtended=isRight ? hand[4].x < hand[3].x-.025 : hand[4].x > hand[3].x+.025;
+  if(thumbExtended) count++;
+  return count;
+}
+
 function setupHands(){
   try{
     if(typeof Hands==="undefined")return;
     const hands=new Hands({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-    hands.setOptions({maxNumHands:2,modelComplexity:0,minDetectionConfidence:.55,minTrackingConfidence:.5});
+    hands.setOptions({maxNumHands:2,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.55});
+
     hands.onResults(results=>{
+      const landmarks=results.multiHandLandmarks||[];
+      state.visibleHands=landmarks.length;
+
+      if(landmarks.length){
+        state.lastHandSeenAt=Date.now();
+        state.visibleFingers=landmarks.reduce((total,hand,index)=>{
+          const handed=results.multiHandedness?.[index]?.label||"";
+          return total+countExtendedFingers(hand,handed);
+        },0);
+      }else{
+        state.visibleFingers=0;
+      }
+
       const face=state.lastDetections[0];
-      if(!face||!results.multiHandLandmarks?.length){state.handNearMouth=false;return;}
+      if(!face||!landmarks.length){
+        state.handNearMouth=false;
+        return;
+      }
+
       const vw=camera.videoWidth||640, vh=camera.videoHeight||480;
       const mouth=face.landmarks.getMouth();
       const mx=mouth.reduce((a,p)=>a+p.x,0)/mouth.length/vw;
       const my=mouth.reduce((a,p)=>a+p.y,0)/mouth.length/vh;
-      state.handNearMouth=results.multiHandLandmarks.some(hand=>{
+
+      state.handNearMouth=landmarks.some(hand=>{
         const tips=[4,8,12,16,20].map(i=>hand[i]);
         return tips.some(p=>Math.hypot(p.x-mx,p.y-my)<.15);
       });
     });
+
     const loop=async()=>{
-      if(!state.started||state.handsBusy){setTimeout(loop,500);return;}
+      if(!state.started||state.handsBusy){setTimeout(loop,450);return;}
       state.handsBusy=true;
       try{await hands.send({image:camera});}catch{}
       state.handsBusy=false;
-      setTimeout(loop,500);
+      setTimeout(loop,450);
     };
     loop();
   }catch(e){console.warn("hands",e);}
@@ -432,10 +551,13 @@ function mouthOpenRatio(landmarks){
     return h?v/h:0;
   }catch{return 0}
 }
+
 let eatHits=0, lastSharedMeal=0;
 function detectEating(det){
   const ratio=mouthOpenRatio(det.landmarks);
-  if(ratio>.15&&state.handNearMouth) eatHits++; else eatHits=Math.max(0,eatHits-1);
+  if(ratio>.15&&state.handNearMouth) eatHits++;
+  else eatHits=Math.max(0,eatHits-1);
+
   if(eatHits>4 && Date.now()-lastSharedMeal>45000){
     lastSharedMeal=Date.now();
     feedRobot(true);
@@ -457,6 +579,7 @@ async function enrollPerson(){
     if(det)samples.push([...det.descriptor]);
     await new Promise(r=>setTimeout(r,420));
   }
+
   if(samples.length<3){
     $("#enrollStatus").textContent="No pude ver bien la cara. Probá con más luz y mirá al frente.";
     return;
@@ -469,16 +592,22 @@ async function enrollPerson(){
   }else{
     state.people.push({name,birthday,descriptors:samples,relationship:50,createdAt:Date.now()});
   }
+
   save(KEYS.people,state.people);
   buildMatcher();
   renderPeople();
   $("#enrollStatus").textContent=`Listo: ahora recuerdo a ${name}.`;
-  say(sample([`Ya sé quién sos, ${name} 🐼`,`Listo, ${name}. Esa cara queda guardada.`,`Te voy a reconocer la próxima vez, ${name}.`]));
+  say(sample([
+    `Ya sé quién sos, ${name} 🐼`,
+    `Listo, ${name}. Esa cara queda guardada.`,
+    `Te voy a reconocer la próxima vez, ${name}.`
+  ]));
 }
 
 function checkBirthday(p){
   if(!p.birthday)return;
-  const now=new Date(), d=new Date(p.birthday+"T12:00:00");
+  const now=new Date();
+  const d=new Date(p.birthday+"T12:00:00");
   if(now.getMonth()===d.getMonth()&&now.getDate()===d.getDate()) birthdayParty(p.name);
 }
 
@@ -487,7 +616,7 @@ function birthdayParty(name){
   $("#birthdayScene").classList.remove("hidden");
   setMood("happy","Robotito reconoció a alguien que cumple años.");
   confetti(90);
-  setTimeout(()=>$("#birthdayScene").classList.add("hidden"),6500);
+  setTimeout(()=>$("#birthdayScene").classList.add("hidden"),5000);
 }
 
 function confetti(n=60){
@@ -510,17 +639,17 @@ function clearActionClasses(){
 function animatePet(){
   clearActionClasses();
   robot.classList.add("pet-happy");
-  setTimeout(()=>robot.classList.remove("pet-happy"),1600);
+  setTimeout(()=>robot.classList.remove("pet-happy"),1500);
 }
 function animateEat(){
   clearActionClasses();
   robot.classList.add("eating");
-  setTimeout(()=>robot.classList.remove("eating"),1450);
+  setTimeout(()=>robot.classList.remove("eating"),1400);
 }
 function animatePoke(){
   clearActionClasses();
   robot.classList.add("poked");
-  setTimeout(()=>robot.classList.remove("poked"),1000);
+  setTimeout(()=>robot.classList.remove("poked"),900);
 }
 
 function feedRobot(shared=false){
@@ -543,7 +672,7 @@ function petRobot(){
 function scareRobot(){
   setMood("scared","Robotito se asustó.");
   say(sample(["¡AH!","¡No hagas eso! 😳","…casi me da algo."]));
-  setTimeout(()=>ambientMood(),2600);
+  setTimeout(()=>ambientMood(),2500);
 }
 
 function pokeRobot(){
@@ -551,23 +680,26 @@ function pokeRobot(){
   setMood("angry","Robotito se molestó un poco.");
   animatePoke();
   say(sample(["Ey 😠","No me pinches.","Eso no era una caricia.","Te estoy mirando…"]));
-  setTimeout(()=>ambientMood(),2600);
+  setTimeout(()=>ambientMood(),2500);
 }
 
 function hungerTick(){
   let last=Number(localStorage.getItem(KEYS.lastFed));
-  if(!last){last=Date.now();localStorage.setItem(KEYS.lastFed,String(last));}
+  if(!last){
+    last=Date.now();
+    localStorage.setItem(KEYS.lastFed,String(last));
+  }
+
   const hours=(Date.now()-last)/36e5;
   state.hunger=clamp(hours/4*100,0,100);
-  if(hours>=4){
-    setMood("angry","Robotito está muy enojado porque hace más de 4 horas que no come.");
-  }else if(hours>=3){
-    setMood("hungry","Robotito tiene muchísima hambre.");
-  }
+
+  if(hours>=4) setMood("angry","Robotito está muy enojado porque hace más de 4 horas que no come.");
+  else if(hours>=3) setMood("hungry","Robotito tiene muchísima hambre.");
 }
 
 function inactivityTick(){
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
+
   if(quietFor>100){
     if(!state.sleeping) say("Zzz…");
     state.sleeping=true;
@@ -594,6 +726,7 @@ function renderPeople(){
     root.innerHTML='<p class="muted">Todavía no recuerda a nadie.</p>';
     return;
   }
+
   state.people.forEach(p=>{
     const row=document.createElement("div");
     row.className="person-row";
@@ -608,10 +741,12 @@ function renderMemories(){
   const root=$("#memoryList");
   root.innerHTML="";
   const list=[...state.memories].reverse();
+
   if(!list.length){
     root.innerHTML='<p class="muted">Todavía no guardó recuerdos.</p>';
     return;
   }
+
   list.slice(0,120).forEach(m=>{
     const row=document.createElement("div");
     row.className="memory-row";
@@ -670,27 +805,30 @@ function updateLibraryStats(){
   $("#libraryStats").textContent=`${state.library.length} libros · ${read} leídos · ${tbr} por leer`;
 }
 
-function norm(s){return (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 function scoreBook(book,prompt){
-  const words=norm(prompt).split(/\s+/).filter(x=>x.length>3);
-  const hay=norm([book["Title"],book["Author"],book["Bookshelves"],book["My Review"]].join(" "));
+  const words=normalizeText(prompt).split(/\s+/).filter(x=>x.length>3);
+  const hay=normalizeText([book["Title"],book["Author"],book["Bookshelves"],book["My Review"]].join(" "));
   let s=0;
   words.forEach(w=>{if(hay.includes(w))s+=2;});
   if((book["Exclusive Shelf"]||"")==="to-read")s+=1;
   return s;
 }
 
-async function recommendBook(){
-  const prompt=$("#bookPrompt").value.trim();
+async function recommendBook(promptOverride=null){
+  const prompt=(promptOverride||$("#bookPrompt").value).trim();
   if(!prompt)return toast("Decime qué tipo de libro querés.");
-  const only=$("#onlyOwned").checked, exclude=$("#excludeRead").checked;
+
+  const only=$("#onlyOwned").checked;
+  const exclude=$("#excludeRead").checked;
   $("#bookResults").innerHTML='<div class="card">Pensando… 📚</div>';
 
-  if(only&&state.library.length){
+  if(state.library.length){
     let pool=state.library.filter(b=>!exclude||(b["Exclusive Shelf"]||"").toLowerCase()!=="read");
-    pool=pool.map(b=>({b,s:scoreBook(b,prompt)})).sort((a,b)=>b.s-a.s);
-    const choice=pool[0]?.b;
-    if(choice){
+    const ranked=pool.map(b=>({b,s:scoreBook(b,prompt)})).sort((a,b)=>b.s-a.s);
+    const goodMatch=ranked[0]&&ranked[0].s>0;
+
+    if((only||goodMatch)&&ranked[0]){
+      const choice=ranked[0].b;
       showBook({title:choice["Title"],authors:[choice["Author"]],description:choice["My Review"]||"Está en tu biblioteca.",thumbnail:""},true);
       return;
     }
@@ -699,14 +837,15 @@ async function recommendBook(){
   try{
     const res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(prompt)}&maxResults=12&printType=books`);
     const data=await res.json();
-    const readTitles=new Set(state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").map(b=>norm(b["Title"])));
+    const readTitles=new Set(state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").map(b=>normalizeText(b["Title"])));
     const items=(data.items||[]).map(x=>x.volumeInfo).filter(v=>v.title);
-    const filtered=exclude?items.filter(v=>!readTitles.has(norm(v.title))):items;
+    const filtered=exclude?items.filter(v=>!readTitles.has(normalizeText(v.title))):items;
     const v=filtered[0]||items[0];
     if(!v)throw new Error("sin resultados");
     showBook({title:v.title,authors:v.authors||[],description:v.description||"Sin descripción disponible.",thumbnail:v.imageLinks?.thumbnail||""},false);
   }catch{
     $("#bookResults").innerHTML='<div class="card">No pude buscar libros ahora. Si importaste Goodreads, probá “Solo de mi biblioteca”.</div>';
+    say("No pude encontrar una recomendación ahora mismo.");
   }
 }
 
@@ -718,7 +857,7 @@ function showBook(book,owned){
     <p>${escapeHtml(book.authors.join(", "))}</p>
     <p>${escapeHtml((book.description||"").replace(/<[^>]+>/g,"").slice(0,280))}${book.description?.length>280?"…":""}</p>
     <span class="relation">${owned?"Ya está en tu biblioteca":"Sugerencia nueva"}</span></div></div>`;
-  say(`Yo probaría con “${book.title}” 📚`);
+  say(`Yo probaría con “${book.title}” 📚`,4500);
 }
 
 function clockTick(){
@@ -756,7 +895,7 @@ function bindUI(){
   $("#goodreadsFile").addEventListener("change",e=>{
     if(e.target.files[0])importGoodreads(e.target.files[0]);
   });
-  $("#recommendBtn").addEventListener("click",recommendBook);
+  $("#recommendBtn").addEventListener("click",()=>recommendBook());
 
   $$(".tab").forEach(t=>t.addEventListener("click",()=>{
     $$(".tab").forEach(x=>x.classList.remove("active"));
@@ -779,12 +918,36 @@ function bindUI(){
 function migrateOldData(){
   const oldPeople=load("robotito.people.v1",[]);
   const oldMem=load("robotito.memories.v1",[]);
-  if(!state.people.length&&oldPeople.length){state.people=oldPeople;save(KEYS.people,state.people);}
-  if(!state.memories.length&&oldMem.length){state.memories=oldMem.map(m=>({...m,source:m.source||"manual"}));save(KEYS.memories,state.memories);}
+  if(!state.people.length&&oldPeople.length){
+    state.people=oldPeople;
+    save(KEYS.people,state.people);
+  }
+  if(!state.memories.length&&oldMem.length){
+    state.memories=oldMem.map(m=>({...m,source:m.source||"manual"}));
+    save(KEYS.memories,state.memories);
+  }
+}
+
+function purgeAAA(){
+  const isAAA=name=>normalizeText(name)==="aaa";
+
+  state.people=state.people.filter(p=>!isAAA(p.name));
+  state.memories=state.memories.filter(m=>!isAAA(m.person));
+  Object.keys(state.greetingHistory).forEach(name=>{if(isAAA(name))delete state.greetingHistory[name];});
+
+  save(KEYS.people,state.people);
+  save(KEYS.memories,state.memories);
+  save(KEYS.greetings,state.greetingHistory);
+
+  const oldPeople=load("robotito.people.v1",[]).filter(p=>!isAAA(p.name));
+  const oldMem=load("robotito.memories.v1",[]).filter(m=>!isAAA(m.person));
+  save("robotito.people.v1",oldPeople);
+  save("robotito.memories.v1",oldMem);
 }
 
 function init(){
   migrateOldData();
+  purgeAAA();
   bindUI();
   buildMatcher();
   renderPeople();
