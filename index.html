@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <title>Robotito 🐵</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script defer src="script.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">MASCOTA VIRTUAL</div>
+        <h1>Robotito <span aria-hidden="true">🐵</span></h1>
+      </div>
+      <div class="top-actions">
+        <span id="clock" class="clock"></span>
+        <button id="startBtn" class="primary">Despertar sentidos</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="world" id="world" aria-label="Mundo de Robotito">
+        <video id="camera" autoplay muted playsinline></video>
+        <canvas id="visionCanvas"></canvas>
+
+        <div class="ambient-orb orb-a"></div>
+        <div class="ambient-orb orb-b"></div>
+        <div class="ambient-orb orb-c"></div>
+
+        <div id="speechBubble" class="speech-bubble hidden" role="status"></div>
+
+        <div id="robotito" class="robotito mood-calm" role="img" aria-label="Robotito, macaquito virtual">
+          <div class="shadow"></div>
+
+          <div class="tail" aria-hidden="true">
+            <div class="tail-inner"></div>
+          </div>
+
+          <div class="body">
+            <div class="belly"></div>
+            <div class="arm arm-left"></div>
+            <div class="arm arm-right"></div>
+            <div class="leg leg-left"></div>
+            <div class="leg leg-right"></div>
+          </div>
+
+          <div class="head">
+            <div class="ear ear-left"><span></span></div>
+            <div class="ear ear-right"><span></span></div>
+
+            <div class="face">
+              <div class="brow brow-left"></div>
+              <div class="brow brow-right"></div>
+
+              <div class="eye eye-left">
+                <div class="white">
+                  <div class="iris"><div class="pupil"></div><div class="spark"></div></div>
+                </div>
+                <div class="lid"></div>
+              </div>
+
+              <div class="eye eye-right">
+                <div class="white">
+                  <div class="iris"><div class="pupil"></div><div class="spark"></div></div>
+                </div>
+                <div class="lid"></div>
+              </div>
+
+              <div class="muzzle">
+                <div class="nose"></div>
+                <div class="mouth"><div class="tongue"></div></div>
+              </div>
+
+              <div class="cheek cheek-left"></div>
+              <div class="cheek cheek-right"></div>
+            </div>
+          </div>
+
+          <div id="sleepZ" class="sleep-z">Zzz</div>
+        </div>
+
+        <div id="birthdayScene" class="birthday-scene hidden">
+          <div class="cake">
+            <div class="candle"><span class="flame"></span></div>
+            <div class="cake-top"></div>
+            <div class="cake-body">🎂</div>
+          </div>
+          <div id="birthdayText" class="birthday-text"></div>
+        </div>
+
+        <div class="hud">
+          <div class="hud-pill"><span>Humor</span><strong id="moodLabel">tranquilo</strong></div>
+          <div class="hud-pill"><span>Hambre</span><strong id="hungerLabel">0%</strong></div>
+          <div class="hud-pill"><span>Veo</span><strong id="seenLabel">a nadie</strong></div>
+          <div class="hud-pill"><span>Escucho</span><strong id="heardLabel">silencio</strong></div>
+        </div>
+
+        <div class="quick-actions">
+          <button data-action="pet">🤍 Acariciar</button>
+          <button data-action="feed">🍌 Dar banana</button>
+          <button data-action="surprise">👻 Asustar</button>
+          <button data-action="poke">👉 Molestar</button>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <nav class="tabs" aria-label="Panel de Robotito">
+          <button class="tab active" data-tab="status">Estado</button>
+          <button class="tab" data-tab="people">Personas</button>
+          <button class="tab" data-tab="books">Libros</button>
+          <button class="tab" data-tab="memory">Memoria</button>
+        </nav>
+
+        <section class="tabpage active" id="tab-status">
+          <div class="card intro-card">
+            <h2>¿Qué está pasando?</h2>
+            <p id="statusText">Robotito todavía está medio dormido. Dale permiso a la cámara y al micrófono para empezar.</p>
+          </div>
+
+          <div class="meter-card">
+            <div class="meter-head"><span>Ánimo</span><span id="moodScoreText">50 / 100</span></div>
+            <div class="meter"><span id="moodMeter"></span></div>
+          </div>
+
+          <div class="meter-card">
+            <div class="meter-head"><span>Energía</span><span id="energyText">100%</span></div>
+            <div class="meter"><span id="energyMeter"></span></div>
+          </div>
+
+          <div class="meter-card">
+            <div class="meter-head"><span>Hambre</span><span id="hungerText">0%</span></div>
+            <div class="meter"><span id="hungerMeter"></span></div>
+          </div>
+
+          <div class="card small">
+            <h3>Última cosa que entendí</h3>
+            <p id="transcript">—</p>
+          </div>
+
+          <div class="card small">
+            <h3>Hoy</h3>
+            <p id="dateInfo"></p>
+          </div>
+        </section>
+
+        <section class="tabpage" id="tab-people">
+          <div class="card">
+            <h2>Registrar una persona</h2>
+            <p class="muted">La cara queda guardada solo en este navegador.</p>
+
+            <label>Nombre
+              <input id="personName" type="text" placeholder="Ej. Antonia" autocomplete="off" />
+            </label>
+
+            <label>Cumpleaños
+              <input id="personBirthday" type="date" />
+            </label>
+
+            <button id="enrollBtn" class="primary full">Mirar a cámara y registrar</button>
+            <p id="enrollStatus" class="mini-status"></p>
+          </div>
+
+          <div class="card">
+            <div class="section-head">
+              <h2>Personas que recuerda</h2>
+              <button id="refreshPeopleBtn" class="ghost">Actualizar</button>
+            </div>
+            <div id="peopleList" class="people-list"></div>
+          </div>
+        </section>
+
+        <section class="tabpage" id="tab-books">
+          <div class="card">
+            <h2>Goodreads</h2>
+            <p class="muted">Importá el CSV de tu biblioteca. Robotito lo usa para no recomendarte cosas que ya leíste y para buscar entre tus pendientes.</p>
+            <label class="file-label">
+              Importar CSV
+              <input id="goodreadsFile" type="file" accept=".csv,text/csv" />
+            </label>
+            <p id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
+          </div>
+
+          <div class="card">
+            <h2>¿Qué querés leer?</h2>
+            <label>Pedido
+              <textarea id="bookPrompt" rows="3" placeholder="Ej. fantasía oscura con romance, final feliz y protagonista femenina"></textarea>
+            </label>
+            <div class="book-options">
+              <label class="check"><input id="onlyOwned" type="checkbox" /> Solo de mi biblioteca</label>
+              <label class="check"><input id="excludeRead" type="checkbox" checked /> Evitar leídos</label>
+            </div>
+            <button id="recommendBtn" class="primary full">Recomendarme un libro</button>
+          </div>
+
+          <div id="bookResults" class="book-results"></div>
+        </section>
+
+        <section class="tabpage" id="tab-memory">
+          <div class="card">
+            <h2>Decile algo para recordar</h2>
+            <p class="muted">Si Robotito reconoce quién está delante, el recuerdo queda asociado a esa persona.</p>
+            <textarea id="memoryInput" rows="3" placeholder="Ej. Mi color favorito es el verde"></textarea>
+            <button id="rememberBtn" class="primary full">Recordar esto</button>
+          </div>
+
+          <div class="card">
+            <div class="section-head">
+              <h2>Recuerdos</h2>
+              <button id="clearMemoryBtn" class="ghost danger">Borrar recuerdos</button>
+            </div>
+            <div id="memoryList" class="memory-list"></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span id="systemStatus">Cámara y micrófono apagados.</span>
+      <span>Los datos personales se guardan localmente.</span>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <div id="confettiLayer" class="confetti-layer"></div>
+</body>
+</html>
