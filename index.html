@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="style.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs" type="module"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -80,7 +83,7 @@
                   <circle class="eye-spark" cx="-5" cy="-4" r="4"/>
                   <circle class="eye-spark tiny" cx="5" cy="8" r="2"/>
                 </g>
-                <ellipse class="lid-svg" cx="0" cy="-27" rx="26" ry="28"/>
+                <ellipse class="lid-svg" cx="0" cy="0" rx="26" ry="28"/>
               </g>
 
               <g class="eye eye-right" transform="translate(205 139)">
@@ -91,7 +94,7 @@
                   <circle class="eye-spark" cx="-5" cy="-4" r="4"/>
                   <circle class="eye-spark tiny" cx="5" cy="8" r="2"/>
                 </g>
-                <ellipse class="lid-svg" cx="0" cy="-27" rx="26" ry="28"/>
+                <ellipse class="lid-svg" cx="0" cy="0" rx="26" ry="28"/>
               </g>
 
               <path class="brow brow-left" d="M91 104 Q112 91 132 103"/>
@@ -206,6 +209,7 @@
             <span class="muted">Si se confunde de voz:</span>
             <button id="nextMeBtn" type="button" class="tiny-btn">Próxima frase: yo</button>
             <button id="nextTeacherBtn" type="button" class="tiny-btn">Próxima frase: profesora</button>
+            <button id="nextClassmateBtn" type="button" class="tiny-btn">Próxima frase: compañero/a</button>
           </div>
 
           <div class="live-class-box">
@@ -223,6 +227,16 @@
         </div>
 
         <div class="card">
+          <h2>Cargar material académico</h2>
+          <p class="muted">Podés cargar apuntes o material de apoyo en TXT, Markdown, CSV, JSON o PDF. Robotito lo suma a lo que sabe de la materia.</p>
+          <label class="file-label">
+            Cargar material
+            <input id="academicFiles" type="file" multiple accept=".txt,.md,.csv,.json,.pdf,text/plain,text/markdown,text/csv,application/json,application/pdf" />
+          </label>
+          <div id="academicFilesList" class="study-output"><p class="muted">Todavía no cargaste material.</p></div>
+        </div>
+
+        <div class="card">
           <h2>Preguntarle sobre clases</h2>
           <textarea id="classQuestion" rows="3" placeholder="Ej. ¿Qué explicó la profesora sobre los anticuerpos?"></textarea>
           <div class="button-grid two">
@@ -230,6 +244,22 @@
             <button id="flashcardsBtn" type="button">Tarjetas de estudio</button>
           </div>
           <div id="classAnswer" class="study-output"></div>
+        </div>
+
+        <div class="card">
+          <h2>Matemática visual</h2>
+          <p class="muted">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
+          <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0"></textarea>
+          <button id="solveMathBtn" type="button" class="primary full">Resolver y representar</button>
+          <div id="mathExplanation" class="study-output"></div>
+          <canvas id="mathCanvas" width="520" height="360"></canvas>
+        </div>
+
+        <div class="card">
+          <h2>¿Qué objeto es?</h2>
+          <p class="muted">Mostrá un objeto a cámara y preguntá “¿qué es esto?” o usá el botón.</p>
+          <button id="detectObjectBtn" type="button" class="primary full">Reconocer objeto</button>
+          <div id="objectResult" class="study-output"></div>
         </div>
       </section>
 
