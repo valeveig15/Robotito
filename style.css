@@ -108,3 +108,28 @@ input:focus,textarea:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,17
 @keyframes poked{50%{transform:translate(-50%,-50%) translateX(-14px) rotate(-3deg)}}@keyframes danceHop{0%,100%{transform:translate(-50%,-50%) translateY(0) rotate(-3deg)}50%{transform:translate(-50%,-50%) translateY(-13px) rotate(4deg)}}
 @keyframes danceL{to{transform:rotate(62deg)}}@keyframes danceR{to{transform:rotate(-62deg)}}@keyframes sleepBob{50%{transform:translate(-50%,-50%) translateY(6px) rotate(2deg)}}@keyframes zzz{50%{transform:translate(11px,-14px);opacity:.45}}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.panel{max-height:none}.world{min-height:650px}.topbar{align-items:flex-start}.clock{display:none}.bamboo{opacity:.5}}
+
+
+/* === Robotito v4: SVG panda + study mode === */
+.panda-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 12px 20px rgba(70,54,72,.08))}
+.fur-white{fill:#fff}.fur-black,.eye-patch-svg{fill:#232027}.body-shape,.head-shape{stroke:#eee6ec;stroke-width:2}.belly-shape{fill:#fffafd}.paw-pad{fill:#5d515f}.eye-white-svg{fill:#fff}.iris-svg{fill:#4a4350}.pupil-svg{fill:#111}.eye-spark{fill:#fff}.snout-svg{fill:#fbf7f9}.nose-svg{fill:#262129}.mouth-line{fill:none;stroke:#4b434d;stroke-width:4;stroke-linecap:round}.tongue-svg{fill:#f09bb3}.brow{fill:none;stroke:#4e4751;stroke-width:5;stroke-linecap:round;transition:.2s}.cheek{fill:#f5b7c8;opacity:.48;transition:.2s}.svg-shadow{fill:rgba(68,55,67,.16)}
+.panda-whole,.head-group,.body-group,.arm,.leg,.tail-group{transform-box:fill-box;transform-origin:center}
+.robotito.blink .lid-svg{transform:translateY(27px)}.lid-svg{fill:#f3edf1;transition:transform .12s}
+.robotito .iris{transform-box:fill-box;transform-origin:center}
+.robotito.pet-happy .head-group{animation:svgNuzzle .7s ease-in-out 2}.robotito.pet-happy .cheek{opacity:.92}
+.robotito.eating .mouth-line{stroke-width:5}.robotito.eating .head-group{animation:tinyNod .28s ease-in-out infinite alternate}
+.robotito.poked .panda-whole{animation:svgPoke .42s ease 2}
+.robotito.dancing .panda-whole{animation:svgDance .72s ease-in-out infinite}.robotito.dancing .arm-left{animation:svgArmL .5s ease-in-out infinite alternate}.robotito.dancing .arm-right{animation:svgArmR .5s ease-in-out infinite alternate}
+.robotito.sleeping .panda-whole{animation:svgSleep 2.4s ease-in-out infinite}
+.mood-happy .cheek{opacity:.9}.mood-sad .brow-left{transform:rotate(-10deg)}.mood-sad .brow-right{transform:rotate(10deg)}.mood-angry .brow-left{transform:rotate(18deg)}.mood-angry .brow-right{transform:rotate(-18deg)}.mood-angry .cheek{fill:#ef8f99}.mood-scared .eye-white-svg{transform-box:fill-box;transform-origin:center;transform:scale(1.12)}.mood-sleepy .lid-svg{transform:translateY(14px)}
+.idea-pop{position:absolute;opacity:0;right:10px;top:78px;font-size:34px;color:#f0b45c;pointer-events:none}.robotito.thinking .idea-pop{animation:idea 1.2s ease}.robotito.hugging .arm-left{animation:hugSvgL .8s ease-in-out 2}.robotito.hugging .arm-right{animation:hugSvgR .8s ease-in-out 2}.robotito.highfive .arm-right{animation:highFive .6s ease-in-out 2}.robotito.playing .panda-whole{animation:playBounce .55s ease-in-out 4}
+@keyframes svgNuzzle{50%{transform:rotate(-4deg) translateX(-3px)}}@keyframes tinyNod{to{transform:translateY(3px)}}@keyframes svgPoke{50%{transform:translateX(-13px) rotate(-2deg)}}@keyframes svgDance{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-13px) rotate(4deg)}}@keyframes svgArmL{to{transform:rotate(35deg)}}@keyframes svgArmR{to{transform:rotate(-35deg)}}@keyframes svgSleep{50%{transform:translateY(7px) rotate(1.8deg)}}@keyframes idea{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.15)}100%{opacity:0;transform:translateY(-22px)}}@keyframes hugSvgL{50%{transform:rotate(-28deg) translateX(18px)}}@keyframes hugSvgR{50%{transform:rotate(28deg) translateX(-18px)}}@keyframes highFive{50%{transform:rotate(-58deg) translate(-10px,-24px)}}@keyframes playBounce{50%{transform:translateY(-12px) rotate(3deg)}}
+
+.tabs{grid-template-columns:repeat(6,1fr)}
+.status-badge{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#f1ebf0;color:#8a7e8c}.status-badge.on{background:#dff4eb;color:#527f73}
+.button-grid{display:grid;gap:8px}.button-grid.two{grid-template-columns:1fr 1fr}.speaker-override{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:10px}.tiny-btn{font-size:11px;padding:7px 9px}
+.live-class-box{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:11px;background:#fffafd}.class-transcript{max-height:220px;overflow:auto;display:grid;gap:7px;margin-top:8px}.class-line{padding:8px 10px;border-radius:11px;background:#fff;border:1px solid var(--line);font-size:12px;line-height:1.4}.class-line.teacher{border-left:4px solid #ae9bdd}.class-line.me{border-left:4px solid #8fd0c1}.speaker-tag{font-size:10px;font-weight:900;color:#8b7f8d;margin-right:6px}
+.study-output{margin-top:10px;display:grid;gap:8px}.study-chip{padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:#fffafd;font-size:12px;line-height:1.45}
+.tasks-list{display:grid;gap:8px}.task-row{border:1px solid var(--line);border-radius:13px;padding:10px;background:#fffafd}.task-row strong{display:block}.task-meta{font-size:11px;color:var(--muted);margin-top:3px}.task-urgent{border-left:4px solid #ef9c9c}.task-done{opacity:.55;text-decoration:line-through}
+.quick-actions{max-width:calc(100% - 36px)}.quick-actions button{font-size:12px;padding:8px 10px}
+@media(max-width:900px){.tabs{grid-template-columns:repeat(3,1fr)}}
