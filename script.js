@@ -41,7 +41,10 @@ const state = {
   classLines: load("robotito.classLines.v1", []),
   speakerOverride: null,
   recentAudioFeatures: [],
-  voiceProfiles: load("robotito.voiceProfiles.v1", {me:[],teacher:[]}),
+  voiceProfiles: load("robotito.voiceProfiles.v1", {me:[],teacher:[],classmate:[]}),
+  classSummaries: load("robotito.classSummaries.v1", []),
+  academicMaterials: load("robotito.academicMaterials.v1", []),
+  objectModel: null,
   tasks: load("robotito.tasks.v1", []),
   tasksSheetUrl: localStorage.getItem("robotito.tasksSheetUrl.v1") || "",
   tasksSheetGid: localStorage.getItem("robotito.tasksSheetGid.v1") || "",
@@ -382,6 +385,204 @@ function answerEasyQuestion(rawText){
 }
 
 
+
+function curriculumSubject(subject){
+  const cur=window.ROBOTITO_CURRICULUM;
+  if(!cur)return null;
+  const n=normalizeText(subject);
+  for(const [name,data] of Object.entries(cur.subjects||{})){
+    const aliases=[name,...(data.aliases||[])].map(normalizeText);
+    if(aliases.some(a=>n.includes(a)||a.includes(n)))return {name,...data};
+  }
+  return null;
+}
+function levenshtein(a,b){
+  a=normalizeText(a);b=normalizeText(b);
+  const m=Array.from({length:a.length+1},(_,i)=>[i]);
+  for(let j=1;j<=b.length;j++)m[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return m[a.length][b.length];
+}
+function correctAcademicTranscript(text,subject){
+  const info=curriculumSubject(subject);
+  if(!info)return {text,changes:[]};
+  const terms=(info.terms||[]).filter(t=>!t.includes(" "));
+  const words=text.split(/(\s+)/);
+  const changes=[];
+  const corrected=words.map(token=>{
+    if(/^\s+$/.test(token))return token;
+    const clean=normalizeText(token);
+    if(clean.length<5)return token;
+    let best=null,bestD=99;
+    for(const term of terms){
+      const t=normalizeText(term);
+      if(Math.abs(t.length-clean.length)>2)continue;
+      const d=levenshtein(clean,t);
+      if(d<bestD){bestD=d;best=term;}
+    }
+    if(best && bestD<=1 && normalizeText(best)!==clean){
+      changes.push({from:token,to:best});
+      const cap=/^[A-ZÁÉÍÓÚÑ]/.test(token);
+      return cap?best.charAt(0).toUpperCase()+best.slice(1):best;
+    }
+    return token;
+  }).join("");
+  return {text:corrected,changes};
+}
+function materialEvidenceLines(){
+  const subj=normalizeText(state.classSubject||$("#classSubject")?.value||"");
+  return state.academicMaterials
+    .filter(m=>!subj||normalizeText(m.subject||"").includes(subj)||subj.includes(normalizeText(m.subject||"")))
+    .flatMap(m=>(m.chunks||[]).map((text,i)=>({text,correctedText:text,speaker:"material",subject:m.subject||"Material",at:m.at,sourceName:m.name,chunk:i+1})));
+}
+async function browserRewrite(prompt){
+  try{
+    if(window.LanguageModel?.create){
+      const session=await window.LanguageModel.create({temperature:.2,topK:3});
+      const out=await session.prompt(prompt);
+      session.destroy?.();
+      return out?.trim()||null;
+    }
+  }catch(e){console.warn("browser AI",e);}
+  return null;
+}
+function fallbackAcademicAnswer(question,evidence){
+  const snippets=evidence.map(e=>(e.correctedText||e.text).replace(/\b(bueno|o sea|este|eh|tipo)\b/gi,"").replace(/\s+/g," ").trim()).filter(Boolean);
+  const q=normalizeText(question);
+  if(!snippets.length)return "No tengo suficiente información.";
+  if(q.startsWith("por que")||q.startsWith("porque"))return "La explicación que aparece en tus materiales es que "+snippets.join(" Además, ").replace(/^./,x=>x.toLowerCase());
+  if(q.startsWith("como"))return "El procedimiento o mecanismo que se explicó es el siguiente: "+snippets.join(" Luego, ");
+  if(q.startsWith("que es")||q.startsWith("que significa"))return "En tus materiales, se entiende como "+snippets.join(" ");
+  return "La respuesta, según lo trabajado en clase y el material cargado, es: "+snippets.join(" ");
+}
+async function composeAcademicAnswer(question,evidence){
+  const evidenceText=evidence.map((e,i)=>`[${i+1}] ${e.correctedText||e.text}`).join("\n");
+  const prompt=`Respondé en español rioplatense a la pregunta del estudiante usando solamente la evidencia. Contestá la pregunta en tus propias palabras, de forma clara y breve. No inventes nada. Si la evidencia no alcanza, decilo. Pregunta: ${question}\nEvidencia:\n${evidenceText}`;
+  return await browserRewrite(prompt)||fallbackAcademicAnswer(question,evidence);
+}
+function keySentences(lines,max=7){
+  const candidates=lines.map(l=>(l.correctedText||l.text||"").trim()).filter(t=>t.length>28);
+  const seen=new Set(),out=[];
+  for(const t of candidates){
+    const key=contentWords(t).slice(0,5).join(" ");
+    if(key&&!seen.has(key)){seen.add(key);out.push(t);}
+    if(out.length>=max)break;
+  }
+  return out;
+}
+async function generateAndSaveClassSummary(endedAt=Date.now()){
+  const all=classLinesForSubject().filter(l=>l.at>=state.classStartedAt-1000&&l.at<=endedAt+1000);
+  if(!all.length){summarizeClass();return null;}
+  const important=keySentences(all.filter(l=>l.speaker!=="me"),8);
+  const subject=state.classSubject||"Clase";
+  const prompt=`Hacé un resumen de estudio en español, claro y fiel, usando solo estas notas de la clase de ${subject}. Corregí redacción pero no agregues contenido externo. Incluí: tema central, ideas clave y conceptos a revisar. Notas:\n${important.join("\n")}`;
+  let summary=await browserRewrite(prompt);
+  if(!summary){
+    summary="Resumen de "+subject+": "+important.join(" ");
+  }
+  const entry={subject,startedAt:state.classStartedAt,endedAt,summary,lines:all.length,at:Date.now()};
+  state.classSummaries.push(entry);
+  state.classSummaries=state.classSummaries.slice(-100);
+  save("robotito.classSummaries.v1",state.classSummaries);
+  $("#classSummary").innerHTML='<div class="answer-card"><strong>Resumen automático</strong><p>'+escapeHtml(summary)+'</p><div class="answer-evidence">Generado al terminar la clase · '+new Date(entry.at).toLocaleString("es-UY")+'</div></div>';
+  return summary;
+}
+async function readAcademicFile(file){
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  if(ext==="pdf"){
+    try{
+      const pdfjs=await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs");
+      pdfjs.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs";
+      const pdf=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+      let text="";
+      for(let p=1;p<=pdf.numPages;p++){
+        const page=await pdf.getPage(p);
+        const tc=await page.getTextContent();
+        text+=tc.items.map(x=>x.str).join(" ")+"\n";
+      }
+      return text;
+    }catch(e){throw new Error("No pude leer ese PDF.");}
+  }
+  return await file.text();
+}
+function chunkText(text,size=1100){
+  const clean=text.replace(/\s+/g," ").trim();
+  const chunks=[];
+  for(let i=0;i<clean.length;i+=size)chunks.push(clean.slice(i,i+size));
+  return chunks;
+}
+async function importAcademicFiles(files){
+  if(!files.length)return;
+  for(const file of files){
+    try{
+      const text=await readAcademicFile(file);
+      state.academicMaterials.push({name:file.name,subject:$("#classSubject").value.trim()||state.classSubject||"Material académico",chunks:chunkText(text),at:Date.now()});
+    }catch(e){toast(e.message||("No pude leer "+file.name));}
+  }
+  state.academicMaterials=state.academicMaterials.slice(-50);
+  save("robotito.academicMaterials.v1",state.academicMaterials);
+  renderAcademicMaterials();
+  toast("Material académico cargado.");
+}
+function renderAcademicMaterials(){
+  const root=$("#academicFilesList");if(!root)return;
+  if(!state.academicMaterials.length){root.innerHTML='<p class="muted">Todavía no cargaste material.</p>';return;}
+  root.innerHTML=[...state.academicMaterials].reverse().slice(0,20).map(m=>'<div class="material-row"><strong>'+escapeHtml(m.name)+'</strong><div class="muted">'+escapeHtml(m.subject)+' · '+m.chunks.length+' fragmentos</div></div>').join("");
+}
+function parseCirclePrompt(raw){
+  const s=raw.replace(/²/g,"^2").replace(/−/g,"-");
+  let m=s.match(/centro\s*\(?\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*\)?.*radio\s*(?:=|de)?\s*(\d+(?:\.\d+)?)/i);
+  if(m)return {h:+m[1],k:+m[2],r:+m[3],method:"datos"};
+  const A=Number((s.match(/x\^2[^y]*?([+-]\s*\d+(?:\.\d+)?)\s*\*?\s*x/i)||[])[1]?.replace(/\s/g,"")||0);
+  const B=Number((s.match(/y\^2.*?([+-]\s*\d+(?:\.\d+)?)\s*\*?\s*y/i)||[])[1]?.replace(/\s/g,"")||0);
+  const cMatch=s.match(/([+-]\s*\d+(?:\.\d+)?)\s*=\s*0\s*$/);
+  if(/x\^2/i.test(s)&&/y\^2/i.test(s)){
+    const C=cMatch?Number(cMatch[1].replace(/\s/g,"")):0;
+    const h=-A/2,k=-B/2,r2=h*h+k*k-C;
+    if(r2>0)return {h,k,r:Math.sqrt(r2),A,B,C,method:"general"};
+  }
+  m=s.match(/\(\s*x\s*([+-])\s*(\d+(?:\.\d+)?)\s*\)\s*\^2\s*\+\s*\(\s*y\s*([+-])\s*(\d+(?:\.\d+)?)\s*\)\s*\^2\s*=\s*(\d+(?:\.\d+)?)/i);
+  if(m)return {h:m[1]==="-"?+m[2]:-m[2],k:m[3]==="-"?+m[4]:-m[4],r:Math.sqrt(+m[5]),method:"canonica"};
+  return null;
+}
+function drawCircle(sol){
+  const cv=$("#mathCanvas");if(!cv)return;const ctx=cv.getContext("2d"),w=cv.width,h=cv.height;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
+  const span=Math.max(6,Math.abs(sol.h)+sol.r+2,Math.abs(sol.k)+sol.r+2),sx=w/(2*span),sy=h/(2*span),cx=w/2,cy=h/2;
+  ctx.strokeStyle="#d8cfd8";ctx.lineWidth=1;
+  for(let i=-Math.floor(span);i<=span;i++){ctx.beginPath();ctx.moveTo(cx+i*sx,0);ctx.lineTo(cx+i*sx,h);ctx.stroke();ctx.beginPath();ctx.moveTo(0,cy-i*sy);ctx.lineTo(w,cy-i*sy);ctx.stroke();}
+  ctx.strokeStyle="#5f5662";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.strokeStyle="#ef8fb0";ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx+sol.h*sx,cy-sol.k*sy,sol.r*sx,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle="#4d4650";ctx.beginPath();ctx.arc(cx+sol.h*sx,cy-sol.k*sy,4,0,Math.PI*2);ctx.fill();
+}
+function solveMathFromUI(){
+  const raw=$("#mathPrompt").value.trim();if(!raw)return;
+  const sol=parseCirclePrompt(raw);
+  if(!sol){$("#mathExplanation").innerHTML='<div class="study-chip">Todavía puedo resolver y representar circunferencias en forma canónica, general simple o a partir de centro y radio. Probá, por ejemplo: x² + y² - 6x + 4y - 12 = 0.</div>';return;}
+  const r2=sol.r*sol.r;
+  let explanation;
+  if(sol.method==="general") explanation=`Parto de x² + y² + Ax + By + C = 0. El centro es (-A/2,-B/2), por eso queda (${sol.h.toFixed(2)}, ${sol.k.toFixed(2)}). Al completar cuadrados resulta un radio de ${sol.r.toFixed(2)}. La forma canónica es (x-${sol.h.toFixed(2)})² + (y-${sol.k.toFixed(2)})² = ${r2.toFixed(2)}.`;
+  else explanation=`La circunferencia tiene centro (${sol.h}, ${sol.k}) y radio ${sol.r.toFixed(2)}. Su forma canónica es (x-${sol.h})² + (y-${sol.k})² = ${r2.toFixed(2)}.`;
+  $("#mathExplanation").innerHTML='<div class="answer-card"><strong>Resolución</strong><p>'+escapeHtml(explanation)+'</p></div>';
+  drawCircle(sol);say("Listo. La resolví y la dibujé.");
+}
+async function detectObjectNow(){
+  if(!state.started){toast("Primero despertá los sentidos.");return;}
+  const out=$("#objectResult");out.innerHTML='<div class="study-chip">Mirando…</div>';
+  try{
+    if(!state.objectModel){
+      if(!window.cocoSsd)throw new Error("El detector de objetos no cargó.");
+      state.objectModel=await cocoSsd.load({base:"lite_mobilenet_v2"});
+    }
+    const preds=await state.objectModel.detect(camera,10,.45);
+    if(!preds.length){out.innerHTML='<div class="study-chip">No logro reconocer un objeto claro. Acercalo y dejalo quieto un segundo.</div>';say("No lo reconozco bien todavía.");return;}
+    const names={person:"persona",bottle:"botella",cup:"taza o vaso",book:"libro",cell_phone:"celular",laptop:"laptop",keyboard:"teclado",mouse:"mouse",chair:"silla",backpack:"mochila",scissors:"tijera",toothbrush:"cepillo de dientes",apple:"manzana",banana:"banana",orange:"naranja"};
+    const top=preds[0],name=names[top.class]||top.class;
+    out.innerHTML='<div class="object-box"><div class="object-icon">👀</div><div><strong>Creo que es '+escapeHtml(name)+'</strong><div class="muted">Confianza: '+Math.round(top.score*100)+'%</div></div></div>';
+    say("Creo que es "+name+".");
+  }catch(e){out.innerHTML='<div class="study-chip">No pude activar el reconocimiento de objetos.</div>';console.warn(e);}
+}
+
 function averageRecentVoiceFeature(){
   const arr=state.recentAudioFeatures.filter(x=>Date.now()-x.t<2200);
   if(!arr.length)return {rms:0,centroid:0,flat:0};
@@ -410,26 +611,28 @@ function classifySpeaker(feature){
     learnSpeaker(label,feature);
     return label;
   }
-  const me=profileMean(state.voiceProfiles.me);
-  const teacher=profileMean(state.voiceProfiles.teacher);
-  if(me&&teacher) return featureDistance(feature,me)<=featureDistance(feature,teacher)?"me":"teacher";
-  if(me) return featureDistance(feature,me)<.55?"me":"teacher";
-  if(teacher) return featureDistance(feature,teacher)<.55?"teacher":"me";
-  // Until profiles exist, assume classroom speech is the teacher unless Robotito
-  // recognizes the user and the phrase explicitly addresses him.
-  return "teacher";
+  const profiles=["me","teacher","classmate"]
+    .map(label=>({label,mean:profileMean(state.voiceProfiles[label])}))
+    .filter(x=>x.mean);
+  if(profiles.length){
+    const ranked=profiles.map(x=>({label:x.label,d:featureDistance(feature,x.mean)})).sort((a,b)=>a.d-b.d);
+    if(ranked[0].d<.7)return ranked[0].label;
+    if(ranked.length>1&&ranked[0].d+.10<ranked[1].d)return ranked[0].label;
+  }
+  return "classmate";
 }
 function captureClassLine(text){
   const feature=averageRecentVoiceFeature();
   const speaker=classifySpeaker(feature);
-  const line={text:text.trim(),speaker,subject:state.classSubject||"Clase",at:Date.now(),feature};
+  const correction=correctAcademicTranscript(text,state.classSubject);
+  const line={text:text.trim(),correctedText:correction.text,corrections:correction.changes,speaker,subject:state.classSubject||"Clase",at:Date.now(),feature};
   state.classLines.push(line);
   state.classLines=state.classLines.slice(-1000);
   save("robotito.classLines.v1",state.classLines);
-  if(speaker==="teacher" && state.voiceProfiles.teacher.length<2) learnSpeaker("teacher",feature);
+  if((state.voiceProfiles[speaker]||[]).length<2) learnSpeaker(speaker,feature);
   renderClassTranscript();
   $("#speakerPill").classList.remove("hidden");
-  $("#speakerLabel").textContent=speaker==="me"?"vos":"profesora";
+  $("#speakerLabel").textContent=speaker==="me"?"vos":speaker==="teacher"?"profesora":"compañero/a";
 }
 function startClassMode(){
   if(!state.started){toast("Primero despertá los sentidos.");return;}
@@ -442,15 +645,16 @@ function startClassMode(){
   setMood("focused","Robotito está concentrado escuchando la clase.");
   say("Modo clase activado. Voy a escuchar y aprender.");
 }
-function stopClassMode(){
+async function stopClassMode(){
   if(!state.classMode)return;
+  const endedAt=Date.now();
   state.classMode=false;
   $("#classBadge").textContent="apagado";
   $("#classBadge").classList.remove("on");
   $("#speakerPill").classList.add("hidden");
-  setMood("proud","Robotito terminó de escuchar la clase y guardó lo que entendió.");
-  say("Listo. Guardé la clase para estudiar después.");
-  summarizeClass();
+  setMood("proud","Robotito terminó de escuchar la clase y está preparando el resumen.");
+  const summary=await generateAndSaveClassSummary(endedAt);
+  say(summary?"Listo. Te preparé y guardé el resumen de la clase.":"Listo. Guardé la clase, aunque no tuve suficiente contenido para resumirla.");
 }
 function classLinesForSubject(){
   const subj=normalizeText(state.classSubject||$("#classSubject").value||"");
@@ -464,9 +668,9 @@ function contentWords(text){
 }
 function answerFromClass(question){
   const words=contentWords(question);
-  const lines=classLinesForSubject();
+  const lines=[...classLinesForSubject(),...materialEvidenceLines()];
   const ranked=lines.map(l=>{
-    const norm=normalizeText(l.text);
+    const norm=normalizeText(l.correctedText||l.text);
     let score=0;
     words.forEach(w=>{if(norm.includes(w))score+=2;});
     if(l.speaker==="teacher")score+=.5;
@@ -474,10 +678,10 @@ function answerFromClass(question){
   }).sort((a,b)=>b.score-a.score);
   const best=ranked.filter(x=>x.score>0).slice(0,3);
   if(!best.length)return null;
-  return best.map(x=>x.l.text).join(" ");
+  return {evidence:best.map(x=>x.l), text:best.map(x=>x.l.correctedText||x.l.text).join(" ")};
 }
 function summarizeClass(){
-  const lines=classLinesForSubject().filter(l=>l.speaker==="teacher");
+  const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"||l.speaker==="classmate");
   const out=$("#classSummary");
   if(!lines.length){out.innerHTML='<p class="muted">Todavía no tengo suficientes explicaciones de la profesora guardadas.</p>';return;}
   const candidates=lines.filter(l=>l.text.length>35).slice(-80);
@@ -485,19 +689,27 @@ function summarizeClass(){
   const selected=[];
   for(const l of candidates.reverse()){
     const key=normalizeText(l.text).split(" ").slice(0,6).join(" ");
-    if(!seen.has(key)){seen.add(key);selected.push(l.text);}
+    const txt=l.correctedText||l.text;
+    if(!seen.has(key)){seen.add(key);selected.push(txt);}
     if(selected.length>=6)break;
   }
   out.innerHTML=selected.reverse().map(t=>'<div class="study-chip">• '+escapeHtml(t)+'</div>').join("");
 }
-function askClass(){
+async function askClass(){
   const q=$("#classQuestion").value.trim();
   if(!q)return;
   robot.classList.add("thinking");setTimeout(()=>robot.classList.remove("thinking"),1200);
   setMood("curious","Robotito está buscando en lo que aprendió de clase.");
-  const ans=answerFromClass(q);
-  $("#classAnswer").innerHTML=ans?'<div class="study-chip">'+escapeHtml(ans)+'</div>':'<div class="study-chip">No encontré eso en lo que escuché. Puede que no lo haya entendido bien o que todavía no se haya explicado.</div>';
-  say(ans?ans.slice(0,220):"No encontré eso en mis apuntes de clase.",4200);
+  const found=answerFromClass(q);
+  if(!found){
+    $("#classAnswer").innerHTML='<div class="study-chip">No encontré eso en la clase ni en el material cargado.</div>';
+    say("No encontré eso en mis apuntes.",3500);
+    return;
+  }
+  const answer=await composeAcademicAnswer(q,found.evidence);
+  const evidenceHtml=found.evidence.map((e,i)=>'<div class="answer-evidence"><strong>Fuente '+(i+1)+':</strong> '+escapeHtml(e.correctedText||e.text)+(e.correctedText&&e.correctedText!==e.text?'<br><span>Transcripción original: '+escapeHtml(e.text)+'</span>':'')+'</div>').join("");
+  $("#classAnswer").innerHTML='<div class="answer-card"><strong>Respuesta</strong><p>'+escapeHtml(answer)+'</p>'+evidenceHtml+'</div>';
+  say(answer.slice(0,280),5200);
 }
 function makeFlashcards(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"&&l.text.length>30).slice(-8);
@@ -514,7 +726,13 @@ function renderClassTranscript(){
   const root=$("#classTranscript");
   const lines=classLinesForSubject().slice(-40);
   if(!lines.length){root.innerHTML='<p class="muted">Todavía no hay frases guardadas.</p>';return;}
-  root.innerHTML=lines.map(l=>'<div class="class-line '+(l.speaker==="me"?"me":"teacher")+'"><span class="speaker-tag">'+(l.speaker==="me"?"VOS":"PROFESORA")+'</span>'+escapeHtml(l.text)+'</div>').join("");
+  root.innerHTML=lines.map(l=>{
+    const cls=l.speaker==="me"?"me":l.speaker==="teacher"?"teacher":"classmate";
+    const tag=l.speaker==="me"?"VOS":l.speaker==="teacher"?"PROFESORA":"COMPAÑERO/A";
+    const txt=l.correctedText||l.text;
+    const corr=l.correctedText&&l.correctedText!==l.text?'<div class="muted">Oí: '+escapeHtml(l.text)+'</div>':'';
+    return '<div class="class-line '+cls+'"><span class="speaker-tag '+cls+'">'+tag+'</span>'+escapeHtml(txt)+corr+'</div>';
+  }).join("");
   root.scrollTop=root.scrollHeight;
 }
 function updateClassDuration(){
@@ -1193,6 +1411,10 @@ function bindUI(){
   $("#flashcardsBtn").addEventListener("click",makeFlashcards);
   $("#nextMeBtn").addEventListener("click",()=>{state.speakerOverride="me";toast("La próxima frase se aprenderá como tu voz.");});
   $("#nextTeacherBtn").addEventListener("click",()=>{state.speakerOverride="teacher";toast("La próxima frase se aprenderá como voz de profesora.");});
+  $("#nextClassmateBtn")?.addEventListener("click",()=>{state.speakerOverride="classmate";toast("La próxima frase se aprenderá como voz de compañero/a.");});
+  $("#academicFiles")?.addEventListener("change",e=>importAcademicFiles([...e.target.files]));
+  $("#solveMathBtn")?.addEventListener("click",solveMathFromUI);
+  $("#detectObjectBtn")?.addEventListener("click",detectObjectNow);
   $("#connectTasksBtn").addEventListener("click",connectTasksSheet);
   $("#refreshTasksBtn").addEventListener("click",refreshTasks);
 
@@ -1259,6 +1481,7 @@ function init(){
   $("#tasksSheetGid").value=state.tasksSheetGid;
   renderTasks();
   renderClassTranscript();
+  renderAcademicMaterials();
   summarizeClass();
   clockTick();
   updateMeters();
