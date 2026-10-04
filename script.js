@@ -688,7 +688,7 @@ function captureClassLine(text){
   const voiceMatch=recognizeVoicePerson(voicePrint);
   let speaker=voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role)?voiceMatch.role:classifySpeaker(feature);
   const correction=correctAcademicTranscript(text,state.classSubject);
-  const line={id:(crypto.randomUUID?.()||("line-"+Date.now()+"-"+Math.random().toString(16).slice(2))),text:text.trim(),correctedText:correction.text,corrections:correction.changes,speaker,speakerName:voiceMatch?.name||null,voiceScore:voiceMatch?.score||null,subject:state.classSubject||"Clase",at:Date.now(),feature};
+  const line={id:(crypto.randomUUID?.()||("line-"+Date.now()+"-"+Math.random().toString(16).slice(2))),text:text.trim(),correctedText:correction.text,corrections:correction.changes,speaker,speakerName:voiceMatch?.name||null,voiceScore:voiceMatch?.score||null,voicePrint,subject:state.classSubject||"Clase",at:Date.now(),feature};
   state.classLines.push(line);
   state.classLines=state.classLines.slice(-1000);
   save("robotito.classLines.v1",state.classLines);
@@ -797,6 +797,10 @@ function changeClassLineSpeaker(id,value){
     line.speakerName=name;
     line.speaker=speakerRoleForPerson(name);
     const p=state.people.find(x=>x.name===name);
+    if(p&&line.voicePrint){
+      p.voicePrints=[...(p.voicePrints||[]),line.voicePrint].slice(-5);
+      save(KEYS.people,state.people);
+    }
     if(p&&line.feature&&["me","teacher","classmate"].includes(p.role))learnSpeaker(p.role,line.feature);
   }else{
     line.speaker=value;
@@ -1387,7 +1391,7 @@ function renderPeople(){
     row.className="person-row";
     row.innerHTML=`<strong>${escapeHtml(p.name)}</strong>
       <div class="relation">${relationText(p.relationship??50)}</div>
-      <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"}</div>`;
+      <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"} · ${(p.voicePrints||[]).length?"voz aprendida":"voz no registrada"}</div>`;
     root.appendChild(row);
   });
 }
