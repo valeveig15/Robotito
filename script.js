@@ -41,6 +41,8 @@ const state = {
   classLines: load("robotito.classLines.v1", []),
   speakerOverride: null,
   recentAudioFeatures: [],
+  recentVoicePrints: [],
+  currentVoicePerson: null,
   voiceProfiles: load("robotito.voiceProfiles.v1", {me:[],teacher:[],classmate:[]}),
   classSummaries: load("robotito.classSummaries.v1", []),
   academicMaterials: load("robotito.academicMaterials.v1", []),
@@ -204,6 +206,53 @@ function spectralFlatness(values){
   return Math.exp(logSum/count)/(linearSum/count);
 }
 
+function makeVoicePrint(freq){
+  const start=4,end=Math.min(244,freq.length),bands=16;
+  const step=Math.max(1,Math.floor((end-start)/bands));
+  const values=[];
+  for(let b=0;b<bands;b++){
+    const a=start+b*step,z=b===bands-1?end:Math.min(end,a+step);
+    let sum=0,n=0;
+    for(let i=a;i<z;i++){sum+=freq[i];n++;}
+    values.push(Math.log1p(sum/Math.max(1,n)));
+  }
+  const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  const centered=values.map(v=>v-mean);
+  const norm=Math.sqrt(centered.reduce((s,v)=>s+v*v,0))||1;
+  return centered.map(v=>v/norm);
+}
+function averageVoiceVectors(vectors){
+  if(!vectors?.length)return null;
+  const n=vectors[0].length;
+  const avg=Array(n).fill(0);
+  for(const v of vectors)for(let i=0;i<n;i++)avg[i]+=v[i]||0;
+  for(let i=0;i<n;i++)avg[i]/=vectors.length;
+  const norm=Math.sqrt(avg.reduce((s,v)=>s+v*v,0))||1;
+  return avg.map(v=>v/norm);
+}
+function cosineSimilarity(a,b){
+  if(!a||!b||a.length!==b.length)return -1;
+  let dot=0,na=0,nb=0;
+  for(let i=0;i<a.length;i++){dot+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
+  return dot/(Math.sqrt(na)*Math.sqrt(nb)||1);
+}
+function recentVoicePrint(ms=2600){
+  const now=Date.now();
+  const vectors=state.recentVoicePrints.filter(x=>now-x.t<=ms).map(x=>x.vector);
+  return averageVoiceVectors(vectors);
+}
+function recognizeVoicePerson(print){
+  if(!print)return null;
+  let best=null,bestScore=.72;
+  for(const p of state.people){
+    for(const vp of (p.voicePrints||[])){
+      const score=cosineSimilarity(print,vp);
+      if(score>bestScore){bestScore=score;best={name:p.name,role:p.role||"other",score};}
+    }
+  }
+  return best;
+}
+
 function setupAudio(stream){
   try{
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
@@ -238,6 +287,10 @@ function setupAudio(stream){
       state.recentAudioFeatures.push({rms,centroid,flat,t:Date.now()});
       state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
       const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
+      if(rms>.045 && Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
+        state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq),rms});
+        state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<7000);
+      }
 
       const likelyMusic = rms>.06 && activeBands>=2 && flat>.09 && flat<.66 && midE>19;
       const likelyNoise = rms>.05 && (flat>=.72 || activeBands<=1);
@@ -295,6 +348,8 @@ function setupSpeechRecognition(){
     $("#transcript").textContent=text;
     state.lastHeardAt=Date.now();
     state.lastTranscriptAt=Date.now();
+    const voiceMatch=recognizeVoicePerson(recentVoicePrint());
+    state.currentVoicePerson=voiceMatch?.name||null;
     autoRemember(text);
     if(!state.classMode && state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
     handleSpeech(text);
@@ -313,7 +368,7 @@ function setupSpeechRecognition(){
 function autoRemember(text){
   const clean=text.trim();
   if(clean.length<2)return;
-  const person=state.currentPerson||"persona no reconocida";
+  const person=state.currentVoicePerson||state.currentPerson||"persona no reconocida";
   const last=state.memories[state.memories.length-1];
   if(last && last.text.toLowerCase()===clean.toLowerCase() && Date.now()-last.at<15000)return;
   state.memories.push({person,text:clean,at:Date.now(),source:"auto"});
@@ -331,10 +386,11 @@ function answerEasyQuestion(rawText){
   }
 
   if(/(yo como me llamo|como me llamo yo|cual es mi nombre|quien soy yo)/.test(text)){
-    if(state.currentPerson) say(sample([
-      `Vos sos ${state.currentPerson}.`,
-      `Te llamás ${state.currentPerson}. Te reconocí.`,
-      `${state.currentPerson} 🐼. Me acuerdo de vos.`
+    const known=state.currentVoicePerson||state.currentPerson;
+    if(known) say(sample([
+      `Vos sos ${known}.`,
+      `Te llamás ${known}. Te reconocí.`,
+      `${known} 🐼. Me acuerdo de vos.`
     ]));
     else say("Todavía no sé quién sos. Registrá tu cara y después sí me voy a acordar.");
     return true;
@@ -628,13 +684,15 @@ function classifySpeaker(feature){
 }
 function captureClassLine(text){
   const feature=averageRecentVoiceFeature();
-  const speaker=classifySpeaker(feature);
+  const voicePrint=recentVoicePrint();
+  const voiceMatch=recognizeVoicePerson(voicePrint);
+  let speaker=voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role)?voiceMatch.role:classifySpeaker(feature);
   const correction=correctAcademicTranscript(text,state.classSubject);
-  const line={text:text.trim(),correctedText:correction.text,corrections:correction.changes,speaker,subject:state.classSubject||"Clase",at:Date.now(),feature};
+  const line={id:(crypto.randomUUID?.()||("line-"+Date.now()+"-"+Math.random().toString(16).slice(2))),text:text.trim(),correctedText:correction.text,corrections:correction.changes,speaker,speakerName:voiceMatch?.name||null,voiceScore:voiceMatch?.score||null,subject:state.classSubject||"Clase",at:Date.now(),feature};
   state.classLines.push(line);
   state.classLines=state.classLines.slice(-1000);
   save("robotito.classLines.v1",state.classLines);
-  if((state.voiceProfiles[speaker]||[]).length<2) learnSpeaker(speaker,feature);
+  if(voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role)&&(state.voiceProfiles[speaker]||[]).length<4) learnSpeaker(speaker,feature);
   renderClassTranscript();
   $("#speakerPill").classList.remove("hidden");
   $("#speakerLabel").textContent=speaker==="me"?"vos":speaker==="teacher"?"profesora":"compañero/a";
@@ -727,17 +785,53 @@ function makeFlashcards(){
   }).join("");
   setMood("proud","Robotito preparó tarjetas para estudiar.");
 }
+function speakerRoleForPerson(name){
+  const p=state.people.find(x=>x.name===name);
+  return p&&["me","teacher","classmate"].includes(p.role)?p.role:"classmate";
+}
+function changeClassLineSpeaker(id,value){
+  const line=state.classLines.find(l=>l.id===id);
+  if(!line)return;
+  if(value.startsWith("person:")){
+    const name=value.slice(7);
+    line.speakerName=name;
+    line.speaker=speakerRoleForPerson(name);
+    const p=state.people.find(x=>x.name===name);
+    if(p&&line.feature&&["me","teacher","classmate"].includes(p.role))learnSpeaker(p.role,line.feature);
+  }else{
+    line.speaker=value;
+    line.speakerName=null;
+    if(line.feature&&["me","teacher","classmate"].includes(value))learnSpeaker(value,line.feature);
+  }
+  save("robotito.classLines.v1",state.classLines);
+  renderClassTranscript();
+}
+function speakerSelectHtml(l){
+  const current=l.speakerName?"person:"+l.speakerName:l.speaker;
+  const base=[
+    ["me","Vos"],["teacher","Profesor/a"],["classmate","Compañero/a"]
+  ];
+  const people=state.people.map(p=>["person:"+p.name,p.name]);
+  return '<select class="class-speaker-select" data-line-id="'+escapeHtml(l.id)+'">'+[...base,...people].map(([v,label])=>'<option value="'+escapeHtml(v)+'" '+(v===current?"selected":"")+'>'+escapeHtml(label)+'</option>').join("")+'</select>';
+}
+function ensureClassLineIds(){
+  let changed=false;
+  state.classLines.forEach((l,i)=>{if(!l.id){l.id="legacy-"+l.at+"-"+i;changed=true;}});
+  if(changed)save("robotito.classLines.v1",state.classLines);
+}
 function renderClassTranscript(){
   const root=$("#classTranscript");
   const lines=classLinesForSubject().slice(-40);
   if(!lines.length){root.innerHTML='<p class="muted">Todavía no hay frases guardadas.</p>';return;}
   root.innerHTML=lines.map(l=>{
     const cls=l.speaker==="me"?"me":l.speaker==="teacher"?"teacher":"classmate";
-    const tag=l.speaker==="me"?"VOS":l.speaker==="teacher"?"PROFESORA":"COMPAÑERO/A";
+    const tag=l.speakerName?l.speakerName:(l.speaker==="me"?"VOS":l.speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
     const txt=l.correctedText||l.text;
     const corr=l.correctedText&&l.correctedText!==l.text?'<div class="muted">Oí: '+escapeHtml(l.text)+'</div>':'';
-    return '<div class="class-line '+cls+'"><span class="speaker-tag '+cls+'">'+tag+'</span>'+escapeHtml(txt)+corr+'</div>';
+    const match=l.voiceScore?'<span class="voice-match">voz '+Math.round(l.voiceScore*100)+'%</span>':'';
+    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(tag)+'</span>'+speakerSelectHtml(l)+match+'</div>'+escapeHtml(txt)+corr+'</div>';
   }).join("");
+  root.querySelectorAll(".class-speaker-select").forEach(sel=>sel.addEventListener("change",()=>changeClassLineSpeaker(sel.dataset.lineId,sel.value)));
   root.scrollTop=root.scrollHeight;
 }
 function updateClassDuration(){
@@ -829,6 +923,24 @@ function taskReminderTick(){
   say(`Ey, llevamos más de 20 minutos juntos. Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. Una es: ${first.task}`,6000);
 }
 
+function isTodayTimestamp(ts){
+  const d=new Date(ts),n=new Date();
+  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();
+}
+function todayClassLines(){return state.classLines.filter(l=>isTodayTimestamp(l.at));}
+async function answerWhatLearnedToday(){
+  const lines=todayClassLines();
+  if(!lines.length){
+    say("Hoy todavía no escuché ninguna clase, así que no tengo nada de clase aprendido de hoy.");
+    return;
+  }
+  const important=keySentences(lines.filter(l=>l.speaker!=="me"),5);
+  if(!important.length){say("Hoy escuché una clase, pero todavía no tengo suficiente contenido claro para resumirla.");return;}
+  const evidence=lines.filter(l=>important.includes(l.correctedText||l.text)).slice(0,5);
+  const answer=await composeAcademicAnswer("¿Qué aprendiste hoy?",evidence);
+  say(answer.slice(0,320),5600);
+}
+
 async function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentPerson;
@@ -854,7 +966,12 @@ async function handleSpeech(rawText){
     return;
   }
 
-  if(/(que aprendiste hoy|que aprendiste|que sabes de la clase|explicame la clase|resumime la clase|resume la clase)/.test(text)){
+  if(/(que aprendiste hoy|que aprendiste hoy en clase|que viste hoy en clase)/.test(text)){
+    await answerWhatLearnedToday();
+    return;
+  }
+
+  if(/(que aprendiste|que sabes de la clase|explicame la clase|resumime la clase|resume la clase)/.test(text)){
     const found=answerFromClass(rawText);
     if(found){
       const answer=await composeAcademicAnswer(rawText,found.evidence);
@@ -997,7 +1114,7 @@ function setupHands(){
   try{
     if(typeof Hands==="undefined")return;
     const hands=new Hands({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-    hands.setOptions({maxNumHands:2,modelComplexity:0,minDetectionConfidence:.6,minTrackingConfidence:.55});
+    hands.setOptions({maxNumHands:4,modelComplexity:0,minDetectionConfidence:.58,minTrackingConfidence:.52});
 
     hands.onResults(results=>{
       const landmarks=results.multiHandLandmarks||[];
@@ -1064,10 +1181,34 @@ function detectEating(det){
   }
 }
 
+function parseBirthdayInput(value){
+  const m=String(value||"").trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+  if(!m)return null;
+  const d=+m[1],mo=+m[2],y=+m[3];
+  const dt=new Date(y,mo-1,d);
+  if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d)return null;
+  return `${y}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+function formatBirthday(iso){
+  const m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?`${m[3]}/${m[2]}/${m[1]}`:"";
+}
+async function captureEnrollmentVoice(){
+  const start=Date.now();
+  $("#enrollStatus").textContent="Ahora hablá durante unos segundos para que aprenda tu voz…";
+  say("Ahora decí una frase durante unos segundos para que aprenda tu voz.",4200);
+  await new Promise(r=>setTimeout(r,3800));
+  const vectors=state.recentVoicePrints.filter(x=>x.t>=start&&x.rms>.045).map(x=>x.vector);
+  return vectors.length>=5?averageVoiceVectors(vectors):null;
+}
+
 async function enrollPerson(){
   const name=$("#personName").value.trim();
-  const birthday=$("#personBirthday").value;
+  const birthdayRaw=$("#personBirthday").value.trim();
+  const birthday=birthdayRaw?parseBirthdayInput(birthdayRaw):"";
+  const role=$("#personRole")?.value||"other";
   if(!name)return toast("Escribí el nombre.");
+  if(birthdayRaw&&!birthday)return toast("Usá el cumpleaños como DD/MM/AAAA.");
   if(!state.started)return toast("Primero activá cámara y micrófono.");
 
   $("#enrollStatus").textContent="Mirando la cara…";
@@ -1084,18 +1225,21 @@ async function enrollPerson(){
     return;
   }
 
+  const voicePrint=await captureEnrollmentVoice();
   const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
   if(existing){
     existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-10);
     existing.birthday=birthday||existing.birthday;
+    existing.role=role;
+    if(voicePrint)existing.voicePrints=[...(existing.voicePrints||[]),voicePrint].slice(-5);
   }else{
-    state.people.push({name,birthday,descriptors:samples,relationship:50,createdAt:Date.now()});
+    state.people.push({name,birthday,role,descriptors:samples,voicePrints:voicePrint?[voicePrint]:[],relationship:50,createdAt:Date.now()});
   }
 
   save(KEYS.people,state.people);
   buildMatcher();
   renderPeople();
-  $("#enrollStatus").textContent=`Listo: ahora recuerdo a ${name}.`;
+  $("#enrollStatus").textContent=voicePrint?`Listo: ahora recuerdo la cara y la voz de ${name}.`:`Guardé la cara de ${name}, pero no escuché suficiente voz. Podés volver a registrarlo hablando más fuerte.`;
   say(sample([
     `Ya sé quién sos, ${name} 🐼`,
     `Listo, ${name}. Esa cara queda guardada.`,
@@ -1243,7 +1387,7 @@ function renderPeople(){
     row.className="person-row";
     row.innerHTML=`<strong>${escapeHtml(p.name)}</strong>
       <div class="relation">${relationText(p.relationship??50)}</div>
-      <div class="muted">${p.birthday?"Cumple: "+new Date(p.birthday+"T12:00:00").toLocaleDateString("es-UY"):"Sin cumpleaños cargado"}</div>`;
+      <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"}</div>`;
     root.appendChild(row);
   });
 }
@@ -1392,6 +1536,10 @@ function ambientMood(){
 function bindUI(){
   $("#startBtn").addEventListener("click",startSenses);
   $("#enrollBtn").addEventListener("click",enrollPerson);
+  $("#personBirthday")?.addEventListener("input",e=>{
+    const digits=e.target.value.replace(/\D/g,"").slice(0,8);
+    e.target.value=digits.length<=2?digits:digits.length<=4?digits.slice(0,2)+"/"+digits.slice(2):digits.slice(0,2)+"/"+digits.slice(2,4)+"/"+digits.slice(4);
+  });
   $("#refreshPeopleBtn").addEventListener("click",renderPeople);
   $("#rememberBtn").addEventListener("click",rememberManual);
 
@@ -1413,9 +1561,6 @@ function bindUI(){
   $("#summarizeClassBtn").addEventListener("click",summarizeClass);
   $("#askClassBtn").addEventListener("click",askClass);
   $("#flashcardsBtn").addEventListener("click",makeFlashcards);
-  $("#nextMeBtn").addEventListener("click",()=>{state.speakerOverride="me";toast("La próxima frase se aprenderá como tu voz.");});
-  $("#nextTeacherBtn").addEventListener("click",()=>{state.speakerOverride="teacher";toast("La próxima frase se aprenderá como voz de profesora.");});
-  $("#nextClassmateBtn")?.addEventListener("click",()=>{state.speakerOverride="classmate";toast("La próxima frase se aprenderá como voz de compañero/a.");});
   $("#academicFiles")?.addEventListener("change",e=>importAcademicFiles([...e.target.files]));
   $("#solveMathBtn")?.addEventListener("click",solveMathFromUI);
   $("#detectObjectBtn")?.addEventListener("click",detectObjectNow);
@@ -1475,6 +1620,7 @@ function init(){
   migrateOldData();
   purgeNamedPeople();
   bindUI();
+  ensureClassLineIds();
   buildMatcher();
   renderPeople();
   renderMemories();
