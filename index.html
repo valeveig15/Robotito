@@ -84,7 +84,7 @@
                   <circle class="eye-spark" cx="-5" cy="-4" r="4"/>
                   <circle class="eye-spark tiny" cx="5" cy="8" r="2"/>
                 </g>
-                <ellipse class="lid-svg" cx="0" cy="0" rx="26" ry="28"/>
+                <path class="blink-line" d="M -21 1 Q 0 8 21 1"/>
               </g>
 
               <g class="eye eye-right" transform="translate(205 139)">
@@ -95,7 +95,7 @@
                   <circle class="eye-spark" cx="-5" cy="-4" r="4"/>
                   <circle class="eye-spark tiny" cx="5" cy="8" r="2"/>
                 </g>
-                <ellipse class="lid-svg" cx="0" cy="0" rx="26" ry="28"/>
+                <path class="blink-line" d="M -21 1 Q 0 8 21 1"/>
               </g>
 
               <path class="brow brow-left" d="M91 104 Q112 91 132 103"/>
@@ -204,10 +204,7 @@
           </div>
 
           <div class="speaker-override">
-            <span class="muted">Si se confunde de voz:</span>
-            <button id="nextMeBtn" type="button" class="tiny-btn">Próxima frase: yo</button>
-            <button id="nextTeacherBtn" type="button" class="tiny-btn">Próxima frase: profesora</button>
-            <button id="nextClassmateBtn" type="button" class="tiny-btn">Próxima frase: compañero/a</button>
+            <span class="muted">Robotito intenta reconocer la voz automáticamente. Si se equivoca, podés corregir quién habló directamente en cada línea de la transcripción.</span>
           </div>
 
           <div class="live-class-box">
@@ -293,10 +290,19 @@
             <input id="personName" type="text" placeholder="Ej. Antonia" autocomplete="off" />
           </label>
           <label>Cumpleaños
-            <input id="personBirthday" type="date" />
+            <input id="personBirthday" type="text" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" />
           </label>
-          <button id="enrollBtn" type="button" class="primary full">Mirar a cámara y registrar</button>
+          <label>En clase esta persona es
+            <select id="personRole">
+              <option value="other">Persona / otro</option>
+              <option value="me">Yo</option>
+              <option value="teacher">Profesor/a</option>
+              <option value="classmate">Compañero/a</option>
+            </select>
+          </label>
+          <button id="enrollBtn" type="button" class="primary full">Registrar cara y voz</button>
           <p id="enrollStatus" class="mini-status"></p>
+          <p class="muted">Después de mirar a cámara, Robotito te va a pedir que hables unos segundos para aprender también tu voz.</p>
         </div>
         <div class="card">
           <div class="section-head">
