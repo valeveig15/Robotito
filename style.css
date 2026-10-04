@@ -191,3 +191,59 @@ input:focus,textarea:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,17
 
 .robotito.hugging .arm-left,.robotito.hugging .arm-right,
 .robotito.highfive .arm-right,.robotito.playing .panda-whole{animation:none !important}
+
+
+/* v5.2 — safe blink + editable transcript */
+select{
+  width:100%;
+  margin-top:6px;
+  border:1px solid var(--line);
+  background:#fffafd;
+  color:var(--text);
+  border-radius:12px;
+  padding:11px;
+  outline:none;
+}
+select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
+
+.lid-svg{display:none !important}
+.blink-line{
+  fill:none;
+  stroke:#2f2a31;
+  stroke-width:4;
+  stroke-linecap:round;
+  opacity:0;
+  pointer-events:none;
+}
+.robotito.blink .eye-white-svg,
+.robotito.blink .iris{
+  opacity:0;
+}
+.robotito.blink .blink-line{
+  opacity:1;
+}
+.mood-sleepy .eye-white-svg{transform-box:fill-box;transform-origin:center;transform:scaleY(.68)}
+.mood-sleepy .blink-line{opacity:.18}
+
+.class-line{position:relative}
+.class-line-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+.class-speaker-select{
+  width:auto;
+  min-width:116px;
+  margin:0;
+  padding:5px 8px;
+  border-radius:9px;
+  font-size:10px;
+  font-weight:800;
+  background:#fff;
+}
+.voice-match{
+  font-size:10px;
+  color:var(--muted);
+  font-weight:700;
+}
+.voice-learned{
+  color:#5e9487;
+  font-size:11px;
+  font-weight:800;
+}
