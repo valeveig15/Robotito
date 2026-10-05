@@ -48,6 +48,7 @@
     if(questionRouting){
       results.push(same(questionRouting.shouldUseClassFirst("¿Qué es permutación?"),false,"definición general no usa clase primero"));
       results.push(same(questionRouting.shouldUseClassFirst("Según la clase, ¿qué es permutación?"),true,"referencia explícita usa clase primero"));
+      results.push(same(questionRouting.shouldUseClassFirst("¿Qué es una clase abstracta?"),false,"concepto llamado clase no se confunde con memoria de clase"));
       results.push(same(questionRouting.isDefinitionQuestion("¿Qué son las permutaciones?"),true,"reconoce definición en plural"));
       results.push(same(questionRouting.definitionSubject("¿Qué es una permutación?"),"permutacion","extrae concepto definido"));
       results.push(same(questionRouting.definitionEvidenceQuality("¿Qué es permutación?",{text:"Entonces por permutación nos da x igual a seis."}),0,"rechaza mención incidental como definición"));
