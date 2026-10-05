@@ -98,6 +98,19 @@
     await transactionDone(tx);
     db.close();
   }
+  async function updateMetadata(id,patch={}){
+    if(!id)return null;
+    const db=await openDb();
+    const tx=db.transaction(RECORDINGS,"readwrite");
+    const store=tx.objectStore(RECORDINGS);
+    const current=await requestResult(store.get(id));
+    if(!current){db.close();return null;}
+    const next={...current,...patch,id:current.id};
+    store.put(next);
+    await transactionDone(tx);
+    db.close();
+    return next;
+  }
   function pickMimeType(){
     if(!window.MediaRecorder)return "";
     const candidates=[
@@ -121,8 +134,8 @@
     if(bytes<1024*1024)return Math.max(1,Math.round(bytes/1024))+" KB";
     return (bytes/(1024*1024)).toFixed(bytes<10*1024*1024?1:0)+" MB";
   }
-  function safeFilename(subject,startedAt,mime){
-    const base=String(subject||"Clase")
+  function safeFilename(subject,startedAt,mime,topic=""){
+    const base=String([subject,topic].filter(Boolean).join("_")||"Clase")
       .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
       .replace(/[^a-zA-Z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,55)||"Clase";
     const d=new Date(startedAt);
@@ -174,32 +187,53 @@
       return;
     }
 
-    root.innerHTML=rows.map(r=>{
-      const url=URL.createObjectURL(r.blob);
-      objectUrls.push(url);
-      const date=new Date(r.startedAt).toLocaleString("es-UY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
-      const filename=safeFilename(r.subject,r.startedAt,r.mimeType);
-      return '<article class="class-recording" data-recording-id="'+String(r.id).replace(/"/g,"&quot;")+'">'+
-        '<div class="class-recording-head">'+
-          '<div><strong>'+escapeHtml(r.subject||"Clase")+'</strong><div class="muted">'+escapeHtml(date)+' · '+escapeHtml(prettyDuration(r.durationMs))+' · '+escapeHtml(prettyBytes(r.size))+'</div></div>'+
-          '<span class="recording-saved">● guardada</span>'+
-        '</div>'+
-        '<audio controls preload="metadata" src="'+url+'"></audio>'+
-        '<div class="class-recording-actions">'+
-          '<a class="button-link" href="'+url+'" download="'+escapeHtml(filename)+'">Guardar archivo</a>'+
-          '<button type="button" class="ghost delete-class-recording" data-id="'+escapeHtml(r.id)+'">Borrar</button>'+
-        '</div>'+
-      '</article>';
-    }).join("");
+    const grouped=new Map();
+    rows.forEach(r=>{
+      const subject=r.subject||"Sin materia";
+      const topic=r.topic||"Sin tema identificado";
+      if(!grouped.has(subject))grouped.set(subject,new Map());
+      const topics=grouped.get(subject);
+      if(!topics.has(topic))topics.set(topic,[]);
+      topics.get(topic).push(r);
+    });
+
+    root.innerHTML=[...grouped.entries()].map(([subject,topics])=>
+      '<details class="recording-subject" open>'+
+        '<summary>'+escapeHtml(subject)+'</summary>'+
+        [...topics.entries()].map(([topic,recs])=>
+          '<div class="recording-topic">'+
+            '<h4>'+escapeHtml(topic)+'</h4>'+
+            recs.map(r=>{
+              const url=URL.createObjectURL(r.blob);
+              objectUrls.push(url);
+              const date=new Date(r.startedAt).toLocaleString("es-UY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+              const filename=safeFilename(r.subject,r.startedAt,r.mimeType,r.topic);
+              return '<article class="class-recording" data-recording-id="'+String(r.id).replace(/"/g,"&quot;")+'">'+
+                '<div class="class-recording-head">'+
+                  '<div><strong>'+escapeHtml(topic)+'</strong><div class="muted">'+escapeHtml(date)+' · '+escapeHtml(prettyDuration(r.durationMs))+' · '+escapeHtml(prettyBytes(r.size))+'</div></div>'+
+                  '<span class="recording-saved">● guardada</span>'+
+                '</div>'+
+                '<audio controls preload="metadata" src="'+url+'"></audio>'+
+                '<div class="class-recording-actions">'+
+                  '<a class="button-link" href="'+url+'" download="'+escapeHtml(filename)+'">Guardar archivo</a>'+
+                  '<button type="button" class="ghost delete-class-recording" data-id="'+escapeHtml(r.id)+'">Borrar</button>'+
+                '</div>'+
+              '</article>';
+            }).join("")+
+          '</div>'
+        ).join("")+
+      '</details>'
+    ).join("");
 
     root.querySelectorAll(".delete-class-recording").forEach(btn=>btn.addEventListener("click",async()=>{
       const id=btn.dataset.id;
       if(!confirm("¿Querés borrar esta grabación de clase de este dispositivo?"))return;
       await removeRecording(id);
       await render();
+      window.ROBOTITO_CLASS_ORGANIZER?.render?.();
     }));
   }
-  async function start(subject){
+  async function start(subject,topic="",sessionId=null){
     if(active)return {ok:false,reason:"already-recording"};
     if(!window.MediaRecorder)return {ok:false,reason:"unsupported"};
     const source=state.stream;
@@ -220,7 +254,11 @@
     }
 
     const session={
-      id,subject:subject||"Clase",startedAt,recorder,audioStream,
+      id,
+      sessionId:sessionId||id,
+      subject:subject||"Clase",
+      topic:topic||"",
+      startedAt,recorder,audioStream,
       mimeType:recorder.mimeType||mimeType||"audio/webm",
       seq:0,pending:[],stopped:false,stopResolve:null,stopReject:null
     };
@@ -267,7 +305,9 @@
       const endedAt=Date.now();
       const record={
         id:session.id,
+        sessionId:session.sessionId,
         subject:session.subject,
+        topic:session.topic||"",
         startedAt:session.startedAt,
         endedAt,
         durationMs:endedAt-session.startedAt,
@@ -294,7 +334,7 @@
   }
   function isRecording(){return !!active&&active.recorder?.state==="recording";}
 
-  window.ROBOTITO_CLASS_AUDIO={start,stop,render,isRecording,listRecordings,removeRecording};
+  window.ROBOTITO_CLASS_AUDIO={start,stop,render,isRecording,listRecordings,removeRecording,updateMetadata};
 
   document.addEventListener("DOMContentLoaded",()=>{
     render();
