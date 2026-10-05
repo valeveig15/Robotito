@@ -1411,6 +1411,9 @@ function updateAvatarAria(){
   robot.setAttribute("aria-label",lang==="en"
     ?`Robotito, virtual ${name} avatar`
     :lang==="pt"?`Robotito, avatar virtual de ${name}`:`Robotito, avatar virtual de ${name}`);
+  if($("#avatarBrandIcon"))$("#avatarBrandIcon").textContent=avatar.emoji;
+  if($("#avatarBrandEyebrow"))$("#avatarBrandEyebrow").textContent=lang==="en"
+    ?"YOUR VIRTUAL COMPANION":lang==="pt"?"SEU COMPANHEIRO VIRTUAL":"TU COMPAÑERO VIRTUAL";
 }
 function updateAvatarMoodIcon(mood=state.mood){
   const icons={
