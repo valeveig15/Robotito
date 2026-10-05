@@ -101,6 +101,39 @@ function normalizeText(s){
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
+function normalizeSpanishSpeechIntent(input){
+  let t=normalizeText(input);
+
+  // Frequent phonetic spellings produced by mobile ASR/Whisper.
+  // These corrections are ONLY for understanding intent; the visible transcript stays untouched.
+  t=t
+    .replace(/\bte\s+(?:shamas|yamas|jamas|chamas|lamas|llamaz|shama)\b/g,"te llamas")
+    .replace(/\bme\s+(?:shamo|yamo|jamo|chamo|lamo|llamo)\b/g,"me llamo")
+    .replace(/\bse\s+(?:shama|yama|jama|chama|lama)\b/g,"se llama")
+    .replace(/\b(?:shamarse|yamarse|jamarse|chamarse)\b/g,"llamarse")
+    .replace(/\b(?:ase|aze)\b/g,"hace")
+    .replace(/\b(?:aser)\b/g,"hacer")
+    .replace(/\b(?:kiero|quero)\b/g,"quiero")
+    .replace(/\b(?:podes|podés)\b/g,"podes")
+    .replace(/\b(?:tenés)\b/g,"tenes")
+    .replace(/\b(?:estás)\b/g,"estas");
+
+  // Whole-phrase variants for especially common questions.
+  const phraseRules=[
+    [/\bcomo\s+te\s+(?:shamas|yamas|jamas|chamas|lamas)\b/g,"como te llamas"],
+    [/\bcual\s+es\s+tu\s+nombre\b/g,"cual es tu nombre"],
+    [/\bque\s+nombre\s+(?:tenes|tienes)\b/g,"que nombre tenes"],
+    [/\bcomo\s+me\s+(?:shamo|yamo|jamo|chamo|lamo)\b/g,"como me llamo"],
+    [/\bcomo\s+(?:ase|hase)\s+(?:un|una|el|la)\b/g,m=>m.replace(/ase|hase/,"hace")]
+  ];
+  phraseRules.forEach(([re,repl])=>{t=t.replace(re,repl);});
+  return t.replace(/\s+/g," ").trim();
+}
+
+function intentInput(rawText){
+  return state.languageMode==="es"?normalizeSpanishSpeechIntent(rawText):normalizeText(rawText);
+}
+
 function cleanSpeechText(text){
   return String(text||"")
     .replace(/[🐼♡♥🎉🍓😠😳👀📚✋✨]/g,"")
@@ -2076,7 +2109,8 @@ async function answerWhatLearnedToday(){
 }
 
 async function handleSpeech(rawText){
-  const text=normalizeText(rawText);
+  const interpreted=state.languageMode==="es"?normalizeSpanishSpeechIntent(rawText):rawText;
+  const text=normalizeText(interpreted);
   const who=state.currentVoicePerson||state.currentPerson;
 
   if(/osito\s+osito.*(quien|quién).*(mas|más).*bella.*mundo/.test(text)){
@@ -2084,15 +2118,15 @@ async function handleSpeech(rawText){
     return;
   }
   const detectedLang=responseLanguage(rawText);
-  if(drawRequestedThing(rawText,detectedLang))return;
-  if(showRequestedObject(rawText,detectedLang))return;
+  if(drawRequestedThing(interpreted,detectedLang))return;
+  if(showRequestedObject(interpreted,detectedLang))return;
   if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
-  if(answerArithmetic(rawText,detectedLang))return;
-  if(await handleWeatherAndDayQuestions(rawText))return;
+  if(answerArithmetic(interpreted,detectedLang))return;
+  if(await handleWeatherAndDayQuestions(interpreted))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
-  if(answerEasyQuestion(rawText)) return;
-  const commonAnswer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(rawText,detectedLang);
+  if(answerEasyQuestion(interpreted)) return;
+  const commonAnswer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(interpreted,detectedLang);
   if(commonAnswer){say(commonAnswer,4800);return;}
 
   if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
@@ -2102,7 +2136,7 @@ async function handleSpeech(rawText){
   }
 
   if(/(recomendame|recomiendame|recomenda|recomienda).*(libro)/.test(text) || text==="recomendame un libro"){
-    let prompt=rawText.replace(/recom(i|ie)enda(me)?\s+(un\s+)?libro/i,"").trim();
+    let prompt=interpreted.replace(/recom(i|ie)enda(me)?\s+(un\s+)?libro/i,"").trim();
     if(!prompt) prompt="ficción interesante";
     $("#bookPrompt").value=prompt;
     recommendBook(prompt);
