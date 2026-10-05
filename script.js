@@ -2848,7 +2848,7 @@ function collectNewVoiceSamples(startAt,map){
 async function captureEnrollmentVoice(){
   const wasRecognitionWanted=state.recognitionWanted;
   state.enrollmentActive=true;
-  speechSynthesis?.cancel?.();
+  window.speechSynthesis?.cancel?.();
   state.speaking=false;
   state.recentVoicePrints=[];
 
@@ -3248,6 +3248,7 @@ function renderPeople(){
     row.innerHTML=`<strong>${escapeHtml(p.name)}</strong>
       <div class="relation">${relationText(p)}</div>
       <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"} · ${(p.voicePrints||[]).length?"voz aprendida":"voz no registrada"}</div>
+      <div class="muted">cara: ${(p.descriptors||[]).length} muestras · voz: ${(p.voicePrints||[]).length} perfiles${Number.isFinite(p.voiceQuality)?" · calidad "+Math.round(p.voiceQuality*100)+"%":""}</div>
       <div class="bond-detail">${bondDetail(p)}</div>`;
     root.appendChild(row);
   });
