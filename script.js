@@ -2246,32 +2246,51 @@ function relevantSentenceForAnswer(e,question){
     .map(t=>({t,score:classEvidenceScore(question,{...e,correctedText:t,text:t})}))
     .sort((a,b)=>b.score-a.score)[0].t;
 }
+function academicAnswerDepth(question){
+  const q=normalizeText(question);
+  const wantsDetail=/(paso a paso|detallad|explica(?:me)?|desarrolla|por que|porque|como funciona|ejemplo|formula|fórmula|demostra|demuestra|compara|diferencia)/.test(q);
+  if(wantsDetail)return "detailed";
+  const simpleDefinition=/^(?:que es|que significa|defini|define|cual es la definicion|cuál es la definición)\b/.test(q)
+    || /\b(?:que es|que significa)\s+(?:un|una|el|la)?\s*[^?]{1,80}$/.test(q);
+  if(simpleDefinition)return "definition";
+  return "normal";
+}
+function trimAcademicAnswer(text,maxChars){
+  let clean=String(text||"").replace(/\s+/g," ").trim();
+  if(clean.length<=maxChars)return clean;
+  const firstSentence=clean.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim();
+  if(firstSentence&&firstSentence.length<=maxChars)return firstSentence;
+  return clean.slice(0,maxChars-1).replace(/\s+\S*$/,"")+"…";
+}
 function fallbackAcademicAnswer(question,evidence){
+  const depth=academicAnswerDepth(question);
   const best=evidence
     .map(e=>relevantSentenceForAnswer(e,question))
     .filter(Boolean)
-    .slice(0,2)
+    .slice(0,depth==="detailed"?3:depth==="definition"?1:2)
     .map(t=>t.replace(/\b(bueno|o sea|este|eh|tipo)\b/gi,"").replace(/\s+/g," ").trim());
 
   if(!best.length)return "No tengo información suficiente en la clase ni en el material cargado para responder eso.";
 
   const first=best[0].replace(/^[,;:\-\s]+/,"");
+  if(depth==="definition"){
+    return trimAcademicAnswer(first,210);
+  }
+
   const second=best[1]&&normalizeText(best[1])!==normalizeText(first)?best[1]:null;
   const q=normalizeText(question);
-
   let lead;
   if(q.startsWith("por que")||q.startsWith("porque"))lead="La explicación principal es que ";
   else if(q.startsWith("como"))lead="Lo que se explicó es que ";
-  else if(q.startsWith("que es")||q.startsWith("que significa")||q.startsWith("define"))lead="";
   else lead="Según lo trabajado, ";
 
   let answer=lead+first;
-  if(second&&answer.length<330)answer+=" "+second;
-  answer=answer.replace(/\s+/g," ").trim();
-  if(answer.length>430)answer=answer.slice(0,427).replace(/\s+\S*$/,"")+"…";
-  return answer;
+  if(second)answer+=" "+second;
+  if(depth==="detailed"&&best[2])answer+=" "+best[2];
+  return trimAcademicAnswer(answer,depth==="detailed"?700:360);
 }
 async function composeAcademicAnswer(question,evidence){
+  const depth=academicAnswerDepth(question);
   const compact=evidence.map((e,i)=>{
     const text=relevantSentenceForAnswer(e,question);
     const source=e.sourceType==="material"
@@ -2280,23 +2299,29 @@ async function composeAcademicAnswer(question,evidence){
     return `[${i+1}] (${source}) ${text}`;
   }).join("\n");
 
+  const scopeRule=depth==="definition"
+    ?"La pregunta pide solamente una definición. Respondé con UNA sola oración, idealmente de 8 a 22 palabras. No agregues ejemplos, fórmulas, consecuencias, comparaciones ni contexto que no fue pedido."
+    :depth==="detailed"
+      ?"La persona pidió desarrollo. Explicá con el detalle necesario, pero solo lo que responde a la pregunta."
+      :"Respondé directamente en 1 a 3 oraciones. No agregues datos relacionados que no hayan sido pedidos.";
+
   const prompt=`Respondé en español rioplatense usando SOLAMENTE la evidencia.
 Pregunta: ${question}
 Evidencia:
 ${compact}
 
 Reglas:
-- Contestá primero la pregunta de manera directa, fluida y comprensible.
-- Máximo 2 a 4 oraciones y aproximadamente 80 palabras.
-- Sintetizá: no copies párrafos ni enumeres las fuentes.
-- No incluyas citas textuales, comillas ni etiquetas de fuente en la respuesta; la interfaz las muestra aparte.
+- ${scopeRule}
+- Respondé exactamente lo preguntado y frená cuando ya quedó contestado.
+- No copies párrafos largos.
+- No incluyas citas textuales, comillas ni etiquetas de fuente; la interfaz las muestra aparte.
 - Si la evidencia no alcanza para afirmar algo, decilo explícitamente.
 - No agregues conocimiento externo.`;
 
   const rewritten=await browserRewrite(prompt);
   if(rewritten){
     const clean=rewritten.replace(/^["“]|["”]$/g,"").trim();
-    return clean.length>520?clean.slice(0,517).replace(/\s+\S*$/,"")+"…":clean;
+    return trimAcademicAnswer(clean,depth==="definition"?220:depth==="detailed"?750:380);
   }
   return fallbackAcademicAnswer(question,evidence);
 }
@@ -2397,11 +2422,7 @@ function renderAcademicAnswer(question,answer,evidence){
     '</div>';
 }
 function spokenAcademicAnswer(question,answer,evidence){
-  const first=classEvidenceForDisplay(question,evidence,1)[0];
-  if(!first)return answer;
-  const kind=sourceKindLabel(first).toLowerCase();
-  const quote=first.quote.length>125?first.quote.slice(0,122).replace(/\s+\S*$/,"")+"…":first.quote;
-  return `${answer} Cita textual, ${kind}: “${quote}”`;
+  return answer;
 }
 
 function summarizeClass(){
