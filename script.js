@@ -2499,6 +2499,7 @@ function changeClassLineSpeaker(id,value){
     const name=value.slice(7);
     line.speakerName=name;
     line.speaker=speakerRoleForPerson(name);
+    line.speakerConfidence=1;
     const p=state.people.find(x=>x.name===name);
     if(p&&line.voicePrint){
       p.voicePrints=[...(p.voicePrints||[]),line.voicePrint].slice(-5);
@@ -2508,6 +2509,7 @@ function changeClassLineSpeaker(id,value){
   }else{
     line.speaker=value;
     line.speakerName=null;
+    line.speakerConfidence=1;
     if(line.feature&&["me","teacher","classmate"].includes(value))learnSpeaker(value,line.feature);
   }
   save("robotito.classLines.v1",state.classLines);
@@ -2537,7 +2539,10 @@ function renderClassTranscript(){
     const tag=l.speakerName?l.speakerName:(l.speaker==="me"?"VOS":l.speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
     const txt=l.correctedText||l.text;
     const corr=l.correctedText&&l.correctedText!==l.text?'<div class="muted">Oí: '+escapeHtml(l.text)+'</div>':'';
-    const match=l.voiceScore?'<span class="voice-match">voz '+Math.round(l.voiceScore*100)+'%</span>':'';
+    const confidence=Number(l.voiceScore??l.speakerConfidence);
+    const match=Number.isFinite(confidence)
+      ?'<span class="voice-match '+(confidence<.55?'uncertain':'')+'">'+(confidence<.55?'voz dudosa ':'voz ')+Math.round(confidence*100)+'%</span>'
+      :'';
     const verify=l.verificationStatus==="verified"
       ?'<span class="fact-badge">✓ verificado en web</span>'
       :l.verificationStatus==="checking"
