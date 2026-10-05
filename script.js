@@ -103,7 +103,7 @@ function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value
 function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
 function sample(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function normalizeText(s){
-  return String(s||"").toLowerCase().normalize("NFD").replace(/[const night=isNightByClock(new Date());u0300-const night=isNightByClock(new Date());u036f]/g,"").replace(/[¿?¡!.,;:]/g," ").replace(/const night=isNightByClock(new Date());s+/g," ").trim();
+  return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[¿?¡!.,;:]/g," ").replace(/\s+/g," ").trim();
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
@@ -113,27 +113,27 @@ function normalizeSpanishSpeechIntent(input){
   // Frequent phonetic spellings produced by mobile ASR/Whisper.
   // These corrections are ONLY for understanding intent; the visible transcript stays untouched.
   t=t
-    .replace(/const night=isNightByClock(new Date());bteconst night=isNightByClock(new Date());s+(?:shamas|yamas|jamas|chamas|lamas|llamaz|shama)const night=isNightByClock(new Date());b/g,"te llamas")
-    .replace(/const night=isNightByClock(new Date());bmeconst night=isNightByClock(new Date());s+(?:shamo|yamo|jamo|chamo|lamo|llamo)const night=isNightByClock(new Date());b/g,"me llamo")
-    .replace(/const night=isNightByClock(new Date());bseconst night=isNightByClock(new Date());s+(?:shama|yama|jama|chama|lama)const night=isNightByClock(new Date());b/g,"se llama")
-    .replace(/const night=isNightByClock(new Date());b(?:shamarse|yamarse|jamarse|chamarse)const night=isNightByClock(new Date());b/g,"llamarse")
-    .replace(/const night=isNightByClock(new Date());b(?:ase|aze)const night=isNightByClock(new Date());b/g,"hace")
-    .replace(/const night=isNightByClock(new Date());b(?:aser)const night=isNightByClock(new Date());b/g,"hacer")
-    .replace(/const night=isNightByClock(new Date());b(?:kiero|quero)const night=isNightByClock(new Date());b/g,"quiero")
-    .replace(/const night=isNightByClock(new Date());b(?:podes|podés)const night=isNightByClock(new Date());b/g,"podes")
-    .replace(/const night=isNightByClock(new Date());b(?:tenés)const night=isNightByClock(new Date());b/g,"tenes")
-    .replace(/const night=isNightByClock(new Date());b(?:estás)const night=isNightByClock(new Date());b/g,"estas");
+    .replace(/\bte\s+(?:shamas|yamas|jamas|chamas|lamas|llamaz|shama)\b/g,"te llamas")
+    .replace(/\bme\s+(?:shamo|yamo|jamo|chamo|lamo|llamo)\b/g,"me llamo")
+    .replace(/\bse\s+(?:shama|yama|jama|chama|lama)\b/g,"se llama")
+    .replace(/\b(?:shamarse|yamarse|jamarse|chamarse)\b/g,"llamarse")
+    .replace(/\b(?:ase|aze)\b/g,"hace")
+    .replace(/\b(?:aser)\b/g,"hacer")
+    .replace(/\b(?:kiero|quero)\b/g,"quiero")
+    .replace(/\b(?:podes|podés)\b/g,"podes")
+    .replace(/\b(?:tenés)\b/g,"tenes")
+    .replace(/\b(?:estás)\b/g,"estas");
 
   // Whole-phrase variants for especially common questions.
   const phraseRules=[
-    [/const night=isNightByClock(new Date());bcomoconst night=isNightByClock(new Date());s+teconst night=isNightByClock(new Date());s+(?:shamas|yamas|jamas|chamas|lamas)const night=isNightByClock(new Date());b/g,"como te llamas"],
-    [/const night=isNightByClock(new Date());bcualconst night=isNightByClock(new Date());s+esconst night=isNightByClock(new Date());s+tuconst night=isNightByClock(new Date());s+nombreconst night=isNightByClock(new Date());b/g,"cual es tu nombre"],
-    [/const night=isNightByClock(new Date());bqueconst night=isNightByClock(new Date());s+nombreconst night=isNightByClock(new Date());s+(?:tenes|tienes)const night=isNightByClock(new Date());b/g,"que nombre tenes"],
-    [/const night=isNightByClock(new Date());bcomoconst night=isNightByClock(new Date());s+meconst night=isNightByClock(new Date());s+(?:shamo|yamo|jamo|chamo|lamo)const night=isNightByClock(new Date());b/g,"como me llamo"],
-    [/const night=isNightByClock(new Date());bcomoconst night=isNightByClock(new Date());s+(?:ase|hase)const night=isNightByClock(new Date());s+(?:un|una|el|la)const night=isNightByClock(new Date());b/g,m=>m.replace(/ase|hase/,"hace")]
+    [/\bcomo\s+te\s+(?:shamas|yamas|jamas|chamas|lamas)\b/g,"como te llamas"],
+    [/\bcual\s+es\s+tu\s+nombre\b/g,"cual es tu nombre"],
+    [/\bque\s+nombre\s+(?:tenes|tienes)\b/g,"que nombre tenes"],
+    [/\bcomo\s+me\s+(?:shamo|yamo|jamo|chamo|lamo)\b/g,"como me llamo"],
+    [/\bcomo\s+(?:ase|hase)\s+(?:un|una|el|la)\b/g,m=>m.replace(/ase|hase/,"hace")]
   ];
   phraseRules.forEach(([re,repl])=>{t=t.replace(re,repl);});
-  return t.replace(/const night=isNightByClock(new Date());s+/g," ").trim();
+  return t.replace(/\s+/g," ").trim();
 }
 
 function intentInput(rawText){
@@ -143,7 +143,7 @@ function intentInput(rawText){
 function cleanSpeechText(text){
   return String(text||"")
     .replace(/[🐼♡♥🎉🍓😠😳👀📚✋✨]/g,"")
-    .replace(/const night=isNightByClock(new Date());s+/g," ")
+    .replace(/\s+/g," ")
     .trim();
 }
 function responseLanguage(){
@@ -866,7 +866,7 @@ function phraseOrTokenMatch(text,term){
   const t=normalizeText(text), q=normalizeText(term);
   if(!q)return false;
   if(q.includes(" "))return t.includes(q);
-  return new Set(t.split(/const night=isNightByClock(new Date());s+/)).has(q);
+  return new Set(t.split(/\s+/)).has(q);
 }
 function textHasAny(text,terms){
   return terms.some(t=>phraseOrTokenMatch(text,t));
@@ -914,6 +914,7 @@ function chooseStartupLanguage(mode){
   $("#statusText").textContent=mode==="en"
     ?"Robotito is ready to wake up."
     :mode==="pt"?"Robotito está pronto para despertar.":"Robotito está listo para despertar.";
+  applyDayNightMode(new Date());
 }
 function handleLanguageCommand(text){
   if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english|fale.*ingles|fale.*ingl[eê]s/.test(text)){
@@ -977,7 +978,7 @@ async function translateShortPhrase(phrase,source,target){
   try{
     if(window.LanguageModel?.create){
       const session=await window.LanguageModel.create({temperature:0,topK:1});
-      const prompt=`Translate this short phrase from ${languageLabel(source)} to ${languageLabel(target)}. Return ONLY the translation, no quotes or explanation:const night=isNightByClock(new Date());n${clean}`;
+      const prompt=`Translate this short phrase from ${languageLabel(source)} to ${languageLabel(target)}. Return ONLY the translation, no quotes or explanation:\n${clean}`;
       const out=String(await session.prompt(prompt)||"").trim();
       session.destroy?.();
       if(out){translationCache.set(key,out);return out;}
@@ -996,12 +997,12 @@ async function handleSayInLanguageCommand(rawText){
   const text=normalizeText(rawText);
   const aliases="(?:espanol|español|castellano|spanish|espanhol|ingles|english|ingl[eê]s|portugues|portugu[eê]s|portuguese)";
   const patterns=[
-    new RegExp("^(?:decime|dime|deci|di|pronuncia|repeti|repite)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+(.+?)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+enconst night=isNightByClock(new Date());const night=isNightByClock(new Date());s+("+aliases+")$"),
-    new RegExp("^(?:como se dice)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+(.+?)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+enconst night=isNightByClock(new Date());const night=isNightByClock(new Date());s+("+aliases+")$"),
-    new RegExp("^(?:say|tell me)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+(.+?)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+inconst night=isNightByClock(new Date());const night=isNightByClock(new Date());s+("+aliases+")$"),
-    new RegExp("^(?:how do you say)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+(.+?)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+inconst night=isNightByClock(new Date());const night=isNightByClock(new Date());s+("+aliases+")$"),
-    new RegExp("^(?:diga|me diga|fala|fale)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+(.+?)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+emconst night=isNightByClock(new Date());const night=isNightByClock(new Date());s+("+aliases+")$"),
-    new RegExp("^(?:como se diz)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+(.+?)const night=isNightByClock(new Date());const night=isNightByClock(new Date());s+emconst night=isNightByClock(new Date());const night=isNightByClock(new Date());s+("+aliases+")$")
+    new RegExp("^(?:decime|dime|deci|di|pronuncia|repeti|repite)\\s+(.+?)\\s+en\\s+("+aliases+")$"),
+    new RegExp("^(?:como se dice)\\s+(.+?)\\s+en\\s+("+aliases+")$"),
+    new RegExp("^(?:say|tell me)\\s+(.+?)\\s+in\\s+("+aliases+")$"),
+    new RegExp("^(?:how do you say)\\s+(.+?)\\s+in\\s+("+aliases+")$"),
+    new RegExp("^(?:diga|me diga|fala|fale)\\s+(.+?)\\s+em\\s+("+aliases+")$"),
+    new RegExp("^(?:como se diz)\\s+(.+?)\\s+em\\s+("+aliases+")$")
   ];
   let match=null;
   for(const p of patterns){match=text.match(p);if(match)break;}
@@ -1068,10 +1069,10 @@ function answerArithmetic(rawText,lang="es"){
     .replace(/mas|plus/g," + ")
     .replace(/menos|minus/g," - ")
     .replace(/coma/g,".")
-    .replace(/const night=isNightByClock(new Date());s+/g," ").trim();
-  const symbolic=String(rawText).match(/-?const night=isNightByClock(new Date());d+(?:[.,]const night=isNightByClock(new Date());d+)?const night=isNightByClock(new Date());s*[+const night=isNightByClock(new Date());-*/x×÷]const night=isNightByClock(new Date());s*-?const night=isNightByClock(new Date());d+(?:[.,]const night=isNightByClock(new Date());d+)?/);
+    .replace(/\s+/g," ").trim();
+  const symbolic=String(rawText).match(/-?\d+(?:[.,]\d+)?\s*[+\-*/x×÷]\s*-?\d+(?:[.,]\d+)?/);
   if(symbolic)s=symbolic[0].replace(/x|×/g,"*").replace(/÷/g,"/").replace(/,/g,".");
-  const m=s.match(/(-?const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*([+const night=isNightByClock(new Date());-*/])const night=isNightByClock(new Date());s*(-?const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)/);
+  const m=s.match(/(-?\d+(?:\.\d+)?)\s*([+\-*/])\s*(-?\d+(?:\.\d+)?)/);
   if(!m)return false;
   const a=parseSpokenNumber(m[1]),b=parseSpokenNumber(m[3]),op=m[2];
   if(a===null||b===null)return false;
@@ -1149,8 +1150,17 @@ async function handleWeatherAndDayQuestions(rawText){
   const locationAsk=/(donde estoy|en que ciudad estoy|donde me encuentro|cual es mi ubicacion|what city am i in|where am i|what is my location)/.test(text);
   const weatherAsk=/(clima|tiempo|temperatura|llueve|llover|frio|calor|viento|weather|temperature|raining|rain|wind)/.test(text)
     && /(hoy|ahora|afuera|aca|aqui|actual|today|now|outside|here|como|how|que|what)/.test(text);
-  const nightAsk=/(es de noche|ya es de noche|esta de noche|es de dia|ya es de dia|todavia es de dia|is it night|is it nighttime|is it day|is it daytime)/.test(text);
+  const nightAsk=/(es de noche|ya es de noche|esta de noche|es de dia|ya es de dia|todavia es de dia|is it night|is it nighttime|is it day|is it daytime|e noite|é noite|e dia|é dia)/.test(text);
   if(!weatherAsk&&!nightAsk&&!locationAsk)return false;
+
+  if(nightAsk){
+    const night=isNightByClock(new Date());
+    if(lang==="en")say(night?"Yes. Robotito is in night mode.":"No. Robotito is in day mode.");
+    else if(lang==="pt")sayInLanguage(night?"Sim. O Robotito está no modo noite.":"Não. O Robotito está no modo dia.","pt");
+    else say(night?"Sí. Robotito está en modo noche.":"No. Robotito está en modo día.");
+    return true;
+  }
+
   try{
     if(locationAsk){
       const label=await getLocationLabel(lang);
@@ -1159,11 +1169,6 @@ async function handleWeatherAndDayQuestions(rawText){
     }
     const w=await getWeatherNow();
     const cur=w.current||{},daily=w.daily||{};
-    if(nightAsk){
-      const day=Number(cur.is_day)===1;
-      say(lang==="en"?(day?"Yes, it is daytime where you are.":"Yes, it is nighttime where you are."):(day?"Sí, donde estás todavía es de día.":"Sí, donde estás ya es de noche."));
-      return true;
-    }
     const desc=weatherCodeText(Number(cur.weather_code),lang);
     const temp=Math.round(Number(cur.temperature_2m));
     const feels=Math.round(Number(cur.apparent_temperature));
@@ -1178,13 +1183,10 @@ async function handleWeatherAndDayQuestions(rawText){
     }
     return true;
   }catch(e){
-    const hour=new Date().getHours();
-    if(nightAsk){
-      const night=hour>=20||const night=isNightByClock(new Date());
-      say(lang==="en"?(night?"By your device clock, it's nighttime.":"By your device clock, it's daytime."):(night?"Por la hora de tu dispositivo, sí: es de noche.":"Por la hora de tu dispositivo, todavía es de día."));
-      return true;
-    }
-    say(lang==="en"?"I need location permission to tell you the weather where you are.":"Necesito permiso de ubicación del navegador para decirte el clima donde estás.");
+    say(lang==="en"
+      ?"I need location permission to tell you the weather where you are."
+      :lang==="pt"?"Preciso da permissão de localização para dizer como está o tempo onde você está."
+      :"Necesito permiso de ubicación del navegador para decirte el clima donde estás.");
     return true;
   }
 }
@@ -1229,9 +1231,9 @@ function drawCuteThing(kind,item){
 }
 function drawRequestedThing(rawText,lang="es"){
   const text=normalizeText(rawText);
-  const m=text.match(/(?:dibujame|dibuj[aá]|haceme un dibujo de|hazme un dibujo de|quiero un dibujo de|draw me|draw a|draw an|can you draw)const night=isNightByClock(new Date());s+(?:un|una|el|la|a|an|the)?const night=isNightByClock(new Date());s*(.+)$/);
+  const m=text.match(/(?:dibujame|dibuj[aá]|haceme un dibujo de|hazme un dibujo de|quiero un dibujo de|draw me|draw a|draw an|can you draw)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
   if(!m)return false;
-  let query=m[1].replace(/const night=isNightByClock(new Date());b(por favor|please)const night=isNightByClock(new Date());b/g,"").trim();
+  let query=m[1].replace(/\b(por favor|please)\b/g,"").trim();
   const item=window.ROBOTITO_OBJECTS?.find?.(query);
   const aliases={
     sol:"sun",sun:"sun",corazon:"heart",heart:"heart",estrella:"star",star:"star",flor:"flower",flower:"flower",
@@ -1486,8 +1488,8 @@ function answerEasyQuestion(rawText){
     ["es de noche","ya es de noche","estamos de noche","es de dia","ya es de dia","todavia es de dia","todavía es de día"],
     [["noche","dia"],["es","ya","todavia"]]
   )){
-    const h=new Date().getHours(),night=h>=20||const night=isNightByClock(new Date());
-    say(night?"Sí, por la hora de tu dispositivo es de noche.":"No, por la hora de tu dispositivo todavía es de día.");
+    const night=isNightByClock(new Date());
+    say(night?"Sí. Robotito está en modo noche.":"No. Robotito está en modo día.");
     return true;
   }
 
@@ -1623,7 +1625,7 @@ function answerEasyQuestion(rawText){
   )){
     const now=new Date();
     const names=state.people.filter(p=>{
-      const m=String(p.birthday||"").match(/^(const night=isNightByClock(new Date());d{4})-(const night=isNightByClock(new Date());d{2})-(const night=isNightByClock(new Date());d{2})$/);
+      const m=String(p.birthday||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
       return m&&Number(m[2])===now.getMonth()+1&&Number(m[3])===now.getDate();
     }).map(p=>p.name);
     say(names.length?`Hoy cumple ${names.join(", ")}.`:"No tengo registrado a nadie que cumpla años hoy.");
@@ -1756,10 +1758,10 @@ function correctAcademicTranscript(text,subject){
   const info=curriculumSubject(subject);
   if(!info)return {text,changes:[]};
   const terms=(info.terms||[]).filter(t=>!t.includes(" "));
-  const words=text.split(/(const night=isNightByClock(new Date());s+)/);
+  const words=text.split(/(\s+)/);
   const changes=[];
   const corrected=words.map(token=>{
-    if(/^const night=isNightByClock(new Date());s+$/.test(token))return token;
+    if(/^\s+$/.test(token))return token;
     const clean=normalizeText(token);
     if(clean.length<5)return token;
     let best=null,bestD=99;
@@ -1796,7 +1798,7 @@ async function browserRewrite(prompt){
   return null;
 }
 function fallbackAcademicAnswer(question,evidence){
-  const snippets=evidence.map(e=>(e.correctedText||e.text).replace(/const night=isNightByClock(new Date());b(bueno|o sea|este|eh|tipo)const night=isNightByClock(new Date());b/gi,"").replace(/const night=isNightByClock(new Date());s+/g," ").trim()).filter(Boolean);
+  const snippets=evidence.map(e=>(e.correctedText||e.text).replace(/\b(bueno|o sea|este|eh|tipo)\b/gi,"").replace(/\s+/g," ").trim()).filter(Boolean);
   const q=normalizeText(question);
   if(!snippets.length)return "No tengo suficiente información.";
   if(q.startsWith("por que")||q.startsWith("porque"))return "La explicación que aparece en tus materiales es que "+snippets.join(" Además, ").replace(/^./,x=>x.toLowerCase());
@@ -1805,8 +1807,8 @@ function fallbackAcademicAnswer(question,evidence){
   return "La respuesta, según lo trabajado en clase y el material cargado, es: "+snippets.join(" ");
 }
 async function composeAcademicAnswer(question,evidence){
-  const evidenceText=evidence.map((e,i)=>`[${i+1}] ${e.correctedText||e.text}`).join("const night=isNightByClock(new Date());n");
-  const prompt=`Respondé en español rioplatense a la pregunta del estudiante usando solamente la evidencia. Contestá la pregunta en tus propias palabras, de forma clara y breve. No inventes nada. Si la evidencia no alcanza, decilo. Pregunta: ${question}const night=isNightByClock(new Date());nEvidencia:const night=isNightByClock(new Date());n${evidenceText}`;
+  const evidenceText=evidence.map((e,i)=>`[${i+1}] ${e.correctedText||e.text}`).join("\n");
+  const prompt=`Respondé en español rioplatense a la pregunta del estudiante usando solamente la evidencia. Contestá la pregunta en tus propias palabras, de forma clara y breve. No inventes nada. Si la evidencia no alcanza, decilo. Pregunta: ${question}\nEvidencia:\n${evidenceText}`;
   return await browserRewrite(prompt)||fallbackAcademicAnswer(question,evidence);
 }
 function keySentences(lines,max=7){
@@ -1824,7 +1826,7 @@ async function generateAndSaveClassSummary(endedAt=Date.now()){
   if(!all.length){summarizeClass();return null;}
   const important=keySentences(all.filter(l=>l.speaker!=="me"),8);
   const subject=state.classSubject||"Clase";
-  const prompt=`Hacé un resumen de estudio en español, claro y fiel, usando solo estas notas de la clase de ${subject}. Corregí redacción pero no agregues contenido externo. Incluí: tema central, ideas clave y conceptos a revisar. Notas:const night=isNightByClock(new Date());n${important.join("const night=isNightByClock(new Date());n")}`;
+  const prompt=`Hacé un resumen de estudio en español, claro y fiel, usando solo estas notas de la clase de ${subject}. Corregí redacción pero no agregues contenido externo. Incluí: tema central, ideas clave y conceptos a revisar. Notas:\n${important.join("\n")}`;
   let summary=await browserRewrite(prompt);
   if(!summary){
     summary="Resumen de "+subject+": "+important.join(" ");
@@ -1847,7 +1849,7 @@ async function readAcademicFile(file){
       for(let p=1;p<=pdf.numPages;p++){
         const page=await pdf.getPage(p);
         const tc=await page.getTextContent();
-        text+=tc.items.map(x=>x.str).join(" ")+"const night=isNightByClock(new Date());n";
+        text+=tc.items.map(x=>x.str).join(" ")+"\n";
       }
       return text;
     }catch(e){throw new Error("No pude leer ese PDF.");}
@@ -1855,7 +1857,7 @@ async function readAcademicFile(file){
   return await file.text();
 }
 function chunkText(text,size=1100){
-  const clean=text.replace(/const night=isNightByClock(new Date());s+/g," ").trim();
+  const clean=text.replace(/\s+/g," ").trim();
   const chunks=[];
   for(let i=0;i<clean.length;i+=size)chunks.push(clean.slice(i,i+size));
   return chunks;
@@ -1880,17 +1882,17 @@ function renderAcademicMaterials(){
 }
 function parseCirclePrompt(raw){
   const s=raw.replace(/²/g,"^2").replace(/−/g,"-");
-  let m=s.match(/centroconst night=isNightByClock(new Date());s*const night=isNightByClock(new Date());(?const night=isNightByClock(new Date());s*(-?const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*[,;]const night=isNightByClock(new Date());s*(-?const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());)?.*radioconst night=isNightByClock(new Date());s*(?:=|de)?const night=isNightByClock(new Date());s*(const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)/i);
+  let m=s.match(/centro\s*\(?\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*\)?.*radio\s*(?:=|de)?\s*(\d+(?:\.\d+)?)/i);
   if(m)return {h:+m[1],k:+m[2],r:+m[3],method:"datos"};
-  const A=Number((s.match(/xconst night=isNightByClock(new Date());^2[^y]*?([+-]const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());*?const night=isNightByClock(new Date());s*x/i)||[])[1]?.replace(/const night=isNightByClock(new Date());s/g,"")||0);
-  const B=Number((s.match(/yconst night=isNightByClock(new Date());^2.*?([+-]const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());*?const night=isNightByClock(new Date());s*y/i)||[])[1]?.replace(/const night=isNightByClock(new Date());s/g,"")||0);
-  const cMatch=s.match(/([+-]const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*=const night=isNightByClock(new Date());s*0const night=isNightByClock(new Date());s*$/);
-  if(/xconst night=isNightByClock(new Date());^2/i.test(s)&&/yconst night=isNightByClock(new Date());^2/i.test(s)){
-    const C=cMatch?Number(cMatch[1].replace(/const night=isNightByClock(new Date());s/g,"")):0;
+  const A=Number((s.match(/x\^2[^y]*?([+-]\s*\d+(?:\.\d+)?)\s*\*?\s*x/i)||[])[1]?.replace(/\s/g,"")||0);
+  const B=Number((s.match(/y\^2.*?([+-]\s*\d+(?:\.\d+)?)\s*\*?\s*y/i)||[])[1]?.replace(/\s/g,"")||0);
+  const cMatch=s.match(/([+-]\s*\d+(?:\.\d+)?)\s*=\s*0\s*$/);
+  if(/x\^2/i.test(s)&&/y\^2/i.test(s)){
+    const C=cMatch?Number(cMatch[1].replace(/\s/g,"")):0;
     const h=-A/2,k=-B/2,r2=h*h+k*k-C;
     if(r2>0)return {h,k,r:Math.sqrt(r2),A,B,C,method:"general"};
   }
-  m=s.match(/const night=isNightByClock(new Date());(const night=isNightByClock(new Date());s*xconst night=isNightByClock(new Date());s*([+-])const night=isNightByClock(new Date());s*(const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());^2const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());+const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());(const night=isNightByClock(new Date());s*yconst night=isNightByClock(new Date());s*([+-])const night=isNightByClock(new Date());s*(const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());)const night=isNightByClock(new Date());s*const night=isNightByClock(new Date());^2const night=isNightByClock(new Date());s*=const night=isNightByClock(new Date());s*(const night=isNightByClock(new Date());d+(?:const night=isNightByClock(new Date());.const night=isNightByClock(new Date());d+)?)/i);
+  m=s.match(/\(\s*x\s*([+-])\s*(\d+(?:\.\d+)?)\s*\)\s*\^2\s*\+\s*\(\s*y\s*([+-])\s*(\d+(?:\.\d+)?)\s*\)\s*\^2\s*=\s*(\d+(?:\.\d+)?)/i);
   if(m)return {h:m[1]==="-"?+m[2]:-m[2],k:m[3]==="-"?+m[4]:-m[4],r:Math.sqrt(+m[5]),method:"canonica"};
   return null;
 }
@@ -1932,9 +1934,9 @@ function showObjectCard(item,lang="es"){
 }
 function showRequestedObject(rawText,lang="es"){
   const normalized=normalizeText(rawText);
-  const m=normalized.match(/(?:mostrame|muestrame|mostra|mostrar|ensen[aá]me|quiero ver|quiero que me muestres|podes mostrarme|puedes mostrarme|me mostras|me muestras|dejame ver|show me|can you show me|could you show me|i want to see|let me see|display)const night=isNightByClock(new Date());s+(?:un|una|el|la|a|an|the)?const night=isNightByClock(new Date());s*(.+)$/);
+  const m=normalized.match(/(?:mostrame|muestrame|mostra|mostrar|ensen[aá]me|quiero ver|quiero que me muestres|podes mostrarme|puedes mostrarme|me mostras|me muestras|dejame ver|show me|can you show me|could you show me|i want to see|let me see|display)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
   if(!m)return false;
-  const query=m[1].replace(/const night=isNightByClock(new Date());b(por favor|please)const night=isNightByClock(new Date());b/g,"").trim();
+  const query=m[1].replace(/\b(por favor|please)\b/g,"").trim();
   const item=window.ROBOTITO_OBJECTS?.find?.(query);
   if(!item)return false;
   showObjectCard(item,lang);
@@ -2187,7 +2189,7 @@ function updateClassDuration(){
 }
 
 function extractSheetId(url){
-  const m=String(url||"").match(/const night=isNightByClock(new Date());/spreadsheetsconst night=isNightByClock(new Date());/dconst night=isNightByClock(new Date());/([a-zA-Z0-9-_]+)/);
+  const m=String(url||"").match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   return m?m[1]:null;
 }
 async function connectTasksSheet(){
@@ -2207,7 +2209,7 @@ function csvRows(text){
     if(ch==='"'&&q&&n==='"'){field+='"';i++;}
     else if(ch==='"')q=!q;
     else if(ch===","&&!q){row.push(field);field="";}
-    else if((ch==="const night=isNightByClock(new Date());n"||ch==="const night=isNightByClock(new Date());r")&&!q){if(ch==="const night=isNightByClock(new Date());r"&&n==="const night=isNightByClock(new Date());n")i++;row.push(field);if(row.some(Boolean))rows.push(row);row=[];field="";}
+    else if((ch==="\n"||ch==="\r")&&!q){if(ch==="\r"&&n==="\n")i++;row.push(field);if(row.some(Boolean))rows.push(row);row=[];field="";}
     else field+=ch;
   }
   if(field||row.length){row.push(field);rows.push(row);}
@@ -2292,7 +2294,7 @@ async function handleSpeech(rawText){
   const text=normalizeText(interpreted);
   const who=state.currentVoicePerson||state.currentPerson;
 
-  if(/ositoconst night=isNightByClock(new Date());s+osito.*(quien|quién).*(mas|más).*bella.*mundo/.test(text)){
+  if(/osito\s+osito.*(quien|quién).*(mas|más).*bella.*mundo/.test(text)){
     say("Mi dulce creadora, la más bella a toda hora; si digo otra cosa… me borra sin demora.");
     return;
   }
@@ -2340,7 +2342,7 @@ async function handleSpeech(rawText){
   }
 
   if(/(recomendame|recomiendame|recomenda|recomienda).*(libro)/.test(text) || text==="recomendame un libro"){
-    let prompt=interpreted.replace(/recom(i|ie)enda(me)?const night=isNightByClock(new Date());s+(unconst night=isNightByClock(new Date());s+)?libro/i,"").trim();
+    let prompt=interpreted.replace(/recom(i|ie)enda(me)?\s+(un\s+)?libro/i,"").trim();
     if(!prompt) prompt="ficción interesante";
     $("#bookPrompt").value=prompt;
     recommendBook(prompt);
@@ -2394,7 +2396,7 @@ async function handleSpeech(rawText){
     say("Eso no me gustó.");
     return;
   }
-  if(/[?¿]/.test(rawText)||/^(que|como|cual|cuando|donde|por que|porque|quien|cuanto|puedes|podes|what|how|which|when|where|why|who|can|do|does|is|are)const night=isNightByClock(new Date());b/.test(text)){
+  if(/[?¿]/.test(rawText)||/^(que|como|cual|cuando|donde|por que|porque|quien|cuanto|puedes|podes|what|how|which|when|where|why|who|can|do|does|is|are)\b/.test(text)){
     say(detectedLang==="en"?"I don't know that one yet, but I understood the question.":"Esa todavía no la sé, pero entendí que me hiciste una pregunta.");
   }
 }
@@ -2474,56 +2476,56 @@ function handleSocialSpeech(text){
   const name=known?", "+known:"";
   const enName=known?", "+known:"";
 
-  if(/const night=isNightByClock(new Date());b(achu|achis|achoo|atchoo|atishoo)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){
     const lang=responseLanguage();
     sayInLanguage(lang==="en"?"Bless you!":lang==="pt"?"Saúde!":"¡Salud!",lang);
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(bom dia)const night=isNightByClock(new Date());b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
-  if(/const night=isNightByClock(new Date());b(boa tarde)const night=isNightByClock(new Date());b/.test(text)){wakeFromNight();sayInLanguage("Boa tarde"+enName+".","pt");return true;}
-  if(/const night=isNightByClock(new Date());b(boa noite)const night=isNightByClock(new Date());b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");setTimeout(sleepForNight,700);return true;}
-  if(/const night=isNightByClock(new Date());b(ola|olá|oi|opa)const night=isNightByClock(new Date());b/.test(text)){wakeFromNight();sayInLanguage("Olá"+enName+".","pt");return true;}
-  if(/const night=isNightByClock(new Date());b(tchau|adeus|ate logo|até logo|ate mais|até mais)const night=isNightByClock(new Date());b/.test(text)){sayInLanguage(sample(["Tchau"+enName+".","Até logo"+enName+".","Se cuida"+enName+"."]),"pt");return true;}
-  if(/const night=isNightByClock(new Date());b(obrigado|obrigada|muito obrigado|muito obrigada)const night=isNightByClock(new Date());b/.test(text)){sayInLanguage(sample(["De nada.","Por nada.","Sempre que quiser."]),"pt");return true;}
-  if(/const night=isNightByClock(new Date());b(desculpa|desculpe|sinto muito)const night=isNightByClock(new Date());b/.test(text)){sayInLanguage(sample(["Tudo bem.","Sem problema.","Desculpa aceita."]),"pt");return true;}
+  if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
+  if(/\b(boa tarde)\b/.test(text)){wakeFromNight();sayInLanguage("Boa tarde"+enName+".","pt");return true;}
+  if(/\b(boa noite)\b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");setTimeout(sleepForNight,700);return true;}
+  if(/\b(ola|olá|oi|opa)\b/.test(text)){wakeFromNight();sayInLanguage("Olá"+enName+".","pt");return true;}
+  if(/\b(tchau|adeus|ate logo|até logo|ate mais|até mais)\b/.test(text)){sayInLanguage(sample(["Tchau"+enName+".","Até logo"+enName+".","Se cuida"+enName+"."]),"pt");return true;}
+  if(/\b(obrigado|obrigada|muito obrigado|muito obrigada)\b/.test(text)){sayInLanguage(sample(["De nada.","Por nada.","Sempre que quiser."]),"pt");return true;}
+  if(/\b(desculpa|desculpe|sinto muito)\b/.test(text)){sayInLanguage(sample(["Tudo bem.","Sem problema.","Desculpa aceita."]),"pt");return true;}
 
-  if(/const night=isNightByClock(new Date());b(good morning)const night=isNightByClock(new Date());b/.test(text)){wakeFromNight();say("Good morning"+enName+".");return true;}
-  if(/const night=isNightByClock(new Date());b(good afternoon)const night=isNightByClock(new Date());b/.test(text)){wakeFromNight();say("Good afternoon"+enName+".");return true;}
-  if(/const night=isNightByClock(new Date());b(good night|goodnight)const night=isNightByClock(new Date());b/.test(text)){say("Good night"+enName+". Sleep well.");setTimeout(sleepForNight,700);return true;}
-  if(/const night=isNightByClock(new Date());b(hello|hi|hey there|hiya)const night=isNightByClock(new Date());b/.test(text)){wakeFromNight();say("Hello"+enName+".");return true;}
-  if(/const night=isNightByClock(new Date());b(bye|goodbye|see you|see you later|i have to go)const night=isNightByClock(new Date());b/.test(text)){say(sample(["Bye"+enName+".","See you later"+enName+".","Take care"+enName+"."]));return true;}
-  if(/const night=isNightByClock(new Date());b(thank you|thanks|thank you very much)const night=isNightByClock(new Date());b/.test(text)){say(sample(["You're welcome.","No problem.","Any time."]));return true;}
-  if(/const night=isNightByClock(new Date());b(sorry|i'm sorry|excuse me)const night=isNightByClock(new Date());b/.test(text)){say(sample(["It's okay.","No problem.","Apology accepted."]));return true;}
+  if(/\b(good morning)\b/.test(text)){wakeFromNight();say("Good morning"+enName+".");return true;}
+  if(/\b(good afternoon)\b/.test(text)){wakeFromNight();say("Good afternoon"+enName+".");return true;}
+  if(/\b(good night|goodnight)\b/.test(text)){say("Good night"+enName+". Sleep well.");setTimeout(sleepForNight,700);return true;}
+  if(/\b(hello|hi|hey there|hiya)\b/.test(text)){wakeFromNight();say("Hello"+enName+".");return true;}
+  if(/\b(bye|goodbye|see you|see you later|i have to go)\b/.test(text)){say(sample(["Bye"+enName+".","See you later"+enName+".","Take care"+enName+"."]));return true;}
+  if(/\b(thank you|thanks|thank you very much)\b/.test(text)){say(sample(["You're welcome.","No problem.","Any time."]));return true;}
+  if(/\b(sorry|i'm sorry|excuse me)\b/.test(text)){say(sample(["It's okay.","No problem.","Apology accepted."]));return true;}
 
-  if(/const night=isNightByClock(new Date());b(buenos dias|buen dia)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(buenos dias|buen dia)\b/.test(text)){
     wakeFromNight();
     say("Buenos días"+name+".");
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(buenas tardes|buena tarde)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(buenas tardes|buena tarde)\b/.test(text)){
     wakeFromNight();
     say("Buenas tardes"+name+".");
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(buenas noches|buena noche)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(buenas noches|buena noche)\b/.test(text)){
     say(sample(["Buenas noches"+name+". Que descanses.","Buenas noches"+name+". Me voy a dormir.","Que descanses"+name+". Buenas noches."]));
     setTimeout(sleepForNight,700);
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(chau|chao|adios|hasta luego|nos vemos|me voy|hasta manana|hasta mañana|bye)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(chau|chao|adios|hasta luego|nos vemos|me voy|hasta manana|hasta mañana|bye)\b/.test(text)){
     say(sample(["Chau"+name+".","Nos vemos"+name+".","Hasta luego"+name+".","Que te vaya bien"+name+"."]));
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(hola|holi|buenas|hey|ey)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(hola|holi|buenas|hey|ey)\b/.test(text)){
     wakeFromNight();
     say(dayPartGreeting()+name+".");
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(gracias|muchas gracias|te agradezco)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(gracias|muchas gracias|te agradezco)\b/.test(text)){
     say(sample(["De nada.","No hay problema.","Para eso estoy.","Cuando quieras."]));
     return true;
   }
-  if(/const night=isNightByClock(new Date());b(perdon|perdona|disculpa|lo siento)const night=isNightByClock(new Date());b/.test(text)){
+  if(/\b(perdon|perdona|disculpa|lo siento)\b/.test(text)){
     say(sample(["Está bien.","Todo bien.","Acepto la disculpa."]));
     return true;
   }
@@ -2687,7 +2689,7 @@ function detectEating(det){
 }
 
 function parseBirthdayInput(value){
-  const m=String(value||"").trim().match(/^(const night=isNightByClock(new Date());d{1,2})[const night=isNightByClock(new Date());/const night=isNightByClock(new Date());-.](const night=isNightByClock(new Date());d{1,2})[const night=isNightByClock(new Date());/const night=isNightByClock(new Date());-.](const night=isNightByClock(new Date());d{4})$/);
+  const m=String(value||"").trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
   if(!m)return null;
   const d=+m[1],mo=+m[2],y=+m[3];
   const dt=new Date(y,mo-1,d);
@@ -2695,7 +2697,7 @@ function parseBirthdayInput(value){
   return `${y}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 }
 function formatBirthday(iso){
-  const m=String(iso||"").match(/^(const night=isNightByClock(new Date());d{4})-(const night=isNightByClock(new Date());d{2})-(const night=isNightByClock(new Date());d{2})$/);
+  const m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m?`${m[3]}/${m[2]}/${m[1]}`:"";
 }
 async function captureMobileVoicePrints(){
@@ -2982,8 +2984,8 @@ function parseCSV(text){
     if(c=='"'&&q&&n=='"'){field+='"';i++;}
     else if(c=='"')q=!q;
     else if(c==","&&!q){row.push(field);field="";}
-    else if((c==="const night=isNightByClock(new Date());n"||c==="const night=isNightByClock(new Date());r")&&!q){
-      if(c==="const night=isNightByClock(new Date());r"&&n==="const night=isNightByClock(new Date());n")i++;
+    else if((c==="\n"||c==="\r")&&!q){
+      if(c==="\r"&&n==="\n")i++;
       row.push(field);
       if(row.some(x=>x!==""))rows.push(row);
       row=[];field="";
@@ -3014,7 +3016,7 @@ function updateLibraryStats(){
 }
 
 function scoreBook(book,prompt){
-  const words=normalizeText(prompt).split(/const night=isNightByClock(new Date());s+/).filter(x=>x.length>3);
+  const words=normalizeText(prompt).split(/\s+/).filter(x=>x.length>3);
   const hay=normalizeText([book["Title"],book["Author"],book["Bookshelves"],book["My Review"]].join(" "));
   let s=0;
   words.forEach(w=>{if(hay.includes(w))s+=2;});
@@ -3085,36 +3087,37 @@ function routinePromptTick(){
 }
 function isNightByClock(date=new Date()){
   const h=date.getHours();
-  return h>=18 || const night=isNightByClock(new Date());
+  return h>=18 || h<6;
 }
 function applyDayNightMode(date=new Date()){
   const mode=isNightByClock(date)?"night":"day";
-  const changed=state.dayNightMode!==mode;
   state.dayNightMode=mode;
 
   document.body.classList.toggle("mode-day",mode==="day");
   document.body.classList.toggle("mode-night",mode==="night");
+
   const world=$("#world");
   if(world){
     world.dataset.timeMode=mode;
     world.setAttribute("aria-label",mode==="night"?"Mundo nocturno de Robotito":"Mundo diurno de Robotito");
   }
+
+  const lang=responseLanguage();
   const label=$("#dayNightLabel");
   if(label){
-    const lang=responseLanguage();
     label.textContent=mode==="night"
       ?(lang==="en"?"night":lang==="pt"?"noite":"noche")
       :(lang==="en"?"day":lang==="pt"?"dia":"día");
   }
+
   const theme=document.querySelector('meta[name="theme-color"]');
   if(theme)theme.setAttribute("content",mode==="night"?"#17213a":"#fff8fc");
-
-  return changed;
 }
 function clockTick(){
   const d=new Date();
   applyDayNightMode(d);
-  const locale=responseLanguage()==="en"?"en-US":responseLanguage()==="pt"?"pt-BR":"es-UY";
+  const lang=responseLanguage();
+  const locale=lang==="en"?"en-US":lang==="pt"?"pt-BR":"es-UY";
   $("#clock").textContent=d.toLocaleTimeString(locale,{hour:"2-digit",minute:"2-digit"});
   $("#dateInfo").textContent=d.toLocaleDateString(locale,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 }
@@ -3171,7 +3174,7 @@ function bindUI(){
   });
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personBirthday")?.addEventListener("input",e=>{
-    const digits=e.target.value.replace(/const night=isNightByClock(new Date());D/g,"").slice(0,8);
+    const digits=e.target.value.replace(/\D/g,"").slice(0,8);
     e.target.value=digits.length<=2?digits:digits.length<=4?digits.slice(0,2)+"/"+digits.slice(2):digits.slice(0,2)+"/"+digits.slice(2,4)+"/"+digits.slice(4);
   });
   $("#refreshPeopleBtn").addEventListener("click",renderPeople);
