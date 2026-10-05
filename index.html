@@ -115,13 +115,52 @@
       <div id="robotito" class="robotito mood-calm" role="img" aria-label="Robotito, panda virtual">
         <div class="mood-aura"></div>
         <svg class="panda-svg" viewBox="0 0 320 380" aria-hidden="true">
+          <defs>
+            <linearGradient id="robotitoFur" x1="18%" y1="5%" x2="82%" y2="96%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="58%" stop-color="#fffdfd"/>
+              <stop offset="100%" stop-color="#eee8ef"/>
+            </linearGradient>
+            <linearGradient id="robotitoDarkFur" x1="20%" y1="8%" x2="80%" y2="95%">
+              <stop offset="0%" stop-color="#403a45"/>
+              <stop offset="45%" stop-color="#28242c"/>
+              <stop offset="100%" stop-color="#151319"/>
+            </linearGradient>
+            <radialGradient id="robotitoIris" cx="34%" cy="28%" r="72%">
+              <stop offset="0%" stop-color="#81728c"/>
+              <stop offset="42%" stop-color="#514759"/>
+              <stop offset="100%" stop-color="#29232e"/>
+            </radialGradient>
+            <radialGradient id="robotitoBlush" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffafc7" stop-opacity=".9"/>
+              <stop offset="100%" stop-color="#f6b5c8" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="robotitoSoftDepth" x="-30%" y="-30%" width="160%" height="170%">
+              <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#59485d" flood-opacity=".13"/>
+            </filter>
+          </defs>
+
+          <g class="ambient-sparkles">
+            <path class="sparkle sparkle-a" d="M41 116l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>
+            <path class="sparkle sparkle-b" d="M280 159l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z"/>
+            <circle class="sparkle-dot dot-a" cx="54" cy="193" r="3"/>
+            <circle class="sparkle-dot dot-b" cx="270" cy="103" r="2.5"/>
+            <circle class="sparkle-dot dot-c" cx="251" cy="232" r="2"/>
+          </g>
           
           <g class="panda-whole">
             
 
             <g class="body-group">
-              <ellipse class="fur-white body-shape" cx="160" cy="260" rx="78" ry="95"/>
-              <ellipse class="belly-shape" cx="160" cy="268" rx="53" ry="67"/>
+              <g class="tail-group">
+                <circle class="tail-fur" cx="231" cy="277" r="29"/>
+                <circle class="tail-glint" cx="222" cy="267" r="8"/>
+              </g>
+              <ellipse class="fur-white body-shape body-fur" cx="160" cy="260" rx="78" ry="95"/>
+              <path class="body-fur-shine" d="M117 219c-13 24-15 55-5 80"/>
+              <ellipse class="belly-shape belly-fur" cx="160" cy="268" rx="53" ry="67"/>
+              <ellipse class="belly-glow" cx="145" cy="247" rx="24" ry="35"/>
+              <path class="chest-heart" d="M160 246c-7-10-23-5-21 7 2 11 21 22 21 22s19-11 21-22c2-12-14-17-21-7z"/>
               <g class="arm arm-left">
                 <ellipse class="fur-black" cx="92" cy="244" rx="25" ry="64" transform="rotate(18 92 244)"/>
                 <ellipse class="paw-pad" cx="79" cy="291" rx="14" ry="10" transform="rotate(18 79 291)"/>
@@ -133,20 +172,33 @@
               <g class="leg leg-left">
                 <ellipse class="fur-black" cx="120" cy="326" rx="32" ry="39"/>
                 <ellipse class="paw-pad" cx="120" cy="341" rx="17" ry="10"/>
+                <circle class="toe-bean" cx="108" cy="329" r="4"/>
+                <circle class="toe-bean" cx="120" cy="326" r="4.5"/>
+                <circle class="toe-bean" cx="132" cy="329" r="4"/>
               </g>
               <g class="leg leg-right">
                 <ellipse class="fur-black" cx="200" cy="326" rx="32" ry="39"/>
                 <ellipse class="paw-pad" cx="200" cy="341" rx="17" ry="10"/>
+                <circle class="toe-bean" cx="188" cy="329" r="4"/>
+                <circle class="toe-bean" cx="200" cy="326" r="4.5"/>
+                <circle class="toe-bean" cx="212" cy="329" r="4"/>
               </g>
             </g>
 
             <g class="head-group">
               <circle class="fur-black ear-svg ear-left-svg" cx="91" cy="83" r="42"/>
               <circle class="fur-black ear-svg ear-right-svg" cx="229" cy="83" r="42"/>
-              <ellipse class="fur-white head-shape" cx="160" cy="142" rx="104" ry="91"/>
+              <circle class="inner-ear inner-ear-left" cx="91" cy="82" r="25"/>
+              <circle class="inner-ear inner-ear-right" cx="229" cy="82" r="25"/>
+              <ellipse class="fur-white head-shape head-fur" cx="160" cy="142" rx="104" ry="91"/>
+              <path class="head-fur-shine" d="M86 103c17-33 53-50 88-49"/>
+              <path class="fur-tuft tuft-one" d="M139 58q8-18 20 0q10-20 22 2"/>
+              <path class="fur-tuft tuft-two" d="M111 70q6-10 13-1"/>
 
               <ellipse class="eye-patch-svg patch-left-svg" cx="116" cy="139" rx="38" ry="46" transform="rotate(17 116 139)"/>
               <ellipse class="eye-patch-svg patch-right-svg" cx="204" cy="139" rx="38" ry="46" transform="rotate(-17 204 139)"/>
+              <path class="patch-shine patch-shine-left" d="M93 119q10-19 27-23"/>
+              <path class="patch-shine patch-shine-right" d="M227 119q-10-19-27-23"/>
 
               <g class="eye eye-left" transform="translate(115 139)">
                 <ellipse class="eye-white-svg" cx="0" cy="0" rx="25" ry="28"/>
@@ -155,6 +207,7 @@
                   <ellipse class="pupil-svg" cx="0" cy="4" rx="10" ry="13"/>
                   <circle class="eye-spark" cx="-6" cy="-6" r="5"/>
                   <circle class="eye-spark tiny" cx="6" cy="8" r="2.5"/>
+                  <path class="eye-star" d="M7-8l1.2 2.8L11-4 8.2-2.8 7 0 5.8-2.8 3-4l2.8-1.2z"/>
                 </g>
                 <path class="blink-line" d="M -21 1 Q 0 8 21 1"/>
               </g>
@@ -166,6 +219,7 @@
                   <ellipse class="pupil-svg" cx="0" cy="4" rx="10" ry="13"/>
                   <circle class="eye-spark" cx="-6" cy="-6" r="5"/>
                   <circle class="eye-spark tiny" cx="6" cy="8" r="2.5"/>
+                  <path class="eye-star" d="M7-8l1.2 2.8L11-4 8.2-2.8 7 0 5.8-2.8 3-4l2.8-1.2z"/>
                 </g>
                 <path class="blink-line" d="M -21 1 Q 0 8 21 1"/>
               </g>
@@ -175,14 +229,18 @@
               <path class="brow brow-left" d="M91 104 Q112 91 132 103"/>
               <path class="brow brow-right" d="M188 103 Q208 91 229 104"/>
 
-              <ellipse class="cheek cheek-left" cx="90" cy="180" rx="18" ry="9"/>
-              <ellipse class="cheek cheek-right" cx="230" cy="180" rx="18" ry="9"/>
+              <ellipse class="cheek cheek-left" cx="90" cy="180" rx="22" ry="12"/>
+              <ellipse class="cheek cheek-right" cx="230" cy="180" rx="22" ry="12"/>
+              <g class="freckles freckles-left"><circle cx="82" cy="179" r="1.6"/><circle cx="90" cy="182" r="1.3"/><circle cx="97" cy="178" r="1.5"/></g>
+              <g class="freckles freckles-right"><circle cx="222" cy="178" r="1.5"/><circle cx="230" cy="182" r="1.3"/><circle cx="238" cy="179" r="1.6"/></g>
 
               <ellipse class="snout-svg" cx="160" cy="184" rx="49" ry="38"/>
               <path class="nose-svg" d="M145 170 Q160 159 175 170 Q172 186 160 187 Q148 186 145 170Z"/>
+              <ellipse class="nose-shine" cx="154" cy="169" rx="5.5" ry="3"/>
               <path class="mouth-line" d="M160 187 Q160 201 144 205"/>
               <path class="mouth-line" d="M160 187 Q160 201 176 205"/>
               <ellipse class="tongue-svg" cx="160" cy="207" rx="11" ry="6"/>
+              <path class="tongue-shine" d="M153 205q7-4 14 0"/>
             </g>
           </g>
         </svg>
