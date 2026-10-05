@@ -33,6 +33,8 @@ const state = {
   speechRestartTimer: null,
   lastSpeechStartAt: 0,
   speechRetryCount: 0,
+  silentUntil: 0,
+  silenceTimer: null,
   voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")===null
     ? !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
@@ -228,10 +230,93 @@ function restartRecognitionAfterSpeech(){
   setListenState(state.languageMode==="en"?"reconnecting…":state.languageMode==="pt"?"reconectando…":"reconectando…");
   state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?850:420);
 }
+const DEFAULT_SILENCE_MS=25*1000;
+const MAX_SILENCE_MS=24*60*60*1000;
+
+function isSpeechMuted(){
+  return state.silentUntil===Infinity || Date.now()<state.silentUntil;
+}
+function spokenDurationValue(raw){
+  const word=normalizeText(raw);
+  const values={
+    medio:.5,media:.5,un:1,una:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,
+    once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,
+    veinte:20,veintiuno:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,
+    veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,sesenta:60
+  };
+  if(Object.prototype.hasOwnProperty.call(values,word))return values[word];
+  const n=Number(String(raw).replace(",","."));
+  return Number.isFinite(n)&&n>0?n:null;
+}
+function parseSilenceDuration(rawText){
+  const text=normalizeText(rawText);
+  if(/hasta (?:que te diga|nuevo aviso)|sin limite|indefinidamente/.test(text))return Infinity;
+  const units=[
+    {re:/\b(\d+(?:[.,]\d+)?|medio|media|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciseis|diecisiete|dieciocho|diecinueve|veinte|veintiuno|veintidos|veintitres|veinticuatro|veinticinco|veintiseis|veintisiete|veintiocho|veintinueve|treinta|sesenta)\s*(horas?|hrs?|h)\b/,factor:60*60*1000},
+    {re:/\b(\d+(?:[.,]\d+)?|medio|media|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciseis|diecisiete|dieciocho|diecinueve|veinte|veintiuno|veintidos|veintitres|veinticuatro|veinticinco|veintiseis|veintisiete|veintiocho|veintinueve|treinta|sesenta)\s*(minutos?|mins?|min)\b/,factor:60*1000},
+    {re:/\b(\d+(?:[.,]\d+)?|medio|media|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciseis|diecisiete|dieciocho|diecinueve|veinte|veintiuno|veintidos|veintitres|veinticuatro|veinticinco|veintiseis|veintisiete|veintiocho|veintinueve|treinta|sesenta)\s*(segundos?|segs?|seg)\b/,factor:1000}
+  ];
+  for(const unit of units){
+    const match=text.match(unit.re);
+    const value=match&&spokenDurationValue(match[1]);
+    if(value!==null&&value!==false&&value!==undefined)return clamp(Math.round(value*unit.factor),1000,MAX_SILENCE_MS);
+  }
+  const bare=text.match(/\b(?:por|durante)\s+(\d+)\b/);
+  if(bare)return clamp(Number(bare[1])*1000,1000,MAX_SILENCE_MS);
+  return DEFAULT_SILENCE_MS;
+}
+function silenceDurationLabel(ms){
+  if(ms===Infinity)return "hasta que me digas que vuelva a hablar";
+  if(ms%3600000===0)return ms/3600000+" "+(ms===3600000?"hora":"horas");
+  if(ms%60000===0)return ms/60000+" "+(ms===60000?"minuto":"minutos");
+  return Math.round(ms/1000)+" segundos";
+}
+function beginSpeechSilence(rawText){
+  const duration=parseSilenceDuration(rawText);
+  clearTimeout(state.silenceTimer);
+  state.silentUntil=duration===Infinity?Infinity:Date.now()+duration;
+  if("speechSynthesis" in window)speechSynthesis.cancel();
+  state.speaking=false;
+  const label=silenceDurationLabel(duration);
+  say("🤫 Está bien. Me quedo callado "+label+".",Math.min(duration===Infinity?5000:duration,5000));
+  setListenState(duration===Infinity?"escuchando en silencio":"silencio · "+label,"listening");
+  if(duration!==Infinity){
+    state.silenceTimer=setTimeout(()=>{
+      state.silentUntil=0;
+      state.silenceTimer=null;
+      if(state.started)setListenState("escuchando","listening");
+    },duration);
+  }
+}
+function endSpeechSilence(){
+  clearTimeout(state.silenceTimer);
+  state.silenceTimer=null;
+  state.silentUntil=0;
+  if(state.started)setListenState("escuchando","listening");
+  say("Ya puedo hablar de nuevo.",3200);
+}
+function handleSilenceCommand(rawText){
+  const text=normalizeText(rawText);
+  const resume=/^(?:robotito\s+)?(?:(?:ya\s+)?(?:podes|puedes)\s+(?:volver a\s+)?hablar|volve a hablar|vuelve a hablar|habla de nuevo|deja de estar callado|fin del silencio)\b/.test(text);
+  if(resume){
+    endSpeechSilence();
+    return true;
+  }
+  const mute=/^(?:robotito\s+)?(?:(?:por favor|te pido que)\s+)?(?:callate|quedate callado|quedate en silencio|no hables|no digas nada|guarda silencio|deja de hablar|quiero que te calles|silencio)(?:\b|$)/.test(text);
+  if(!mute)return false;
+  beginSpeechSilence(text);
+  return true;
+}
+window.ROBOTITO_SILENCE={
+  parseDuration:parseSilenceDuration,
+  isMuted:isSpeechMuted,
+  defaultMs:DEFAULT_SILENCE_MS
+};
+
 function speakResponse(text,forcedLang=null){
-  // Class Mode is intentionally silent: Robotito may show text, transcribe,
-  // verify and save information, but must never speak over the lesson.
-  if(state.classMode)return false;
+  // Class Mode and requested quiet periods are intentionally silent: Robotito
+  // keeps listening, learning and showing text without speaking aloud.
+  if(state.classMode||isSpeechMuted())return false;
   if(!state.voiceEnabled||!("speechSynthesis" in window))return false;
   const clean=cleanSpeechText(text);
   if(!clean)return false;
@@ -2673,6 +2758,10 @@ async function handleSpeech(rawText){
     return;
   }
   const detectedLang=responseLanguage(rawText);
+
+  // Silence is a voice command, so it takes priority over questions and other actions.
+  // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
+  if(handleSilenceCommand(interpreted))return;
 
   // Exact exercise requests from uploaded academic material have top priority.
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
