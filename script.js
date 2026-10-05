@@ -74,6 +74,11 @@ const state = {
   locationDenied: false,
   audioContext: null,
   snoreTimer: null,
+  blinkTimer: null,
+  blinkCloseTimer: null,
+  heartEyeTimer: null,
+  eyeLookX: 0,
+  eyeLookY: 0,
   tasks: load("robotito.tasks.v1", []),
   tasksSheetUrl: localStorage.getItem("robotito.tasksSheetUrl.v1") || "",
   tasksSheetGid: localStorage.getItem("robotito.tasksSheetGid.v1") || "",
@@ -141,15 +146,23 @@ function cleanSpeechText(text){
     .trim();
 }
 function responseLanguage(){
-  return state.languageMode==="en"?"en":"es";
+  return state.languageMode==="en"?"en":state.languageMode==="pt"?"pt":"es";
+}
+function languageLocale(lang){
+  return lang==="en"?"en-US":lang==="pt"?"pt-BR":"es-UY";
+}
+function languageLabel(lang){
+  return lang==="en"?"English":lang==="pt"?"Português":"Español";
 }
 function chooseDefaultVoice(voices,targetLang="es"){
-  const pref=targetLang==="en"?/^en([-_]|$)/i:/^es([-_]|$)/i;
+  const pref=targetLang==="en"?/^en([-_]|$)/i:targetLang==="pt"?/^pt([-_]|$)/i:/^es([-_]|$)/i;
   const langPool=voices.filter(v=>pref.test(v.lang||""));
   const pool=langPool.length?langPool:voices;
   const maleHints=targetLang==="en"
     ?["daniel","george","arthur","aaron","fred","thomas","matthew","alex","male"]
-    :["pablo","jorge","carlos","diego","miguel","enrique","antonio","juan","raul","alvaro","andres","mateo","sergio","male","hombre"];
+    :targetLang==="pt"
+      ?["antonio","joao","joão","paulo","ricardo","felipe","bruno","thiago","homem","male"]
+      :["pablo","jorge","carlos","diego","miguel","enrique","antonio","juan","raul","alvaro","andres","mateo","sergio","male","hombre"];
   return pool.find(v=>maleHints.some(h=>normalizeText(v.name).includes(h)))
     || pool.find(v=>/natural|neural|premium/i.test(v.name))
     || pool[0]
@@ -160,11 +173,11 @@ function populateVoiceSelect(){
   const select=$("#voiceSelect");
   if(!select||!("speechSynthesis" in window))return;
   const all=speechSynthesis.getVoices();
-  const bilingual=all.filter(v=>/^(es|en)([-_]|$)/i.test(v.lang||""));
-  const voices=bilingual.length?bilingual:all;
+  const supported=all.filter(v=>/^(es|en|pt)([-_]|$)/i.test(v.lang||""));
+  const voices=supported.length?supported:all;
   const previous=state.voiceURI;
   select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
-  const target=state.languageMode==="en"?"en":"es";
+  const target=responseLanguage();
   let chosen=voices.find(v=>v.voiceURI===previous)||chooseDefaultVoice(voices,target);
   if(chosen){
     state.voiceURI=chosen.voiceURI;
@@ -192,10 +205,10 @@ function restartRecognitionAfterSpeech(){
   if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
   
-  setListenState(state.languageMode==="en"?"reconnecting…":"reconectando…");
+  setListenState(state.languageMode==="en"?"reconnecting…":state.languageMode==="pt"?"reconectando…":"reconectando…");
   state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?850:420);
 }
-function speakResponse(text){
+function speakResponse(text,forcedLang=null){
   if(!state.voiceEnabled||!("speechSynthesis" in window))return;
   const clean=cleanSpeechText(text);
   if(!clean)return;
@@ -206,15 +219,15 @@ function speakResponse(text){
   }else{
     discardRecognition();
   }
-  setListenState(state.languageMode==="en"?"responding":"respondiendo");
+  setListenState(state.languageMode==="en"?"responding":state.languageMode==="pt"?"respondendo":"respondiendo");
   const utter=new SpeechSynthesisUtterance(clean);
   const voices=speechSynthesis.getVoices();
-  const lang=responseLanguage(clean);
+  const lang=forcedLang||responseLanguage();
   const selected=voices.find(v=>v.voiceURI===state.voiceURI);
   const selectedMatches=selected && new RegExp("^"+lang+"([-_]|$)","i").test(selected.lang||"");
   const chosen=selectedMatches?selected:chooseDefaultVoice(voices,lang);
   if(chosen)utter.voice=chosen;
-  utter.lang=chosen?.lang||(lang==="en"?"en-US":"es-UY");
+  utter.lang=chosen?.lang||languageLocale(lang);
   utter.pitch=clamp(state.voicePitch,.5,1.1);
   utter.rate=clamp(state.voiceRate,.65,1.1);
   utter.volume=.92;
@@ -230,14 +243,17 @@ function speakResponse(text){
   utter.onerror=done;
   speechSynthesis.speak(utter);
 }
-function say(text, ms=3000){
+function say(text, ms=3000, spokenLang=null){
   state.lastSaid=text;
   const b=$("#speechBubble");
   b.textContent=text;
   b.classList.remove("hidden");
   clearTimeout(say.t);
   say.t=setTimeout(()=>b.classList.add("hidden"),ms);
-  speakResponse(text);
+  speakResponse(text,spokenLang);
+}
+function sayInLanguage(text,lang,ms=3500){
+  say(text,ms,lang);
 }
 function toast(text){
   const t=$("#toast");
@@ -344,22 +360,48 @@ function updateMeters(){
   $("#hungerLabel").textContent=Math.round(state.hunger)+"%";
 }
 
+function clearBlinkState(){
+  clearTimeout(state.blinkCloseTimer);
+  state.blinkCloseTimer=null;
+  robot.classList.remove("blink");
+}
+function eyesLocked(){
+  return state.sleeping || robot.classList.contains("heart-eyes");
+}
+function performBlink(){
+  if(eyesLocked()||document.hidden)return;
+  clearBlinkState();
+  requestAnimationFrame(()=>{
+    if(eyesLocked())return;
+    robot.classList.add("blink");
+    state.blinkCloseTimer=setTimeout(()=>{
+      robot.classList.remove("blink");
+      state.blinkCloseTimer=null;
+    },125);
+  });
+}
 function blinkLoop(){
-  setTimeout(()=>{
-    if(!state.sleeping){
-      robot.classList.add("blink");
-      setTimeout(()=>robot.classList.remove("blink"),145);
-    }
+  clearTimeout(state.blinkTimer);
+  state.blinkTimer=setTimeout(()=>{
+    performBlink();
     blinkLoop();
-  },2300+Math.random()*4200);
+  },2800+Math.random()*3900);
 }
-
-function moveEyes(nx,ny){
-  const x=clamp(nx,-1,1)*5.5;
-  const y=clamp(ny,-1,1)*4;
-  $$(".iris").forEach(i=>i.style.transform=`translate(${x}px,${y}px)`);
+function moveEyes(nx,ny,force=false){
+  state.eyeLookX=clamp(nx,-1,1);
+  state.eyeLookY=clamp(ny,-1,1);
+  if(!force&&eyesLocked())return;
+  const x=state.eyeLookX*5;
+  const y=state.eyeLookY*3.6;
+  $$(".iris").forEach(i=>{
+    i.style.transform=`translate3d(${x}px,${y}px,0)`;
+  });
 }
-
+function resetEyes(){
+  state.eyeLookX=0;
+  state.eyeLookY=0;
+  $$(".iris").forEach(i=>i.style.transform="translate3d(0,0,0)");
+}
 function followFace(box){
   const vw=camera.videoWidth||640, vh=camera.videoHeight||480;
   const cx=(box.x+box.width/2)/vw;
@@ -412,8 +454,8 @@ function primeMobileSpeechFromGesture(){
 
 async function startSenses(){
   if(state.started)return;
-  if(state.languageMode!=="es"&&state.languageMode!=="en"){
-    toast("Elegí Español o English primero.");
+  if(!["es","en","pt"].includes(state.languageMode)){
+    toast("Elegí Español, English o Português primero.");
     return;
   }
 
@@ -692,10 +734,10 @@ function processSpeechResult(text){
 }
 
 function recognitionLanguage(){
-  return state.languageMode==="en"?"en-US":"es-UY";
+  return languageLocale(responseLanguage());
 }
 function updateDetectedLanguage(){
-  state.lastDetectedLanguage=state.languageMode==="en"?"en":"es";
+  state.lastDetectedLanguage=responseLanguage();
   return state.lastDetectedLanguage;
 }
 
@@ -845,7 +887,7 @@ function capabilitiesAnswer(){
   return "Puedo reconocerte por cara y voz, recordar cosas, escuchar clases, resumirlas, ayudarte a estudiar, contar dedos, reconocer algunos objetos, recomendar libros, mirar tus tareas y resolver o dibujar algunos ejercicios de circunferencias.";
 }
 function setLanguageMode(mode){
-  if(mode!=="es"&&mode!=="en")return;
+  if(!["es","en","pt"].includes(mode))return;
   state.languageMode=mode;
   state.lastDetectedLanguage=mode;
   state.autoListenLanguage=mode;
@@ -856,7 +898,7 @@ function setLanguageMode(mode){
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
 }
 function chooseStartupLanguage(mode){
-  if(mode!=="es"&&mode!=="en")return;
+  if(!["es","en","pt"].includes(mode))return;
   setLanguageMode(mode);
   const gate=$("#languageGate");
   if(gate){
@@ -865,24 +907,127 @@ function chooseStartupLanguage(mode){
     gate.setAttribute("aria-hidden","true");
     gate.style.display="none";
   }
-  document.documentElement.lang=mode==="en"?"en":"es";
+  document.documentElement.lang=mode;
   $("#startBtn").disabled=false;
-  $("#startBtn").textContent=mode==="en"?"Wake up senses":"Despertar sentidos";
-  $("#statusText").textContent=mode==="en"?"Robotito is ready to wake up.":"Robotito está listo para despertar.";
+  $("#startBtn").textContent=mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos";
+  $("#statusText").textContent=mode==="en"
+    ?"Robotito is ready to wake up."
+    :mode==="pt"?"Robotito está pronto para despertar.":"Robotito está listo para despertar.";
 }
 function handleLanguageCommand(text){
-  if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english/.test(text)){
+  if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english|fale.*ingles|fale.*ingl[eê]s/.test(text)){
     setLanguageMode("en");
-    say("Sure. I'll speak English from now on.");
+    sayInLanguage("Sure. I'll speak English from now on.","en");
     return true;
   }
-  if(/(hablame|habla|responde|contesta).*(espanol|español|castellano)|speak spanish|answer in spanish/.test(text)){
+  if(/(hablame|habla|responde|contesta).*(espanol|español|castellano)|speak spanish|answer in spanish|fale.*espanhol/.test(text)){
     setLanguageMode("es");
-    say("Perfecto. Voy a hablar en español.");
+    sayInLanguage("Perfecto. Voy a hablar en español.","es");
+    return true;
+  }
+  if(/(hablame|habla|responde|contesta).*(portugues|portugu[eê]s)|speak portuguese|answer in portuguese|fale.*portugu[eê]s/.test(text)){
+    setLanguageMode("pt");
+    sayInLanguage("Perfeito. Vou falar em português a partir de agora.","pt");
     return true;
   }
   return false;
 }
+
+const QUICK_TRANSLATIONS=[
+  {es:"hola",en:"hello",pt:"olá"},
+  {es:"buenos dias",en:"good morning",pt:"bom dia"},
+  {es:"buenas tardes",en:"good afternoon",pt:"boa tarde"},
+  {es:"buenas noches",en:"good night",pt:"boa noite"},
+  {es:"gracias",en:"thank you",pt:"obrigado"},
+  {es:"por favor",en:"please",pt:"por favor"},
+  {es:"te quiero",en:"i love you",pt:"eu te amo"},
+  {es:"te extrano",en:"i miss you",pt:"sinto sua falta"},
+  {es:"como estas",en:"how are you",pt:"como você está"},
+  {es:"me llamo",en:"my name is",pt:"meu nome é"},
+  {es:"hasta luego",en:"see you later",pt:"até logo"},
+  {es:"que tengas un lindo dia",en:"have a nice day",pt:"tenha um bom dia"},
+  {es:"sos muy linda",en:"you are very pretty",pt:"você é muito bonita"},
+  {es:"sos mi persona favorita",en:"you are my favorite person",pt:"você é minha pessoa favorita"}
+];
+const translationCache=new Map();
+function targetLanguageFromName(name){
+  const n=normalizeText(name);
+  if(["ingles","english","inglês","inglese"].includes(n))return "en";
+  if(["portugues","portuguese","português"].includes(n))return "pt";
+  if(["espanol","español","castellano","spanish","espanhol"].includes(n))return "es";
+  return null;
+}
+function localTranslate(phrase,source,target){
+  const n=normalizeText(phrase);
+  for(const row of QUICK_TRANSLATIONS){
+    if(normalizeText(row[source]||"")===n || Object.values(row).some(v=>normalizeText(v)===n)){
+      return row[target]||null;
+    }
+  }
+  return null;
+}
+async function translateShortPhrase(phrase,source,target){
+  const clean=String(phrase||"").trim();
+  if(!clean||source===target)return clean;
+  const local=localTranslate(clean,source,target);
+  if(local)return local;
+  const key=`${source}|${target}|${normalizeText(clean)}`;
+  if(translationCache.has(key))return translationCache.get(key);
+  try{
+    if(window.LanguageModel?.create){
+      const session=await window.LanguageModel.create({temperature:0,topK:1});
+      const prompt=`Translate this short phrase from ${languageLabel(source)} to ${languageLabel(target)}. Return ONLY the translation, no quotes or explanation:\n${clean}`;
+      const out=String(await session.prompt(prompt)||"").trim();
+      session.destroy?.();
+      if(out){translationCache.set(key,out);return out;}
+    }
+  }catch(e){console.warn("browser translation",e);}
+  try{
+    const url="https://api.mymemory.translated.net/get?q="+encodeURIComponent(clean)+"&langpair="+encodeURIComponent(source+"|"+target);
+    const res=await fetch(url);
+    const data=await res.json();
+    const out=String(data?.responseData?.translatedText||"").trim();
+    if(out){translationCache.set(key,out);return out;}
+  }catch(e){console.warn("translation",e);}
+  return null;
+}
+async function handleSayInLanguageCommand(rawText){
+  const text=normalizeText(rawText);
+  const aliases="(?:espanol|español|castellano|spanish|espanhol|ingles|english|ingl[eê]s|portugues|portugu[eê]s|portuguese)";
+  const patterns=[
+    new RegExp("^(?:decime|dime|deci|di|pronuncia|repeti|repite)\\s+(.+?)\\s+en\\s+("+aliases+")$"),
+    new RegExp("^(?:como se dice)\\s+(.+?)\\s+en\\s+("+aliases+")$"),
+    new RegExp("^(?:say|tell me)\\s+(.+?)\\s+in\\s+("+aliases+")$"),
+    new RegExp("^(?:how do you say)\\s+(.+?)\\s+in\\s+("+aliases+")$"),
+    new RegExp("^(?:diga|me diga|fala|fale)\\s+(.+?)\\s+em\\s+("+aliases+")$"),
+    new RegExp("^(?:como se diz)\\s+(.+?)\\s+em\\s+("+aliases+")$")
+  ];
+  let match=null;
+  for(const p of patterns){match=text.match(p);if(match)break;}
+  if(!match)return false;
+  const target=targetLanguageFromName(match[2]);
+  if(!target)return false;
+  let phrase=match[1].trim();
+  if(["algo","alguna cosa","something","anything","alguma coisa","algo legal"].includes(phrase)){
+    const cute={
+      es:["Hoy es un buen día para un abrazo panda.","Tu panda virtual cree que merecés algo lindo hoy.","El bambú mejora cuando hay buena compañía."],
+      en:["Today is a good day for a panda hug.","Your virtual panda thinks you deserve something nice today.","Bamboo is better with good company."],
+      pt:["Hoje é um bom dia para um abraço de panda.","Seu panda virtual acha que você merece algo bonito hoje.","Bambu fica melhor com boa companhia."]
+    };
+    sayInLanguage(sample(cute[target]),target,5000);
+    return true;
+  }
+  const source=responseLanguage();
+  const translated=await translateShortPhrase(phrase,source,target);
+  if(!translated){
+    const fail=source==="en"?"I couldn't translate that phrase right now.":source==="pt"?"Não consegui traduzir essa frase agora.":"No pude traducir esa frase ahora.";
+    say(fail);
+    return true;
+  }
+  sayInLanguage(translated,target,5000);
+  return true;
+}
+
 function answerEnglishPersonalQuestion(rawText){
   const text=normalizeText(rawText);
   const known=state.currentVoicePerson||state.currentPerson;
@@ -1108,8 +1253,20 @@ function drawRequestedThing(rawText,lang="es"){
 
 function animateAffection(){
   if(state.sleeping)return;
-  robot.classList.add("heart-eyes");
-  setTimeout(()=>robot.classList.remove("heart-eyes"),1200);
+  clearBlinkState();
+  clearTimeout(state.heartEyeTimer);
+  robot.classList.remove("heart-eyes");
+  resetEyes();
+  requestAnimationFrame(()=>{
+    if(state.sleeping)return;
+    robot.classList.add("heart-eyes");
+    state.heartEyeTimer=setTimeout(()=>{
+      robot.classList.remove("heart-eyes");
+      state.heartEyeTimer=null;
+      clearBlinkState();
+      resetEyes();
+    },1200);
+  });
 }
 function playSnore(){
   const ctx=state.audioContext;
@@ -1133,6 +1290,27 @@ function startSnoring(){
 function stopSnoring(){
   clearTimeout(state.snoreTimer);
   state.snoreTimer=null;
+}
+
+function answerPortuguesePersonalQuestion(rawText){
+  const text=normalizeText(rawText);
+  const known=state.currentVoicePerson||state.currentPerson;
+  if(/(como voce se chama|como você se chama|qual e seu nome|qual é seu nome|quem e voce|quem é você)/.test(text)){sayInLanguage(sample(["Meu nome é Robotito.","Eu sou o Robotito.","Sou o Robotito, seu panda virtual."]),"pt");return true;}
+  if(/(como eu me chamo|qual e meu nome|qual é meu nome|quem sou eu|voce sabe meu nome|você sabe meu nome)/.test(text)){sayInLanguage(known?`Seu nome é ${known}. Eu me lembro de você.`:"Ainda não sei quem você é. Registre seu rosto e sua voz primeiro.","pt");return true;}
+  if(/(como voce esta|como você está|tudo bem|como se sente)/.test(text)){
+    const msg=state.sleeping?"Estou com sono, quase dormindo.":state.hunger>=75?"Estou bem, mas estou com bastante fome.":state.moodScore>=70?"Estou muito bem. Estou feliz.":state.moodScore<35?"Estou um pouquinho triste agora.":"Estou bem e tranquilo.";
+    sayInLanguage(msg,"pt");return true;
+  }
+  if(/(esta com fome|está com fome|tem fome|quer comer)/.test(text)){sayInLanguage(state.hunger>=75?"Sim, estou com bastante fome.":state.hunger>=35?"Um pouco, mas estou bem.":"Não muito. Estou bem satisfeito.","pt");return true;}
+  if(/(esta com sono|está com sono|esta cansado|está cansado|quer dormir)/.test(text)){sayInLanguage(state.sleeping?"Sim. Eu praticamente já estava dormindo.":state.energy<40?"Sim, estou cansado.":"Não muito. Ainda tenho energia.","pt");return true;}
+  if(/(que horas sao|que horas são|me diga as horas)/.test(text)){sayInLanguage("São "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+".","pt");return true;}
+  if(/(que dia e hoje|que dia é hoje|qual e a data|qual é a data)/.test(text)){sayInLanguage("Hoje é "+new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+".","pt");return true;}
+  if(/(quantos dedos|conte meus dedos)/.test(text)){const fresh=Date.now()-state.lastHandSeenAt<2500;sayInLanguage(!fresh||!state.visibleHands?"Não consigo ver sua mão claramente agora.":`Vejo ${state.visibleFingers} dedos levantados.`,"pt");return true;}
+  if(/(o que voce pode fazer|o que você pode fazer|como pode me ajudar)/.test(text)){sayInLanguage("Posso reconhecer rostos e vozes, lembrar coisas, ouvir aulas, resumir, ajudar a estudar, contar dedos, reconhecer objetos, recomendar livros e responder muitas perguntas do dia a dia.","pt",6500);return true;}
+  if(/(o que voce ve|o que você vê|consegue me ver|quem voce ve|quem você vê)/.test(text)){sayInLanguage(!state.lastDetections.length?"Não vejo ninguém agora.":known?`Vejo ${known}.`:`Vejo ${state.lastDetections.length} pessoa ou pessoas, mas não reconheço todo mundo.`,"pt");return true;}
+  if(/(quem esta falando|quem está falando|reconhece minha voz)/.test(text)){sayInLanguage(state.currentVoicePerson?`Acho que ${state.currentVoicePerson} está falando.`:"Ouço uma voz, mas não consigo reconhecê-la com segurança.","pt");return true;}
+  if(/(voce e real|você é real|esta vivo|está vivo|voce e um robo|você é um robô)/.test(text)){sayInLanguage("Sou o Robotito, um panda virtual. Não estou vivo como uma pessoa, mas posso ver, ouvir, lembrar e reagir.","pt");return true;}
+  return false;
 }
 
 function answerEasyQuestion(rawText){
@@ -2120,14 +2298,25 @@ async function handleSpeech(rawText){
   const detectedLang=responseLanguage(rawText);
   if(drawRequestedThing(interpreted,detectedLang))return;
   if(showRequestedObject(interpreted,detectedLang))return;
+  if(await handleSayInLanguageCommand(interpreted))return;
   if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
   if(answerArithmetic(interpreted,detectedLang))return;
   if(await handleWeatherAndDayQuestions(interpreted))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
-  if(answerEasyQuestion(interpreted)) return;
-  const commonAnswer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(interpreted,detectedLang);
-  if(commonAnswer){say(commonAnswer,4800);return;}
+  if(detectedLang==="pt" && answerPortuguesePersonalQuestion(interpreted)) return;
+  if(detectedLang==="es" && answerEasyQuestion(interpreted)) return;
+  if(detectedLang==="pt"){
+    const qEs=await translateShortPhrase(interpreted,"pt","es");
+    const answerEs=qEs?window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(qEs,"es"):null;
+    if(answerEs){
+      const answerPt=await translateShortPhrase(answerEs,"es","pt");
+      if(answerPt){sayInLanguage(answerPt,"pt",5200);return;}
+    }
+  }else{
+    const commonAnswer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(interpreted,detectedLang);
+    if(commonAnswer){say(commonAnswer,4800);return;}
+  }
 
   if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
     const last=load(KEYS.lastBook,null);
@@ -2236,12 +2425,20 @@ function wakeFromNight(){
   state.nightSleep=false;
   state.sleeping=false;
   stopSnoring();
+  clearBlinkState();
+  clearTimeout(state.heartEyeTimer);
+  robot.classList.remove("heart-eyes");
   robot.classList.remove("sleeping");
+  resetEyes();
   setMood("calm","Robotito está despierto otra vez.");
 }
 function sleepForNight(){
   state.nightSleep=true;
   state.sleeping=true;
+  clearBlinkState();
+  clearTimeout(state.heartEyeTimer);
+  robot.classList.remove("heart-eyes");
+  resetEyes();
   robot.classList.add("sleeping");
   setMood("sleepy","Robotito se fue a dormir porque le dijeron buenas noches.");
   startSnoring();
@@ -2252,6 +2449,14 @@ function handleSocialSpeech(text){
   const enName=known?", "+known:"";
 
   if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){say(responseLanguage(text)==="en"?"Bless you!":"¡Salud!");return true;}
+  if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
+  if(/\b(boa tarde)\b/.test(text)){wakeFromNight();sayInLanguage("Boa tarde"+enName+".","pt");return true;}
+  if(/\b(boa noite)\b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");setTimeout(sleepForNight,700);return true;}
+  if(/\b(ola|olá|oi|opa)\b/.test(text)){wakeFromNight();sayInLanguage("Olá"+enName+".","pt");return true;}
+  if(/\b(tchau|adeus|ate logo|até logo|ate mais|até mais)\b/.test(text)){sayInLanguage(sample(["Tchau"+enName+".","Até logo"+enName+".","Se cuida"+enName+"."]),"pt");return true;}
+  if(/\b(obrigado|obrigada|muito obrigado|muito obrigada)\b/.test(text)){sayInLanguage(sample(["De nada.","Por nada.","Sempre que quiser."]),"pt");return true;}
+  if(/\b(desculpa|desculpe|sinto muito)\b/.test(text)){sayInLanguage(sample(["Tudo bem.","Sem problema.","Desculpa aceita."]),"pt");return true;}
+
   if(/\b(good morning)\b/.test(text)){wakeFromNight();say("Good morning"+enName+".");return true;}
   if(/\b(good afternoon)\b/.test(text)){wakeFromNight();say("Good afternoon"+enName+".");return true;}
   if(/\b(good night|goodnight)\b/.test(text)){say("Good night"+enName+". Sleep well.");setTimeout(sleepForNight,700);return true;}
@@ -2866,10 +3071,10 @@ function bindUI(){
   $("#languageMode")?.addEventListener("change",e=>{
     const mode=e.target.value;
     setLanguageMode(mode);
-    document.documentElement.lang=mode==="en"?"en":"es";
+    document.documentElement.lang=mode;
     $("#startBtn").textContent=state.started
-      ?(mode==="en"?"Senses active":"Sentidos activos")
-      :(mode==="en"?"Wake up senses":"Despertar sentidos");
+      ?(mode==="en"?"Senses active":mode==="pt"?"Sentidos ativos":"Sentidos activos")
+      :(mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos");
   });
   $("#voiceEnabled")?.addEventListener("change",e=>{
     state.voiceEnabled=e.target.checked;
@@ -2892,7 +3097,11 @@ function bindUI(){
     state.voiceRate=Number(e.target.value);
     localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));
   });
-  $("#testVoiceBtn")?.addEventListener("click",()=>speakResponse(state.languageMode==="en"?"My name is Robotito. I'm ready to help you.":"Mi nombre es Robotito. Estoy listo para ayudarte."));
+  $("#testVoiceBtn")?.addEventListener("click",()=>{
+    const lang=responseLanguage();
+    const text=lang==="en"?"My name is Robotito. I'm ready to help you.":lang==="pt"?"Meu nome é Robotito. Estou pronto para ajudar você.":"Mi nombre es Robotito. Estoy listo para ayudarte.";
+    speakResponse(text,lang);
+  });
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personBirthday")?.addEventListener("input",e=>{
     const digits=e.target.value.replace(/\D/g,"").slice(0,8);
