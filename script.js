@@ -58,6 +58,7 @@ const state = {
   classStartedAt: 0,
   classSubject: "",
   classLines: load("robotito.classLines.v1", []),
+  verifyClassWeb: localStorage.getItem("robotito.verifyClassWeb.v1")!=="false",
   speakerOverride: null,
   recentAudioFeatures: [],
   recentVoicePrints: [],
@@ -2310,7 +2311,15 @@ function renderClassTranscript(){
     const txt=l.correctedText||l.text;
     const corr=l.correctedText&&l.correctedText!==l.text?'<div class="muted">Oí: '+escapeHtml(l.text)+'</div>':'';
     const match=l.voiceScore?'<span class="voice-match">voz '+Math.round(l.voiceScore*100)+'%</span>':'';
-    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(tag)+'</span>'+speakerSelectHtml(l)+match+'</div>'+escapeHtml(txt)+corr+'</div>';
+    const verify=l.verificationStatus==="verified"
+      ?'<span class="fact-badge">✓ verificado en web</span>'
+      :l.verificationStatus==="checking"
+        ?'<span class="fact-badge pending">verificando…</span>'
+        :'';
+    const src=(l.verificationSources||[]).length
+      ?'<div class="fact-sources">Fuentes: '+l.verificationSources.map(x=>'<a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener">'+escapeHtml(x.title)+'</a>').join(' · ')+'</div>'
+      :'';
+    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(tag)+'</span>'+speakerSelectHtml(l)+match+verify+'</div>'+escapeHtml(txt)+corr+src+'</div>';
   }).join("");
   root.querySelectorAll(".class-speaker-select").forEach(sel=>sel.addEventListener("change",()=>changeClassLineSpeaker(sel.dataset.lineId,sel.value)));
   root.scrollTop=root.scrollHeight;
@@ -3625,6 +3634,10 @@ function bindUI(){
   });
   $("#recommendBtn").addEventListener("click",()=>recommendBook());
   $("#startClassBtn").addEventListener("click",startClassMode);
+  $("#verifyClassWeb")?.addEventListener("change",e=>{
+    state.verifyClassWeb=!!e.target.checked;
+    localStorage.setItem("robotito.verifyClassWeb.v1",String(state.verifyClassWeb));
+  });
   $("#stopClassBtn").addEventListener("click",stopClassMode);
   $("#summarizeClassBtn").addEventListener("click",summarizeClass);
   $("#askClassBtn").addEventListener("click",askClass);
@@ -3706,6 +3719,7 @@ function init(){
   $("#tasksSheetUrl").value=state.tasksSheetUrl;
   $("#tasksSheetGid").value=state.tasksSheetGid;
   renderTasks();
+  if($("#verifyClassWeb"))$("#verifyClassWeb").checked=state.verifyClassWeb;
   renderClassTranscript();
   renderAcademicMaterials();
   summarizeClass();
