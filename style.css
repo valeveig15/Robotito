@@ -1708,3 +1708,19 @@ body.layout-resizing *{cursor:col-resize!important}
   .layout-resizer{display:none}
   .world,.panel{min-width:0}
 }
+
+
+/* v21 — cejas suaves y naturales */
+.brow{
+  stroke:#756d77!important;
+  stroke-width:3.1!important;
+  opacity:.56;
+  stroke-linecap:round;
+}
+.mood-happy .brow{opacity:.48}
+.mood-angry .brow-left{transform:rotate(7deg)!important}
+.mood-angry .brow-right{transform:rotate(-7deg)!important}
+.mood-annoyed .brow-left{transform:rotate(5deg) translateY(1px)!important}
+.mood-annoyed .brow-right{transform:rotate(-5deg) translateY(1px)!important}
+.mood-confused .brow-left{transform:translateY(-3px) rotate(-5deg)!important}
+.mood-confused .brow-right{transform:translateY(2px) rotate(4deg)!important}
