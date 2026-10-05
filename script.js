@@ -2310,7 +2310,12 @@ function classEvidenceScore(question,e){
 }
 function hasExplicitClassReference(raw){
   const t=normalizeText(raw);
-  return /\b(clase|transcripcion|apunte|apuntes|profesor|profesora|profe|dijo|dijeron|explico|vimos|estudiamos|aprendimos|hicimos|material cargado|segun la clase|en la materia|en el curso)\b/.test(t);
+  return /\b(?:segun|de acuerdo con) (?:la )?(?:clase|transcripcion|profesor|profesora|profe|material cargado)\b/.test(t)
+    || /\b(?:en|durante) (?:la|esta|mi) (?:clase|materia|curso)\b/.test(t)
+    || /\b(?:transcripcion|material cargado|mis apuntes|los apuntes)\b/.test(t)
+    || /\b(?:que|como) (?:dijo|dijeron|explico) (?:el|la|mi)? ?(?:profesor|profesora|profe)\b/.test(t)
+    || /\b(?:que )?(?:vimos|estudiamos|aprendimos|hicimos) (?:en clase|en la materia|en el curso)?\b/.test(t)
+    || /\b(?:explicame|resume|resumime|recordame) (?:la|esta|mi) clase\b/.test(t);
 }
 function definitionQuestionCore(raw){
   return normalizeText(raw)
