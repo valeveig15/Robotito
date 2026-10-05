@@ -158,12 +158,9 @@ function discardRecognition(){
 function restartRecognitionAfterSpeech(){
   if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
-  if(isMobileSpeech()){
-    setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
-    $("#mobileListenBtn")?.classList.remove("hidden");
-    return;
-  }
-  state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),300);
+  $("#mobileListenBtn")?.classList.add("hidden");
+  setListenState(state.languageMode==="en"?"reconnecting…":"reconectando…");
+  state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?850:420);
 }
 function speakResponse(text){
   if(!state.voiceEnabled||!("speechSynthesis" in window))return;
