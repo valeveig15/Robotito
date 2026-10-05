@@ -64,6 +64,7 @@ const state = {
   tasksSheetGid: localStorage.getItem("robotito.tasksSheetGid.v1") || "",
   sessionStartedAt: Date.now(),
   lastTaskReminderAt: 0,
+  lastSaid: "",
   people: load(KEYS.people, []),
   memories: load(KEYS.memories, []),
   library: load(KEYS.goodreads, []),
@@ -159,6 +160,7 @@ function speakResponse(text){
   speechSynthesis.speak(utter);
 }
 function say(text, ms=3000){
+  state.lastSaid=text;
   const b=$("#speechBubble");
   b.textContent=text;
   b.classList.remove("hidden");
@@ -818,6 +820,149 @@ function answerEasyQuestion(rawText){
     if(text.includes("libro")||text.includes("leer"))say("Sí. Especialmente porque puedo ayudarte a elegir qué leer.");
     else if(text.includes("musica"))say("Sí. Si detecto música, hasta intento bailar.");
     else say("Me gusta aprender cosas con vos, sobre todo cuando después puedo ayudarte a estudiarlas.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que estas haciendo","que haces ahora","que haces","en que andas","que estas haciendo ahora"],
+    [["que"],["haces","haciendo","andas"]]
+  )){
+    if(state.classMode)say(`Estoy escuchando y aprendiendo la clase de ${state.classSubject||"esta materia"}.`);
+    else if(state.nightSleep||state.sleeping)say("Estoy durmiendo.");
+    else if(robot.classList.contains("dancing"))say("Estoy bailando porque detecté música.");
+    else if(state.hunger>=75)say("Estoy acá, pero bastante pendiente de que tengo hambre.");
+    else say("Estoy atento a lo que pasa y esperando que me hables.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que materia es","que materia estamos viendo","que clase estas escuchando","que clase es","que estas estudiando"],
+    [["materia","clase","estudiando"],["que"]]
+  )){
+    if(state.classMode)say(`Estoy escuchando ${state.classSubject||"una clase sin nombre"}.`);
+    else {
+      const last=[...state.classLines].sort((a,b)=>b.at-a.at)[0];
+      say(last?`La última materia que tengo registrada es ${last.subject||"una clase sin nombre"}.`:"Todavía no escuché ninguna clase.");
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantas clases escuchaste hoy","cuantas clases tuviste hoy","cuantas clases aprendiste hoy","escuchaste alguna clase hoy"],
+    [["clase","clases"],["hoy"],["cuantas","alguna","escuchaste","tuviste","aprendiste"]]
+  )){
+    const subjects=[...new Set(todayClassLines().map(l=>l.subject||"Clase"))];
+    if(!subjects.length)say("Hoy todavía no escuché ninguna clase.");
+    else say(`Hoy tengo registradas ${subjects.length} ${subjects.length===1?"clase":"clases"}: ${subjects.join(", ")}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cual fue la ultima clase","que clase escuchaste ultima","ultima clase que aprendiste","que fue lo ultimo que estudiaste"],
+    [["ultima","ultimo"],["clase","estudiaste","aprendiste"]]
+  )){
+    const last=[...state.classLines].sort((a,b)=>b.at-a.at)[0];
+    say(last?`La última clase que tengo registrada es ${last.subject||"una clase sin nombre"}.`:"Todavía no escuché ninguna clase.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["te caigo bien","te agrado","me queres","me quieres","que pensas de mi","que piensas de mi","como nos llevamos"],
+    [["mi","me"],["caigo","agrado","queres","quieres","pensas","piensas","llevamos"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(!p)say("Todavía no te conozco lo suficiente como para decirlo.");
+    else say(`Nuestra relación está así: ${relationText(p.relationship??50)}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["quien cumple anos hoy","quien cumple hoy","hay algun cumpleanos hoy","hay cumpleaños hoy"],
+    [["cumple","cumpleanos"],["hoy","quien","hay"]]
+  )){
+    const now=new Date();
+    const names=state.people.filter(p=>{
+      const m=String(p.birthday||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m&&Number(m[2])===now.getMonth()+1&&Number(m[3])===now.getDate();
+    }).map(p=>p.name);
+    say(names.length?`Hoy cumple ${names.join(", ")}.`:"No tengo registrado a nadie que cumpla años hoy.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuando cumple","cuando es el cumpleanos de","cuando es el cumple de","sabes el cumpleanos de"],
+    [["cumple","cumpleanos"],["cuando","sabes"]]
+  )){
+    const target=state.people.find(p=>text.includes(normalizeText(p.name)));
+    if(target?.birthday)say(`${target.name} cumple el ${formatBirthday(target.birthday)}.`);
+    else say("No encontré ese cumpleaños entre las personas registradas.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos libros lei","cuantos libros he leido","cuantos libros tengo leidos","cuantos libros ya lei"],
+    [["libro","libros"],["lei","leido","leidos"],["cuantos"]]
+  )){
+    if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
+    else {
+      const n=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").length;
+      say(`En el archivo de Goodreads veo ${n} libros leídos.`);
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos libros tengo pendientes","cuantos libros quiero leer","cuantos libros tengo por leer","cuantos libros hay en to read"],
+    [["libro","libros"],["pendiente","leer","to read"],["cuantos"]]
+  )){
+    if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
+    else {
+      const n=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="to-read").length;
+      say(`Tenés ${n} libros marcados para leer.`);
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que estoy leyendo","que libro estoy leyendo","cuales estoy leyendo","que tengo en currently reading"],
+    [["leyendo","currently reading"],["que","cuales","libro"]]
+  )){
+    if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
+    else {
+      const books=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="currently-reading").map(b=>b["Title"]).filter(Boolean);
+      say(books.length?`Tenés como lectura actual: ${books.join(", ")}.`:"No veo ningún libro marcado como lectura actual.");
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que musica es","que cancion es","sabes que cancion esta sonando","reconoces la cancion"],
+    [["cancion","musica"],["que","sabes","reconoces"]]
+  )){
+    say(state.audioKind==="música"?"Sé que suena música, pero todavía no puedo identificar el nombre de la canción.":"Ahora mismo no detecto música con suficiente seguridad.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["repeti","repetilo","repite","decilo de nuevo","dilo de nuevo","que dijiste recien"],
+    [["repeti","repite","nuevo","dijiste"],["que","decilo","dilo","recien"]]
+  )){
+    if(state.lastSaid)say(state.lastSaid);
+    else say("Todavía no había dicho nada.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuando comiste","hace cuanto comiste","hace cuanto no comes","cuando fue la ultima vez que comiste"],
+    [["comiste","comes"],["cuando","cuanto","ultima"]]
+  )){
+    const last=Number(localStorage.getItem(KEYS.lastFed)||0);
+    if(!last)say("No tengo registrada una comida todavía.");
+    else {
+      const mins=Math.floor((Date.now()-last)/60000);
+      if(mins<60)say(`Comí hace aproximadamente ${mins} minutos.`);
+      else say(`Comí hace aproximadamente ${(mins/60).toFixed(1)} horas.`);
+    }
     return true;
   }
 
