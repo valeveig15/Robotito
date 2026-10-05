@@ -94,6 +94,7 @@ const state = {
   sessionStartedAt: Date.now(),
   lastTaskReminderAt: 0,
   lastSaid: "",
+  speechBubbleToken: 0,
   people: load(KEYS.people, []),
   memories: load(KEYS.memories, []),
   library: load(KEYS.goodreads, []),
@@ -218,9 +219,9 @@ function restartRecognitionAfterSpeech(){
   state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?850:420);
 }
 function speakResponse(text,forcedLang=null){
-  if(!state.voiceEnabled||!("speechSynthesis" in window))return;
+  if(!state.voiceEnabled||!("speechSynthesis" in window))return false;
   const clean=cleanSpeechText(text);
-  if(!clean)return;
+  if(!clean)return false;
   speechSynthesis.cancel();
   state.recentVoicePrints=[];
   state.speaking=true;
@@ -252,14 +253,49 @@ function speakResponse(text,forcedLang=null){
   utter.onend=done;
   utter.onerror=done;
   speechSynthesis.speak(utter);
+  return true;
+}
+function readingDisplayTime(text,minMs=3000){
+  const clean=cleanSpeechText(text);
+  const words=(clean.match(/\S+/g)||[]).length;
+  const punctuation=(clean.match(/[.!?;:]/g)||[]).length;
+  // Comfortable on-screen reading pace: ~175 words/minute, plus pauses.
+  const readingMs=words*(60000/175)+punctuation*180+900;
+  return clamp(Math.round(readingMs),Math.max(3000,minMs||0),45000);
+}
+function scheduleSpeechBubbleHide(token,deadline){
+  clearTimeout(say.t);
+  const check=()=>{
+    if(token!==state.speechBubbleToken)return;
+    const remaining=deadline-Date.now();
+    if(remaining>0){
+      say.t=setTimeout(check,Math.min(remaining,1000));
+      return;
+    }
+    // Never hide the current message while Robotito is still saying it aloud.
+    if(state.speaking){
+      say.t=setTimeout(check,500);
+      return;
+    }
+    say.t=setTimeout(()=>{
+      if(token===state.speechBubbleToken&&!state.speaking){
+        $("#speechBubble")?.classList.add("hidden");
+      }
+    },900);
+  };
+  check();
 }
 function say(text, ms=3000, spokenLang=null){
   state.lastSaid=text;
   const b=$("#speechBubble");
+  if(!b)return;
   b.textContent=text;
   b.classList.remove("hidden");
-  clearTimeout(say.t);
-  say.t=setTimeout(()=>b.classList.add("hidden"),ms);
+
+  const token=++state.speechBubbleToken;
+  const displayMs=readingDisplayTime(text,ms);
+  const deadline=Date.now()+displayMs;
+  scheduleSpeechBubbleHide(token,deadline);
   speakResponse(text,spokenLang);
 }
 function sayInLanguage(text,lang,ms=3500){
