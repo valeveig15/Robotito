@@ -1567,3 +1567,66 @@ button:active{transform:translateY(0) scale(.985)}
   .mood-aura,.chest-heart,.tail-group,.inner-ear,.fur-tuft,.eye-star,
   .sparkle,.sparkle-dot,.ground-shadow{animation:none!important}
 }
+
+
+/* v19 — edición de clases guardadas */
+.class-session-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  align-items:stretch;
+}
+.class-session-edit{
+  min-width:82px;
+  padding:8px 10px;
+  align-self:stretch;
+  color:#76566f;
+  background:linear-gradient(180deg,#fff,#fff6fa);
+}
+.class-session-editor{
+  width:min(92vw,470px);
+  max-height:min(88vh,680px);
+  border:1px solid rgba(95,70,96,.14);
+  border-radius:24px;
+  padding:0;
+  color:var(--text);
+  background:rgba(255,253,255,.98);
+  box-shadow:0 28px 80px rgba(67,45,68,.24);
+}
+.class-session-editor::backdrop{
+  background:rgba(53,40,56,.30);
+  backdrop-filter:blur(5px);
+}
+.class-session-editor form{padding:22px}
+.class-editor-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+}
+.class-editor-head h2{margin:3px 0 0;font-size:21px}
+.class-editor-kicker{
+  font-size:10px;
+  letter-spacing:.14em;
+  font-weight:900;
+  color:#a27796;
+}
+.class-editor-close{
+  min-width:38px;
+  padding:5px 10px;
+  font-size:24px;
+  line-height:1;
+}
+.class-editor-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:9px;
+  margin-top:18px;
+}
+.class-editor-actions button{min-width:124px}
+@media(max-width:620px){
+  .class-session-row{grid-template-columns:1fr}
+  .class-session-edit{justify-self:stretch}
+  .class-editor-actions{display:grid;grid-template-columns:1fr}
+  .class-editor-actions button{width:100%}
+}
