@@ -2703,6 +2703,9 @@ async function handleSpeech(rawText){
   if(await handleSayInLanguageCommand(interpreted))return;
   if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
+  if(/\b(abrazame|abrazá|abraza|dame un abrazo|quiero un abrazo|hug me)\b/.test(text)){hugRobot();return;}
+  if(/\b(choca los cinco|chocame los cinco|dame cinco|high five)\b/.test(text)){highFiveRobot();return;}
+  if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
   if(answerArithmetic(interpreted,detectedLang))return;
   if(await handleWeatherAndDayQuestions(interpreted))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
