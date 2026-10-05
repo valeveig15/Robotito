@@ -1724,3 +1724,20 @@ body.layout-resizing *{cursor:col-resize!important}
 .mood-annoyed .brow-right{transform:rotate(-5deg) translateY(1px)!important}
 .mood-confused .brow-left{transform:translateY(-3px) rotate(-5deg)!important}
 .mood-confused .brow-right{transform:translateY(2px) rotate(4deg)!important}
+
+
+/* v22 — corazones de ojos más grandes */
+.heart-eye{
+  font-size:44px!important;
+  fill:#f078a0;
+  stroke:rgba(255,255,255,.72);
+  stroke-width:.8px;
+  paint-order:stroke fill;
+  filter:drop-shadow(0 3px 3px rgba(171,75,111,.24));
+}
+@keyframes heartEyePop{
+  0%{transform:translateY(4px) scale(.18)}
+  35%{transform:translateY(4px) scale(1.16)}
+  65%{transform:translateY(4px) scale(.96)}
+  100%{transform:translateY(4px) scale(1)}
+}
