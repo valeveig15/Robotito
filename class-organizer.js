@@ -372,7 +372,7 @@ ${useful.join("\n").slice(0,7000)}`;
         '<div class="academic-topic-group"><span class="academic-topic-title">'+esc(topic)+'</span>'+
         items.map(m=>
           '<div class="academic-file-row">'+
-            '<span>📄 '+esc(m.name)+'</span>'+
+            '<span>📄 '+esc(m.name)+(Array.isArray(m.exercises)&&m.exercises.length?' · '+m.exercises.length+' ejercicios detectados':'')+'</span>'+
             '<button type="button" class="ghost delete-academic-file" data-id="'+esc(m.id)+'">Borrar</button>'+
           '</div>'
         ).join("")+
@@ -398,14 +398,20 @@ ${useful.join("\n").slice(0,7000)}`;
       try{
         const text=await textFromAcademicFile(file);
         const chunks=chunkAcademicText(text);
+        const id=crypto.randomUUID?.()||("material-"+Date.now()+"-"+Math.random().toString(16).slice(2));
+        const exercises=window.ROBOTITO_CLASS_EXERCISES?.extractFromText?.(text,{
+          materialId:id,subject,topic,sourceName:file.name
+        })||[];
         state.academicMaterials.push({
-          id:crypto.randomUUID?.()||("material-"+Date.now()+"-"+Math.random().toString(16).slice(2)),
+          id,
           name:file.name,
           type:file.type||"",
           size:file.size||0,
           subject,
           topic,
+          rawText:text,
           chunks,
+          exercises,
           at:Date.now()
         });
       }catch(e){
