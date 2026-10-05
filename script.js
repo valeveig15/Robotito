@@ -3896,6 +3896,9 @@ function bindUI(){
     localStorage.setItem("robotito.verifyClassWeb.v1",String(state.verifyClassWeb));
   });
   $("#stopClassBtn").addEventListener("click",stopClassMode);
+  $("#nextMeBtn")?.addEventListener("click",()=>{state.speakerOverride="me";toast("La próxima frase se aprenderá como tu voz.");});
+  $("#nextTeacherBtn")?.addEventListener("click",()=>{state.speakerOverride="teacher";toast("La próxima frase se aprenderá como voz de profesor/a.");});
+  $("#nextClassmateBtn")?.addEventListener("click",()=>{state.speakerOverride="classmate";toast("La próxima frase se aprenderá como voz de compañero/a.");});
   $("#summarizeClassBtn").addEventListener("click",summarizeClass);
   $("#askClassBtn").addEventListener("click",askClass);
   $("#flashcardsBtn").addEventListener("click",makeFlashcards);
