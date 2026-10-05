@@ -25,6 +25,7 @@
   <script defer src="class-organizer.js"></script>
   <script defer src="class-exercises.js"></script>
   <script defer src="class-verification.js"></script>
+  <script defer src="layout-resizer.js"></script>
   <script defer src="script.js"></script>
   <script defer src="robotito-vnext.js"></script>
   <script defer src="video-material.js"></script>
@@ -290,6 +291,12 @@
         <button type="button" data-action="poke">👉 Molestar</button>
       </div>
     </section>
+
+    <div id="layoutResizer" class="layout-resizer" role="separator" aria-orientation="vertical"
+      aria-label="Ajustar el ancho entre Robotito y el panel" tabindex="0"
+      title="Arrastrá para cambiar el ancho. Doble clic para restablecer.">
+      <span class="layout-resizer-grip" aria-hidden="true">‹›</span>
+    </div>
 
     <aside class="panel">
       <nav class="tabs" aria-label="Panel de Robotito">
