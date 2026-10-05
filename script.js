@@ -2827,7 +2827,7 @@ function ambientMood(){
 }
 
 function bindUI(){
-  $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
+  $$("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#startBtn").addEventListener("click",startSenses);
   $("#languageMode")?.addEventListener("change",e=>{
     const mode=e.target.value;
