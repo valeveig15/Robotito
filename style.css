@@ -99,6 +99,18 @@ input:focus,textarea:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,17
 .mood-sad .mouth{border-bottom:0;border-top:4px solid #4a424c;border-radius:50% 50% 0 0;top:36px}.mood-sad .brow-left{transform:rotate(-12deg)}.mood-sad .brow-right{transform:rotate(12deg)}
 .mood-angry .brow-left{transform:rotate(20deg)}.mood-angry .brow-right{transform:rotate(-20deg)}.mood-angry .cheek{background:#ef8f99}
 .mood-scared .eye-white{transform:scale(1.13)}.mood-scared .mouth{width:26px;height:27px;left:30px;border:4px solid #4a424c;border-radius:50%}.mood-scared .scare-mark{animation:scarePop .55s ease;opacity:1}
+.battery-source{margin:7px 0 0;color:var(--muted);font-size:10px;line-height:1.25}
+.battery-meter-card{transition:border-color .25s,box-shadow .25s,background .25s}
+.battery-meter-card.battery-critical{border-color:#ff6f7d;background:#fff3f5;box-shadow:0 0 0 3px rgba(255,83,105,.12),0 10px 24px rgba(153,35,54,.12)}
+.battery-meter-card.battery-critical .meter-head{color:#a8223a;font-weight:900}
+.battery-meter-card.battery-critical #energyMeter{background:linear-gradient(90deg,#ff304f,#ff8895);animation:batteryMeterPulse .7s ease-in-out infinite alternate}
+.robotito.battery-critical{--aura:#ff7787;animation:batteryPanic .34s ease-in-out infinite alternate}
+.robotito.battery-critical .mood-aura{opacity:.8;filter:blur(9px)}
+.robotito.battery-critical .eye-white,.robotito.battery-critical .eye-white-svg{transform:scale(1.18)}
+.robotito.battery-critical .scare-mark{opacity:1;animation:scarePop .45s ease,batteryAlertMark .65s ease-in-out infinite alternate}
+@keyframes batteryPanic{from{transform:translate(-50%,-50%) translateX(-2px) rotate(-.8deg)}to{transform:translate(-50%,-50%) translateX(2px) translateY(-3px) rotate(.8deg)}}
+@keyframes batteryMeterPulse{from{filter:saturate(1);opacity:.82}to{filter:saturate(1.45);opacity:1}}
+@keyframes batteryAlertMark{from{transform:scale(.92)}to{transform:scale(1.15)}}
 .mood-hungry .mouth{animation:nibble .55s infinite alternate}.mood-sleepy .lid{transform:translateY(-45%)}
 .robotito.pet-happy .heart-pop{animation:heartFloat 1.2s ease forwards}.robotito.pet-happy .panda-head{animation:nuzzle .7s ease-in-out 2}
 .robotito.eating .food-prop{animation:foodNom 1.2s ease forwards}.robotito.eating .mouth{height:24px;border:4px solid #4a424c;border-radius:50%;animation:chew .26s infinite alternate}
