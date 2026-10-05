@@ -298,3 +298,49 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
   font-weight:800;
 }
 .goodreads-link:hover{text-decoration:underline}
+
+
+/* v5.5 — larger cute eyes + mobile listening */
+.eye-white-svg{filter:drop-shadow(0 1px 1px rgba(65,48,67,.08))}
+.iris-svg{fill:#4b4352}
+.pupil-svg{fill:#141116}
+.eye-spark{filter:drop-shadow(0 0 1px rgba(255,255,255,.8))}
+.mobile-listen{
+  display:none;
+  border:none;
+  background:linear-gradient(135deg,#d9f4ed,#f8dfe9);
+  color:#4c414d;
+  padding:10px 12px;
+  border-radius:13px;
+  font-weight:900;
+}
+.listen-state{
+  font-size:10px;
+  font-weight:900;
+  padding:5px 8px;
+  border-radius:999px;
+  background:#f1ebf0;
+  color:#817683;
+}
+.listen-state.listening{background:#def3ea;color:#4d8072}
+.listen-state.problem{background:#ffe5e5;color:#a55e65}
+@media(max-width:900px){
+  .top-actions{flex-wrap:wrap;justify-content:flex-end}
+  .mobile-listen{display:inline-block}
+  .world{min-height:580px}
+  .robotito{transform:translate(-50%,-50%) scale(.92)}
+  .quick-actions{bottom:14px}
+  .quick-actions button{font-size:11px;padding:7px 9px}
+  #mobileSpeechHint{display:block !important}
+}
+@media(max-width:560px){
+  .topbar{padding:13px 14px}
+  .topbar h1{font-size:21px}
+  .layout{padding:8px;gap:8px}
+  .world{min-height:535px;border-radius:20px}
+  .panel{border-radius:20px;padding:10px}
+  .robotito{transform:translate(-50%,-50%) scale(.82)}
+  .hud{bottom:76px;left:10px;right:10px}
+  .hud-pill{font-size:10px;padding:6px 8px}
+  .quick-actions{left:10px;right:10px}
+}
