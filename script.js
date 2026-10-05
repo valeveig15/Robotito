@@ -512,9 +512,9 @@ async function startSenses(){
       window.RobotitoLocalASR.start({
         stream:state.stream,
         lang:state.languageMode,
-        onTranscript:text=>{
+        onTranscript:(text,meta)=>{
           updateDetectedLanguage(text);
-          processSpeechResult(text);
+          processSpeechResult(text,meta);
         },
         statusCallback:(text,kind)=>setListenState(text,kind)
       }).then(()=>{
@@ -719,9 +719,15 @@ function setupAudio(stream){
       state.recentAudioFeatures.push({rms,centroid,flat,t:Date.now()});
       state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
       const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
-      if(rms>.045 && Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
+
+      if(rms<Math.max(.035,state.ambientRms*1.8)){
+        state.ambientRms=state.ambientRms*.96+rms*.04;
+      }
+      state.voiceThreshold=clamp(Math.max(.028,state.ambientRms*2.35),.028,.07);
+
+      if(!state.speaking && rms>state.voiceThreshold && Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
         state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
-        state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<7000);
+        state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<45000);
       }
 
       const likelyMusic = rms>.06 && activeBands>=2 && flat>.09 && flat<.66 && midE>19;
@@ -758,12 +764,15 @@ function setupAudio(stream){
   }catch(e){console.warn("audio",e);}
 }
 
-function processSpeechResult(text){
+function processSpeechResult(text,speechMeta=null){
   if(!text)return;
   $("#transcript").textContent=text;
   state.lastHeardAt=Date.now();
   state.lastTranscriptAt=Date.now();
-  const voiceMatch=recognizeVoicePerson(recentVoicePrint());
+  const print=speechMeta?.startedAt
+    ?voicePrintForWindow(speechMeta.startedAt,speechMeta.endedAt)
+    :recentVoicePrint();
+  const voiceMatch=recognizeVoicePerson(print,state.currentPerson);
   state.currentVoicePerson=voiceMatch?.name||null;
   autoRemember(text);
   if(!state.classMode && state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
