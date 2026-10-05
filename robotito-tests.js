@@ -15,6 +15,7 @@
     const questionRouting=window.ROBOTITO_QUESTION_ROUTING;
     const commonKnowledge=window.ROBOTITO_COMMON_KNOWLEDGE;
     const webKnowledge=window.ROBOTITO_WEB_KNOWLEDGE;
+    const battery=window.ROBOTITO_BATTERY;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
@@ -64,6 +65,16 @@
       results.push(same(webKnowledge.isFactualQuestion("Definime entropía"),true,"acepta pedido imperativo de definición"));
       results.push(same(webKnowledge.isFactualQuestion("Me gusta la entropía"),false,"no confunde comentario con pregunta factual"));
     }else results.push(truthy(false,"web knowledge loaded"));
+
+    if(battery){
+      results.push(same(battery.alertThreshold(51,50),50,"aviso al llegar a 50%"));
+      results.push(same(battery.alertThreshold(21,20),20,"aviso al llegar a 20%"));
+      results.push(same(battery.alertThreshold(11,10),10,"aviso al llegar a 10%"));
+      results.push(same(battery.alertThreshold(6,5),5,"alerta crítica al llegar a 5%"));
+      results.push(same(battery.alertThreshold(4,6),null,"no avisa al subir mientras carga"));
+      results.push(same(battery.bucket(4),5,"mantiene alerta por debajo de 5%"));
+      results.push(truthy(battery.message(5,"es").includes("no me quiero apagar"),"mensaje crítico expresa miedo a apagarse"));
+    }else results.push(truthy(false,"battery integration loaded"));
 
     if(videoMaterial){
       results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de URL de YouTube"));
