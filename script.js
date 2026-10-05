@@ -985,7 +985,6 @@ function autoRemember(text){
   const last=state.memories[state.memories.length-1];
   if(last && last.text.toLowerCase()===clean.toLowerCase() && Date.now()-last.at<15000)return;
   state.memories.push({person,text:clean,at:Date.now(),source:"auto"});
-  if(state.memories.length>500) state.memories=state.memories.slice(-500);
   save(KEYS.memories,state.memories);
   renderMemories();
 }
