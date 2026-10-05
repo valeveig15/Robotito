@@ -272,7 +272,7 @@
     [["cuanto es docena","what is a dozen"],"Una docena son 12 unidades.","A dozen is 12 items."],
     [["cuanto es centena","what is a hundred"],"Una centena son 100 unidades.","One hundred is 100 units."],
     [["par o impar","even or odd"],"Un número par es divisible entre 2 sin resto; uno impar no.","An even number is divisible by 2 with no remainder; an odd number is not."],
-    [["que es permutacion","qué es permutación","define permutacion","what is a permutation"],"Una permutación es una ordenación de todos los elementos de un conjunto; el orden sí importa.","A permutation is an ordering of all the elements in a set; order matters."],
+    [["que es permutacion","qué es permutación","define permutacion","definime permutacion","que son las permutaciones","what is a permutation"],"Una permutación es una ordenación de todos los elementos de un conjunto; el orden sí importa.","A permutation is an ordering of all the elements in a set; order matters."],
     [["que es combinacion","qué es combinación","define combinacion","what is a combination"],"Una combinación es una selección de elementos en la que el orden no importa.","A combination is a selection of elements in which order does not matter."],
     [["que es variacion","qué es variación","define variacion","what is an arrangement"],"Una variación es una selección ordenada de parte de los elementos de un conjunto.","An arrangement is an ordered selection of some elements from a set."],
     [["que es factorial","qué es factorial","define factorial","what is a factorial"],"El factorial de un número natural n es el producto de los enteros positivos desde 1 hasta n; se escribe n!.","The factorial of a natural number n is the product of the positive integers from 1 through n, written n!."],
