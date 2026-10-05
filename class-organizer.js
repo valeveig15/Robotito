@@ -290,14 +290,147 @@ ${useful.join("\n").slice(0,7000)}`;
     );
   }
 
+  async function migrateAudioRecordings(){
+    const api=window.ROBOTITO_CLASS_AUDIO;
+    if(!api?.listRecordings||!api?.updateMetadata)return;
+    try{
+      const recordings=await api.listRecordings();
+      const sessions=sessionsFromLines();
+      for(const rec of recordings){
+        const parsed=parseLegacyLabel(rec.subject||"Clase");
+        let subject=parsed.subject||"Clase";
+        let topic=rec.topic||parsed.topic||"";
+        let sessionId=rec.sessionId||null;
+
+        if(!sessionId){
+          const candidates=sessions
+            .filter(s=>norm(s.subject)===norm(subject) && (!topic||norm(s.topic)===norm(topic)))
+            .map(s=>({...s,diff:Math.abs((s.startedAt||0)-(rec.startedAt||0))}))
+            .sort((a,b)=>a.diff-b.diff);
+          if(candidates[0]&&candidates[0].diff<8*60*60*1000){
+            sessionId=candidates[0].sessionId;
+            if(!topic)topic=candidates[0].topic||"";
+          }
+        }
+        if(subject!==rec.subject||topic!==rec.topic||sessionId!==rec.sessionId){
+          await api.updateMetadata(rec.id,{subject,topic,sessionId:sessionId||rec.id});
+        }
+      }
+      await api.render?.();
+    }catch(e){console.warn("audio metadata migration",e);}
+  }
+
+  function chunkAcademicText(text,size=1200){
+    const clean=String(text||"").replace(/\s+/g," ").trim();
+    if(!clean)return [];
+    const sentences=clean.split(/(?<=[.!?])\s+/).filter(Boolean);
+    const chunks=[];
+    let current="";
+    for(const sentence of sentences){
+      if(!current){current=sentence;continue;}
+      if((current+" "+sentence).length<=size)current+=" "+sentence;
+      else{chunks.push(current);current=sentence;}
+    }
+    if(current)chunks.push(current);
+    return chunks.length?chunks:[clean.slice(0,size)];
+  }
+  async function textFromAcademicFile(file){
+    const name=String(file.name||"").toLowerCase();
+    if(name.endsWith(".pdf")||file.type==="application/pdf"){
+      const pdfjs=await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs");
+      const pdf=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
+      const pages=[];
+      for(let p=1;p<=pdf.numPages;p++){
+        const page=await pdf.getPage(p);
+        const content=await page.getTextContent();
+        pages.push(content.items.map(x=>x.str||"").join(" "));
+      }
+      return pages.join("\n");
+    }
+    return await file.text();
+  }
+  function renderAcademicMaterials(){
+    const root=document.querySelector("#academicFilesList");
+    if(!root)return;
+    const mats=state.academicMaterials||[];
+    if(!mats.length){
+      root.innerHTML='<p class="muted">Todavía no cargaste material.</p>';
+      return;
+    }
+    const grouped=new Map();
+    mats.forEach(m=>{
+      const subject=m.subject||"Sin materia";
+      const topic=m.topic||"Material general";
+      if(!grouped.has(subject))grouped.set(subject,new Map());
+      const topics=grouped.get(subject);
+      if(!topics.has(topic))topics.set(topic,[]);
+      topics.get(topic).push(m);
+    });
+    root.innerHTML=[...grouped.entries()].map(([subject,topics])=>
+      '<div class="academic-subject-group"><strong>'+esc(subject)+'</strong>'+
+      [...topics.entries()].map(([topic,items])=>
+        '<div class="academic-topic-group"><span class="academic-topic-title">'+esc(topic)+'</span>'+
+        items.map(m=>
+          '<div class="academic-file-row">'+
+            '<span>📄 '+esc(m.name)+'</span>'+
+            '<button type="button" class="ghost delete-academic-file" data-id="'+esc(m.id)+'">Borrar</button>'+
+          '</div>'
+        ).join("")+
+        '</div>'
+      ).join("")+
+      '</div>'
+    ).join("");
+
+    root.querySelectorAll(".delete-academic-file").forEach(btn=>btn.addEventListener("click",()=>{
+      state.academicMaterials=state.academicMaterials.filter(m=>m.id!==btn.dataset.id);
+      save("robotito.academicMaterials.v1",state.academicMaterials);
+      renderAcademicMaterials();
+    }));
+  }
+  async function importAcademicFiles(files){
+    if(!files?.length)return;
+    const subject=(document.querySelector("#classSubject")?.value||state.classSubject||"Material").trim()||"Material";
+    const topic=(document.querySelector("#classTopic")?.value||state.classTopic||"").trim();
+    const root=document.querySelector("#academicFilesList");
+    if(root)root.innerHTML='<p class="muted">Procesando material…</p>';
+
+    for(const file of files){
+      try{
+        const text=await textFromAcademicFile(file);
+        const chunks=chunkAcademicText(text);
+        state.academicMaterials.push({
+          id:crypto.randomUUID?.()||("material-"+Date.now()+"-"+Math.random().toString(16).slice(2)),
+          name:file.name,
+          type:file.type||"",
+          size:file.size||0,
+          subject,
+          topic,
+          chunks,
+          at:Date.now()
+        });
+      }catch(e){
+        console.warn("academic file",file.name,e);
+        if(typeof toast==="function")toast("No pude leer "+file.name+".");
+      }
+    }
+    state.academicMaterials=state.academicMaterials.slice(-80);
+    save("robotito.academicMaterials.v1",state.academicMaterials);
+    renderAcademicMaterials();
+  }
+
   window.ROBOTITO_CLASS_ORGANIZER={
     migrate,render,inferTopic,finalizeSession,generateAndSaveClassSummary,
-    sessionsFromLines,selectSession,currentSessionLines,parseLegacyLabel
+    sessionsFromLines,selectSession,currentSessionLines,parseLegacyLabel,
+    migrateAudioRecordings,renderAcademicMaterials,importAcademicFiles
   };
   window.generateAndSaveClassSummary=generateAndSaveClassSummary;
+  window.renderAcademicMaterials=renderAcademicMaterials;
+  window.importAcademicFiles=importAcademicFiles;
 
   document.addEventListener("DOMContentLoaded",()=>{
     try{migrate();}catch(e){console.warn("class migration",e);}
     render();
+    renderAcademicMaterials();
+    migrateAudioRecordings();
   });
 })();
