@@ -86,6 +86,11 @@
       .replace(/\bquanto (?:e|da)\b|\bcalcula\b/g," ")
       .replace(/\s+/g," ").trim();
 
+    s=s
+      .replace(/\bpor ciento\b/g," % ")
+      .replace(/\bpor cento\b/g," % ")
+      .replace(/\bpercent\b/g," % ");
+
     s=replaceNumberWords(s,lang);
 
     // Decimal speech after word-number conversion.
@@ -168,6 +173,23 @@
     }
 
     // Roots.
+    m=s.match(/(?:raiz\s+)?(cuarta|quarta|quinta|sexta|septima|setima|octava|oitava)\s+raiz\s+(?:de|of)?\s*(-?\d+(?:\.\d+)?)/);
+    if(m){
+      const indexes={cuarta:4,quarta:4,quinta:5,sexta:6,septima:7,setima:7,octava:8,oitava:8};
+      const n=indexes[m[1]],a=Number(m[2]);
+      if(a<0&&n%2===0)return {error:lang==="en"?"That even root has no real result.":lang==="pt"?"Essa raiz de índice par não tem resultado real.":"Esa raíz de índice par no tiene resultado real."};
+      const value=a<0?-Math.pow(-a,1/n):Math.pow(a,1/n);
+      return {kind:"root",a,n,value,text:resultText("root",{a,n,value},lang)};
+    }
+    m=s.match(/(?:raiz|root)\s+(?:cuarta|quarta|quinta|sexta|septima|setima|octava|oitava)\s+(?:de|of)?\s*(-?\d+(?:\.\d+)?)/);
+    if(m){
+      const word=(s.match(/(?:raiz|root)\s+(cuarta|quarta|quinta|sexta|septima|setima|octava|oitava)/)||[])[1];
+      const indexes={cuarta:4,quarta:4,quinta:5,sexta:6,septima:7,setima:7,octava:8,oitava:8};
+      const n=indexes[word],a=Number(m[1]);
+      if(a<0&&n%2===0)return {error:lang==="en"?"That even root has no real result.":lang==="pt"?"Essa raiz de índice par não tem resultado real.":"Esa raíz de índice par no tiene resultado real."};
+      const value=a<0?-Math.pow(-a,1/n):Math.pow(a,1/n);
+      return {kind:"root",a,n,value,text:resultText("root",{a,n,value},lang)};
+    }
     m=s.match(/(?:raiz|root)\s+(?:cuadrada|quadrada|square)?\s*(?:de|of)?\s*(-?\d+(?:\.\d+)?)/);
     if(m && /(?:raiz|root)/.test(s) && !/(?:cubica|cubica|cube|indice|index)/.test(s)){
       const a=Number(m[1]);
@@ -190,6 +212,16 @@
     }
 
     // Natural powers.
+    m=s.match(/(?:el\s+)?(?:cuadrado|square)\s+(?:de|of)\s+(-?\d+(?:\.\d+)?)/);
+    if(m){const a=Number(m[1]),b=2,value=a*a;return {kind:"power",a,b,value,text:resultText("power",{a,b,value},lang)};}
+    m=s.match(/(?:el\s+)?(?:cubo|cube)\s+(?:de|of)\s+(-?\d+(?:\.\d+)?)/);
+    if(m){const a=Number(m[1]),b=3,value=a*a*a;return {kind:"power",a,b,value,text:resultText("power",{a,b,value},lang)};}
+    m=s.match(/(-?\d+(?:\.\d+)?)\s+(?:a la|a|elevado a la)\s+(cuarta|quinta|sexta|septima|octava)/);
+    if(m){
+      const powers={cuarta:4,quinta:5,sexta:6,septima:7,octava:8};
+      const a=Number(m[1]),b=powers[m[2]],value=Math.pow(a,b);
+      return {kind:"power",a,b,value,text:resultText("power",{a,b,value},lang)};
+    }
     m=s.match(/(-?\d+(?:\.\d+)?)\s+(?:al cuadrado|squared|ao quadrado)/);
     if(m){const a=Number(m[1]),b=2,value=a*a;return {kind:"power",a,b,value,text:resultText("power",{a,b,value},lang)};}
     m=s.match(/(-?\d+(?:\.\d+)?)\s+(?:al cubo|cubed|ao cubo)/);
