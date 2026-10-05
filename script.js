@@ -1933,7 +1933,7 @@ async function answerWhatLearnedToday(){
   say(answer.slice(0,320),5600);
 }
 
-async async function handleSpeech(rawText){
+async function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentVoicePerson||state.currentPerson;
 
