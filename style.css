@@ -344,3 +344,106 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
   .hud-pill{font-size:10px;padding:6px 8px}
   .quick-actions{left:10px;right:10px}
 }
+
+
+/* v6 — extra cute room, grounded shadow, real sleep */
+.world{
+  background:
+    radial-gradient(circle at 50% 15%,rgba(255,255,255,.98),rgba(255,255,255,0) 30%),
+    radial-gradient(circle at 18% 32%,rgba(255,222,236,.26),transparent 28%),
+    radial-gradient(circle at 82% 35%,rgba(205,240,232,.32),transparent 30%),
+    linear-gradient(180deg,#fffaff 0 69%,#eee5db 69% 100%);
+}
+.ground-shadow{
+  position:absolute;
+  left:50%;
+  bottom:72px;
+  width:162px;
+  height:25px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:radial-gradient(ellipse,rgba(72,55,73,.20),rgba(72,55,73,.06) 55%,transparent 72%);
+  filter:blur(4px);
+  z-index:3;
+  transition:left .42s cubic-bezier(.2,.8,.2,1),width .35s,opacity .35s;
+  pointer-events:none;
+}
+.svg-shadow,.panda-shadow{display:none!important}
+
+.bamboo{width:86px;height:292px;bottom:88px;opacity:.96;filter:drop-shadow(0 8px 10px rgba(62,102,62,.08))}
+.bamboo:before,.bamboo:after{
+  height:272px;
+  width:19px;
+  border-radius:12px;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 46px,rgba(55,115,66,.28) 47px 51px,transparent 52px 57px),
+    linear-gradient(90deg,#5e9d6b 0%,#b6d99a 46%,#76ae78 68%,#4d8b60 100%);
+  box-shadow:inset 3px 0 rgba(255,255,255,.18),inset -3px 0 rgba(48,101,58,.14);
+}
+.bamboo:before{left:17px;transform:rotate(-4deg)}
+.bamboo:after{right:15px;transform:rotate(5deg)}
+.bamboo i{
+  position:absolute;
+  width:54px;height:27px;
+  background:linear-gradient(135deg,#9fd395,#5ca66e);
+  border-radius:90% 6% 90% 8%;
+  transform-origin:5px 50%;
+  box-shadow:inset 4px 3px rgba(255,255,255,.12),0 4px 6px rgba(66,105,69,.08);
+}
+.bamboo i:nth-child(1){top:28px;left:31px;transform:rotate(21deg)}
+.bamboo i:nth-child(2){top:75px;left:-4px;transform:scaleX(-1) rotate(16deg)}
+.bamboo i:nth-child(3){top:118px;left:36px;transform:rotate(31deg)}
+.bamboo i:nth-child(4){top:164px;left:-10px;transform:scaleX(-1) rotate(24deg)}
+.bamboo i:nth-child(5){top:202px;left:34px;transform:rotate(18deg)}
+.bamboo i:nth-child(6){top:235px;left:-3px;transform:scaleX(-1) rotate(31deg)}
+
+.panda-svg{filter:drop-shadow(0 7px 9px rgba(75,58,76,.07))}
+.head-shape{fill:#fffefe}
+.belly-shape{fill:#fffafd}
+.cheek{fill:#f7b2c7;opacity:.65}
+.eye-white-svg{fill:#fff;filter:drop-shadow(0 1px 1px rgba(58,42,60,.10))}
+.iris-svg{fill:#49404f}
+.pupil-svg{fill:#0f0d11}
+.eye-spark{fill:#fff;filter:drop-shadow(0 0 2px rgba(255,255,255,.9))}
+.ear-svg{filter:drop-shadow(0 2px 2px rgba(0,0,0,.06))}
+.panda-whole{animation:cuteBreathing 3.8s ease-in-out infinite}
+.head-group{transform-origin:50% 65%}
+@keyframes cuteBreathing{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-2px) scale(1.008)}
+}
+.robotito:hover .head-group{animation:curiousTilt .8s ease-in-out}
+@keyframes curiousTilt{50%{transform:rotate(-2.4deg) translateY(-2px)}}
+
+.robotito.sleeping .eye-white-svg,
+.robotito.sleeping .iris{opacity:0!important}
+.robotito.sleeping .blink-line{opacity:1!important;stroke-width:4}
+.robotito.sleeping .cheek{opacity:.52}
+.robotito.sleeping .head-group{transform:translateY(5px) rotate(2deg)}
+.robotito.sleeping .panda-whole{animation:sleepBreathing 2.8s ease-in-out infinite}
+@keyframes sleepBreathing{
+  0%,100%{transform:translateY(2px) scale(1)}
+  50%{transform:translateY(5px) scale(1.012)}
+}
+
+.object-showcase{
+  position:absolute;inset:0;z-index:14;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+  background:radial-gradient(circle,rgba(255,255,255,.72),rgba(255,255,255,0) 60%);
+}
+.object-showcase-card{
+  min-width:210px;max-width:310px;
+  padding:22px;text-align:center;
+  border:1px solid var(--line);
+  border-radius:26px;
+  background:rgba(255,255,255,.94);
+  box-shadow:0 18px 45px rgba(83,61,86,.14);
+  animation:objectPop .34s cubic-bezier(.2,1.4,.3,1);
+}
+.object-show-emoji{font-size:84px;line-height:1.05;filter:drop-shadow(0 7px 7px rgba(65,45,67,.10))}
+.object-showcase-card strong{display:block;font-size:20px;margin-top:8px}
+.object-showcase-card span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
+@keyframes objectPop{from{opacity:0;transform:scale(.7) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+.person-row .bond-detail{font-size:10px;color:var(--muted);margin-top:4px}
