@@ -25,6 +25,7 @@ const state = {
   audioKind: "silencio",
   musicConfidence: 0,
   sleeping: false,
+  nightSleep: false,
   recognition: null,
   speaking: false,
   speechBlocked: false,
@@ -268,20 +269,47 @@ function spectralFlatness(values){
   return Math.exp(logSum/count)/(linearSum/count);
 }
 
-function makeVoicePrint(freq){
-  const start=4,end=Math.min(244,freq.length),bands=16;
+function estimatePitch(time,sampleRate){
+  const samples=Array.from(time,v=>(v-128)/128);
+  let rms=0; for(const x of samples)rms+=x*x; rms=Math.sqrt(rms/samples.length);
+  if(rms<.035)return 0;
+  const minLag=Math.max(2,Math.floor(sampleRate/360));
+  const maxLag=Math.min(Math.floor(sampleRate/75),Math.floor(samples.length*.48));
+  let bestLag=0,best=-1;
+  for(let lag=minLag;lag<=maxLag;lag+=2){
+    let sum=0,n=0;
+    for(let i=0;i<samples.length-lag;i+=2){sum+=samples[i]*samples[i+lag];n++;}
+    const score=sum/Math.max(1,n);
+    if(score>best){best=score;bestLag=lag;}
+  }
+  return best>.03&&bestLag?sampleRate/bestLag:0;
+}
+function zeroCrossingRate(time){
+  let z=0;
+  for(let i=1;i<time.length;i++){
+    const a=time[i-1]-128,b=time[i]-128;
+    if((a<0&&b>=0)||(a>=0&&b<0))z++;
+  }
+  return z/Math.max(1,time.length-1);
+}
+function makeVoicePrint(freq,time,sampleRate){
+  const start=4,end=Math.min(260,freq.length),bands=18;
   const step=Math.max(1,Math.floor((end-start)/bands));
-  const values=[];
+  const spectrum=[];
   for(let b=0;b<bands;b++){
     const a=start+b*step,z=b===bands-1?end:Math.min(end,a+step);
     let sum=0,n=0;
     for(let i=a;i<z;i++){sum+=freq[i];n++;}
-    values.push(Math.log1p(sum/Math.max(1,n)));
+    spectrum.push(Math.log1p(sum/Math.max(1,n)));
   }
-  const mean=values.reduce((a,b)=>a+b,0)/values.length;
-  const centered=values.map(v=>v-mean);
-  const norm=Math.sqrt(centered.reduce((s,v)=>s+v*v,0))||1;
-  return centered.map(v=>v/norm);
+  const mean=spectrum.reduce((a,b)=>a+b,0)/spectrum.length;
+  let features=spectrum.map(v=>v-mean);
+  const pitch=estimatePitch(time,sampleRate);
+  const pitchFeature=pitch?clamp((Math.log2(pitch)-Math.log2(75))/(Math.log2(360)-Math.log2(75))*2-1,-1,1):0;
+  const zcrFeature=clamp((zeroCrossingRate(time)-.08)*5,-1,1);
+  features.push(pitchFeature*.9,zcrFeature*.55);
+  const norm=Math.sqrt(features.reduce((s,v)=>s+v*v,0))||1;
+  return features.map(v=>v/norm);
 }
 function averageVoiceVectors(vectors){
   if(!vectors?.length)return null;
@@ -305,13 +333,19 @@ function recentVoicePrint(ms=2600){
 }
 function recognizeVoicePerson(print){
   if(!print)return null;
-  let best=null,bestScore=.72;
+  const scores=[];
   for(const p of state.people){
+    let personBest=-1;
     for(const vp of (p.voicePrints||[])){
       const score=cosineSimilarity(print,vp);
-      if(score>bestScore){bestScore=score;best={name:p.name,role:p.role||"other",score};}
+      if(score>personBest)personBest=score;
     }
+    if(personBest>-1)scores.push({name:p.name,role:p.role||"other",score:personBest});
   }
+  scores.sort((a,b)=>b.score-a.score);
+  const best=scores[0],second=scores[1];
+  if(!best||best.score<.80)return null;
+  if(second && best.score-second.score<.035)return null;
   return best;
 }
 
@@ -350,7 +384,7 @@ function setupAudio(stream){
       state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
       const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
       if(rms>.045 && Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
-        state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq),rms});
+        state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
         state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<7000);
       }
 
@@ -623,6 +657,79 @@ function answerEasyQuestion(rawText){
     [["que"],["sos","eres","animal"]]
   )){
     say("Soy Robotito, un panda virtual.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantas personas ves","cuanta gente ves","hay alguien","cuantos hay enfrente","cuantos estamos"],
+    [["persona","personas","gente"],["ves","hay","cuantas","cuantos"]]
+  )){
+    const n=state.lastDetections.length;
+    if(!n)say("Ahora mismo no veo a nadie.");
+    else say(`Veo ${n} ${n===1?"persona":"personas"}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantas manos ves","cuantas manos hay","ves mis manos","cuantas manos te muestro"],
+    [["mano","manos"],["ves","hay","cuantas","muestro"]]
+  )){
+    if(!state.visibleHands)say("Ahora mismo no veo ninguna mano.");
+    else say(`Veo ${state.visibleHands} ${state.visibleHands===1?"mano":"manos"}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que libro me recomendaste","cual era el libro que me recomendaste","recordame el libro recomendado","que libro dijiste"],
+    [["libro"],["recomendaste","recomendado","dijiste","recordame"]]
+  )){
+    const last=load(KEYS.lastBook,null);
+    say(last?`El último libro que te recomendé fue “${last.title}”.`:"Todavía no tengo una recomendación guardada.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que personas conoces","a quienes conoces","quien esta registrado","a quien reconoces"],
+    [["conoces","registrado","reconoces"],["quien","quienes","personas"]]
+  )){
+    const names=state.people.map(p=>p.name);
+    say(names.length?`Tengo registradas a ${names.join(", ")}.`:"Todavía no tengo personas registradas.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuando cumplo anos","cuando es mi cumpleanos","cuando es mi cumple","sabes mi cumpleanos","sabes cuando cumplo"],
+    [["cumplo","cumpleanos","cumple"],["cuando","sabes"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(p?.birthday)say(`Tu cumpleaños es el ${formatBirthday(p.birthday)}.`);
+    else say("No tengo tu cumpleaños registrado.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["tenes frio","tienes frio","tenes calor","tienes calor"],
+    [["frio","calor"],["tenes","tienes"]]
+  )){
+    say("No siento temperatura como una persona. Pero puedo hacerte compañía.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["sos real","eres real","estas vivo","estas viva","sos un robot","eres un robot"],
+    [["real","vivo","robot"],["sos","eres","estas"]]
+  )){
+    say("Soy una mascota virtual. No estoy vivo como una persona, pero puedo verte, escucharte, recordar cosas y reaccionar.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["te gusta leer","te gustan los libros","te gusta la musica","te gusta estudiar"],
+    [["gusta","gustan"],["leer","libros","musica","estudiar"]]
+  )){
+    if(text.includes("libro")||text.includes("leer"))say("Sí. Especialmente porque puedo ayudarte a elegir qué leer.");
+    else if(text.includes("musica"))say("Sí. Si detecto música, hasta intento bailar.");
+    else say("Me gusta aprender cosas con vos, sobre todo cuando después puedo ayudarte a estudiarlas.");
     return true;
   }
 
@@ -1133,6 +1240,7 @@ async function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentPerson;
 
+  if(handleSocialSpeech(text)) return;
   if(answerEasyQuestion(rawText)) return;
 
   if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
@@ -1225,8 +1333,66 @@ function buildMatcher(){
   state.faceMatcher=labeled.length?new faceapi.FaceMatcher(labeled,.52):null;
 }
 
+function dayPartGreeting(){
+  const h=new Date().getHours();
+  if(h>=6&&h<13)return "Buenos días";
+  if(h>=13&&h<20)return "Buenas tardes";
+  return "Buenas noches";
+}
+function wakeFromNight(){
+  state.nightSleep=false;
+  state.sleeping=false;
+  robot.classList.remove("sleeping");
+  setMood("calm","Robotito está despierto otra vez.");
+}
+function sleepForNight(){
+  state.nightSleep=true;
+  state.sleeping=true;
+  robot.classList.add("sleeping");
+  setMood("sleepy","Robotito se fue a dormir porque le dijeron buenas noches.");
+}
+function handleSocialSpeech(text){
+  const known=state.currentVoicePerson||state.currentPerson;
+  const name=known?", "+known:"";
+
+  if(/\b(buenos dias|buen dia)\b/.test(text)){
+    wakeFromNight();
+    say("Buenos días"+name+".");
+    return true;
+  }
+  if(/\b(buenas tardes|buena tarde)\b/.test(text)){
+    wakeFromNight();
+    say("Buenas tardes"+name+".");
+    return true;
+  }
+  if(/\b(buenas noches|buena noche)\b/.test(text)){
+    say(sample(["Buenas noches"+name+". Que descanses.","Buenas noches"+name+". Me voy a dormir.","Que descanses"+name+". Buenas noches."]));
+    setTimeout(sleepForNight,700);
+    return true;
+  }
+  if(/\b(chau|chao|adios|hasta luego|nos vemos|me voy|hasta manana|hasta mañana|bye)\b/.test(text)){
+    say(sample(["Chau"+name+".","Nos vemos"+name+".","Hasta luego"+name+".","Que te vaya bien"+name+"."]));
+    return true;
+  }
+  if(/\b(hola|holi|buenas|hey|ey)\b/.test(text)){
+    wakeFromNight();
+    say(dayPartGreeting()+name+".");
+    return true;
+  }
+  if(/\b(gracias|muchas gracias|te agradezco)\b/.test(text)){
+    say(sample(["De nada.","No hay problema.","Para eso estoy.","Cuando quieras."]));
+    return true;
+  }
+  if(/\b(perdon|perdona|disculpa|lo siento)\b/.test(text)){
+    say(sample(["Está bien.","Todo bien.","Acepto la disculpa."]));
+    return true;
+  }
+  return false;
+}
+
 function greetingFor(p){
   const rel=p.relationship??50;
+  const timed=dayPartGreeting()+", "+p.name+".";
   let choices;
 
   if(rel>=75){
@@ -1236,7 +1402,8 @@ function greetingFor(p){
       `¡${p.name}! *mini saltito feliz*`,
       `Holaaa, ${p.name} 🐼♡`,
       `Ah, sos vos. Eso me pone de buen humor.`,
-      `¡Volviste, ${p.name}! Me alegra verte.`
+      `¡Volviste, ${p.name}! Me alegra verte.`,
+      timed
     ];
   }else if(rel>=50){
     choices=[
@@ -1245,14 +1412,16 @@ function greetingFor(p){
       `Ey, ${p.name}. Volviste.`,
       `Hola de nuevo, ${p.name}.`,
       `Mmm… esa cara la conozco. Hola, ${p.name}.`,
-      `¿Qué tal, ${p.name}?`
+      `¿Qué tal, ${p.name}?`,
+      timed
     ];
   }else{
     choices=[
       `Ah… hola, ${p.name}.`,
       `Te vi, ${p.name}. Estoy observando 👀`,
       `Hola. Todavía me acuerdo de vos.`,
-      `Mmm, ${p.name}… veremos cómo te portás hoy.`
+      `Mmm, ${p.name}… veremos cómo te portás hoy.`,
+      timed
     ];
   }
 
@@ -1383,11 +1552,19 @@ function formatBirthday(iso){
 }
 async function captureEnrollmentVoice(){
   const start=Date.now();
-  $("#enrollStatus").textContent="Ahora hablá durante unos segundos para que aprenda tu voz…";
-  say("Ahora decí una frase durante unos segundos para que aprenda tu voz.",4200);
-  await new Promise(r=>setTimeout(r,3800));
+  $("#enrollStatus").textContent="Ahora hablá durante unos segundos. Mejor si decís dos o tres frases naturales…";
+  say("Ahora hablá unos segundos. Decí dos o tres frases naturales para que aprenda mejor tu voz.",5200);
+  await new Promise(r=>setTimeout(r,5600));
   const vectors=state.recentVoicePrints.filter(x=>x.t>=start&&x.rms>.045).map(x=>x.vector);
-  return vectors.length>=5?averageVoiceVectors(vectors):null;
+  if(vectors.length<10)return null;
+  // Divide the recording in several averaged examples instead of one single voice sample.
+  const groups=[];
+  const size=Math.max(3,Math.floor(vectors.length/3));
+  for(let i=0;i<vectors.length;i+=size){
+    const avg=averageVoiceVectors(vectors.slice(i,i+size));
+    if(avg)groups.push(avg);
+  }
+  return groups.slice(0,4);
 }
 
 async function enrollPerson(){
@@ -1413,21 +1590,21 @@ async function enrollPerson(){
     return;
   }
 
-  const voicePrint=await captureEnrollmentVoice();
+  const voicePrints=await captureEnrollmentVoice();
   const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
   if(existing){
     existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-10);
     existing.birthday=birthday||existing.birthday;
     existing.role=role;
-    if(voicePrint)existing.voicePrints=[...(existing.voicePrints||[]),voicePrint].slice(-5);
+    if(voicePrints?.length)existing.voicePrints=[...(existing.voicePrints||[]),...voicePrints].slice(-8);
   }else{
-    state.people.push({name,birthday,role,descriptors:samples,voicePrints:voicePrint?[voicePrint]:[],relationship:50,createdAt:Date.now()});
+    state.people.push({name,birthday,role,descriptors:samples,voicePrints:voicePrints||[],relationship:50,createdAt:Date.now()});
   }
 
   save(KEYS.people,state.people);
   buildMatcher();
   renderPeople();
-  $("#enrollStatus").textContent=voicePrint?`Listo: ahora recuerdo la cara y la voz de ${name}.`:`Guardé la cara de ${name}, pero no escuché suficiente voz. Podés volver a registrarlo hablando más fuerte.`;
+  $("#enrollStatus").textContent=voicePrints?.length?`Listo: ahora recuerdo la cara y la voz de ${name}.`:`Guardé la cara de ${name}, pero no escuché suficiente voz. Podés volver a registrarlo hablando más fuerte.`;
   say(sample([
     `Ya sé quién sos, ${name} 🐼`,
     `Listo, ${name}. Esa cara queda guardada.`,
@@ -1529,6 +1706,12 @@ function hungerTick(){
 }
 
 function inactivityTick(){
+  if(state.nightSleep){
+    state.sleeping=true;
+    robot.classList.add("sleeping");
+    setMood("sleepy","Robotito está durmiendo.");
+    return;
+  }
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
 
   if(state.classMode){
@@ -1758,6 +1941,7 @@ function bindUI(){
     }
   });
 
+  $("#goodreadsHelpBtn")?.addEventListener("click",()=>$("#goodreadsHelp")?.classList.toggle("hidden"));
   $("#goodreadsFile").addEventListener("change",e=>{
     if(e.target.files[0])importGoodreads(e.target.files[0]);
   });
