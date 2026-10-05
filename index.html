@@ -18,6 +18,7 @@
   <script defer src="physics-momentum.js"></script>
   <script defer src="speech-fallback.js"></script>
   <script defer src="class-audio.js"></script>
+  <script defer src="class-organizer.js"></script>
   <script defer src="class-verification.js"></script>
   <script defer src="script.js"></script>
 </head>
@@ -261,9 +262,13 @@
             <span id="classBadge" class="status-badge">apagado</span>
           </div>
 
-          <label>Materia / tema
-            <input id="classSubject" type="text" placeholder="Ej. Biología — vacunas" />
+          <label>Materia
+            <input id="classSubject" type="text" placeholder="Ej. Física" />
           </label>
+          <label>Tema de esta clase
+            <input id="classTopic" type="text" placeholder="Ej. Impulso y cantidad de movimiento" />
+          </label>
+          <p class="muted">Si dejás el tema vacío, Robotito intenta identificarlo al terminar la clase usando la transcripción.</p>
 
           <div class="button-grid two">
             <button id="startClassBtn" type="button" class="primary">▶ Empezar clase</button>
@@ -283,6 +288,18 @@
           <div class="live-class-box">
             <div class="section-head"><h3>Transcripción en vivo</h3><span id="classDuration">00:00</span></div>
             <div id="classTranscript" class="class-transcript"><p class="muted">Todavía no empezó ninguna clase.</p></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2>Clases guardadas</h2>
+              <p class="muted">Organizadas primero por materia y después por tema.</p>
+            </div>
+          </div>
+          <div id="classLibrary" class="class-library">
+            <p class="muted">Todavía no hay clases organizadas.</p>
           </div>
         </div>
 
