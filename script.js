@@ -1498,6 +1498,12 @@ function answerEnglishPersonalQuestion(rawText){
     return true;
   }
   if(/(are you hungry|do you want to eat|how hungry are you)/.test(text)){say(state.hunger>=95?"Yes. I'm extremely hungry.":state.hunger>=75?"Yes, I'm quite hungry.":state.hunger>=35?"A little, but I'm fine.":"Not really. I'm pretty full.");return true;}
+  if(/(how much battery|battery level|how much energy|are you charging)/.test(text)){
+    const detail=state.batterySupported
+      ?`The device battery is at ${Math.round(state.energy)}%${state.batteryCharging?" and it is charging":""}.`
+      :`My estimated energy is ${Math.round(state.energy)}%. This browser does not let me read the device battery.`;
+    say(detail);return true;
+  }
   if(/(are you sleepy|are you tired|do you want to sleep)/.test(text)){say(state.sleeping?"Yes. I'm basically asleep.":state.energy<40?"Yes, I'm tired.":"Not really. I still have energy.");return true;}
   if(/(what time is it|tell me the time|do you know the time)/.test(text)){say("It's "+new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})+".");return true;}
   if(/(what day is it|what is the date|what's the date|tell me the date)/.test(text)){say("Today is "+new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"})+".");return true;}
@@ -1766,6 +1772,12 @@ function answerPortuguesePersonalQuestion(rawText){
     sayInLanguage(msg,"pt");return true;
   }
   if(/(esta com fome|está com fome|tem fome|quer comer)/.test(text)){sayInLanguage(state.hunger>=75?"Sim, estou com bastante fome.":state.hunger>=35?"Um pouco, mas estou bem.":"Não muito. Estou bem satisfeito.","pt");return true;}
+  if(/(quanta bateria|nivel da bateria|nível da bateria|quanta energia|esta carregando|está carregando)/.test(text)){
+    const detalhe=state.batterySupported
+      ?`A bateria do dispositivo está em ${Math.round(state.energy)}%${state.batteryCharging?" e está carregando":""}.`
+      :`Minha energia estimada está em ${Math.round(state.energy)}%. Este navegador não permite ler a bateria do dispositivo.`;
+    sayInLanguage(detalhe,"pt");return true;
+  }
   if(/(esta com sono|está com sono|esta cansado|está cansado|quer dormir)/.test(text)){sayInLanguage(state.sleeping?"Sim. Eu praticamente já estava dormindo.":state.energy<40?"Sim, estou cansado.":"Não muito. Ainda tenho energia.","pt");return true;}
   if(/(que horas sao|que horas são|me diga as horas)/.test(text)){sayInLanguage("São "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+".","pt");return true;}
   if(/(que dia e hoje|que dia é hoje|qual e a data|qual é a data)/.test(text)){sayInLanguage("Hoje é "+new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+".","pt");return true;}
@@ -1814,6 +1826,17 @@ function answerEasyQuestion(rawText){
     else if(state.hunger>=75)say("Sí, tengo bastante hambre.");
     else if(state.hunger>=35)say("Un poco. Todavía aguanto.");
     else say("No mucho. Estoy bastante lleno.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuanta bateria tenes","cuanta bateria tienes","que porcentaje de bateria tenes","que porcentaje de bateria tienes","cuanta energia tenes","cuanta energia tienes","estas cargando","se esta cargando la bateria"],
+    [["bateria","energia","cargando"],["cuanta","porcentaje","tenes","tienes","estas"]]
+  )){
+    const detail=state.batterySupported
+      ?`La batería del dispositivo está en ${Math.round(state.energy)}%${state.batteryCharging?" y se está cargando":""}.`
+      :`Mi energía estimada está en ${Math.round(state.energy)}%. Este navegador no me permite leer la batería del dispositivo.`;
+    say(detail);
     return true;
   }
 
