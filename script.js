@@ -908,11 +908,96 @@ function autoRemember(text){
   renderMemories();
 }
 
+const INTENT_ALIASES=[
+  ["nombre","llamas","llamo","llama","llamar","name"],
+  ["tu","te","tuyo","your","you"],
+  ["mi","me","mio","mía","my","i"],
+  ["sentir","sentis","sientes","sentís","animo","ánimo","humor","mood","feel"],
+  ["hambre","hambriento","comer","comida","hungry","eat"],
+  ["sueno","sueño","cansado","cansancio","dormido","dormir","sleepy","tired","sleep"],
+  ["ver","ves","viendo","miras","mirando","veo","see","seeing"],
+  ["escuchar","escuchas","ois","oís","oyes","oyendo","hear","hearing","listen"],
+  ["hablar","habla","hablando","voz","voice","speaking","talking"],
+  ["recordar","recordas","recordás","recuerdas","acordas","acordás","acuerdas","remember"],
+  ["tarea","tareas","pendiente","pendientes","deberes","homework","task","tasks"],
+  ["ayudar","ayuda","servir","servis","sirves","funcion","funciones","hacer","abilities","help"],
+  ["hora","time"],
+  ["fecha","date"],
+  ["dedo","dedos","finger","fingers"],
+  ["mano","manos","hand","hands"],
+  ["persona","personas","gente","people","person"],
+  ["noche","night","nighttime"],
+  ["dia","día","day","daytime"]
+];
+const INTENT_ALIAS_MAP=new Map();
+INTENT_ALIASES.forEach((group,i)=>group.forEach(w=>INTENT_ALIAS_MAP.set(normalizeText(w),"i"+i)));
+const INTENT_FILLERS=new Set([
+  "que","cual","cuales","como","por","para","de","del","el","la","los","las","un","una","es","son",
+  "che","oye","ey","robotito","osito","porfavor","favor","please","what","which","how","is","are","the","a","an","of",
+  "can","could","would","tell"
+]);
+function canonicalIntentWord(word){
+  let w=normalizeText(word);
+  if(!w)return "";
+  if(INTENT_ALIAS_MAP.has(w))return INTENT_ALIAS_MAP.get(w);
+  if(w.length>6)w=w.replace(/(?:mente|ciones|cion|ando|iendo|ados|adas|idos|idas)$/,"");
+  if(w.length>4)w=w.replace(/(?:es|os|as)$/,"");
+  return INTENT_ALIAS_MAP.get(w)||w;
+}
+function canonicalIntentText(text){
+  return normalizeText(text)
+    .replace(/\b(?:me podes decir|me puedes decir|podrias decirme|podrías decirme|me dirias|me dirías|quiero saber|quisiera saber|me gustaria saber|me gustaría saber|decime por favor|dime por favor)\b/g," ")
+    .replace(/\b(?:shamas|yamas|chamas|jamas)\b/g,"llamas")
+    .replace(/\b(?:ase|hase)\b/g,"hace")
+    .replace(/\s+/g," ").trim();
+}
+function intentTokens(text){
+  return canonicalIntentText(text).split(/\s+/)
+    .filter(Boolean)
+    .filter(w=>!INTENT_FILLERS.has(w))
+    .map(canonicalIntentWord)
+    .filter(Boolean);
+}
+function oneEditApart(a,b){
+  if(a===b)return true;
+  if(a.length<5||b.length<5||Math.abs(a.length-b.length)>1)return false;
+  let i=0,j=0,diff=0;
+  while(i<a.length&&j<b.length){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++diff>1)return false;
+    if(a.length>b.length)i++;
+    else if(b.length>a.length)j++;
+    else{i++;j++;}
+  }
+  return diff+(i<a.length||j<b.length?1:0)<=1;
+}
+function intentPhraseScore(text,phrase){
+  const q=intentTokens(text),p=intentTokens(phrase);
+  if(!p.length||!q.length)return 0;
+  const used=new Set();
+  let hits=0;
+  for(const pw of p){
+    let found=-1;
+    for(let i=0;i<q.length;i++){
+      if(used.has(i))continue;
+      if(q[i]===pw||oneEditApart(q[i],pw)){found=i;break;}
+    }
+    if(found>=0){used.add(found);hits++;}
+  }
+  const coverage=hits/p.length;
+  const precision=hits/Math.max(q.length,p.length);
+  return coverage*.8+precision*.2;
+}
 function phraseOrTokenMatch(text,term){
-  const t=normalizeText(text), q=normalizeText(term);
+  const t=canonicalIntentText(text),q=canonicalIntentText(term);
   if(!q)return false;
-  if(q.includes(" "))return t.includes(q);
-  return new Set(t.split(/\s+/)).has(q);
+  if(t.includes(q))return true;
+  const tokens=intentTokens(term);
+  if(tokens.length===1){
+    const queryTokens=intentTokens(text);
+    return queryTokens.some(x=>x===tokens[0]||oneEditApart(x,tokens[0]));
+  }
+  return intentPhraseScore(text,term)>=.78;
 }
 function textHasAny(text,terms){
   return terms.some(t=>phraseOrTokenMatch(text,t));
@@ -921,8 +1006,17 @@ function textHasAllGroups(text,groups){
   return groups.every(group=>group.some(t=>phraseOrTokenMatch(text,t)));
 }
 function intentMatches(text,phrases=[],groups=[]){
-  if(phrases.some(p=>normalizeText(text).includes(normalizeText(p))))return true;
-  return groups.length?textHasAllGroups(text,groups):false;
+  const canonical=canonicalIntentText(text);
+  if(phrases.some(p=>canonical.includes(canonicalIntentText(p))))return true;
+
+  let best=0;
+  for(const p of phrases)best=Math.max(best,intentPhraseScore(text,p));
+  const groupMatch=groups.length?textHasAllGroups(text,groups):false;
+
+  if(groupMatch)return true;
+  if(best>=.84)return true;
+  if(best>=.72&&phrases.some(p=>intentTokens(p).length>=3))return true;
+  return false;
 }
 function moodAnswer(){
   if(state.sleeping)return "Estoy dormido… o casi.";
