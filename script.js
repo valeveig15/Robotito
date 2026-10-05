@@ -57,6 +57,9 @@ const state = {
   classMode: false,
   classStartedAt: 0,
   classSubject: "",
+  classTopic: "",
+  classSessionId: null,
+  selectedClassSessionId: null,
   classLines: load("robotito.classLines.v1", []),
   verifyClassWeb: localStorage.getItem("robotito.verifyClassWeb.v1")!=="false",
   speakerOverride: null,
@@ -2303,7 +2306,8 @@ function sourceDetailLabel(e){
   const who=classSpeakerLabel(e);
   const time=e.at?new Date(e.at).toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"}):"";
   const subject=e.subject&&e.subject!=="Clase"?e.subject:"";
-  return [subject,who,time].filter(Boolean).join(" · ");
+  const topic=e.topic||"";
+  return [subject,topic,who,time].filter(Boolean).join(" · ");
 }
 function shortEvidenceQuote(e,question,maxChars=210){
   const source=e.sourceType==="class"?(e.text||e.correctedText||""):(e.text||e.correctedText||"");
@@ -2473,7 +2477,9 @@ function renderClassTranscript(){
   const root=$("#classTranscript");
   const lines=classLinesForSubject().slice(-40);
   if(!lines.length){root.innerHTML='<p class="muted">Todavía no hay frases guardadas.</p>';return;}
-  root.innerHTML=lines.map(l=>{
+  const first=lines[0];
+  const heading='<div class="class-transcript-context"><strong>'+escapeHtml(first.subject||"Clase")+'</strong>'+(first.topic?' <span>›</span> '+escapeHtml(first.topic):'')+'</div>';
+  root.innerHTML=heading+lines.map(l=>{
     const cls=l.speaker==="me"?"me":l.speaker==="teacher"?"teacher":"classmate";
     const tag=l.speakerName?l.speakerName:(l.speaker==="me"?"VOS":l.speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
     const txt=l.correctedText||l.text;
@@ -3811,6 +3817,14 @@ function bindUI(){
     if(e.target.files[0])importGoodreads(e.target.files[0]);
   });
   $("#recommendBtn").addEventListener("click",()=>recommendBook());
+  $("#classSubject")?.addEventListener("input",()=>{
+    if(!state.classMode)state.selectedClassSessionId=null;
+    state.classSubject=$("#classSubject").value.trim();
+  });
+  $("#classTopic")?.addEventListener("input",()=>{
+    if(!state.classMode)state.selectedClassSessionId=null;
+    state.classTopic=$("#classTopic").value.trim();
+  });
   $("#startClassBtn").addEventListener("click",startClassMode);
   $("#verifyClassWeb")?.addEventListener("change",e=>{
     state.verifyClassWeb=!!e.target.checked;
@@ -3890,6 +3904,7 @@ function init(){
   purgeNamedPeople();
   bindUI();
   ensureClassLineIds();
+  window.ROBOTITO_CLASS_ORGANIZER?.migrate?.();
   buildMatcher();
   renderPeople();
   renderMemories();
@@ -3901,6 +3916,8 @@ function init(){
   renderClassTranscript();
   renderAcademicMaterials();
   summarizeClass();
+  window.ROBOTITO_CLASS_ORGANIZER?.render?.();
+  window.ROBOTITO_CLASS_AUDIO?.render?.();
   $("#startBtn").disabled=true;
   const gate=$("#languageGate");
   if(gate){
