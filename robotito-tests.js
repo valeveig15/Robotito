@@ -13,6 +13,7 @@
     const circles=window.ROBOTITO_CIRCLE_MATH;
     const router=window.ROBOTITO_ROUTER;
     const silence=window.ROBOTITO_SILENCE;
+    const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
     if(math){
       results.push(same(math.solve("20 por ciento de 50","es").value,10,"20% de 50"));
@@ -41,6 +42,13 @@
       results.push(same(router.classify("¿Qué objeto es esto?").intent,"object","ruta objeto"));
       results.push(same(router.shapeAnswer("¿Qué es la gravedad?","La gravedad es una interacción física. Además tiene múltiples efectos y aplicaciones."),"La gravedad es una interacción física.","recorta definiciones al alcance pedido"));
     }else results.push(truthy(false,"router loaded"));
+
+    if(videoMaterial){
+      results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de URL de YouTube"));
+      results.push(same(videoMaterial.parseYouTubeId("https://youtu.be/dQw4w9WgXcQ?t=10"),"dQw4w9WgXcQ","extrae ID de URL corta"));
+      results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/shorts/dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de Shorts"));
+      results.push(same(videoMaterial.parseYouTubeId("https://example.com/video"),null,"rechaza enlace que no es de YouTube"));
+    }else results.push(truthy(false,"YouTube material controls loaded"));
 
     if(silence){
       results.push(same(silence.parseDuration("callate"),25000,"silencio predeterminado de 25 segundos"));
