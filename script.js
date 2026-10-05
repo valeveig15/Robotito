@@ -4547,7 +4547,7 @@ function ambientMood(){
 }
 
 function bindUI(){
-  $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
+  document.querySelectorAll("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#avatarChoices")?.addEventListener("click",event=>{
     const choice=event.target.closest("[data-avatar-id]");
     if(choice)finishStartupAvatar(choice.dataset.avatarId);
