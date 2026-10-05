@@ -10,9 +10,11 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs" type="module"></script>
   <script defer src="curriculum.js"></script>
   <script defer src="knowledge.js"></script>
+  <script defer src="objects.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -36,16 +38,17 @@
 
       <div class="room-cloud cloud-one"></div>
       <div class="room-cloud cloud-two"></div>
-      <div class="bamboo bamboo-left"><i></i><i></i><i></i></div>
-      <div class="bamboo bamboo-right"><i></i><i></i><i></i></div>
+      <div class="bamboo bamboo-left"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="bamboo bamboo-right"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="floor-glow"></div>
+      <div id="groundShadow" class="ground-shadow"></div>
 
       <div id="speechBubble" class="speech-bubble hidden" role="status"></div>
 
       <div id="robotito" class="robotito mood-calm" role="img" aria-label="Robotito, panda virtual">
         <div class="mood-aura"></div>
         <svg class="panda-svg" viewBox="0 0 320 380" aria-hidden="true">
-          <ellipse class="svg-shadow" cx="160" cy="350" rx="82" ry="15"/>
+          
           <g class="panda-whole">
             
 
@@ -120,6 +123,14 @@
         <div class="food-prop">🍓</div>
         <div class="scare-mark">!</div>
         <div class="idea-pop">✦</div>
+      </div>
+
+      <div id="objectShowcase" class="object-showcase hidden">
+        <div class="object-showcase-card">
+          <div id="objectShowEmoji" class="object-show-emoji">✨</div>
+          <strong id="objectShowName">Objeto</strong>
+          <span id="objectShowInfo"></span>
+        </div>
       </div>
 
       <div id="birthdayScene" class="birthday-scene hidden">
