@@ -49,6 +49,11 @@
       <video id="camera" autoplay muted playsinline></video>
       <canvas id="visionCanvas"></canvas>
 
+      <div class="day-sun" aria-hidden="true"></div>
+      <div class="night-sky" aria-hidden="true">
+        <div class="night-stars"></div>
+        <div class="night-moon"></div>
+      </div>
       <div class="room-cloud cloud-one"></div>
       <div class="room-cloud cloud-two"></div>
       <div class="bamboo bamboo-left"><i></i><i></i><i></i><i></i><i></i><i></i></div>
@@ -160,6 +165,7 @@
       </div>
 
       <div class="hud">
+        <div class="hud-pill mode-pill"><span>Modo</span><strong id="dayNightLabel">día</strong></div>
         <div class="hud-pill"><span>Humor</span><strong id="moodLabel">tranquilo</strong></div>
         <div class="hud-pill"><span>Hambre</span><strong id="hungerLabel">0%</strong></div>
         <div class="hud-pill"><span>Veo</span><strong id="seenLabel">a nadie</strong></div>
