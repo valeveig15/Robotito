@@ -296,8 +296,9 @@ Respondé únicamente JSON válido:
     save("robotito.classLines.v1",state.classLines);
     renderClassTranscript();
   }
-  function startClassMode(){
+  async function startClassMode(){
     if(!state.started){toast("Primero despertá los sentidos.");return;}
+    if(state.classMode)return;
     state.classMode=true;
     state.classStartedAt=Date.now();
     state.classSubject=$("#classSubject")?.value.trim()||"Clase";
@@ -305,18 +306,42 @@ Respondé únicamente JSON válido:
     $("#classBadge").classList.add("on");
     $("#speakerPill")?.classList.remove("hidden");
     setMood("focused","Robotito está concentrado escuchando la clase.");
-    say("Modo clase activado. Voy a escuchar, aprender y verificar errores claros de transcripción.");
+
+    const audio=await window.ROBOTITO_CLASS_AUDIO?.start?.(state.classSubject);
+    if(audio?.ok){
+      toast("Modo clase activado: transcripción y audio en marcha.");
+    }else{
+      const reason=audio?.reason;
+      const msg=reason==="unsupported"
+        ?"El navegador no permite grabar audio, pero la transcripción sigue funcionando."
+        :reason==="no-audio-track"
+          ?"No encontré una pista de micrófono para grabar, pero la transcripción sigue funcionando."
+          :"Modo clase activado. La transcripción está funcionando.";
+      toast(msg);
+    }
   }
   async function stopClassMode(){
     if(!state.classMode)return;
     const endedAt=Date.now();
     state.classMode=false;
-    $("#classBadge").textContent="apagado";
+    $("#classBadge").textContent="guardando…";
     $("#classBadge").classList.remove("on");
     $("#speakerPill")?.classList.add("hidden");
-    setMood("proud","Robotito terminó de escuchar la clase y está preparando el resumen.");
+    setMood("proud","Robotito terminó de escuchar la clase y está guardando el audio.");
+
+    const recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
+    $("#classBadge").textContent="apagado";
+
     const summary=await generateAndSaveClassSummary(endedAt);
-    say(summary?"Listo. Te preparé y guardé el resumen de la clase.":"Listo. Guardé la clase, aunque no tuve suficiente contenido para resumirla.");
+    if(recording){
+      say(summary
+        ?"Listo. Guardé el audio completo y también preparé el resumen de la clase."
+        :"Listo. Guardé el audio completo de la clase.");
+    }else{
+      say(summary
+        ?"Listo. Te preparé y guardé el resumen de la clase, aunque no pude guardar el audio."
+        :"Listo. Guardé la transcripción, aunque no pude guardar el audio.");
+    }
   }
 
   window.averageRecentVoiceFeature=averageRecentVoiceFeature;
