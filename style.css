@@ -451,3 +451,20 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
 /* v6.1 — only one shadow, on the floor */
 .panda-svg{filter:none!important}
 .ear-svg{filter:none!important}
+
+
+/* v6.2 — tiny cute idle details */
+.ear-left-svg{transform-box:fill-box;transform-origin:80% 80%;animation:earWiggleL 7.5s ease-in-out infinite}
+.ear-right-svg{transform-box:fill-box;transform-origin:20% 80%;animation:earWiggleR 7.5s ease-in-out infinite}
+@keyframes earWiggleL{
+  0%,54%,66%,100%{transform:rotate(0)}
+  58%{transform:rotate(-4deg)}
+  62%{transform:rotate(2deg)}
+}
+@keyframes earWiggleR{
+  0%,54%,66%,100%{transform:rotate(0)}
+  58%{transform:rotate(4deg)}
+  62%{transform:rotate(-2deg)}
+}
+.mood-happy .eye-white-svg{transform-box:fill-box;transform-origin:center;transform:scaleY(.96)}
+.mood-happy .cheek{opacity:.82}
