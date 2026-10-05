@@ -140,7 +140,7 @@
       /(?:otra masa|segunda masa)[^0-9-]*(-?\d+(?:[.,]\d+)?)/
     ]);
     const mass=extractNumber(t,[
-      /(?:masa|m)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*kg/,
+      /(?:masa|\bm\b)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*kg/,
       /(-?\d+(?:[.,]\d+)?)\s*kg/
     ]);
     const vi=extractNumber(t,[
@@ -175,7 +175,7 @@
 
     // p = m v
     if((has(t,["cantidad de movimiento","momentum","momento lineal"])||/\bp\b/.test(t)) && v.mass!==null){
-      const speed=v.vf??v.vi??extractNumber(t,[/(?:velocidad|rapidez|v)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)/]);
+      const speed=v.vf??v.vi??extractNumber(t,[/(?:velocidad|rapidez|\bv\b)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)/]);
       if(speed!==null){
         const p=v.mass*speed;
         return `Uso p = m·v. p = ${nfmt(v.mass)} kg · ${nfmt(speed)} m/s = ${nfmt(p)} kg·m/s. El signo indica el sentido según el eje que elegiste.`;
