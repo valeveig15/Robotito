@@ -66,6 +66,7 @@
     let x=normBasic(w);
     if(!x)return "";
     if(SYN.has(x))return SYN.get(x);
+    if(x.length>5&&/(arse|erse|irse)$/.test(x))x=x.slice(0,-2);
     if(x.length>6)x=x.replace(/(?:amientos|imientos|aciones|adores|adoras|mente)$/,"");
     if(x.length>5)x=x.replace(/(?:ando|iendo|ados|adas|idos|idas|acion|iones)$/,"");
     if(x.length>4)x=x.replace(/(?:es|os|as)$/,"");
