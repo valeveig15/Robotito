@@ -168,8 +168,12 @@ function speakResponse(text){
   if(!clean)return;
   speechSynthesis.cancel();
   state.speaking=true;
-  discardRecognition();
-  setListenState("respondiendo");
+  if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
+    window.RobotitoLocalASR.pause(true);
+  }else{
+    discardRecognition();
+  }
+  setListenState(state.languageMode==="en"?"responding":"respondiendo");
   const utter=new SpeechSynthesisUtterance(clean);
   const voices=speechSynthesis.getVoices();
   const lang=responseLanguage(clean);
@@ -181,7 +185,14 @@ function speakResponse(text){
   utter.pitch=clamp(state.voicePitch,.5,1.1);
   utter.rate=clamp(state.voiceRate,.65,1.1);
   utter.volume=.92;
-  const done=()=>{state.speaking=false;restartRecognitionAfterSpeech();};
+  const done=()=>{
+    state.speaking=false;
+    if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
+      setTimeout(()=>window.RobotitoLocalASR.pause(false),320);
+    }else{
+      restartRecognitionAfterSpeech();
+    }
+  };
   utter.onend=done;
   utter.onerror=done;
   speechSynthesis.speak(utter);
@@ -376,47 +387,76 @@ async function startSenses(){
   const mobile=isMobileSpeech();
   state.started=true;
 
-  // Critical mobile path: SpeechRecognition.start() is invoked synchronously
-  // from the user's one initial "Despertar sentidos" gesture, before any await.
-  const initialSpeech=mobile?primeMobileSpeechFromGesture():Promise.resolve(true);
+  // Prime the local audio engine synchronously from the initial user gesture.
+  if(mobile){
+    try{
+      window.RobotitoLocalASR?.prime(
+        state.languageMode,
+        (text,kind)=>setListenState(text,kind)
+      );
+    }catch(e){console.warn("local ASR prime",e);}
+  }
 
   $("#systemStatus").textContent=mobile
-    ?(state.languageMode==="en"?"Activating microphone…":"Activando micrófono…")
+    ?(state.languageMode==="en"?"Requesting camera and microphone…":"Pidiendo cámara y micrófono…")
     :"Pidiendo permisos…";
 
   try{
-    if(mobile){
-      // Wait for the speech service/permission to settle before asking for camera.
-      // This avoids overlapping microphone and camera permission dialogs on Android.
-      await initialSpeech;
-    }
-
     state.stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},
-      audio:mobile?false:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}
     });
+
     camera.srcObject=state.stream;
     await camera.play();
 
-    if(!mobile){
-      setupAudio(state.stream);
+    // Keep audio analysis/voice-print learning on the same shared stream.
+    setupAudio(state.stream);
+
+    if(mobile){
+      discardRecognition();
+      state.recognitionWanted=false;
+      $("#mobileListenBtn")?.classList.add("hidden");
+      $("#mobileSpeechHint")?.classList.remove("hidden");
+      $("#mobileSpeechHint").textContent=state.languageMode==="en"
+        ?"Robotito uses continuous local speech recognition on mobile. The first load may take a little longer while the speech model is prepared."
+        :"En celular Robotito usa reconocimiento local continuo. La primera vez puede demorar un poco mientras prepara el modelo de voz.";
+
+      if(!window.RobotitoLocalASR){
+        throw new Error("Local mobile speech engine unavailable");
+      }
+
+      // Start local continuous recognition. This does not require a tap per phrase.
+      window.RobotitoLocalASR.start({
+        stream:state.stream,
+        lang:state.languageMode,
+        onTranscript:text=>{
+          updateDetectedLanguage(text);
+          processSpeechResult(text);
+        },
+        statusCallback:(text,kind)=>setListenState(text,kind)
+      }).then(()=>{
+        $("#systemStatus").textContent=state.languageMode==="en"
+          ?"Camera and microphone active. Continuous local listening is on."
+          :"Cámara y micrófono activos. Escucha local continua encendida.";
+      }).catch(err=>{
+        console.warn("local ASR",err);
+        $("#systemStatus").textContent=state.languageMode==="en"
+          ?"Camera active, but local speech recognition failed."
+          :"Cámara activa, pero falló el reconocimiento local.";
+        // Desktop-style Web Speech remains a last automatic fallback if available.
+        state.recognitionWanted=true;
+        startListeningCycle(false);
+      });
+    }else{
       setupSpeechRecognition(true);
+      $("#systemStatus").textContent="Cámara y micrófono activos.";
     }
 
     $("#startBtn").textContent=state.languageMode==="en"?"Senses active":"Sentidos activos";
     $("#startBtn").disabled=true;
 
-    if(mobile){
-      $("#mobileListenBtn")?.classList.add("hidden");
-      $("#systemStatus").textContent=state.languageMode==="en"
-        ?"Camera active. Robotito is listening continuously."
-        :"Cámara activa. Robotito está escuchando de forma continua.";
-      if(!state.recognition && !state.speechBlocked)startListeningCycle(false);
-    }else{
-      $("#systemStatus").textContent="Cámara y micrófono activos.";
-    }
-
-    // Vision models load after listening is already active.
+    // Vision loads after audio has already begun.
     loadFaceModels().then(()=>{
       setupHands();
       detectLoop();
@@ -427,18 +467,15 @@ async function startSenses(){
     console.error(err);
     state.stream?.getTracks?.().forEach(t=>t.stop());
     state.stream=null;
-    // Keep speech alive even if camera permission fails.
-    if(mobile && state.recognition){
-      $("#systemStatus").textContent=state.languageMode==="en"
-        ?"Microphone active. Camera permission failed."
-        :"Micrófono activo. No pude activar la cámara.";
-      toast(state.languageMode==="en"?"I can hear you, but I need camera permission to see.":"Puedo escucharte, pero necesito permiso de cámara para verte.");
-      return;
-    }
+    try{window.RobotitoLocalASR?.stop();}catch{}
     state.started=false;
     discardRecognition();
-    $("#systemStatus").textContent=state.languageMode==="en"?"I couldn't activate the sensors.":"No pude activar los sentidos.";
-    toast(state.languageMode==="en"?"Check microphone and camera permissions.":"Revisá los permisos de micrófono y cámara.");
+    $("#systemStatus").textContent=state.languageMode==="en"
+      ?"I couldn't activate camera and microphone."
+      :"No pude activar cámara y micrófono.";
+    toast(state.languageMode==="en"
+      ?"Allow camera and microphone for this site."
+      :"Permití cámara y micrófono para este sitio.");
   }
 }
 
@@ -782,7 +819,8 @@ function setLanguageMode(mode){
   localStorage.setItem("robotito.languageMode.v1",mode);
   if($("#languageMode"))$("#languageMode").value=mode;
   populateVoiceSelect();
-  if(state.started){discardRecognition();startListeningCycle(true);}
+  if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
+  if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
 }
 function chooseStartupLanguage(mode){
   setLanguageMode(mode);
@@ -2377,43 +2415,21 @@ function formatBirthday(iso){
   return m?`${m[3]}/${m[2]}/${m[1]}`:"";
 }
 async function captureMobileVoicePrints(){
-  discardRecognition();
-  let stream=null,ctx=null;
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:true},video:false});
-    ctx=new (window.AudioContext||window.webkitAudioContext)();
-    await ctx.resume();
-    const source=ctx.createMediaStreamSource(stream);
-    const analyser=ctx.createAnalyser();
-    analyser.fftSize=1024;
-    source.connect(analyser);
-    const freq=new Uint8Array(analyser.frequencyBinCount);
-    const time=new Uint8Array(analyser.fftSize);
-    const vectors=[];
-    const start=Date.now();
-    while(Date.now()-start<5200){
-      analyser.getByteFrequencyData(freq);
-      analyser.getByteTimeDomainData(time);
-      let sum=0;for(const v of time){const x=(v-128)/128;sum+=x*x;}
-      const rms=Math.sqrt(sum/time.length);
-      if(rms>.04)vectors.push(makeVoicePrint(freq,time,ctx.sampleRate));
-      await new Promise(r=>setTimeout(r,95));
-    }
-    if(vectors.length<10)return null;
-    const groups=[],size=Math.max(4,Math.floor(vectors.length/3));
-    for(let i=0;i<vectors.length;i+=size){
-      const avg=averageVoiceVectors(vectors.slice(i,i+size));
-      if(avg)groups.push(avg);
-    }
-    return groups.slice(0,4);
-  }catch(e){
-    console.warn("mobile voice enrollment",e);
-    return null;
-  }finally{
-    stream?.getTracks().forEach(t=>t.stop());
-    try{await ctx?.close();}catch{}
-    setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+  const start=Date.now();
+  window.RobotitoLocalASR?.pause(true);
+  $("#enrollStatus").textContent=state.languageMode==="en"
+    ?"Speak naturally for about five seconds…"
+    :"Hablá naturalmente durante unos cinco segundos…";
+  await new Promise(r=>setTimeout(r,5200));
+  const vectors=state.recentVoicePrints.filter(x=>x.t>=start&&x.rms>.04).map(x=>x.vector);
+  window.RobotitoLocalASR?.pause(false);
+  if(vectors.length<8)return null;
+  const groups=[],size=Math.max(3,Math.floor(vectors.length/3));
+  for(let i=0;i<vectors.length;i+=size){
+    const avg=averageVoiceVectors(vectors.slice(i,i+size));
+    if(avg)groups.push(avg);
   }
+  return groups.slice(0,4);
 }
 
 async function captureEnrollmentVoice(){
@@ -2804,14 +2820,26 @@ function ambientMood(){
 function bindUI(){
   $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#startBtn").addEventListener("click",startSenses);
-  $("#mobileListenBtn")?.addEventListener("click",()=>{
+  $("#mobileListenBtn")?.addEventListener("click",async()=>{
     state.speechBlocked=false;
     state.speechRetryCount=0;
-    state.recognitionWanted=true;
     if("speechSynthesis" in window)speechSynthesis.cancel();
     state.speaking=false;
     $("#mobileListenBtn")?.classList.add("hidden");
-    startListeningCycle(true);
+    if(isMobileSpeech()&&state.stream&&window.RobotitoLocalASR){
+      try{
+        await window.RobotitoLocalASR.stop();
+        await window.RobotitoLocalASR.start({
+          stream:state.stream,
+          lang:state.languageMode,
+          onTranscript:text=>{updateDetectedLanguage(text);processSpeechResult(text);},
+          statusCallback:(text,kind)=>setListenState(text,kind)
+        });
+      }catch(e){console.warn("local ASR recovery",e);}
+    }else{
+      state.recognitionWanted=true;
+      startListeningCycle(true);
+    }
   });
   $("#languageMode")?.addEventListener("change",e=>setLanguageMode(e.target.value));
   $("#voiceEnabled")?.addEventListener("change",e=>{
