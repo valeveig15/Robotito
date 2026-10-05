@@ -3834,7 +3834,7 @@ function bindUI(){
   $("#summarizeClassBtn").addEventListener("click",summarizeClass);
   $("#askClassBtn").addEventListener("click",askClass);
   $("#flashcardsBtn").addEventListener("click",makeFlashcards);
-  $("#academicFiles")?.addEventListener("change",e=>importAcademicFiles([...e.target.files]));
+  $("#academicFiles")?.addEventListener("change",e=>window.ROBOTITO_CLASS_ORGANIZER?.importAcademicFiles?.([...e.target.files]));
   $("#solveMathBtn")?.addEventListener("click",solveMathFromUI);
   $("#detectObjectBtn")?.addEventListener("click",detectObjectNow);
   $("#connectTasksBtn").addEventListener("click",connectTasksSheet);
@@ -3914,7 +3914,7 @@ function init(){
   renderTasks();
   if($("#verifyClassWeb"))$("#verifyClassWeb").checked=state.verifyClassWeb;
   renderClassTranscript();
-  renderAcademicMaterials();
+  window.ROBOTITO_CLASS_ORGANIZER?.renderAcademicMaterials?.();
   summarizeClass();
   window.ROBOTITO_CLASS_ORGANIZER?.render?.();
   window.ROBOTITO_CLASS_AUDIO?.render?.();
