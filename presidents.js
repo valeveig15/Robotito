@@ -110,6 +110,35 @@
     ].join("\n");
   }
 
+  async function currentPresident(country){
+    const key="current-president|"+country.id;
+    const hit=cache.get(key);
+    if(hit&&Date.now()-hit.at<RESULT_TTL)return hit.value;
+
+    const q=[
+      "SELECT DISTINCT ?person ?personLabel ?office ?officeLabel WHERE {",
+      "  wd:"+country.id+" wdt:P35 ?person .",
+      "  ?person p:P39 ?statement .",
+      "  ?statement ps:P39 ?office .",
+      "  ?office rdfs:label ?officeLabel .",
+      "  FILTER(LANG(?officeLabel) = \"en\")",
+      "  FILTER(CONTAINS(LCASE(STR(?officeLabel)), \"president\"))",
+      "  FILTER(!CONTAINS(LCASE(STR(?officeLabel)), \"vice\"))",
+      "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"es,en,pt\" . }",
+      "}"
+    ].join("\n");
+    const url="https://query.wikidata.org/sparql?format=json&query="+encodeURIComponent(q);
+    const data=await json(url);
+    const row=(data.results?.bindings||[])[0];
+    const value=row?{
+      id:(row.person?.value||"").split("/").pop(),
+      name:row.personLabel?.value||"",
+      office:row.officeLabel?.value||""
+    }:null;
+    cache.set(key,{at:Date.now(),value});
+    return value;
+  }
+
   async function officeHolders(country){
     const key="holders|"+country.id;
     const hit=cache.get(key);
@@ -213,6 +242,18 @@
     try{
       const country=await resolveCountry(parsed.country,lang);
       if(!country)return {handled:true,text:language(lang)==="en"?"I couldn't identify that country.":"No pude identificar ese país.",source:null};
+      if(parsed.intent==="current"){
+        const live=await currentPresident(country);
+        if(live?.name){
+          const code=language(lang);
+          const text=code==="en"
+            ?"The current president of "+country.label+" is "+live.name+"."
+            :code==="pt"
+              ?"O presidente atual de "+country.label+" é "+live.name+"."
+              :"El presidente actual de "+country.label+" es "+live.name+".";
+          return {handled:true,text,source:"Wikidata",country,parsed,rows:[live]};
+        }
+      }
       const rows=await officeHolders(country);
       const text=format(parsed,country,rows,lang);
       return {
@@ -234,5 +275,5 @@
     }
   }
 
-  window.ROBOTITO_PRESIDENTS={parseQuestion,resolveCountry,officeHolders,answer};
+  window.ROBOTITO_PRESIDENTS={parseQuestion,resolveCountry,currentPresident,officeHolders,answer};
 })();
