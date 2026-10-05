@@ -20,6 +20,7 @@
   const STOP=new Set([
     "que","cual","cuales","como","de","del","el","la","los","las","un","una","unos","unas","es","son","era",
     "se","lo","le","les","al","y","o","por","para","con","sin","en","a","esto","esa","ese","eso","esta","este",
+    "mas","más","more","most",
     "what","which","how","is","are","was","were","the","a","an","of","does","do","did","to","in","on","for","and","or",
     "please","tell","me","can","could","would","you"
   ]);
@@ -40,7 +41,7 @@
     ["hervir","hierve","ebullicion","ebullición","boil","boiling"],
     ["congelar","congela","congelacion","congelación","freeze","freezing"],
     ["girar","gira","orbitar","orbita","orbit"],
-    ["comer","come","comen","alimentar","alimenta","eat"],
+    ["comer","come","comen","alimentar","alimenta","alimentan","alimento","dieta","eat","eats","feed"],
     ["vivir","vive","viven","habitat","hábitat","live"],
     ["respirar","respira","respiran","breathe"],
     ["corazon","corazón","heart"],
@@ -388,9 +389,21 @@
       return answer(`La mitad es ${Number(v.toFixed(8))}.`,`Half is ${Number(v.toFixed(8))}.`,lang);
     }
 
+    let bestDirect=null;
     for(const [patterns,es,en] of direct){
-      if(es&&(has(t,patterns)||patterns.some(p=>loose(t,p))))return answer(es,en,lang);
+      if(!es)continue;
+      for(const pattern of patterns){
+        const pt=semanticTokens(pattern);
+        if(!pt.length)continue;
+        const exact=t.includes(norm(pattern));
+        const score=exact?1:semanticScore(t,pattern);
+        const threshold=pt.length===1?.96:pt.length===2?.78:.66;
+        if(score>=threshold && (!bestDirect||score>bestDirect.score)){
+          bestDirect={score,es,en};
+        }
+      }
     }
+    if(bestDirect)return answer(bestDirect.es,bestDirect.en,lang);
     return null;
   }
 
