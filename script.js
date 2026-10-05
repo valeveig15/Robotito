@@ -1960,26 +1960,102 @@ function splitEvidenceSentences(text){
   }
   return parts.length?parts:[clean];
 }
+const CLASS_STOPWORDS=new Set([
+  "que","cual","cuales","como","cuando","donde","quien","quienes","cuanto","cuantos","porque","por","para",
+  "de","del","la","el","las","los","un","una","unos","unas","y","o","en","a","con","sin","sobre","es","son",
+  "fue","era","eran","hay","habia","había","me","te","se","lo","le","esto","eso","esta","este","esa",
+  "decime","dime","contame","cuentame","explicame","explica","recordame","acordate","quiero","saber",
+  "clase","profesor","profesora","profe","dijo","dijeron","hablo","habló","explico","explicó"
+]);
+const CLASS_SYNONYM_GROUPS=[
+  ["impulso","impulsos"],
+  ["cantidad","momentum","momento"],
+  ["movimiento","movimientos"],
+  ["choque","choques","colision","colisión","colisiones"],
+  ["fuerza","fuerzas"],
+  ["velocidad","rapidez"],
+  ["masa","masas"],
+  ["energia","energía","energetico","energético"],
+  ["conservar","conserva","conservacion","conservación"],
+  ["vacuna","vacunas","vacunacion","vacunación"],
+  ["anticuerpo","anticuerpos","inmunidad","inmune"],
+  ["celula","célula","celulas","células"],
+  ["problema","problemas","dificultad","dificultades"],
+  ["causa","causas","razon","razón","motivo","motivos"],
+  ["consecuencia","consecuencias","efecto","efectos","resultado","resultados"],
+  ["ejemplo","ejemplos","caso","casos"],
+  ["definir","define","definicion","definición","significa","concepto"],
+  ["ventaja","ventajas","beneficio","beneficios"],
+  ["desventaja","desventajas","riesgo","riesgos"],
+  ["diferencia","diferencias","distingue","comparar","comparacion","comparación"]
+];
+const CLASS_SYNONYM_MAP=new Map();
+CLASS_SYNONYM_GROUPS.forEach((g,i)=>g.forEach(w=>CLASS_SYNONYM_MAP.set(normalizeText(w),"cg"+i)));
+
+function classStemToken(w){
+  let x=normalizeText(w);
+  if(!x)return "";
+  if(CLASS_SYNONYM_MAP.has(x))return CLASS_SYNONYM_MAP.get(x);
+  if(x.length>7)x=x.replace(/(?:amientos|imientos|aciones|adores|adoras|encias|mente)$/,"");
+  if(x.length>5)x=x.replace(/(?:ando|iendo|ados|adas|idos|idas|acion|ición|cion|iones)$/,"");
+  if(x.length>4)x=x.replace(/(?:es|os|as)$/,"");
+  else if(x.length>3)x=x.replace(/s$/,"");
+  return CLASS_SYNONYM_MAP.get(x)||x;
+}
+function classQueryTokens(text){
+  return normalizeText(text).split(" ")
+    .filter(Boolean)
+    .filter(w=>w.length>2&&!CLASS_STOPWORDS.has(w))
+    .map(classStemToken)
+    .filter(Boolean);
+}
+function classOneEditApart(a,b){
+  if(a===b)return true;
+  if(a.length<5||b.length<5||Math.abs(a.length-b.length)>1)return false;
+  let i=0,j=0,diff=0;
+  while(i<a.length&&j<b.length){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++diff>1)return false;
+    if(a.length>b.length)i++;
+    else if(b.length>a.length)j++;
+    else{i++;j++;}
+  }
+  return diff+(i<a.length||j<b.length?1:0)<=1;
+}
+function splitEvidenceSentences(text){
+  const clean=String(text||"").replace(/\s+/g," ").trim();
+  if(!clean)return [];
+  let parts=clean.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ0-9¿¡])/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===1&&clean.length>320){
+    parts=clean.split(/\s*[;•]\s*|\s+(?=(?:Además|También|Por eso|Entonces|En cambio|Sin embargo|Finalmente)\b)/i)
+      .map(x=>x.trim()).filter(Boolean);
+  }
+  return parts.length?parts:[clean];
+}
 function materialEvidenceLines(){
-  const subj=normalizeText(state.classSubject||$("#classSubject")?.value||"");
-  return state.academicMaterials
-    .filter(m=>!subj||normalizeText(m.subject||"").includes(subj)||subj.includes(normalizeText(m.subject||"")))
-    .flatMap(m=>(m.chunks||[]).flatMap((chunkText,chunkIndex)=>
-      splitEvidenceSentences(chunkText).map((text,sentenceIndex)=>({
-        text,
-        correctedText:text,
-        speaker:"material",
-        sourceType:"material",
-        subject:m.subject||"Material",
-        at:m.at,
-        sourceName:m.name,
-        chunk:chunkIndex+1,
-        sentence:sentenceIndex+1
-      }))
-    ));
+  const selectedSubject=normalizeText(state.classSubject||$("#classSubject")?.value||"");
+  return state.academicMaterials.flatMap(m=>(m.chunks||[]).flatMap((chunkText,chunkIndex)=>
+    splitEvidenceSentences(chunkText).map((text,sentenceIndex)=>({
+      text,
+      correctedText:text,
+      speaker:"material",
+      sourceType:"material",
+      subject:m.subject||"Material",
+      at:m.at,
+      sourceName:m.name,
+      chunk:chunkIndex+1,
+      sentence:sentenceIndex+1,
+      subjectPreferred:!!selectedSubject&&(
+        normalizeText(m.subject||"").includes(selectedSubject)||
+        selectedSubject.includes(normalizeText(m.subject||""))
+      )
+    }))
+  ));
 }
 function classEvidenceLines(){
-  return classLinesForSubject().flatMap(line=>{
+  const selectedSubject=normalizeText(state.classSubject||$("#classSubject")?.value||"");
+  // Search ALL saved transcripts. The selected subject is a ranking hint, never a hard filter.
+  return state.classLines.flatMap(line=>{
     const sourceText=line.correctedText||line.text||"";
     const correctedParts=splitEvidenceSentences(sourceText);
     const originalParts=splitEvidenceSentences(line.text||sourceText);
@@ -1989,7 +2065,11 @@ function classEvidenceLines(){
       correctedText:text,
       sourceType:"class",
       sourceName:line.speakerName||null,
-      sentence:i+1
+      sentence:i+1,
+      subjectPreferred:!!selectedSubject&&(
+        normalizeText(line.subject||"").includes(selectedSubject)||
+        selectedSubject.includes(normalizeText(line.subject||""))
+      )
     }));
   });
 }
@@ -2005,34 +2085,52 @@ async function browserRewrite(prompt){
   return null;
 }
 function academicTokenSet(text){
-  return new Set(contentWords(text).map(w=>w.replace(/(mente|ciones|cion|ando|iendo|ados|adas|ido|ida|es|s)$/,"")).filter(w=>w.length>2));
+  return new Set(classQueryTokens(text));
 }
 function classEvidenceScore(question,e){
-  const qTerms=[...academicTokenSet(question)];
+  const qTerms=classQueryTokens(question);
   if(!qTerms.length)return 0;
   const raw=normalizeText(e.correctedText||e.text||"");
-  const eTerms=academicTokenSet(raw);
+  const eTerms=classQueryTokens(raw);
+  if(!eTerms.length)return 0;
+
+  const used=new Set();
   let overlap=0;
   for(const q of qTerms){
-    if(eTerms.has(q)||[...eTerms].some(w=>w.startsWith(q)||q.startsWith(w)))overlap++;
+    let found=-1;
+    for(let i=0;i<eTerms.length;i++){
+      if(used.has(i))continue;
+      const w=eTerms[i];
+      if(w===q||w.startsWith(q)||q.startsWith(w)||classOneEditApart(w,q)){found=i;break;}
+    }
+    if(found>=0){used.add(found);overlap++;}
   }
-  const coverage=overlap/qTerms.length;
   if(overlap===0)return 0;
 
-  let score=overlap*3+coverage*5;
-  const phrase=contentWords(question).slice(0,5).join(" ");
-  if(phrase.length>8&&raw.includes(phrase))score+=5;
+  const coverage=overlap/qTerms.length;
+  const precision=overlap/Math.max(overlap,eTerms.length);
+  let score=overlap*3.4+coverage*6+precision*1.5;
 
-  const qBigrams=[];
-  const qw=contentWords(question);
-  for(let i=0;i<qw.length-1;i++)qBigrams.push(qw[i]+" "+qw[i+1]);
-  for(const bg of qBigrams)if(raw.includes(bg))score+=1.5;
+  // Reward adjacent concepts regardless of filler wording.
+  const qRaw=normalizeText(question);
+  const content=contentWords(question);
+  for(let i=0;i<content.length-1;i++){
+    const a=normalizeText(content[i]),b=normalizeText(content[i+1]);
+    if(raw.includes(a+" "+b))score+=1.35;
+  }
 
-  if(e.sourceType==="class"&&e.speaker==="teacher")score+=.35;
-  if(raw.length>420)score-=Math.min(2,(raw.length-420)/300);
+  // Subject context helps but never excludes older transcripts.
+  if(e.subjectPreferred)score+=1.2;
+  if(e.sourceType==="class"&&e.speaker==="teacher")score+=.45;
 
-  // For longer questions, one accidental shared word is not enough.
-  if(qTerms.length>=3&&overlap===1&&coverage<.45)return 0;
+  // Penalize accidental one-word hits in multi-concept questions.
+  if(qTerms.length>=3&&overlap===1&&coverage<.42)return 0;
+  if(qTerms.length>=5&&overlap<2)return 0;
+
+  // Direct distinctive term deserves a modest boost.
+  if(qTerms.some(t=>t.length>=7&&raw.includes(t)))score+=.8;
+  if(raw.length>520)score-=Math.min(1.5,(raw.length-520)/420);
+
   return score;
 }
 function answerFromClass(question){
@@ -2044,20 +2142,49 @@ function answerFromClass(question){
 
   if(!ranked.length)return null;
 
+  const topScore=ranked[0].score;
+  const qTerms=classQueryTokens(question);
+  // Flexible enough for paraphrases, still strict enough to reject random keyword matches.
+  const threshold=qTerms.length<=2?5.2:qTerms.length<=4?6.1:6.8;
+  if(topScore<threshold)return null;
+
   const best=[];
   const seen=new Set();
   for(const item of ranked){
-    const key=normalizeText(item.e.correctedText||item.e.text).slice(0,160);
+    if(best.length&&item.score<Math.max(threshold,topScore*.48))break;
+    const key=normalizeText(item.e.correctedText||item.e.text).slice(0,180);
     if(seen.has(key))continue;
     seen.add(key);
     best.push(item.e);
-    if(best.length>=3)break;
+    if(best.length>=4)break;
   }
-
-  const topScore=ranked[0].score;
-  // Reject very weak matches instead of pretending a random keyword is an answer.
-  if(topScore<4.2)return null;
   return {evidence:best,score:topScore};
+}
+function looksLikeClassQuestion(text){
+  const t=normalizeText(text);
+  if(!t)return false;
+  const explicit=/(clase|transcripcion|transcripción|apunte|apuntes|profesor|profesora|profe|dijo|dijeron|explico|explicó|vimos|estudiamos|aprendimos|material cargado|segun la clase|según la clase)/.test(t);
+  if(explicit)return true;
+  const questionish=/^(que|como|por que|porque|cual|cuando|donde|quien|cuanto|explica|explicame|define|decime|dime|contame|recordame|me podes|me puedes|sabes)/.test(t)
+    ||/[?¿]/.test(String(text));
+  if(!questionish)return false;
+  if(!(state.classLines.length||state.academicMaterials.length))return false;
+  // A strong evidence match makes it a class question even without saying "clase".
+  return !!answerFromClass(text);
+}
+async function answerClassQuestion(question,{speak=true,render=true,announceMissing=false}={}){
+  const found=answerFromClass(question);
+  if(!found){
+    if(render&&$("#classAnswer")){
+      $("#classAnswer").innerHTML='<div class="study-chip">No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
+    }
+    if(announceMissing&&speak) say("No encontré evidencia suficiente en las transcripciones para contestar eso.",3600);
+    return false;
+  }
+  const answer=await composeAcademicAnswer(question,found.evidence);
+  if(render)renderAcademicAnswer(question,answer,found.evidence);
+  if(speak)say(spokenAcademicAnswer(question,answer,found.evidence).slice(0,520),6500);
+  return true;
 }
 function relevantSentenceForAnswer(e,question){
   const units=splitEvidenceSentences(e.correctedText||e.text||"");
@@ -2136,7 +2263,8 @@ function sourceDetailLabel(e){
   }
   const who=classSpeakerLabel(e);
   const time=e.at?new Date(e.at).toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"}):"";
-  return time?who+" · "+time:who;
+  const subject=e.subject&&e.subject!=="Clase"?e.subject:"";
+  return [subject,who,time].filter(Boolean).join(" · ");
 }
 function shortEvidenceQuote(e,question,maxChars=210){
   const source=e.sourceType==="class"?(e.text||e.correctedText||""):(e.text||e.correctedText||"");
@@ -2240,17 +2368,18 @@ function summarizeClass(){
 async function askClass(){
   const q=$("#classQuestion").value.trim();
   if(!q)return;
-  robot.classList.add("thinking");setTimeout(()=>robot.classList.remove("thinking"),1200);
+  const out=$("#classAnswer");
+  robot.classList.add("thinking");
+  setTimeout(()=>robot.classList.remove("thinking"),1200);
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
-  const found=answerFromClass(q);
-  if(!found){
-    $("#classAnswer").innerHTML='<div class="study-chip">No encontré evidencia suficiente para responder eso en lo dicho en clase ni en el material cargado.</div>';
-    say("No encontré evidencia suficiente para responder eso en mis apuntes.",3500);
-    return;
+  if(out)out.innerHTML='<div class="study-chip">Buscando en las transcripciones y el material cargado…</div>';
+  try{
+    await answerClassQuestion(q,{speak:true,render:true,announceMissing:true});
+  }catch(e){
+    console.warn("class answer",e);
+    if(out)out.innerHTML='<div class="study-chip">Tuve un problema al buscar en las transcripciones. La pregunta no se perdió: probá de nuevo.</div>';
+    say("Tuve un problema al buscar en las transcripciones. Probá de nuevo.",3500);
   }
-  const answer=await composeAcademicAnswer(q,found.evidence);
-  renderAcademicAnswer(q,answer,found.evidence);
-  say(spokenAcademicAnswer(q,answer,found.evidence).slice(0,520),6500);
 }
 function makeFlashcards(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"&&l.text.length>30).slice(-8);
