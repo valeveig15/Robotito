@@ -18,6 +18,17 @@
   <script defer src="script.js"></script>
 </head>
 <body>
+<div id="languageGate" class="language-gate" role="dialog" aria-modal="true" aria-labelledby="languageGateTitle">
+  <div class="language-gate-card">
+    <div class="language-panda">🐼</div>
+    <h2 id="languageGateTitle">¿En qué idioma hablamos?</h2>
+    <p>Elegilo antes de despertar a Robotito. Va a escuchar y responder solo en ese idioma hasta que vos lo cambies.</p>
+    <div class="language-gate-actions">
+      <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
+      <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
+    </div>
+  </div>
+</div>
 <div id="app">
   <header class="topbar">
     <div>
@@ -208,7 +219,6 @@
           <label class="check voice-toggle"><input id="voiceEnabled" type="checkbox" /> Hablar en voz alta</label>
           <label>Idioma de conversación
             <select id="languageMode">
-              <option value="auto">Automático — Español / English</option>
               <option value="es">Español</option>
               <option value="en">English</option>
             </select>
@@ -221,7 +231,7 @@
             <label>Velocidad <input id="voiceRate" type="range" min="0.65" max="1.1" step="0.05" value="0.82" /></label>
           </div>
           <button id="testVoiceBtn" type="button" class="ghost full">Probar voz</button>
-          <p class="muted">En Automático intenta contestar en el idioma de la pregunta. También podés fijar Español o English. La voz hablada puede quedar apagada y usar solo los globos de texto.</p>
+          <p class="muted">El idioma queda fijo para escuchar y responder. Si querés cambiarlo, elegí el otro acá y Robotito reinicia el micrófono en ese idioma.</p>
         </div>
 
         <div class="card small">
