@@ -3,19 +3,120 @@
 (function(){
   const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9ñ\s]/g," ").replace(/\s+/g," ").trim()
+    .replace(/\b(?:che|oye|ey)\s+robotito\b/g," ")
+    .replace(/\b(?:robotito|osito)\s+(?=(?:me|te|que|cual|como|sabes|decime|dime))/g," ")
+    .replace(/\b(?:me podes decir|me puedes decir|podrias decirme|podrías decirme|me dirias|me dirías|decime por favor|dime por favor|quiero saber|quisiera saber|me gustaria saber|me gustaría saber|sabes decirme|sabes cual es|sabes cuál es|sabes cuantos|sabes cuántos)\b/g," ")
     .replace(/de mayor tamano|mayor tamano|mas enorme/g,"mas grande")
+    .replace(/\b(?:el|la) de mayor tamaño\b/g,"mas grande")
     .replace(/biggest/g,"largest")
     .replace(/how many does a/g,"how many")
     .replace(/que cantidad de/g,"cuantos")
     .replace(/cual es el sonido de/g,"que sonido hace")
-    .replace(/what noise is made by/g,"what sound does");
-  const has=(t,arr)=>arr.some(x=>t.includes(norm(x)));
+    .replace(/what noise is made by/g,"what sound does")
+    .replace(/\b(?:ase|hase)\b/g,"hace")
+    .replace(/\b(?:shamas|yamas|chamas|jamas)\b/g,"llamas")
+    .replace(/\s+/g," ").trim();
+
+  const STOP=new Set([
+    "que","cual","cuales","como","de","del","el","la","los","las","un","una","unos","unas","es","son","era",
+    "se","lo","le","les","al","y","o","por","para","con","sin","en","a","esto","esa","ese","eso","esta","este",
+    "what","which","how","is","are","was","were","the","a","an","of","does","do","did","to","in","on","for","and","or",
+    "please","tell","me","can","could","would","you"
+  ]);
+
+  const SYNONYM_GROUPS=[
+    ["cantidad","cuantos","cuantas","numero","número","howmany","many"],
+    ["grande","mayor","largest","biggest"],
+    ["pequeno","pequeño","menor","smallest"],
+    ["rapido","rápido","veloz","fastest"],
+    ["alto","elevado","tallest","highest"],
+    ["sonido","ruido","voz","sound","noise"],
+    ["hacer","hace","hacen","dice","suena","emitir","emite","produce","sound"],
+    ["servir","sirve","sirven","funcion","función","funciona","hace"],
+    ["razon","razón","motivo","causa","porque","debe","why"],
+    ["verde","verdes","green"],
+    ["tierra","terrestre","land"],
+    ["agua","water"],
+    ["hervir","hierve","ebullicion","ebullición","boil","boiling"],
+    ["congelar","congela","congelacion","congelación","freeze","freezing"],
+    ["girar","gira","orbitar","orbita","orbit"],
+    ["comer","come","comen","alimentar","alimenta","eat"],
+    ["vivir","vive","viven","habitat","hábitat","live"],
+    ["respirar","respira","respiran","breathe"],
+    ["corazon","corazón","heart"],
+    ["cerebro","brain"],
+    ["pulmon","pulmón","pulmones","lungs"],
+    ["diente","dientes","teeth"],
+    ["hueso","huesos","bones"],
+    ["dia","días","dias","day","days"],
+    ["mes","meses","month","months"],
+    ["hora","horas","hour","hours"],
+    ["minuto","minutos","minute","minutes"],
+    ["segundo","segundos","second","seconds"]
+  ];
+  const SYN=new Map();
+  SYNONYM_GROUPS.forEach((g,i)=>g.forEach(w=>SYN.set(normBasic(w),"g"+i)));
+  function normBasic(s){
+    return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9ñ]/g,"");
+  }
+  function stemToken(w){
+    let x=normBasic(w);
+    if(!x)return "";
+    if(SYN.has(x))return SYN.get(x);
+    if(x.length>6)x=x.replace(/(?:amientos|imientos|aciones|adores|adoras|mente)$/,"");
+    if(x.length>5)x=x.replace(/(?:ando|iendo|ados|adas|idos|idas|acion|iones)$/,"");
+    if(x.length>4)x=x.replace(/(?:es|os|as)$/,"");
+    else if(x.length>3)x=x.replace(/s$/,"");
+    return SYN.get(x)||x;
+  }
+  function editDistanceOne(a,b){
+    if(a===b)return true;
+    if(a.length<4||b.length<4||Math.abs(a.length-b.length)>1)return false;
+    let i=0,j=0,diff=0;
+    while(i<a.length&&j<b.length){
+      if(a[i]===b[j]){i++;j++;continue;}
+      if(++diff>1)return false;
+      if(a.length>b.length)i++;
+      else if(b.length>a.length)j++;
+      else{i++;j++;}
+    }
+    return diff+(i<a.length||j<b.length?1:0)<=1;
+  }
+  function semanticTokens(text){
+    return norm(text).split(" ")
+      .filter(w=>w&&w.length>1&&!STOP.has(w))
+      .map(stemToken)
+      .filter(Boolean);
+  }
+  function semanticScore(text,pattern){
+    const q=semanticTokens(text), p=semanticTokens(pattern);
+    if(!p.length)return 0;
+    if(!q.length)return 0;
+    let hits=0;
+    const used=new Set();
+    for(const pw of p){
+      let found=-1;
+      for(let i=0;i<q.length;i++){
+        if(used.has(i))continue;
+        if(q[i]===pw||editDistanceOne(q[i],pw)){found=i;break;}
+      }
+      if(found>=0){used.add(found);hits++;}
+    }
+    const coverage=hits/p.length;
+    const precision=hits/Math.max(hits,q.length);
+    return coverage*.82+precision*.18;
+  }
+  const has=(t,arr)=>arr.some(x=>{
+    const q=norm(x);
+    return t.includes(q)||semanticScore(t,q)>=.86;
+  });
   const loose=(t,pattern)=>{
-    const stop=new Set(["que","cual","como","de","del","el","la","los","las","un","una","es","son","what","which","is","are","the","a","an","of","does","do"]);
-    const words=norm(pattern).split(" ").filter(w=>w.length>2&&!stop.has(w));
-    if(!words.length)return false;
-    const hits=words.filter(w=>t.includes(w)).length;
-    return hits>=Math.max(1,Math.ceil(words.length*.72));
+    const p=semanticTokens(pattern);
+    if(!p.length)return false;
+    const score=semanticScore(t,pattern);
+    if(p.length===1)return score>=.96;
+    if(p.length===2)return score>=.78;
+    return score>=.66;
   };
   const langOf=t=>{
     const n=norm(t);
