@@ -41,7 +41,8 @@
         req.onsuccess=()=>resolve(req.result?.value);
         req.onerror=()=>reject(req.error);
       });
-      await done(tx).catch(()=>{});
+      // The read request has completed; don't attach transaction handlers after
+      // the completion event may already have fired.
       db.close();
       return value===undefined?fallback:value;
     }catch(e){
@@ -114,8 +115,20 @@
 
   async function persistStateKey(key,value){
     if(!HEAVY.has(key))return false;
-    try{await set(key,value);return true;}
-    catch(e){console.warn("robotito durable-store persist",key,e);return false;}
+    try{
+      await set(key,value);
+      return true;
+    }catch(e){
+      console.warn("robotito durable-store persist",key,e);
+      // Compatibility fallback: preserve data even if IndexedDB is blocked.
+      try{
+        localStorage.setItem(key,JSON.stringify(value));
+        return true;
+      }catch(storageError){
+        console.warn("robotito local fallback",key,storageError);
+        return false;
+      }
+    }
   }
 
   function isHeavyKey(key){return HEAVY.has(key);}
