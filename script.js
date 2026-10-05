@@ -2428,7 +2428,7 @@ async function detectLoop(){
       detectEating(dets[0]);
     }else{
       $("#seenLabel").textContent="a nadie";
-      state.currentPerson=null;
+      if(Date.now()-state.lastFaceConfirmedAt>2600)state.currentPerson=null;
       resetEyes();
     }
   }catch(e){console.warn("vision",e);}
@@ -2442,7 +2442,7 @@ function buildMatcher(){
       labeled.push(new faceapi.LabeledFaceDescriptors(p.name,p.descriptors.map(d=>new Float32Array(d))));
     }
   }
-  state.faceMatcher=labeled.length?new faceapi.FaceMatcher(labeled,.52):null;
+  state.faceMatcher=labeled.length?new faceapi.FaceMatcher(labeled,.50):null;
 }
 
 function dayPartGreeting(){
@@ -2576,19 +2576,53 @@ function greetingFor(p){
 }
 
 function recognize(det){
-  if(!state.faceMatcher){state.currentPerson=null;return;}
+  const now=Date.now();
+  if(!state.faceMatcher){
+    if(now-state.lastFaceConfirmedAt>2500)state.currentPerson=null;
+    return;
+  }
+
   const best=state.faceMatcher.findBestMatch(det.descriptor);
-  if(best.label==="unknown"){state.currentPerson=null;return;}
+  const known=best.label!=="unknown" && Number.isFinite(best.distance);
+
+  state.faceMatchHistory.push({
+    label:known?best.label:"unknown",
+    distance:known?best.distance:1,
+    t:now
+  });
+  state.faceMatchHistory=state.faceMatchHistory.filter(x=>now-x.t<5000).slice(-7);
+
+  if(!known){
+    if(now-state.lastFaceConfirmedAt>2600)state.currentPerson=null;
+    return;
+  }
+
+  // Once a person is confirmed, a good matching frame keeps that identity stable.
+  if(state.currentPerson===best.label && best.distance<=.51){
+    state.lastFaceConfirmedAt=now;
+    return;
+  }
+
+  const recent=state.faceMatchHistory.slice(-5);
+  const same=recent.filter(x=>x.label===best.label);
+  const avg=same.length?same.reduce((sum,x)=>sum+x.distance,0)/same.length:1;
+  const last2=recent.slice(-2);
+  const twoVeryStrong=last2.length===2
+    && last2.every(x=>x.label===best.label&&x.distance<=.43);
+  const consensus=same.length>=3 && avg<=.50;
+
+  if(!twoVeryStrong&&!consensus)return;
 
   const p=state.people.find(x=>x.name===best.label);
   if(!p)return;
 
   const changed=state.currentPerson!==best.label;
   state.currentPerson=best.label;
+  state.lastFaceConfirmedAt=now;
   const lastGreeting=p.lastGreetingAt||0;
 
-  if(changed && Date.now()-lastGreeting>25000){
-    p.lastGreetingAt=Date.now();
+  if(changed && now-lastGreeting>25000){
+    p.lastGreetingAt=now;
     save(KEYS.people,state.people);
     say(greetingFor(p));
     if(["loves","likes"].includes(bondCategory(p)))animateAffection();
