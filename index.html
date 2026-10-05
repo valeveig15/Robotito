@@ -12,6 +12,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs" type="module"></script>
   <script defer src="curriculum.js"></script>
+  <script defer src="knowledge.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
@@ -185,6 +186,13 @@
         <div class="card small">
           <h3>Voz de Robotito</h3>
           <label class="check voice-toggle"><input id="voiceEnabled" type="checkbox" /> Hablar en voz alta</label>
+          <label>Idioma de conversación
+            <select id="languageMode">
+              <option value="auto">Automático — Español / English</option>
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
+          </label>
           <label>Voz
             <select id="voiceSelect"></select>
           </label>
@@ -193,12 +201,12 @@
             <label>Velocidad <input id="voiceRate" type="range" min="0.65" max="1.1" step="0.05" value="0.82" /></label>
           </div>
           <button id="testVoiceBtn" type="button" class="ghost full">Probar voz</button>
-          <p class="muted">Por defecto intenta elegir una voz española adulta y grave disponible en tu navegador. Podés dejar la voz apagada y usar solo los globos de texto.</p>
+          <p class="muted">En Automático intenta contestar en el idioma de la pregunta. También podés fijar Español o English. La voz hablada puede quedar apagada y usar solo los globos de texto.</p>
         </div>
 
         <div class="card small">
           <h3>Probá preguntarle</h3>
-          <p class="muted">Entiende distintas formas de preguntar por su nombre, tu nombre, cómo está, hambre, sueño, humor, fecha, hora, dedos, lo que ve, quién habla, tareas, recuerdos, clases y lo que puede hacer.</p>
+          <p class="muted">Podés hablarle en español o inglés. Además de preguntas personales, entiende muchas preguntas comunes sobre animales, planetas, cuerpo humano, geografía básica, formas, tiempo, agua y ciencia cotidiana.</p>
         </div>
       </section>
 
