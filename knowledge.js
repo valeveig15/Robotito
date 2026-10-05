@@ -32,7 +32,16 @@
     {id:"octopus",es:["pulpo"],en:["octopus"],sound:["no tiene un sonido cotidiano característico","does not have a familiar everyday call"],legs:8,type:["molusco","mollusk"]},
     {id:"penguin",es:["pinguino","pingüino"],en:["penguin"],sound:["emite graznidos y llamadas","makes braying and calling sounds"],legs:2,type:["ave","bird"]},
     {id:"whale",es:["ballena"],en:["whale"],sound:["emite cantos y llamadas","makes songs and calls"],legs:0,type:["mamífero","mammal"]},
-    {id:"dolphin",es:["delfin","delfín"],en:["dolphin"],sound:["emite silbidos y clics","makes whistles and clicks"],legs:0,type:["mamífero","mammal"]}
+    {id:"dolphin",es:["delfin","delfín"],en:["dolphin"],sound:["emite silbidos y clics","makes whistles and clicks"],legs:0,type:["mamífero","mammal"]},
+    {id:"tiger",es:["tigre"],en:["tiger"],sound:["ruge","roars"],legs:4,type:["mamífero","mammal"]},
+    {id:"bear",es:["oso"],en:["bear"],sound:["gruñe","growls"],legs:4,type:["mamífero","mammal"]},
+    {id:"giraffe",es:["jirafa"],en:["giraffe"],sound:["emite sonidos suaves y poco frecuentes","makes quiet, infrequent sounds"],legs:4,type:["mamífero","mammal"]},
+    {id:"owl",es:["buho","búho","lechuza"],en:["owl"],sound:["ulula","hoots"],legs:2,type:["ave","bird"]},
+    {id:"eagle",es:["aguila","águila"],en:["eagle"],sound:["emite chillidos","screeches"],legs:2,type:["ave","bird"]},
+    {id:"snake",es:["serpiente","culebra"],en:["snake"],sound:["sisea","hisses"],legs:0,type:["reptil","reptile"]},
+    {id:"turtle",es:["tortuga"],en:["turtle"],sound:["puede emitir pequeños sonidos","can make quiet sounds"],legs:4,type:["reptil","reptile"]},
+    {id:"butterfly",es:["mariposa"],en:["butterfly"],sound:["no tiene un sonido cotidiano característico","does not have a familiar everyday call"],legs:6,type:["insecto","insect"]},
+    {id:"ant",es:["hormiga"],en:["ant"],sound:["no tiene un sonido cotidiano audible para nosotros","does not have a familiar everyday sound for us"],legs:6,type:["insecto","insect"]}
   ];
 
   const countries=[
@@ -100,8 +109,78 @@
     [["cuanto es pi","valor de pi","what is pi"],"Pi es aproximadamente 3,14159.","Pi is approximately 3.14159."],
     [["cuantos minutos hora","minutes in an hour"],"Una hora tiene 60 minutos.","An hour has 60 minutes."],
     [["cuantos segundos minuto","seconds in a minute"],"Un minuto tiene 60 segundos.","A minute has 60 seconds."],
-    [["cuantas horas dia","hours in a day"],"Un día tiene 24 horas.","A day has 24 hours."]
+    [["cuantas horas dia","hours in a day"],"Un día tiene 24 horas.","A day has 24 hours."],
+    [["sentidos humanos","cinco sentidos","human senses","five senses"],"Tradicionalmente se enseñan cinco sentidos: vista, oído, olfato, gusto y tacto, aunque el cuerpo humano percibe también otras clases de estímulos.","Traditionally, five senses are taught: sight, hearing, smell, taste, and touch, although the human body senses other kinds of information too."],
+    [["color sangre","blood color"],"La sangre humana es roja; su tono cambia según cuánto oxígeno transporta.","Human blood is red; its shade changes depending on how much oxygen it carries."],
+    [["corazon bombea","corazón bombea","what does the heart do"],"El corazón bombea sangre para que circule por el cuerpo.","The heart pumps blood around the body."],
+    [["para que sirven pulmones","para qué sirven pulmones","what do lungs do"],"Los pulmones permiten el intercambio de gases: incorporamos oxígeno y eliminamos dióxido de carbono.","The lungs exchange gases: we take in oxygen and remove carbon dioxide."],
+    [["para que sirve cerebro","para qué sirve cerebro","what does the brain do"],"El cerebro coordina gran parte de la actividad del cuerpo y participa en percepción, movimiento, memoria, lenguaje, emociones y pensamiento.","The brain coordinates much of the body's activity and is involved in perception, movement, memory, language, emotions, and thought."],
+    [["cuantos ojos","how many eyes"],"Los seres humanos normalmente tenemos dos ojos.","Humans normally have two eyes."],
+    [["cuantos dedos mano","fingers on a hand"],"Una mano humana normalmente tiene cinco dedos, contando el pulgar.","A human hand normally has five digits, including the thumb."],
+    [["cuantos dedos pies","toes on two feet"],"Dos pies humanos normalmente tienen diez dedos en total.","Two human feet normally have ten toes in total."],
+    [["animal con ocho patas","animal tiene ocho patas","animal has eight legs"],"Las arañas tienen ocho patas.","Spiders have eight legs."],
+    [["insectos seis patas","insects six legs","how many legs insects"],"Los insectos tienen seis patas.","Insects have six legs."],
+    [["arana insecto","araña insecto","is a spider an insect"],"No. Una araña es un arácnido, no un insecto.","No. A spider is an arachnid, not an insect."],
+    [["ballena pez","is a whale a fish"],"No. Una ballena es un mamífero.","No. A whale is a mammal."],
+    [["delfin pez","delfín pez","is a dolphin a fish"],"No. Un delfín es un mamífero.","No. A dolphin is a mammal."],
+    [["pinguino vuela","pingüino vuela","can penguins fly"],"Los pingüinos no vuelan; sus alas están adaptadas para nadar.","Penguins cannot fly; their wings are adapted for swimming."],
+    [["aves tienen plumas","birds have feathers"],"Sí. Las plumas son una característica propia de las aves.","Yes. Feathers are a defining feature of birds."],
+    [["peces respiran","how do fish breathe"],"La mayoría de los peces obtiene oxígeno del agua mediante branquias.","Most fish obtain oxygen from water using gills."],
+    [["por que gatos ronronean","porque gatos ronronean","why do cats purr"],"Los gatos pueden ronronear en situaciones de bienestar, contacto social y también en algunos momentos de estrés o dolor.","Cats can purr when content and social, but also in some situations involving stress or pain."],
+    [["por que perros mueven cola","porque perros mueven cola","why do dogs wag their tails"],"Los perros mueven la cola como parte de su comunicación; el significado depende de la postura, dirección y contexto.","Dogs wag their tails as part of communication; the meaning depends on posture, direction, and context."],
+    [["que comen pandas","what do pandas eat"],"Los pandas gigantes comen principalmente bambú, aunque biológicamente pertenecen al orden de los carnívoros.","Giant pandas eat mainly bamboo, although biologically they belong to the order Carnivora."],
+    [["donde viven pandas","where do pandas live"],"Los pandas gigantes silvestres viven en regiones montañosas de China.","Wild giant pandas live in mountainous regions of China."],
+    [["tierra redonda","forma tierra","shape of earth","is earth round"],"La Tierra es aproximadamente esférica, ligeramente achatada en los polos.","Earth is approximately spherical, slightly flattened at the poles."],
+    [["por que hay dia noche","porque hay dia noche","why day and night"],"El día y la noche se producen porque la Tierra gira sobre su eje.","Day and night occur because Earth rotates on its axis."],
+    [["cuanto tarda tierra sol","earth orbit time"],"La Tierra tarda aproximadamente un año en completar una órbita alrededor del Sol.","Earth takes about one year to complete an orbit around the Sun."],
+    [["cuanto tarda tierra girar","earth rotation time"],"La Tierra tarda aproximadamente 24 horas en completar una rotación respecto del ciclo solar diario.","Earth takes about 24 hours to complete a rotation relative to the daily solar cycle."],
+    [["que causa lluvia","por que llueve","porque llueve","why does it rain"],"Llueve cuando gotas de agua en las nubes crecen lo suficiente como para caer por gravedad.","Rain falls when water droplets in clouds grow large enough to fall under gravity."],
+    [["que es trueno","what is thunder"],"El trueno es el sonido producido por la rápida expansión del aire calentado por un rayo.","Thunder is the sound produced by the rapid expansion of air heated by lightning."],
+    [["rayo antes trueno","lightning before thunder"],"Vemos el relámpago antes de oír el trueno porque la luz viaja muchísimo más rápido que el sonido.","We see lightning before hearing thunder because light travels much faster than sound."],
+    [["estaciones ano","estaciones del año","seasons of the year"],"Las cuatro estaciones tradicionales son primavera, verano, otoño e invierno.","The four traditional seasons are spring, summer, autumn or fall, and winter."],
+    [["por que estaciones","porque estaciones","why seasons"],"Las estaciones se deben principalmente a la inclinación del eje de la Tierra mientras orbita alrededor del Sol.","Seasons are caused mainly by the tilt of Earth's axis as Earth orbits the Sun."],
+    [["continentes nombres","nombres continentes","name the continents"],"En el modelo de siete continentes: África, Antártida, Asia, Europa, América del Norte, América del Sur y Oceanía/Australia.","In the seven-continent model: Africa, Antarctica, Asia, Europe, North America, South America, and Australia/Oceania."],
+    [["oceanos nombres","océanos nombres","name the oceans"],"Se suelen distinguir cinco océanos: Pacífico, Atlántico, Índico, Ártico y Austral.","Five oceans are commonly recognized: Pacific, Atlantic, Indian, Arctic, and Southern."],
+    [["capital uruguay","uruguay capital"],"La capital de Uruguay es Montevideo.","The capital of Uruguay is Montevideo."],
+    [["idioma brasil","language of brazil"],"El idioma oficial de Brasil es el portugués.","The official language of Brazil is Portuguese."],
+    [["moneda uruguay","uruguay currency"],"La moneda de Uruguay es el peso uruguayo.","Uruguay's currency is the Uruguayan peso."],
+    [["cuanto es docena","what is a dozen"],"Una docena son 12 unidades.","A dozen is 12 items."],
+    [["cuanto es centena","what is a hundred"],"Una centena son 100 unidades.","One hundred is 100 units."],
+    [["par o impar","even or odd"],"Un número par es divisible entre 2 sin resto; uno impar no.","An even number is divisible by 2 with no remainder; an odd number is not."],
+    [["triangulo angulos","triangle angles"],"En geometría euclidiana, los ángulos interiores de un triángulo suman 180 grados.","In Euclidean geometry, the interior angles of a triangle add up to 180 degrees."],
+    [["cuadrado angulos","square angles"],"Un cuadrado tiene cuatro ángulos rectos de 90 grados.","A square has four right angles of 90 degrees."],
+    [["rectangulo lados","rectangle sides"],"Un rectángulo tiene cuatro lados y cuatro ángulos rectos; los lados opuestos son iguales.","A rectangle has four sides and four right angles; opposite sides are equal."],
+    [["que es mamifero","qué es mamífero","what is a mammal"],"Un mamífero es un vertebrado cuyo grupo se caracteriza, entre otras cosas, por tener pelo en alguna etapa y por alimentar a las crías con leche producida por glándulas mamarias.","A mammal is a vertebrate whose group is characterized, among other things, by having hair at some stage and feeding young with milk produced by mammary glands."],
+    [["que es planeta","qué es planeta","what is a planet"],"Un planeta es un cuerpo celeste que orbita una estrella y, en términos generales, tiene suficiente masa para adquirir una forma casi redonda.","A planet is a celestial body that orbits a star and generally has enough mass to become nearly round."],
+    [["que es estrella","qué es estrella","what is a star"],"Una estrella es una enorme esfera de plasma que produce energía mediante fusión nuclear; el Sol es una estrella.","A star is a huge sphere of plasma that produces energy through nuclear fusion; the Sun is a star."],
+    [["que es luna","qué es luna","what is a moon"],"Una luna es un satélite natural que orbita un planeta u otro cuerpo mayor.","A moon is a natural satellite that orbits a planet or another larger body."],
+    [["que es volcan","qué es volcán","what is a volcano"],"Un volcán es una estructura geológica por la que pueden salir magma, gases y otros materiales desde el interior de un cuerpo planetario.","A volcano is a geological structure through which magma, gases, and other material can emerge from inside a planetary body."],
+    [["que es fosil","qué es fósil","what is a fossil"],"Un fósil es un resto, impresión o señal de un organismo del pasado preservado en materiales geológicos.","A fossil is a preserved remain, impression, or trace of an organism from the past."],
+    [["por que flotan barcos","porque flotan barcos","why do boats float"],"Un barco flota cuando el empuje del agua puede equilibrar su peso; su forma permite desplazar suficiente agua.","A boat floats when the buoyant force from displaced water can balance its weight; its shape helps it displace enough water."],
+    [["por que hielo flota","porque hielo flota","why does ice float"],"El hielo flota porque es menos denso que el agua líquida.","Ice floats because it is less dense than liquid water."],
+    [["por que vemos colores","porque vemos colores","why do we see colors"],"Vemos colores porque distintas longitudes de onda de la luz estimulan de forma diferente los receptores de nuestros ojos y el cerebro interpreta esas señales.","We see colors because different wavelengths of light stimulate receptors in our eyes differently and the brain interprets those signals."]
   ];
+
+  const playfulSounds={
+    dog:["¡Guau guau!","Woof woof!"],
+    cat:["¡Miau miau!","Meow meow!"],
+    cow:["¡Muuu!","Moo!"],
+    horse:["¡Hiiiiii!","Neigh!"],
+    pig:["¡Oinc oinc!","Oink oink!"],
+    sheep:["¡Beeee!","Baa!"],
+    goat:["¡Meeee!","Maa!"],
+    lion:["¡Grrrrr… ROAR!","Grrrr… ROAR!"],
+    tiger:["¡Grrrrr… ROAR!","Grrrr… ROAR!"],
+    wolf:["¡Auuuuuu!","Awoooo!"],
+    elephant:["¡Prrrrruuu!","Pawooo!"],
+    duck:["¡Cuac cuac!","Quack quack!"],
+    chicken:["¡Cloc cloc!","Cluck cluck!"],
+    rooster:["¡Kikirikí!","Cock-a-doodle-doo!"],
+    frog:["¡Croac croac!","Ribbit!"],
+    bee:["¡Bzzzzzz!","Bzzzz!"],
+    owl:["¡Uuuh, uuuh!","Hoot hoot!"],
+    snake:["¡Sssssss!","Hissss!"]
+  };
 
   function findAnimal(t){
     return animals.find(a=>has(t,[...a.es,...a.en]));
@@ -110,9 +189,13 @@
     const t=norm(input), lang=forcedLang==="en"||forcedLang==="es"?forcedLang:langOf(input);
 
     // Animal sounds
-    if(has(t,["que sonido hace","que ruido hace","como hace","what sound does","what noise does"])){
+    if(has(t,["que sonido hace","que ruido hace","como hace","como suena","que dice","imitame","imita un","hace el","hace un","what sound does","what noise does","what does a","what does the","how does a","imitate a"])){
       const a=findAnimal(t);
-      if(a)return answer(`El ${a.es[0]} ${a.sound[0]}.`,`A ${a.en[0]} ${a.sound[1]}.`,lang);
+      if(a){
+        const playful=playfulSounds[a.id];
+        if(playful)return lang==="en"?playful[1]:playful[0];
+        return answer(`El ${a.es[0]} ${a.sound[0]}.`,`A ${a.en[0]} ${a.sound[1]}.`,lang);
+      }
     }
 
     // Animal legs
