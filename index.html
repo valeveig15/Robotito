@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261005-battery2" />
+  <link rel="stylesheet" href="style.css?v=20261005-avatar1" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -27,22 +27,32 @@
   <script defer src="class-verification.js"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
-  <script defer src="script.js?v=20261005-battery2"></script>
+  <script defer src="script.js?v=20261005-avatar1"></script>
   <script defer src="robotito-vnext.js?v=20261005-routing3"></script>
   <script defer src="video-material.js"></script>
-  <script defer src="robotito-tests.js?v=20261005-battery2"></script>
+  <script defer src="robotito-tests.js?v=20261005-avatar1"></script>
 </head>
 <body>
 <div id="languageGate" class="language-gate" role="dialog" aria-modal="true" aria-labelledby="languageGateTitle">
-  <div class="language-gate-card">
-    <div class="language-panda">🐼</div>
-    <h2 id="languageGateTitle">¿Qué idioma preferís?<br><span>Which language do you prefer? · Qual idioma você prefere?</span></h2>
-    <p>Elegí el idioma en el que querés hablar con Robotito.<br><span>Choose the language you want to use with Robotito. · Escolha o idioma para falar com o Robotito.</span></p>
-    <div class="language-gate-actions">
-      <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
-      <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
-      <button type="button" class="primary" data-start-language="pt">🇧🇷 Português</button>
-    </div>
+  <div id="languageGateCard" class="language-gate-card">
+    <div id="startupMascot" class="language-panda" aria-hidden="true">🐼</div>
+
+    <section id="languageStep" class="startup-step" aria-labelledby="languageGateTitle">
+      <h2 id="languageGateTitle">¿Qué idioma preferís?<br><span>Which language do you prefer? · Qual idioma você prefere?</span></h2>
+      <p>Elegí el idioma en el que querés hablar con Robotito.<br><span>Choose the language you want to use with Robotito. · Escolha o idioma para falar com o Robotito.</span></p>
+      <div class="language-gate-actions">
+        <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
+        <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
+        <button type="button" class="primary" data-start-language="pt">🇧🇷 Português</button>
+      </div>
+    </section>
+
+    <section id="avatarStep" class="startup-step hidden" aria-labelledby="avatarStepTitle" hidden>
+      <h2 id="avatarStepTitle">Elegí el avatar de Robotito</h2>
+      <p id="avatarStepDescription">Podés cambiar su aspecto ahora. La elección quedará guardada en este dispositivo.</p>
+      <div id="avatarChoices" class="avatar-choice-grid" role="listbox" aria-label="Avatares disponibles"></div>
+      <button id="backToLanguage" type="button" class="avatar-back-button">Volver al idioma</button>
+    </section>
   </div>
 </div>
 
@@ -116,6 +126,13 @@
 
       <div id="robotito" class="robotito mood-calm" role="img" aria-label="Robotito, panda virtual">
         <div class="mood-aura"></div>
+        <div id="animalAvatar" class="animal-avatar" aria-hidden="true">
+          <span class="animal-avatar-backdrop"></span>
+          <span id="animalAvatarEmoji" class="animal-avatar-emoji">🐼</span>
+          <span id="animalAvatarHeartEyes" class="animal-avatar-heart-eyes">💗 💗</span>
+          <span id="animalAvatarMood" class="animal-avatar-mood">✨</span>
+          <span id="animalAvatarName" class="animal-avatar-name">Panda</span>
+        </div>
         <svg class="panda-svg" viewBox="0 0 320 380" aria-hidden="true">
           <defs>
             <linearGradient id="robotitoFur" x1="18%" y1="5%" x2="82%" y2="96%">
