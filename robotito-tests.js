@@ -12,6 +12,8 @@
     const math=window.ROBOTITO_SPOKEN_MATH;
     const circles=window.ROBOTITO_CIRCLE_MATH;
     const router=window.ROBOTITO_ROUTER;
+    const questionRouting=window.ROBOTITO_QUESTION_ROUTING;
+    const commonKnowledge=window.ROBOTITO_COMMON_KNOWLEDGE;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
@@ -42,6 +44,19 @@
       results.push(same(router.classify("¿Qué objeto es esto?").intent,"object","ruta objeto"));
       results.push(same(router.shapeAnswer("¿Qué es la gravedad?","La gravedad es una interacción física. Además tiene múltiples efectos y aplicaciones."),"La gravedad es una interacción física.","recorta definiciones al alcance pedido"));
     }else results.push(truthy(false,"router loaded"));
+
+    if(questionRouting){
+      results.push(same(questionRouting.shouldUseClassFirst("¿Qué es permutación?"),false,"definición general no usa clase primero"));
+      results.push(same(questionRouting.shouldUseClassFirst("Según la clase, ¿qué es permutación?"),true,"referencia explícita usa clase primero"));
+      results.push(same(questionRouting.isDefinitionQuestion("¿Qué son las permutaciones?"),true,"reconoce definición en plural"));
+      results.push(same(questionRouting.definitionSubject("¿Qué es una permutación?"),"permutacion","extrae concepto definido"));
+      results.push(same(questionRouting.definitionEvidenceQuality("¿Qué es permutación?",{text:"Entonces por permutación nos da x igual a seis."}),0,"rechaza mención incidental como definición"));
+      results.push(same(questionRouting.definitionEvidenceQuality("¿Qué es permutación?",{text:"Una permutación es una ordenación de todos los elementos."}),1,"acepta evidencia definitoria"));
+    }else results.push(truthy(false,"question routing loaded"));
+
+    if(commonKnowledge){
+      results.push(same(commonKnowledge.answer("¿Qué es permutación?","es"),"Una permutación es una ordenación de todos los elementos de un conjunto; el orden sí importa.","responde permutación sin depender de materiales"));
+    }else results.push(truthy(false,"common knowledge loaded"));
 
     if(videoMaterial){
       results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de URL de YouTube"));
