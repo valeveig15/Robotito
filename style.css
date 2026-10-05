@@ -750,3 +750,70 @@ body.mode-night .bamboo:after{
 @media (prefers-reduced-motion:reduce){
   .world,.day-sun,.night-sky{transition:none}
 }
+
+
+/* v10.1 — grounded class answers: answer first, short quote second */
+.class-grounded-answer{
+  display:grid;
+  gap:9px;
+}
+.class-answer-text{
+  margin:2px 0 0!important;
+  font-size:14px;
+  line-height:1.55!important;
+}
+.class-origin{
+  display:inline-flex;
+  width:fit-content;
+  max-width:100%;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#f7f1f6;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+}
+.class-quotes-title{
+  margin-top:3px;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  font-weight:900;
+}
+.class-source-card{
+  padding:10px 11px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fffafd;
+}
+.class-source-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:6px;
+}
+.class-source-head strong{
+  font-size:11px;
+  color:#655b69;
+}
+.class-source-head span{
+  font-size:10px;
+  color:var(--muted);
+}
+.class-source-card blockquote{
+  margin:0;
+  padding-left:10px;
+  border-left:3px solid rgba(174,139,166,.38);
+  color:#514854;
+  font-size:12px;
+  line-height:1.45;
+}
+body.mode-night .class-origin{
+  background:rgba(255,255,255,.08);
+}
+body.mode-night .class-source-card{
+  background:rgba(255,255,255,.94);
+}
