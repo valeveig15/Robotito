@@ -294,20 +294,22 @@
       if(/^\d/.test(t||"")){take();return Number(t);}
       throw new Error("number");
     }
+    // Exponentiation binds more tightly than a leading sign:
+    // -2^2 = -(2^2), while 2^-2 is still accepted.
+    function power(){
+      const base=primary();
+      if(peek()==="^"){take();return Math.pow(base,unary());}
+      return base;
+    }
     function unary(){
       if(peek()==="+"){take();return unary();}
       if(peek()==="-"){take();return -unary();}
-      return primary();
-    }
-    function power(){
-      const base=unary();
-      if(peek()==="^"){take();return Math.pow(base,power());}
-      return base;
+      return power();
     }
     function term(){
-      let v=power();
+      let v=unary();
       while(peek()==="*"||peek()==="/"){
-        const op=take(),rhs=power();
+        const op=take(),rhs=unary();
         if(op==="/"&&rhs===0)throw new Error("divide-zero");
         v=op==="*"?v*rhs:v/rhs;
       }
