@@ -26,6 +26,12 @@ const state = {
   musicConfidence: 0,
   sleeping: false,
   recognition: null,
+  speaking: false,
+  speechBlocked: false,
+  voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
+  voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
+  voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
+  voiceRate: Number(localStorage.getItem("robotito.voiceRate.v1")||0.82),
   stream: null,
   analyser: null,
   lastDetections: [],
@@ -73,12 +79,68 @@ function normalizeText(s){
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
 
+function cleanSpeechText(text){
+  return String(text||"")
+    .replace(/[🐼♡♥🎉🍓😠😳👀📚✋✨]/g,"")
+    .replace(/\s+/g," ")
+    .trim();
+}
+function chooseDefaultVoice(voices){
+  const spanish=voices.filter(v=>/^es([-_]|$)/i.test(v.lang||""));
+  const pool=spanish.length?spanish:voices;
+  const maleHints=["pablo","jorge","carlos","diego","miguel","enrique","antonio","juan","raul","alvaro","andres","mateo","sergio","male","hombre"];
+  return pool.find(v=>maleHints.some(h=>normalizeText(v.name).includes(h)))
+    || pool.find(v=>/natural|neural|premium/i.test(v.name))
+    || pool[0]
+    || voices[0]
+    || null;
+}
+function populateVoiceSelect(){
+  const select=$("#voiceSelect");
+  if(!select||!("speechSynthesis" in window))return;
+  const all=speechSynthesis.getVoices();
+  const spanish=all.filter(v=>/^es([-_]|$)/i.test(v.lang||""));
+  const voices=spanish.length?spanish:all;
+  const previous=state.voiceURI;
+  select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
+  let chosen=voices.find(v=>v.voiceURI===previous)||chooseDefaultVoice(voices);
+  if(chosen){
+    state.voiceURI=chosen.voiceURI;
+    select.value=chosen.voiceURI;
+    localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
+  }
+}
+function restartRecognitionAfterSpeech(){
+  if(!state.started||state.speechBlocked||!state.recognition)return;
+  setTimeout(()=>{try{state.recognition.start();}catch{}},250);
+}
+function speakResponse(text){
+  if(!state.voiceEnabled||!("speechSynthesis" in window))return;
+  const clean=cleanSpeechText(text);
+  if(!clean)return;
+  speechSynthesis.cancel();
+  state.speaking=true;
+  try{state.recognition?.abort();}catch{}
+  const utter=new SpeechSynthesisUtterance(clean);
+  const voices=speechSynthesis.getVoices();
+  const chosen=voices.find(v=>v.voiceURI===state.voiceURI)||chooseDefaultVoice(voices);
+  if(chosen)utter.voice=chosen;
+  utter.lang=chosen?.lang||"es-UY";
+  utter.pitch=clamp(state.voicePitch,.5,1.1);
+  utter.rate=clamp(state.voiceRate,.65,1.1);
+  utter.volume=.92;
+  const done=()=>{state.speaking=false;restartRecognitionAfterSpeech();};
+  utter.onend=done;
+  utter.onerror=done;
+  speechSynthesis.speak(utter);
+}
 function say(text, ms=3000){
   const b=$("#speechBubble");
   b.textContent=text;
   b.classList.remove("hidden");
   clearTimeout(say.t);
   say.t=setTimeout(()=>b.classList.add("hidden"),ms);
+  speakResponse(text);
 }
 function toast(text){
   const t=$("#toast");
@@ -361,7 +423,7 @@ function setupSpeechRecognition(){
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){state.speechBlocked=true;$("#transcript").textContent="El navegador bloqueó el reconocimiento de voz.";}
     else if(e.error!=="no-speech"&&e.error!=="aborted")speechFails++;
   };
-  r.onend=()=>{ if(!state.started||state.speechBlocked)return; setTimeout(()=>{try{r.start();}catch{}},Math.min(5000,300+speechFails*700)); };
+  r.onend=()=>{ if(!state.started||state.speechBlocked||state.speaking)return; setTimeout(()=>{try{r.start();}catch{}},Math.min(5000,300+speechFails*700)); };
   try{r.start(); state.recognition=r;}catch{}
 }
 
@@ -377,68 +439,190 @@ function autoRemember(text){
   renderMemories();
 }
 
+function textHasAny(text,terms){
+  return terms.some(t=>text.includes(t));
+}
+function textHasAllGroups(text,groups){
+  return groups.every(group=>group.some(t=>text.includes(t)));
+}
+function intentMatches(text,phrases=[],groups=[]){
+  if(phrases.some(p=>text.includes(p)))return true;
+  return groups.length?textHasAllGroups(text,groups):false;
+}
+function moodAnswer(){
+  if(state.sleeping)return "Estoy dormido… o casi.";
+  if(state.hunger>=95)return "Estoy bastante enojado porque tengo muchísima hambre.";
+  const labels={happy:"contento",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto",calm:"tranquilo"};
+  return "Ahora estoy "+(labels[state.emotion]||"tranquilo")+".";
+}
+function capabilitiesAnswer(){
+  return "Puedo reconocerte por cara y voz, recordar cosas, escuchar clases, resumirlas, ayudarte a estudiar, contar dedos, reconocer algunos objetos, recomendar libros, mirar tus tareas y resolver o dibujar algunos ejercicios de circunferencias.";
+}
 function answerEasyQuestion(rawText){
   const text=normalizeText(rawText);
+  const known=state.currentVoicePerson||state.currentPerson;
 
-  if(/(como te llamas|cual es tu nombre|quien sos|quien eres)/.test(text)){
-    say(sample(["Me llamo Robotito 🐼","Soy Robotito.","Robotito. Ese soy yo 🐼"]));
+  if(intentMatches(text,
+    ["como te llamas","cual es tu nombre","que nombre tenes","que nombre tienes","decime tu nombre","dime tu nombre","tu nombre cual es","quien sos","quien eres","como es tu nombre"],
+    [["nombre"],["tu","te"]]
+  )){
+    say(sample(["Me llamo Robotito.","Soy Robotito.","Mi nombre es Robotito."]));
     return true;
   }
 
-  if(/(yo como me llamo|como me llamo yo|cual es mi nombre|quien soy yo)/.test(text)){
-    const known=state.currentVoicePerson||state.currentPerson;
-    if(known) say(sample([
-      `Vos sos ${known}.`,
-      `Te llamás ${known}. Te reconocí.`,
-      `${known} 🐼. Me acuerdo de vos.`
-    ]));
-    else say("Todavía no sé quién sos. Registrá tu cara y después sí me voy a acordar.");
+  if(intentMatches(text,
+    ["como me llamo","cual es mi nombre","que nombre tengo","sabes mi nombre","te acordas de mi nombre","te acuerdas de mi nombre","quien soy","quien soy yo","me reconoces"],
+    [["nombre"],["mi","me"]]
+  )){
+    if(known)say(sample([`Vos sos ${known}.`,`Te llamás ${known}. Te reconocí.`,`Sos ${known}. Me acuerdo de vos.`]));
+    else say("Todavía no sé quién sos. Registrá tu cara y tu voz y después sí me voy a acordar.");
     return true;
   }
 
-  if(/(como te va|como estas|como andas|todo bien)/.test(text)){
-    if(state.sleeping) say("Tengo muchísimo sueño… zzz.");
-    else if(state.hunger>=95) say("Tengo tanta hambre que estoy bastante enojado.");
-    else if(state.hunger>=70) say("Estoy bien, pero tengo mucha hambre.");
-    else if(state.mood==="happy"||state.moodScore>=70) say(sample(["¡Muy bien! Estoy contento 🐼","Bien. Hoy estoy de muy buen humor.","Súper bien ♡"]));
-    else if(state.mood==="sad"||state.moodScore<35) say("Más o menos… estoy un poquito triste.");
-    else say(sample(["Bien, tranquilo.","Todo bien por acá 🐼","Bastante bien."]));
+  if(intentMatches(text,
+    ["como estas","como te va","como andas","que tal estas","como te sentis","como te sientes","todo bien","estas bien","que tal te va"],
+    [["como","que tal"],["estas","andas","sentis","sientes","va"]]
+  )){
+    say(moodAnswer());
     return true;
   }
 
-  if(/(tenes hambre|tienes hambre|estas hambriento|cuanta hambre)/.test(text)){
-    if(state.hunger>=95) say("¡Sí! Muchísima. Ya estoy enojado de hambre.");
-    else if(state.hunger>=75) say("Sí. Tengo bastante hambre.");
-    else if(state.hunger>=35) say("Un poquito. Todavía aguanto.");
+  if(intentMatches(text,
+    ["tenes hambre","tienes hambre","estas con hambre","estas hambriento","queres comer","quieres comer","cuanta hambre tenes","cuanta hambre tienes","comiste"],
+    [["hambre","comer","comiste"],["tenes","tienes","estas","queres","quieres","cuanta"]]
+  )){
+    if(state.hunger>=95)say("Sí. Muchísima. Ya estoy enojado de hambre.");
+    else if(state.hunger>=75)say("Sí, tengo bastante hambre.");
+    else if(state.hunger>=35)say("Un poco. Todavía aguanto.");
     else say("No mucho. Estoy bastante lleno.");
     return true;
   }
 
-  if(/(cuantos dedos ves|cuantos dedos estoy mostrando|cuantos dedos hay)/.test(text)){
-    const fresh=Date.now()-state.lastHandSeenAt<2200;
-    if(!fresh||state.visibleHands===0) say("Ahora mismo no veo ninguna mano. Mostrámela bien frente a la cámara.");
-    else if(state.visibleFingers===0) say("Veo una mano, pero no veo ningún dedo levantado.");
+  if(intentMatches(text,
+    ["tenes sueno","tienes sueno","estas cansado","estas dormido","te queres dormir","te quieres dormir","tenes sueño","tienes sueño"],
+    [["sueno","cansado","dormido","dormir"],["tenes","tienes","estas","queres","quieres"]]
+  )){
+    if(state.sleeping)say("Sí. De hecho, me estaba quedando dormido.");
+    else if(state.energy<35)say("Sí, estoy bastante cansado.");
+    else if(state.energy<65)say("Un poco, pero todavía estoy bien.");
+    else say("No. Tengo bastante energía.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que humor tenes","que humor tienes","de que humor estas","como te sentis de animo","como te sientes de animo","estas feliz","estas triste","estas enojado","estas contento"],
+    [["humor","animo"],["tenes","tienes","estas"]]
+  )){
+    say(moodAnswer());
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos dedos ves","cuantos dedos estoy mostrando","cuantos dedos hay","cuantos dedos te muestro","conta los dedos","cuenta los dedos","decime cuantos dedos ves"],
+    [["dedo","dedos"],["ves","mostrar","mostrando","muestro","conta","cuenta","cuantos"]]
+  )){
+    const fresh=Date.now()-state.lastHandSeenAt<2500;
+    if(!fresh||state.visibleHands===0)say("Ahora mismo no veo ninguna mano. Mostrámelas bien frente a la cámara.");
+    else if(state.visibleFingers===0)say("Veo manos, pero ningún dedo levantado.");
     else say(`Veo ${state.visibleFingers} ${state.visibleFingers===1?"dedo":"dedos"} levantados.`);
     return true;
   }
 
-  if(/(que dia es|que fecha es|en que dia estamos)/.test(text)){
+  if(intentMatches(text,
+    ["que dia es","que fecha es","en que dia estamos","que fecha tenemos","decime la fecha","dime la fecha","hoy que dia es"],
+    [["dia","fecha"],["que","cual","hoy"]]
+  )){
     const d=new Date();
     say(d.toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));
     return true;
   }
 
-  if(/(que hora es|tenes hora|tienes hora)/.test(text)){
+  if(intentMatches(text,
+    ["que hora es","tenes hora","tienes hora","decime la hora","dime la hora","me decis la hora","me dices la hora"],
+    [["hora"],["que","tenes","tienes","decime","dime","decis","dices"]]
+  )){
     const d=new Date();
     say(`Son las ${d.toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"})}.`);
     return true;
   }
 
-  if(/(que recuerdas de mi|que te dije|que sabes de mi)/.test(text)){
-    const person=state.currentPerson||"persona no reconocida";
+  if(intentMatches(text,
+    ["que recordas de mi","que recuerdas de mi","que te dije","que sabes de mi","te acordas de lo que te dije","te acuerdas de lo que te dije","que te conte","que te conte antes"],
+    [["recordas","recuerdas","acordas","acuerdas","sabes"],["mi","de mi","te dije","te conte"]]
+  )){
+    const person=known||"persona no reconocida";
     const mine=state.memories.filter(m=>m.person===person).slice(-5);
-    if(!mine.length) say("Todavía no tengo recuerdos tuyos.");
+    if(!mine.length)say("Todavía no tengo recuerdos claros tuyos.");
     else say(`Lo último que recuerdo es: “${mine[mine.length-1].text}”`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que podes hacer","que puedes hacer","para que servis","para que sirves","que sabes hacer","que funciones tenes","que funciones tienes","en que me podes ayudar","en que me puedes ayudar"],
+    [["que","en que"],["podes","puedes","sabes","funciones","ayudar","servis","sirves"]]
+  )){
+    say(capabilitiesAnswer(),6500);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que ves","que estas viendo","a quien ves","me ves","podes verme","puedes verme","hay alguien enfrente tuyo"],
+    [["ves","viendo","ver"],["que","quien","me","alguien"]]
+  )){
+    if(state.lastDetections.length===0)say("Ahora mismo no veo a nadie.");
+    else if(known)say(`Veo a ${known}.`);
+    else say(`Veo ${state.lastDetections.length} ${state.lastDetections.length===1?"persona":"personas"}, pero no reconozco a todas.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["quien esta hablando","quien habla","quien te esta hablando","reconoces mi voz","sabes quien habla","de quien es esta voz"],
+    [["quien"],["habla","hablando","voz"]]
+  )){
+    if(state.currentVoicePerson)say(`Creo que está hablando ${state.currentVoicePerson}.`);
+    else say("Escucho una voz, pero no la reconozco con suficiente seguridad.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que escuchas","que estas escuchando","que ois","que estas oyendo","escuchas musica","es musica o ruido"],
+    [["escuchas","ois","oyendo"],["que","musica","ruido"]]
+  )){
+    say(`Ahora detecto ${state.audioKind}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["tengo tareas","que tareas tengo","que tengo que hacer","tengo algo pendiente","que tengo pendiente","hay algo para hacer","que deberes tengo"],
+    [["tarea","tareas","pendiente","hacer","deberes"],["tengo","que","hay"]]
+  )){
+    const tasks=pendingTasks();
+    if(!tasks.length)say("No veo tareas pendientes en la hoja conectada.");
+    else say(`Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. La primera es: ${tasks[0].task}.`,5200);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["estas escuchando la clase","estas en modo clase","modo clase esta activo","estas aprendiendo la clase"],
+    [["clase"],["escuchando","modo","aprendiendo","activo"]]
+  )){
+    say(state.classMode?`Sí. Estoy escuchando la clase de ${state.classSubject||"esta materia"}.`:"No. El modo clase está apagado.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos anos tenes","cuantos anos tienes","que edad tenes","que edad tienes"],
+    [["edad","anos"],["tenes","tienes","cuantos","que"]]
+  )){
+    say("No tengo una edad humana. Soy una mascota virtual.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que sos","que eres","que animal sos","que animal eres","sos un panda","eres un panda"],
+    [["que"],["sos","eres","animal"]]
+  )){
+    say("Soy Robotito, un panda virtual.");
     return true;
   }
 
@@ -1539,6 +1723,24 @@ function ambientMood(){
 
 function bindUI(){
   $("#startBtn").addEventListener("click",startSenses);
+  $("#voiceEnabled")?.addEventListener("change",e=>{
+    state.voiceEnabled=e.target.checked;
+    localStorage.setItem("robotito.voiceEnabled.v1",String(state.voiceEnabled));
+    if(!state.voiceEnabled&&"speechSynthesis" in window)speechSynthesis.cancel();
+  });
+  $("#voiceSelect")?.addEventListener("change",e=>{
+    state.voiceURI=e.target.value;
+    localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
+  });
+  $("#voicePitch")?.addEventListener("input",e=>{
+    state.voicePitch=Number(e.target.value);
+    localStorage.setItem("robotito.voicePitch.v1",String(state.voicePitch));
+  });
+  $("#voiceRate")?.addEventListener("input",e=>{
+    state.voiceRate=Number(e.target.value);
+    localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));
+  });
+  $("#testVoiceBtn")?.addEventListener("click",()=>speakResponse("Mi nombre es Robotito. Estoy listo para ayudarte."));
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personBirthday")?.addEventListener("input",e=>{
     const digits=e.target.value.replace(/\D/g,"").slice(0,8);
@@ -1635,6 +1837,11 @@ function init(){
   renderClassTranscript();
   renderAcademicMaterials();
   summarizeClass();
+  if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
+  if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
+  if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
+  populateVoiceSelect();
+  if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=populateVoiceSelect;
   clockTick();
   updateMeters();
   blinkLoop();
