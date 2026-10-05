@@ -1,8 +1,22 @@
 // Robotito — common knowledge, Spanish + English.
 // Intentionally limited to stable, everyday facts. Academic/class material remains separate.
 (function(){
-  const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9ñ\s]/g," ").replace(/\s+/g," ").trim();
+  const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9ñ\s]/g," ").replace(/\s+/g," ").trim()
+    .replace(/de mayor tamano|mayor tamano|mas enorme/g,"mas grande")
+    .replace(/biggest/g,"largest")
+    .replace(/how many does a/g,"how many")
+    .replace(/que cantidad de/g,"cuantos")
+    .replace(/cual es el sonido de/g,"que sonido hace")
+    .replace(/what noise is made by/g,"what sound does");
   const has=(t,arr)=>arr.some(x=>t.includes(norm(x)));
+  const loose=(t,pattern)=>{
+    const stop=new Set(["que","cual","como","de","del","el","la","los","las","un","una","es","son","what","which","is","are","the","a","an","of","does","do"]);
+    const words=norm(pattern).split(" ").filter(w=>w.length>2&&!stop.has(w));
+    if(!words.length)return false;
+    const hits=words.filter(w=>t.includes(w)).length;
+    return hits>=Math.max(1,Math.ceil(words.length*.72));
+  };
   const langOf=t=>{
     const n=norm(t);
     const en=["what","how","which","where","who","does","do ","is ","are ","many","name","sound","legs","animal","largest","planet","capital","water","body","days","months","hello","good"];
@@ -198,6 +212,12 @@
       }
     }
 
+    if(has(t,["que animal hace guau","quien hace guau","what animal says woof"]))return answer("El perro.","A dog.",lang);
+    if(has(t,["que animal hace miau","quien hace miau","what animal says meow"]))return answer("El gato.","A cat.",lang);
+    if(has(t,["que animal hace mu","quien hace mu","what animal says moo"]))return answer("La vaca.","A cow.",lang);
+    if(has(t,["que animal hace cuac","quien hace cuac","what animal says quack"]))return answer("El pato.","A duck.",lang);
+    if(has(t,["que animal hace oinc","quien hace oinc","what animal says oink"]))return answer("El cerdo.","A pig.",lang);
+
     // Animal legs
     if(has(t,["cuantas patas","cuántas patas","how many legs"])){
       const a=findAnimal(t);
@@ -233,7 +253,7 @@
     }
 
     for(const [patterns,es,en] of direct){
-      if(es&&has(t,patterns))return answer(es,en,lang);
+      if(es&&(has(t,patterns)||patterns.some(p=>loose(t,p))))return answer(es,en,lang);
     }
     return null;
   }
