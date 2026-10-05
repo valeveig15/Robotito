@@ -65,6 +65,7 @@ const state = {
   imageModel: null,
   routinePromptLog: load("robotito.routinePrompts.v1", {}),
   locationCoords: null,
+  locationLabel: null,
   weatherCache: null,
   locationDenied: false,
   audioContext: null,
@@ -778,6 +779,24 @@ function geolocationOnce(){
     },{enableHighAccuracy:false,timeout:9000,maximumAge:15*60*1000});
   });
 }
+async function getLocationLabel(lang="es"){
+  if(state.locationLabel)return state.locationLabel;
+  const {lat,lon}=await geolocationOnce();
+  try{
+    const url="https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon)+"&localityLanguage="+encodeURIComponent(lang);
+    const res=await fetch(url);
+    if(!res.ok)throw new Error("reverse");
+    const d=await res.json();
+    const locality=d.city||d.locality||d.principalSubdivision||"";
+    const region=d.principalSubdivision||"";
+    const country=d.countryName||"";
+    const parts=[locality,region,country].filter((x,i,a)=>x&&a.indexOf(x)===i);
+    state.locationLabel=parts.join(", ");
+    return state.locationLabel;
+  }catch{
+    return "";
+  }
+}
 function weatherCodeText(code,lang="es"){
   const en=lang==="en";
   if(code===0)return en?"clear skies":"cielo despejado";
@@ -804,11 +823,17 @@ async function getWeatherNow(){
 }
 async function handleWeatherAndDayQuestions(rawText){
   const text=normalizeText(rawText),lang=responseLanguage(rawText);
+  const locationAsk=/(donde estoy|en que ciudad estoy|donde me encuentro|cual es mi ubicacion|what city am i in|where am i|what is my location)/.test(text);
   const weatherAsk=/(clima|tiempo|temperatura|llueve|llover|frio|calor|viento|weather|temperature|raining|rain|wind)/.test(text)
     && /(hoy|ahora|afuera|aca|aqui|actual|today|now|outside|here|como|how|que|what)/.test(text);
   const nightAsk=/(es de noche|ya es de noche|esta de noche|es de dia|ya es de dia|todavia es de dia|is it night|is it nighttime|is it day|is it daytime)/.test(text);
-  if(!weatherAsk&&!nightAsk)return false;
+  if(!weatherAsk&&!nightAsk&&!locationAsk)return false;
   try{
+    if(locationAsk){
+      const label=await getLocationLabel(lang);
+      say(label?(lang==="en"?`Your current approximate location is ${label}.`:`Tu ubicación aproximada actual es ${label}.`):(lang==="en"?"I have your coordinates for weather, but I couldn't turn them into a city name.":"Tengo tu ubicación para el clima, pero no pude convertirla en un nombre de ciudad."));
+      return true;
+    }
     const w=await getWeatherNow();
     const cur=w.current||{},daily=w.daily||{};
     if(nightAsk){
@@ -822,10 +847,11 @@ async function handleWeatherAndDayQuestions(rawText){
     const hi=Math.round(Number(daily.temperature_2m_max?.[0]));
     const lo=Math.round(Number(daily.temperature_2m_min?.[0]));
     const rain=Number(daily.precipitation_probability_max?.[0]??0);
+    const place=await getLocationLabel(lang).catch(()=>"");
     if(lang==="en"){
-      say(`At your current location it's about ${temp} degrees, feels like ${feels}, and it's ${desc}. Today's high is around ${hi}, the low around ${lo}, with up to ${rain}% chance of precipitation.`,7000);
+      say(`${place?"In "+place+", ":"At your current location "}it's about ${temp} degrees, feels like ${feels}, and it's ${desc}. Today's high is around ${hi}, the low around ${lo}, with up to ${rain}% chance of precipitation.`,7000);
     }else{
-      say(`En tu ubicación actual hay unos ${temp} grados, sensación de ${feels}, y está ${desc}. Hoy la máxima ronda ${hi}, la mínima ${lo}, y la probabilidad máxima de precipitación es de ${rain}%.`,7000);
+      say(`${place?"En "+place+" ":"En tu ubicación actual "}hay unos ${temp} grados, sensación de ${feels}, y está ${desc}. Hoy la máxima ronda ${hi}, la mínima ${lo}, y la probabilidad máxima de precipitación es de ${rain}%.`,7000);
     }
     return true;
   }catch(e){
@@ -1977,6 +2003,7 @@ async function handleSpeech(rawText){
     adjustBond(who,{affection:.85,trust:.60,irritation:-.35,fear:-.18});
     setMood("happy","Robotito escuchó algo lindo y se puso contento.");
     animatePet();
+    animateAffection();
   }
   if(mean.some(x=>text.includes(x))){
     changeMoodScore(-5);
