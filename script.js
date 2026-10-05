@@ -1749,13 +1749,13 @@ async function handleSpeech(rawText){
 
   if(nice.some(x=>text.includes(x))){
     changeMoodScore(4);
-    adjustBond(who,{affection:.7,trust:.45,irritation:-.25,fear:-.12});
+    adjustBond(who,{affection:.85,trust:.60,irritation:-.35,fear:-.18});
     setMood("happy","Robotito escuchó algo lindo y se puso contento.");
     animatePet();
   }
   if(mean.some(x=>text.includes(x))){
     changeMoodScore(-5);
-    adjustBond(who,{affection:-.55,trust:-.65,irritation:.7});
+    adjustBond(who,{affection:-.80,trust:-1.15,irritation:1.80});
     setMood("sad","Eso lo dejó un poquito triste.");
     say("…");
   }
@@ -2116,7 +2116,7 @@ function feedRobot(shared=false){
   localStorage.setItem(KEYS.lastFed,String(Date.now()));
   state.hunger=0;
   changeMoodScore(shared?2:4);
-  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.25:.45,trust:shared?.18:.30,irritation:-.12});
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.35:.60,trust:shared?.25:.45,irritation:-.18});
   setMood("happy",shared?"Robotito cree que están comiendo juntos.":"Robotito comió y quedó contentísimo.");
   animateEat();
   say(shared?sample(["¿Comemos juntos? 🐼🍓","Ñam… yo también quiero.","Comida compartida = mejor comida."]):sample(["¡Ñam! 🍓","Eso estaba buenísimo.","Gracias por darme de comer 🐼"]));
@@ -2125,14 +2125,14 @@ function feedRobot(shared=false){
 
 function petRobot(){
   changeMoodScore(5);
-  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.35,fear:-.10,irritation:-.22});
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.75,trust:.50,fear:-.18,irritation:-.30});
   setMood("happy","Robotito recibió mimos.");
   animatePet();
   say(sample(["♡","Mmm… más mimitos.","Eso sí me gusta 🐼","*se acerca un poquito*"]));
 }
 
 function scareRobot(){
-  adjustBond(state.currentVoicePerson||state.currentPerson,{fear:.75,trust:-.18,irritation:.18});
+  adjustBond(state.currentVoicePerson||state.currentPerson,{fear:2.40,trust:-.45,irritation:.40});
   setMood("scared","Robotito se asustó por un instante.");
   say(sample(["¡AH!","¡No hagas eso! 😳","…casi me da algo."]));
   setTimeout(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
@@ -2140,7 +2140,7 @@ function scareRobot(){
 
 function pokeRobot(){
   changeMoodScore(-2);
-  adjustBond(state.currentVoicePerson||state.currentPerson,{irritation:.55,trust:-.22,affection:-.12});
+  adjustBond(state.currentVoicePerson||state.currentPerson,{irritation:1.15,trust:-.35,affection:-.20});
   setMood("annoyed","Robotito se molestó un poco.");
   animatePoke();
   say(sample(["Ey.","No me pinches.","Eso no era una caricia.","Mmm…"]));
