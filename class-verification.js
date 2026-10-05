@@ -299,7 +299,23 @@ Respondé únicamente JSON válido:
   async function startClassMode(){
     if(!state.started){toast("Primero despertá los sentidos.");return;}
     if(state.classMode)return;
+
+    // Enter Class Mode in absolute silence. If Robotito was speaking, stop it
+    // before recording and immediately give the microphone back to listening.
     state.classMode=true;
+    clearTimeout(state.speechRestartTimer);
+    if("speechSynthesis" in window){
+      try{speechSynthesis.cancel();}catch{}
+    }
+    state.speaking=false;
+    if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
+      window.RobotitoLocalASR.pause(false);
+    }else{
+      state.speechBlocked=false;
+      state.recognitionWanted=true;
+      setTimeout(()=>startListeningCycle(false),80);
+    }
+
     state.classStartedAt=Date.now();
     state.classSubject=$("#classSubject")?.value.trim()||"Clase";
     $("#classBadge").textContent="escuchando";
