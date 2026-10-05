@@ -570,3 +570,16 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
   #startBtn,#mobileListenBtn{width:100%}
   #mobileListenBtn{grid-column:1/-1;font-size:15px;min-height:52px}
 }
+
+
+/* v8.2 — clean startup language screen; no listening buttons */
+#mobileListenBtn,.mobile-listen{display:none!important}
+.language-gate-card h2 span{
+  display:inline-block;
+  margin-top:4px;
+  font-size:.72em;
+  font-weight:700;
+  color:var(--muted);
+}
+.language-gate-card p span{font-size:.95em}
+.language-gate-actions .primary{cursor:pointer;touch-action:manipulation}
