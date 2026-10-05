@@ -24,14 +24,14 @@
     if(transcriber)return transcriber;
     if(modelPromise)return modelPromise;
     modelPromise=(async()=>{
-      status(language==="en"?"Preparing offline speech…":"Preparando escucha local…","loading");
+      status(statusText("Preparando escucha local…","Preparing offline speech…","Preparando escuta local…"),"loading");
       const mod=await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1");
       const {pipeline,env}=mod;
       env.allowLocalModels=false;
       const progress_callback=p=>{
         if(p?.status==="progress"&&Number.isFinite(p.progress)){
           const pct=Math.max(0,Math.min(100,Math.round(p.progress)));
-          status(language==="en"?`Preparing speech… ${pct}%`:`Preparando escucha… ${pct}%`,"loading");
+          status(statusText(`Preparando escucha… ${pct}%`,`Preparing speech… ${pct}%`,`Preparando escuta… ${pct}%`),"loading");
         }
       };
       const opts={progress_callback};
@@ -47,14 +47,17 @@
     return modelPromise;
   }
 
+  function normalizeLang(lang){return lang==="en"?"en":lang==="pt"?"pt":"es";}
+  function statusText(es,en,pt){return language==="en"?en:language==="pt"?pt:es;}
+
   function prime(lang="es",statusCb){
-    language=lang==="en"?"en":"es";
+    language=normalizeLang(lang);
     if(statusCb)onStatus=statusCb;
     try{ensureAudioContext();}catch{}
     // Begin model download immediately; do not block the UI.
     loadModel().catch(err=>{
       console.warn("local ASR model",err);
-      status(language==="en"?"Local speech model failed to load":"No pude cargar el reconocimiento local","problem");
+      status(statusText("No pude cargar el reconocimiento local","Local speech model failed to load","Não consegui carregar o reconhecimento local"),"problem");
     });
   }
 
@@ -95,8 +98,8 @@
       if(!active||paused)return;
       const model=await loadModel();
       if(!active||paused)return;
-      status(language==="en"?"Understanding…":"Entendiendo…","processing");
-      const opts={task:"transcribe",language:language==="en"?"english":"spanish"};
+      status(statusText("Entendiendo…","Understanding…","Entendendo…"),"processing");
+      const opts={task:"transcribe",language:language==="en"?"english":language==="pt"?"portuguese":"spanish"};
       const result=await model(audio,opts);
       const text=String(result?.text||"").trim()
         .replace(/^\[[^\]]+\]\s*/,"")
@@ -104,10 +107,10 @@
       if(text && text.length>1 && !/^\.{1,3}$/.test(text)){
         onText(text);
       }
-      if(active&&!paused)status(language==="en"?"listening":"escuchando","listening");
+      if(active&&!paused)status(statusText("escuchando","listening","escutando"),"listening");
     }).catch(err=>{
       console.warn("local ASR transcription",err);
-      if(active)status(language==="en"?"Listening — retrying":"Escuchando — reintentando","problem");
+      if(active)status(statusText("Escuchando — reintentando","Listening — retrying","Escutando — tentando novamente"),"problem");
     });
   }
 
@@ -121,7 +124,7 @@
   }
 
   async function start({stream,lang="es",onTranscript,statusCallback}){
-    language=lang==="en"?"en":"es";
+    language=normalizeLang(lang);
     onText=typeof onTranscript==="function"?onTranscript:()=>{};
     onStatus=typeof statusCallback==="function"?statusCallback:()=>{};
     streamRef=stream;
@@ -129,7 +132,7 @@
     resetSegment();
 
     const ac=ensureAudioContext();
-    status(language==="en"?"Preparing continuous listening…":"Preparando escucha continua…","loading");
+    status(statusText("Preparando escucha continua…","Preparing continuous listening…","Preparando escuta contínua…"),"loading");
 
     // Load in parallel while wiring audio.
     const modelReady=loadModel();
@@ -173,7 +176,7 @@
     };
 
     await modelReady;
-    if(active&&!paused)status(language==="en"?"listening":"escuchando","listening");
+    if(active&&!paused)status(statusText("escuchando","listening","escutando"),"listening");
     return true;
   }
 
@@ -181,14 +184,14 @@
     paused=!!value;
     if(paused){
       resetSegment();
-      status(language==="en"?"paused":"pausado");
+      status(statusText("pausado","paused","pausado"));
     }else if(active){
-      status(language==="en"?"listening":"escuchando","listening");
+      status(statusText("escuchando","listening","escutando"),"listening");
     }
   }
 
   function setLanguage(lang){
-    language=lang==="en"?"en":"es";
+    language=normalizeLang(lang);
   }
 
   async function stop(){
