@@ -2428,6 +2428,8 @@ async function askClass(){
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
   if(out)out.innerHTML='<div class="study-chip">Buscando en las transcripciones y el material cargado…</div>';
   try{
+    const exerciseHandled=await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
+    if(exerciseHandled)return;
     await answerClassQuestion(q,{speak:true,render:true,announceMissing:true});
   }catch(e){
     console.warn("class answer",e);
@@ -2626,6 +2628,10 @@ async function handleSpeech(rawText){
     return;
   }
   const detectedLang=responseLanguage(rawText);
+
+  // Exact exercise requests from uploaded academic material have top priority.
+  // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
+  if(await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(interpreted,{spoken:true}))return;
 
   // Questions grounded in saved classes get first chance before generic knowledge,
   // drawings or object reactions. This prevents a class question from falling into
