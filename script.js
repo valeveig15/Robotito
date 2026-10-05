@@ -15,6 +15,13 @@ const state = {
   mood: "calm",
   moodScore: 55,
   energy: 100,
+  batteryManager: null,
+  batterySupported: false,
+  batteryCharging: false,
+  batteryPreviousLevel: null,
+  batteryCritical: false,
+  pendingBatteryAlert: null,
+  batteryLastAlertAt: 0,
   hunger: 0,
   currentPerson: null,
   faceMatcher: null,
@@ -495,11 +502,130 @@ function changeMoodScore(delta){
   updateMeters();
 }
 
+const BATTERY_ALERT_LEVELS=[50,20,10,5];
+
+function batteryBucket(level){
+  const value=clamp(Number(level),0,100);
+  if(value<=5)return 5;
+  if(value<=10)return 10;
+  if(value<=20)return 20;
+  if(value<=50)return 50;
+  return null;
+}
+function batteryAlertThreshold(previous,current){
+  const now=clamp(Number(current),0,100);
+  const before=previous===null||previous===undefined?null:clamp(Number(previous),0,100);
+  const bucket=batteryBucket(now);
+  if(bucket===null)return null;
+  if(before===null)return bucket;
+  if(now>=before)return null;
+  return batteryBucket(before)!==bucket?bucket:null;
+}
+function batteryAlertMessage(threshold,lang=responseLanguage()){
+  const messages={
+    es:{
+      50:"Mi batería llegó a 50 %. Todavía estoy bien, pero quería avisarte.",
+      20:"Mi batería bajó a 20 %. ¿Podés conectar el cargador dentro de poco?",
+      10:"¡Solo me queda 10 % de batería! Por favor, conectame al cargador.",
+      5:"¡Estoy en alerta! Me queda 5 % de batería o menos. Estoy muy asustado… no me quiero apagar."
+    },
+    en:{
+      50:"My battery reached 50%. I'm still okay, but I wanted to let you know.",
+      20:"My battery dropped to 20%. Could you connect the charger soon?",
+      10:"I only have 10% battery left! Please connect me to the charger.",
+      5:"I'm on alert! I have 5% battery or less. I'm very scared… I don't want to turn off."
+    },
+    pt:{
+      50:"Minha bateria chegou a 50%. Ainda estou bem, mas queria avisar.",
+      20:"Minha bateria caiu para 20%. Você pode conectar o carregador em breve?",
+      10:"Só tenho 10% de bateria! Por favor, conecte o carregador.",
+      5:"Estou em alerta! Tenho 5% de bateria ou menos. Estou com muito medo… não quero desligar."
+    }
+  };
+  return (messages[lang]||messages.es)[threshold]||"";
+}
+function announceBatteryAlert(threshold){
+  if(!threshold)return;
+  if(!["es","en","pt"].includes(state.languageMode)){
+    state.pendingBatteryAlert=threshold;
+    return;
+  }
+  state.pendingBatteryAlert=null;
+  state.batteryLastAlertAt=Date.now();
+  const message=batteryAlertMessage(threshold,state.languageMode);
+  if(message)say(message,threshold===5?8500:5500,state.languageMode);
+}
+function flushPendingBatteryAlert(){
+  if(state.pendingBatteryAlert)announceBatteryAlert(state.pendingBatteryAlert);
+}
+function applyBatteryCriticalState(){
+  const critical=state.batterySupported&&state.energy<=5;
+  const changed=critical!==state.batteryCritical;
+  state.batteryCritical=critical;
+  robot.classList.toggle("battery-critical",critical);
+  $("#energyMeter")?.closest(".meter-card")?.classList.toggle("battery-critical",critical);
+
+  if(critical){
+    state.sleeping=false;
+    stopSnoring();
+    robot.classList.remove("sleeping");
+    setMood("scared","¡Alerta de batería! Robotito está muy asustado y no se quiere apagar.");
+  }else if(changed&&!state.classMode&&!state.nightSleep){
+    setMood("calm",state.batteryCharging?"Robotito se tranquilizó porque la batería está cargando.":"La batería salió del nivel crítico.");
+  }
+}
+function syncBatteryState({announce=true}={}){
+  const battery=state.batteryManager;
+  if(!battery)return;
+  const previous=state.batteryPreviousLevel;
+  const level=clamp(Math.round(Number(battery.level)*100),0,100);
+  state.batterySupported=true;
+  state.batteryCharging=!!battery.charging;
+  state.energy=level;
+  state.batteryPreviousLevel=level;
+
+  const threshold=batteryAlertThreshold(previous,level);
+  applyBatteryCriticalState();
+  updateMeters();
+  if(announce&&threshold)announceBatteryAlert(threshold);
+}
+async function initDeviceBattery(){
+  const source=$("#batterySourceText");
+  if(typeof navigator.getBattery!=="function"){
+    state.batterySupported=false;
+    if(source)source.textContent="Este navegador no permite consultar la batería; se mostrará una energía estimada.";
+    updateMeters();
+    return false;
+  }
+  try{
+    const battery=await navigator.getBattery();
+    state.batteryManager=battery;
+    state.batterySupported=true;
+    const sync=()=>syncBatteryState({announce:true});
+    battery.addEventListener?.("levelchange",sync);
+    battery.addEventListener?.("chargingchange",sync);
+    syncBatteryState({announce:true});
+    if(source)source.textContent=state.batteryCharging?"Batería real del dispositivo · cargando":"Batería real del dispositivo";
+    return true;
+  }catch(error){
+    console.warn("battery status",error);
+    state.batterySupported=false;
+    if(source)source.textContent="No pude consultar la batería; se mostrará una energía estimada.";
+    updateMeters();
+    return false;
+  }
+}
 function updateMeters(){
   $("#moodScoreText").textContent=Math.round(state.moodScore)+" / 100";
   $("#moodMeter").style.width=state.moodScore+"%";
-  $("#energyText").textContent=Math.round(state.energy)+"%";
+  const energyLabel=Math.round(state.energy)+"%"+(state.batterySupported&&state.batteryCharging?" ⚡":"");
+  $("#energyText").textContent=energyLabel;
   $("#energyMeter").style.width=state.energy+"%";
+  $("#energyMeter").setAttribute("aria-valuenow",String(Math.round(state.energy)));
+  const source=$("#batterySourceText");
+  if(source&&state.batterySupported){
+    source.textContent=state.batteryCharging?"Batería real del dispositivo · cargando":"Batería real del dispositivo";
+  }
   $("#hungerText").textContent=Math.round(state.hunger)+"%";
   $("#hungerMeter").style.width=state.hunger+"%";
   $("#hungerLabel").textContent=Math.round(state.hunger)+"%";
@@ -1242,6 +1368,7 @@ function chooseStartupLanguage(mode){
     ?"Robotito is ready to wake up."
     :mode==="pt"?"Robotito está pronto para despertar.":"Robotito está listo para despertar.";
   applyDayNightMode(new Date());
+  flushPendingBatteryAlert();
 }
 function handleLanguageCommand(text){
   if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english|fale.*ingles|fale.*ingl[eê]s/.test(text)){
@@ -3795,7 +3922,7 @@ function highFiveRobot(){
 }
 function playRobot(){
   changeMoodScore(4);
-  state.energy=clamp(state.energy-2,0,100);
+  if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
   setMood("excited","Robotito está jugando.");
   temporaryRobotClass("playing",2300);
@@ -3854,26 +3981,26 @@ function inactivityTick(){
     robot.classList.add("sleeping");
     startSnoring();
     setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
-    state.energy=clamp(state.energy+.35,0,100);
+    if(!state.batterySupported)state.energy=clamp(state.energy+.35,0,100);
   }else if(quietFor>95){
     state.sleeping=false;
     stopSnoring();
     robot.classList.remove("sleeping");
     setMood("sleepy","Robotito está cabeceando de sueño.");
-    state.energy=clamp(state.energy-.05,0,100);
+    if(!state.batterySupported)state.energy=clamp(state.energy-.05,0,100);
   }else if(quietFor>45){
     state.sleeping=false;
     stopSnoring();
     robot.classList.remove("sleeping");
     setMood("bored","Robotito se está aburriendo un poquito y mira alrededor.");
-    state.energy=clamp(state.energy-.02,0,100);
+    if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }else{
     const wasSleeping=state.sleeping;
     state.sleeping=false;
     stopSnoring();
     robot.classList.remove("sleeping");
     if(wasSleeping)say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó?"]));
-    state.energy=clamp(state.energy-.02,0,100);
+    if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }
 }
 
@@ -4235,6 +4362,11 @@ function clockTick(){
 
 function ambientMood(){
   hungerTick();
+  if(state.batteryCritical){
+    applyBatteryCriticalState();
+    updateMeters();
+    return;
+  }
   inactivityTick();
   if(state.classMode){updateMeters();return;}
   if(!state.sleeping&&state.hunger<70&&state.emotion!=="bored"){
@@ -4383,6 +4515,13 @@ function purgeNamedPeople(){
   save("robotito.memories.v1",oldMem);
 }
 
+window.ROBOTITO_BATTERY={
+  alertLevels:BATTERY_ALERT_LEVELS,
+  bucket:batteryBucket,
+  alertThreshold:batteryAlertThreshold,
+  message:batteryAlertMessage
+};
+
 window.ROBOTITO_QUESTION_ROUTING={
   hasExplicitClassReference,
   isDefinitionQuestion,
@@ -4436,6 +4575,7 @@ async function init(){
   populateVoiceSelect();
   if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=populateVoiceSelect;
   clockTick();
+  await initDeviceBattery();
   updateMeters();
   blinkLoop();
   setInterval(clockTick,1000);
