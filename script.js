@@ -2400,6 +2400,7 @@ async function detectLoop(){
     }else{
       $("#seenLabel").textContent="a nadie";
       state.currentPerson=null;
+      resetEyes();
     }
   }catch(e){console.warn("vision",e);}
   setTimeout(detectLoop,700);
@@ -2416,7 +2417,17 @@ function buildMatcher(){
 }
 
 function dayPartGreeting(){
-  const h=new Date().getHours();
+  const h=new Date().getHours(),lang=responseLanguage();
+  if(lang==="en"){
+    if(h>=6&&h<13)return "Good morning";
+    if(h>=13&&h<20)return "Good afternoon";
+    return "Good evening";
+  }
+  if(lang==="pt"){
+    if(h>=6&&h<13)return "Bom dia";
+    if(h>=13&&h<20)return "Boa tarde";
+    return "Boa noite";
+  }
   if(h>=6&&h<13)return "Buenos días";
   if(h>=13&&h<20)return "Buenas tardes";
   return "Buenas noches";
@@ -2448,7 +2459,11 @@ function handleSocialSpeech(text){
   const name=known?", "+known:"";
   const enName=known?", "+known:"";
 
-  if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){say(responseLanguage(text)==="en"?"Bless you!":"¡Salud!");return true;}
+  if(/\b(achu|achis|achoo|atchoo|atishoo)/.test(text)){
+    const lang=responseLanguage();
+    sayInLanguage(lang==="en"?"Bless you!":lang==="pt"?"Saúde!":"¡Salud!",lang);
+    return true;
+  }
   if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
   if(/\b(boa tarde)\b/.test(text)){wakeFromNight();sayInLanguage("Boa tarde"+enName+".","pt");return true;}
   if(/\b(boa noite)\b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");setTimeout(sleepForNight,700);return true;}
@@ -2501,21 +2516,27 @@ function handleSocialSpeech(text){
 }
 
 function greetingFor(p){
+  const lang=responseLanguage();
   const category=bondCategory(p);
   const timed=dayPartGreeting()+", "+p.name+".";
   let choices;
-  if(category==="loves"){
-    choices=[`¡${p.name}! Te extrañé un poquito ♡`,`¡${p.name}! Me alegra muchísimo verte.`,`Ah, sos vos. Mi persona favorita apareció.`,timed];
-  }else if(category==="likes"||category==="trusts"){
-    choices=[`¡Hola, ${p.name}! Me alegra verte.`,`Te reconocí, ${p.name}.`,`Mirá quién volvió: ${p.name}.`,timed];
-  }else if(category==="afraid"){
-    choices=[`Ah… hola, ${p.name}. Voy a mirarte desde acá.`,`Te reconocí, ${p.name}. Todavía me das un poquito de miedo.`,timed];
-  }else if(category==="dislikes"){
-    choices=[`Hola, ${p.name}. Espero que hoy seas amable conmigo.`,`Sí, te reconocí, ${p.name}.`,timed];
-  }else if(category==="annoyed"||category==="wary"){
-    choices=[`Hola, ${p.name}. Todavía estoy un poquito cauteloso.`,`Te vi, ${p.name}.`,timed];
+  if(lang==="en"){
+    if(category==="loves")choices=[`${p.name}! I missed you a little. ♡`,`I'm really happy to see you, ${p.name}.`,timed];
+    else if(category==="afraid")choices=[`Oh… hi, ${p.name}. I'll stay over here for now.`,timed];
+    else if(category==="dislikes")choices=[`Hello, ${p.name}. I hope you're kind to me today.`,timed];
+    else choices=[`Hello, ${p.name}.`,`I recognized you, ${p.name}!`,timed];
+  }else if(lang==="pt"){
+    if(category==="loves")choices=[`${p.name}! Senti um pouquinho a sua falta. ♡`,`Fico muito feliz em ver você, ${p.name}.`,timed];
+    else if(category==="afraid")choices=[`Ah… oi, ${p.name}. Vou ficar aqui por enquanto.`,timed];
+    else if(category==="dislikes")choices=[`Olá, ${p.name}. Espero que hoje você seja gentil comigo.`,timed];
+    else choices=[`Olá, ${p.name}.`,`Reconheci você, ${p.name}!`,timed];
   }else{
-    choices=[`Hola, ${p.name}.`,`¡Te reconocí, ${p.name}!`,`¿Qué tal, ${p.name}?`,timed];
+    if(category==="loves")choices=[`¡${p.name}! Te extrañé un poquito ♡`,`¡${p.name}! Me alegra muchísimo verte.`,`Ah, sos vos. Mi persona favorita apareció.`,timed];
+    else if(category==="likes"||category==="trusts")choices=[`¡Hola, ${p.name}! Me alegra verte.`,`Te reconocí, ${p.name}.`,`Mirá quién volvió: ${p.name}.`,timed];
+    else if(category==="afraid")choices=[`Ah… hola, ${p.name}. Voy a mirarte desde acá.`,`Te reconocí, ${p.name}. Todavía me das un poquito de miedo.`,timed];
+    else if(category==="dislikes")choices=[`Hola, ${p.name}. Espero que hoy seas amable conmigo.`,`Sí, te reconocí, ${p.name}.`,timed];
+    else if(category==="annoyed"||category==="wary")choices=[`Hola, ${p.name}. Todavía estoy un poquito cauteloso.`,`Te vi, ${p.name}.`,timed];
+    else choices=[`Hola, ${p.name}.`,`¡Te reconocí, ${p.name}!`,`¿Qué tal, ${p.name}?`,timed];
   }
   const last=state.greetingHistory[p.name];
   const filtered=choices.filter(x=>x!==last);
