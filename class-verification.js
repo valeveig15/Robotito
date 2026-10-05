@@ -40,11 +40,22 @@
     return "classmate";
   }
   function classLinesForSubject(){
+    const sessionId=state.classMode?state.classSessionId:state.selectedClassSessionId;
+    if(sessionId){
+      const exact=state.classLines.filter(l=>l.sessionId===sessionId);
+      if(exact.length)return exact.slice(-250);
+    }
+
     const subj=normalizeText(state.classSubject||$("#classSubject")?.value||"");
-    if(!subj)return state.classLines.slice(-250);
+    const topic=normalizeText(state.classTopic||$("#classTopic")?.value||"");
+    if(!subj&&!topic)return state.classLines.slice(-250);
+
     const matched=state.classLines.filter(l=>{
       const ls=normalizeText(l.subject||"");
-      return ls.includes(subj)||subj.includes(ls);
+      const lt=normalizeText(l.topic||"");
+      const subjectOk=!subj||ls===subj||ls.includes(subj)||subj.includes(ls);
+      const topicOk=!topic||lt===topic||lt.includes(topic)||topic.includes(lt);
+      return subjectOk&&topicOk;
     });
     return (matched.length?matched:state.classLines).slice(-250);
   }
@@ -260,7 +271,7 @@ Respondé únicamente JSON válido:
       ?voiceMatch.role
       :classifySpeaker(feature);
 
-    const academic=correctAcademicTranscript(text,state.classSubject);
+    const academic=correctAcademicTranscript(text,[state.classSubject,state.classTopic].filter(Boolean).join(" — "));
     const line={
       id:(crypto.randomUUID?.()||("line-"+Date.now()+"-"+Math.random().toString(16).slice(2))),
       text:String(text||"").trim(),
@@ -271,6 +282,8 @@ Respondé únicamente JSON válido:
       voiceScore:voiceMatch?.score||null,
       voicePrint,
       subject:state.classSubject||"Clase",
+      topic:state.classTopic||"",
+      sessionId:state.classSessionId||null,
       at:Date.now(),
       feature,
       verificationStatus:state.verifyClassWeb?"checking":"off",
@@ -286,7 +299,7 @@ Respondé únicamente JSON válido:
     $("#speakerPill")?.classList.remove("hidden");
     if($("#speakerLabel"))$("#speakerLabel").textContent=speaker==="me"?"vos":speaker==="teacher"?"profesora":"compañero/a";
 
-    const verification=await verifyTranscript(line.correctedText,state.classSubject);
+    const verification=await verifyTranscript(line.correctedText,[state.classSubject,state.classTopic].filter(Boolean).join(" — "));
     const live=state.classLines.find(x=>x.id===line.id);
     if(!live)return;
     live.correctedText=verification.text;
@@ -317,13 +330,21 @@ Respondé únicamente JSON válido:
     }
 
     state.classStartedAt=Date.now();
-    state.classSubject=$("#classSubject")?.value.trim()||"Clase";
+    const rawSubject=$("#classSubject")?.value.trim()||"Clase";
+    const rawTopic=$("#classTopic")?.value.trim()||"";
+    const parsed=window.ROBOTITO_CLASS_ORGANIZER?.parseLegacyLabel?.(rawSubject)||{subject:rawSubject,topic:""};
+    state.classSubject=parsed.subject||"Clase";
+    state.classTopic=rawTopic||parsed.topic||"";
+    state.classSessionId=crypto.randomUUID?.()||("class-session-"+Date.now()+"-"+Math.random().toString(16).slice(2));
+    state.selectedClassSessionId=state.classSessionId;
+    if($("#classSubject"))$("#classSubject").value=state.classSubject;
+    if($("#classTopic"))$("#classTopic").value=state.classTopic;
     $("#classBadge").textContent="escuchando";
     $("#classBadge").classList.add("on");
     $("#speakerPill")?.classList.remove("hidden");
     setMood("focused","Robotito está concentrado escuchando la clase.");
 
-    const audio=await window.ROBOTITO_CLASS_AUDIO?.start?.(state.classSubject);
+    const audio=await window.ROBOTITO_CLASS_AUDIO?.start?.(state.classSubject,state.classTopic,state.classSessionId);
     if(audio?.ok){
       toast("Modo clase activado: transcripción y audio en marcha.");
     }else{
@@ -348,7 +369,11 @@ Respondé únicamente JSON válido:
     const recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
     $("#classBadge").textContent="apagado";
 
-    const summary=await generateAndSaveClassSummary(endedAt);
+    const summary=await generateAndSaveClassSummary(endedAt,recording);
+    state.selectedClassSessionId=state.classSessionId;
+    state.classSessionId=null;
+    window.ROBOTITO_CLASS_ORGANIZER?.render?.();
+
     if(recording){
       say(summary
         ?"Listo. Guardé el audio completo y también preparé el resumen de la clase."
