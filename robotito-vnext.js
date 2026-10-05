@@ -263,6 +263,20 @@
     return "normal";
   }
 
+  function shapeAnswer(raw,answer){
+    const text=String(answer||"").replace(/\s+/g," ").trim();
+    const depth=responseDepth(raw);
+    if(!text)return text;
+    if(depth==="detailed")return text.length>1100?text.slice(0,1097).replace(/\s+\S*$/,"")+"…":text;
+    const sentences=text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[text];
+    if(depth==="definition"){
+      const one=(sentences[0]||text).trim();
+      return one.length>230?one.slice(0,227).replace(/\s+\S*$/,"")+"…":one;
+    }
+    const normal=sentences.slice(0,3).join(" ").trim();
+    return normal.length>430?normal.slice(0,427).replace(/\s+\S*$/,"")+"…":normal;
+  }
+
   function classify(raw){
     const q=norm(raw);
     const depth=responseDepth(raw);
@@ -329,5 +343,5 @@
   window.solveMathFromUI=solveMathFromUI;
   window.detectObjectNow=detectObjectNow;
   window.ROBOTITO_CIRCLE_MATH={parse:parseCirclePrompt,explain:circleExplanation,draw:drawCircle,solve:solveMathFromUI};
-  window.ROBOTITO_ROUTER={classify,responseDepth,handle};
+  window.ROBOTITO_ROUTER={classify,responseDepth,shapeAnswer,handle};
 })();
