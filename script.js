@@ -323,11 +323,12 @@ function toast(text){
 }
 
 function setMood(mood, reason=""){
-  const base = ["calm","happy","sad","angry","scared","hungry","sleepy"];
-  base.forEach(m=>robot.classList.remove("mood-"+m));
+  const allMoods=["calm","happy","sad","angry","scared","hungry","sleepy","curious","focused","bored","affectionate","proud","confused","excited","embarrassed","annoyed"];
+  allMoods.forEach(m=>robot.classList.remove("mood-"+m));
   const visualMap={curious:"happy",focused:"calm",bored:"sleepy",affectionate:"happy",proud:"happy",confused:"scared",excited:"happy",embarrassed:"sad",annoyed:"calm"};
-  robot.classList.add("mood-"+(visualMap[mood]||mood));
-  robot.classList.add("mood-"+mood);
+  const visual=visualMap[mood]||mood;
+  robot.classList.add("mood-"+visual);
+  if(visual!==mood)robot.classList.add("mood-"+mood);
   state.mood=mood;
   state.emotion=mood;
   const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"};
