@@ -207,10 +207,35 @@
     }
 
     // perfectly inelastic
-    if(has(t,["totalmente inelastico","totalmente inelástico","quedan pegados","quedan unidos","se pegan"]) &&
+    if(has(t,["totalmente inelastico","totalmente inelástico","perfectamente inelastico","perfectamente inelástico","quedan pegados","quedan unidos","se pegan"]) &&
        v.mass1!==null&&v.mass2!==null&&v.v1!==null&&v.v2!==null){
       const out=(v.mass1*v.v1+v.mass2*v.v2)/(v.mass1+v.mass2);
-      return `Como quedan unidos, uso conservación de momentum: m₁v₁ + m₂v₂ = (m₁+m₂)vf. vf = [${nfmt(v.mass1)}·${nfmt(v.v1)} + ${nfmt(v.mass2)}·${nfmt(v.v2)}]/[${nfmt(v.mass1)}+${nfmt(v.mass2)}] = ${nfmt(out)} m/s.`;
+      const ki=.5*v.mass1*v.v1*v.v1+.5*v.mass2*v.v2*v.v2;
+      const kf=.5*(v.mass1+v.mass2)*out*out;
+      return `Como quedan unidos, uso conservación de momentum: m₁v₁ + m₂v₂ = (m₁+m₂)vf. vf = [${nfmt(v.mass1)}·${nfmt(v.v1)} + ${nfmt(v.mass2)}·${nfmt(v.v2)}]/[${nfmt(v.mass1)}+${nfmt(v.mass2)}] = ${nfmt(out)} m/s. La energía cinética pasa de ${nfmt(ki)} J a ${nfmt(kf)} J; la diferencia no desaparece, se transforma en otras formas.`;
+    }
+
+    // 1D elastic collision, both final velocities unknown.
+    if(has(t,["choque elastico","choque elástico","colision elastica","colisión elástica"]) &&
+       v.mass1!==null&&v.mass2!==null&&v.v1!==null&&v.v2!==null){
+      const den=v.mass1+v.mass2;
+      const v1f=((v.mass1-v.mass2)/den)*v.v1+(2*v.mass2/den)*v.v2;
+      const v2f=(2*v.mass1/den)*v.v1+((v.mass2-v.mass1)/den)*v.v2;
+      return `Para un choque elástico 1D con esas velocidades iniciales, conservo momentum y energía cinética. Resulta v₁f = ${nfmt(v1f)} m/s y v₂f = ${nfmt(v2f)} m/s. Los signos indican el sentido respecto del eje elegido.`;
+    }
+
+    // Recoil/explosion from rest when one final speed is given.
+    if(has(t,["retroceso","explosion","explosión","se separan"]) && v.mass1!==null&&v.mass2!==null){
+      const known1=extractNumber(t,[/(?:v1f|velocidad 1 final|velocidad del primero)[^0-9-]*(-?\d+(?:[.,]\d+)?)/]);
+      const known2=extractNumber(t,[/(?:v2f|velocidad 2 final|velocidad del segundo)[^0-9-]*(-?\d+(?:[.,]\d+)?)/]);
+      if(known1!==null){
+        const out=-(v.mass1*known1)/v.mass2;
+        return `Si el sistema parte en reposo, ptotal inicial = 0. Entonces m₁v₁ + m₂v₂ = 0. Con v₁ = ${nfmt(known1)} m/s, v₂ = −m₁v₁/m₂ = ${nfmt(out)} m/s.`;
+      }
+      if(known2!==null){
+        const out=-(v.mass2*known2)/v.mass1;
+        return `Si el sistema parte en reposo, ptotal inicial = 0. Entonces m₁v₁ + m₂v₂ = 0. Con v₂ = ${nfmt(known2)} m/s, v₁ = −m₂v₂/m₁ = ${nfmt(out)} m/s.`;
+      }
     }
 
     return null;
@@ -251,6 +276,8 @@
     return null;
   }
 
+  // Useful prompts Robotito can understand include definitions, formula summaries,
+  // comparisons, graphs, safety applications and numerical exercises.
   window.ROBOTITO_PHYSICS_MOMENTUM={
     answer,
     solve,
