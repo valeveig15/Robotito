@@ -2746,43 +2746,249 @@ function formatBirthday(iso){
   const m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m?`${m[3]}/${m[2]}/${m[1]}`:"";
 }
-async function captureMobileVoicePrints(){
-  const start=Date.now();
-  window.RobotitoLocalASR?.pause(true);
-  $("#enrollStatus").textContent=state.languageMode==="en"
-    ?"Speak naturally for about five seconds…"
-    :"Hablá naturalmente durante unos cinco segundos…";
-  await new Promise(r=>setTimeout(r,5200));
-  const vectors=state.recentVoicePrints.filter(x=>x.t>=start&&x.rms>.04).map(x=>x.vector);
-  window.RobotitoLocalASR?.pause(false);
-  if(vectors.length<8)return null;
-  const groups=[],size=Math.max(3,Math.floor(vectors.length/3));
-  for(let i=0;i<vectors.length;i+=size){
-    const avg=averageVoiceVectors(vectors.slice(i,i+size));
-    if(avg)groups.push(avg);
-  }
-  return groups.slice(0,4);
+function enrollText(es,en,pt){
+  return state.languageMode==="en"?en:state.languageMode==="pt"?pt:es;
 }
+function setEnrollProgress(percent,text=null){
+  const bar=$("#enrollProgressBar");
+  if(bar)bar.style.width=clamp(percent,0,100)+"%";
+  if(text!=null&&$("#enrollStatus"))$("#enrollStatus").textContent=text;
+}
+function waitMs(ms){return new Promise(r=>setTimeout(r,ms));}
+function descriptorDistance(a,b){
+  if(!a||!b||a.length!==b.length)return Infinity;
+  let sum=0;
+  for(let i=0;i<a.length;i++){const d=a[i]-b[i];sum+=d*d;}
+  return Math.sqrt(sum);
+}
+async function captureFaceEnrollment(){
+  const stages=[
+    {
+      msg:enrollText("1/4 · Mirá de frente a la cámara.","1/4 · Look straight at the camera.","1/4 · Olhe de frente para a câmera."),
+      count:3
+    },
+    {
+      msg:enrollText("2/4 · Girá apenas la cara hacia un lado.","2/4 · Turn your face slightly to one side.","2/4 · Vire o rosto um pouco para um lado."),
+      count:3
+    },
+    {
+      msg:enrollText("3/4 · Ahora girá apenas hacia el otro lado.","3/4 · Now turn slightly to the other side.","3/4 · Agora vire um pouco para o outro lado."),
+      count:3
+    },
+    {
+      msg:enrollText("4/4 · Volvé al frente con expresión natural.","4/4 · Face forward again with a natural expression.","4/4 · Volte a olhar de frente, com expressão natural."),
+      count:3
+    }
+  ];
 
+  const samples=[];
+  for(let stageIndex=0;stageIndex<stages.length;stageIndex++){
+    const stage=stages[stageIndex];
+    setEnrollProgress(stageIndex*10,stage.msg);
+    await waitMs(1050);
+
+    let got=0;
+    const deadline=Date.now()+7500;
+    while(got<stage.count&&Date.now()<deadline){
+      const dets=await faceapi
+        .detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.55}))
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+      if(dets.length!==1){
+        const msg=dets.length>1
+          ?enrollText("Necesito una sola cara en cámara.","I need exactly one face in the camera.","Preciso de apenas um rosto na câmera.")
+          :enrollText("No veo la cara con suficiente claridad. Acercate un poco y buscá buena luz.","I can't see the face clearly enough. Move a little closer and use better light.","Não vejo o rosto com clareza suficiente. Chegue um pouco mais perto e procure boa luz.");
+        setEnrollProgress(stageIndex*10+(got/stage.count)*10,msg);
+        await waitMs(420);
+        continue;
+      }
+
+      const det=dets[0];
+      const vw=camera.videoWidth||640;
+      const vh=camera.videoHeight||480;
+      const box=det.detection.box;
+      const largeEnough=box.width/vw>=.17 && box.height/vh>=.20;
+      if(!largeEnough){
+        setEnrollProgress(stageIndex*10+(got/stage.count)*10,
+          enrollText("Acercate un poquito más a la cámara.","Move a little closer to the camera.","Chegue um pouquinho mais perto da câmera."));
+        await waitMs(420);
+        continue;
+      }
+
+      const descriptor=[...det.descriptor];
+      const tooCloseToLast=samples.length
+        && descriptorDistance(descriptor,samples.at(-1))<.015;
+      if(!tooCloseToLast||Date.now()+1200>deadline){
+        samples.push(descriptor);
+        got++;
+        setEnrollProgress(stageIndex*10+(got/stage.count)*10,stage.msg+"  "+got+"/"+stage.count);
+      }
+      await waitMs(360);
+    }
+
+    if(got<2){
+      setEnrollProgress(stageIndex*10,
+        enrollText("No conseguí suficientes muestras buenas de esa posición. Probá otra vez con más luz.","I couldn't get enough good samples from that angle. Try again with better light.","Não consegui amostras boas suficientes desse ângulo. Tente novamente com mais luz."));
+      return null;
+    }
+  }
+
+  if(samples.length<9)return null;
+  setEnrollProgress(45,enrollText("Cara aprendida. Ahora voy con la voz.","Face learned. Now I'll learn the voice.","Rosto aprendido. Agora vou aprender a voz."));
+  return samples;
+}
+function collectNewVoiceSamples(startAt,map){
+  for(const sample of state.recentVoicePrints){
+    if(sample.t>=startAt&&!map.has(sample.t)){
+      map.set(sample.t,sample);
+    }
+  }
+}
 async function captureEnrollmentVoice(){
-  $("#enrollStatus").textContent=state.languageMode==="en"
-    ?"Now speak naturally for a few seconds so I can learn your voice…"
-    :"Ahora hablá durante unos segundos para que aprenda tu voz…";
-  if(isMobileSpeech()){
-    return await captureMobileVoicePrints();
+  const wasRecognitionWanted=state.recognitionWanted;
+  state.enrollmentActive=true;
+  speechSynthesis?.cancel?.();
+  state.speaking=false;
+  state.recentVoicePrints=[];
+
+  if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
+    window.RobotitoLocalASR.pause(true);
+  }else{
+    state.recognitionWanted=false;
+    discardRecognition();
   }
-  const start=Date.now();
-  say("Ahora hablá unos segundos. Decí dos o tres frases naturales para que aprenda mejor tu voz.",5200);
-  await new Promise(r=>setTimeout(r,5600));
-  const vectors=state.recentVoicePrints.filter(x=>x.t>=start&&x.rms>.045).map(x=>x.vector);
-  if(vectors.length<10)return null;
-  const groups=[];
-  const size=Math.max(3,Math.floor(vectors.length/3));
-  for(let i=0;i<vectors.length;i+=size){
-    const avg=averageVoiceVectors(vectors.slice(i,i+size));
-    if(avg)groups.push(avg);
+
+  const armAt=Date.now();
+  const captured=new Map();
+  let voiceStarted=false;
+  let firstVoiceAt=0;
+  let lastCapturedAt=0;
+  const targetSamples=84;
+  const minimumSamples=55;
+
+  try{
+    setEnrollProgress(48,enrollText(
+      "Voz · Cuando estés listo, empezá a hablar. No voy a contar tiempo hasta escucharte de verdad.",
+      "Voice · Start speaking when you're ready. I won't count time until I actually hear you.",
+      "Voz · Quando estiver pronto, comece a falar. Não vou contar tempo até realmente ouvir você."
+    ));
+
+    // Arming phase: wait for a sustained cluster, not one noise spike.
+    while(Date.now()-armAt<30000&&!voiceStarted){
+      const recent=state.recentVoicePrints.filter(x=>x.t>=armAt&&Date.now()-x.t<1100);
+      if(recent.length>=6){
+        voiceStarted=true;
+        firstVoiceAt=Math.min(...recent.map(x=>x.t));
+        captured.clear();
+        collectNewVoiceSamples(firstVoiceAt,captured);
+        lastCapturedAt=Date.now();
+        break;
+      }
+      await waitMs(120);
+    }
+
+    if(!voiceStarted){
+      setEnrollProgress(48,enrollText(
+        "No llegué a detectar una voz. El registro no empezó: podés intentarlo de nuevo y hablar cuando veas «esperando que hables».",
+        "I didn't detect a voice. Registration never started; try again and speak when you see «waiting for speech».",
+        "Não detectei uma voz. O registro não começou; tente novamente e fale quando aparecer «esperando você falar»."
+      ));
+      return {prints:[],quality:0,error:"no-speech",voicedSeconds:0};
+    }
+
+    const captureDeadline=Date.now()+45000;
+    while(Date.now()<captureDeadline&&captured.size<targetSamples){
+      const before=captured.size;
+      collectNewVoiceSamples(firstVoiceAt,captured);
+      if(captured.size>before)lastCapturedAt=Date.now();
+
+      const fraction=Math.min(1,captured.size/targetSamples);
+      const pct=50+fraction*44;
+      let msg;
+      if(Date.now()-lastCapturedAt>2800){
+        msg=enrollText(
+          "Te dejé de escuchar. El progreso está pausado; seguí hablando cuando quieras.",
+          "I stopped hearing you. Progress is paused; keep speaking when you're ready.",
+          "Parei de ouvir você. O progresso está pausado; continue falando quando quiser."
+        );
+      }else if(fraction<.34){
+        msg=enrollText(
+          "Te escucho. Seguí hablando con naturalidad; contame cualquier cosa.",
+          "I hear you. Keep speaking naturally; tell me anything.",
+          "Estou ouvindo. Continue falando naturalmente; conte qualquer coisa."
+        );
+      }else if(fraction<.70){
+        msg=enrollText(
+          "Bien. Ahora decí otra frase distinta para que aprenda mejor tu voz.",
+          "Good. Now say a different sentence so I learn your voice better.",
+          "Ótimo. Agora diga uma frase diferente para eu aprender melhor sua voz."
+        );
+      }else{
+        msg=enrollText(
+          "Casi está. Una última frase natural, sin acercarte más al micrófono.",
+          "Almost done. One last natural sentence, without moving closer to the microphone.",
+          "Quase pronto. Uma última frase natural, sem se aproximar mais do microfone."
+        );
+      }
+      setEnrollProgress(pct,msg);
+      await waitMs(110);
+    }
+
+    const ordered=[...captured.values()].sort((a,b)=>a.t-b.t);
+    if(ordered.length<minimumSamples){
+      setEnrollProgress(50,enrollText(
+        "Escuché algo, pero no junté suficiente voz real. Necesito varios segundos efectivos hablando; los silencios no cuentan.",
+        "I heard you, but I didn't collect enough real speech. I need several actual seconds of speaking; silence doesn't count.",
+        "Ouvi você, mas não consegui voz real suficiente. Preciso de vários segundos efetivos de fala; silêncio não conta."
+      ));
+      return {prints:[],quality:0,error:"too-short",voicedSeconds:ordered.length*.09};
+    }
+
+    const vectors=ordered.map(x=>x.vector);
+    const validationCount=Math.max(10,Math.min(16,Math.floor(vectors.length*.18)));
+    const training=vectors.slice(0,-validationCount);
+    const validation=vectors.slice(-validationCount);
+    const groupCount=Math.min(8,Math.max(5,Math.floor(training.length/9)));
+    const groupSize=Math.ceil(training.length/groupCount);
+    const prints=[];
+    for(let i=0;i<training.length;i+=groupSize){
+      const avg=averageVoiceVectors(training.slice(i,i+groupSize));
+      if(avg)prints.push(avg);
+    }
+
+    const profileMean=averageVoiceVectors(prints);
+    const validationPrint=averageVoiceVectors(validation);
+    const verification=cosineSimilarity(profileMean,validationPrint);
+    const internal=prints.length
+      ?prints.reduce((sum,p)=>sum+cosineSimilarity(p,profileMean),0)/prints.length
+      :0;
+    const quality=clamp((verification*.58+internal*.42),0,1);
+
+    if(verification<.54||prints.length<4){
+      setEnrollProgress(55,enrollText(
+        "Las muestras de voz no fueron consistentes entre sí. Es mejor repetir el registro en un lugar más silencioso.",
+        "The voice samples were not consistent enough. It's better to repeat registration in a quieter place.",
+        "As amostras de voz não foram consistentes o suficiente. É melhor repetir o registro em um lugar mais silencioso."
+      ));
+      return {prints:[],quality,error:"inconsistent",voicedSeconds:ordered.length*.09};
+    }
+
+    setEnrollProgress(96,enrollText(
+      "Voz verificada. Ya tengo varias muestras distintas de la misma voz.",
+      "Voice verified. I now have several different samples of the same voice.",
+      "Voz verificada. Agora tenho várias amostras diferentes da mesma voz."
+    ));
+    return {prints,quality,verification,voicedSeconds:ordered.length*.09};
+  }finally{
+    state.enrollmentActive=false;
+    if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
+      setTimeout(()=>window.RobotitoLocalASR.pause(false),250);
+    }else{
+      state.recognitionWanted=wasRecognitionWanted;
+      if(wasRecognitionWanted&&state.started)setTimeout(()=>startListeningCycle(false),350);
+    }
   }
-  return groups.slice(0,4);
 }
 
 async function enrollPerson(){
@@ -2790,46 +2996,100 @@ async function enrollPerson(){
   const birthdayRaw=$("#personBirthday").value.trim();
   const birthday=birthdayRaw?parseBirthdayInput(birthdayRaw):"";
   const role=$("#personRole")?.value||"other";
+  const btn=$("#enrollBtn");
+
   if(!name)return toast("Escribí el nombre.");
   if(birthdayRaw&&!birthday)return toast("Usá el cumpleaños como DD/MM/AAAA.");
   if(!state.started)return toast("Primero activá cámara y micrófono.");
+  if(state.enrollmentActive)return;
 
-  $("#enrollStatus").textContent="Mirando la cara…";
-  const samples=[];
-  for(let i=0;i<4;i++){
-    const det=await faceapi.detectSingleFace(camera,new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.5}))
-      .withFaceLandmarks().withFaceDescriptor();
-    if(det)samples.push([...det.descriptor]);
-    await new Promise(r=>setTimeout(r,420));
+  btn.disabled=true;
+  setEnrollProgress(0,enrollText(
+    "Voy a tomar varias muestras. Quedate frente a la cámara.",
+    "I'll take several samples. Stay in front of the camera.",
+    "Vou tirar várias amostras. Fique em frente à câmera."
+  ));
+
+  try{
+    const samples=await captureFaceEnrollment();
+    if(!samples){
+      setEnrollProgress(0,enrollText(
+        "No pude registrar la cara con suficiente calidad. Probá con buena luz y sin otras personas en cámara.",
+        "I couldn't register the face with enough quality. Try good lighting with no other people in frame.",
+        "Não consegui registrar o rosto com qualidade suficiente. Tente com boa luz e sem outras pessoas na câmera."
+      ));
+      return;
+    }
+
+    const voiceCapture=await captureEnrollmentVoice();
+    const voicePrints=voiceCapture?.prints||[];
+    const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
+
+    if(existing){
+      existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-24);
+      existing.birthday=birthday||existing.birthday;
+      existing.role=role;
+      existing.faceEnrolledAt=Date.now();
+      existing.faceSampleCount=existing.descriptors.length;
+      if(voicePrints.length){
+        existing.voicePrints=[...(existing.voicePrints||[]),...voicePrints].slice(-16);
+        existing.voiceQuality=voiceCapture.quality;
+        existing.voiceEnrolledAt=Date.now();
+      }
+    }else{
+      state.people.push({
+        name,birthday,role,
+        descriptors:samples,
+        voicePrints,
+        voiceQuality:voicePrints.length?voiceCapture.quality:null,
+        faceSampleCount:samples.length,
+        faceEnrolledAt:Date.now(),
+        voiceEnrolledAt:voicePrints.length?Date.now():null,
+        relationship:50,
+        createdAt:Date.now()
+      });
+    }
+
+    save(KEYS.people,state.people);
+    state.people.forEach(ensureBond);
+    save(KEYS.people,state.people);
+    buildMatcher();
+    renderPeople();
+    state.faceMatchHistory=[];
+
+    if(voicePrints.length){
+      const q=voiceCapture.quality>=.84
+        ?enrollText("muy buena","very good","muito boa")
+        :voiceCapture.quality>=.72
+          ?enrollText("buena","good","boa")
+          :enrollText("aceptable","acceptable","aceitável");
+      setEnrollProgress(100,enrollText(
+        `Listo: guardé ${samples.length} muestras de cara y ${voicePrints.length} perfiles de voz de ${name}. Calidad de voz: ${q}.`,
+        `Done: I saved ${samples.length} face samples and ${voicePrints.length} voice profiles for ${name}. Voice quality: ${q}.`,
+        `Pronto: salvei ${samples.length} amostras do rosto e ${voicePrints.length} perfis de voz de ${name}. Qualidade da voz: ${q}.`
+      ));
+      say(enrollText(
+        `Listo, ${name}. Ahora tengo una muestra mucho mejor de tu cara y tu voz.`,
+        `Done, ${name}. I now have a much better sample of your face and voice.`,
+        `Pronto, ${name}. Agora tenho uma amostra muito melhor do seu rosto e da sua voz.`
+      ));
+    }else{
+      setEnrollProgress(100,enrollText(
+        `Guardé bien la cara de ${name}, pero no guardé la voz porque no tuvo suficiente calidad. Podés repetir el registro cuando quieras.`,
+        `I saved ${name}'s face well, but I didn't save the voice because its quality wasn't high enough. You can repeat registration anytime.`,
+        `Salvei bem o rosto de ${name}, mas não salvei a voz porque a qualidade não foi suficiente. Você pode repetir o registro quando quiser.`
+      ));
+    }
+  }catch(e){
+    console.warn("enrollment",e);
+    setEnrollProgress(0,enrollText(
+      "Algo falló durante el registro. Probá otra vez con buena luz y poco ruido.",
+      "Something failed during registration. Try again with good lighting and little noise.",
+      "Algo falhou durante o registro. Tente novamente com boa luz e pouco ruído."
+    ));
+  }finally{
+    btn.disabled=false;
   }
-
-  if(samples.length<3){
-    $("#enrollStatus").textContent="No pude ver bien la cara. Probá con más luz y mirá al frente.";
-    return;
-  }
-
-  const voicePrints=await captureEnrollmentVoice();
-  const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
-  if(existing){
-    existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-10);
-    existing.birthday=birthday||existing.birthday;
-    existing.role=role;
-    if(voicePrints?.length)existing.voicePrints=[...(existing.voicePrints||[]),...voicePrints].slice(-8);
-  }else{
-    state.people.push({name,birthday,role,descriptors:samples,voicePrints:voicePrints||[],relationship:50,createdAt:Date.now()});
-  }
-
-  save(KEYS.people,state.people);
-  state.people.forEach(ensureBond);
-  save(KEYS.people,state.people);
-  buildMatcher();
-  renderPeople();
-  $("#enrollStatus").textContent=voicePrints?.length?`Listo: ahora recuerdo la cara y la voz de ${name}.`:`Guardé la cara de ${name}, pero no escuché suficiente voz. Podés volver a registrarlo hablando más fuerte.`;
-  say(sample([
-    `Ya sé quién sos, ${name} 🐼`,
-    `Listo, ${name}. Esa cara queda guardada.`,
-    `Te voy a reconocer la próxima vez, ${name}.`
-  ]));
 }
 
 function checkBirthday(p){
