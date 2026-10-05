@@ -64,6 +64,11 @@ const state = {
   objectModel: null,
   imageModel: null,
   routinePromptLog: load("robotito.routinePrompts.v1", {}),
+  locationCoords: null,
+  weatherCache: null,
+  locationDenied: false,
+  audioContext: null,
+  snoreTimer: null,
   tasks: load("robotito.tasks.v1", []),
   tasksSheetUrl: localStorage.getItem("robotito.tasksSheetUrl.v1") || "",
   tasksSheetGid: localStorage.getItem("robotito.tasksSheetGid.v1") || "",
@@ -447,6 +452,7 @@ function recognizeVoicePerson(print){
 function setupAudio(stream){
   try{
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    state.audioContext=ctx;
     const src=ctx.createMediaStreamSource(stream);
     const analyser=ctx.createAnalyser();
     analyser.fftSize=1024;
@@ -647,14 +653,20 @@ function autoRemember(text){
   renderMemories();
 }
 
+function phraseOrTokenMatch(text,term){
+  const t=normalizeText(text), q=normalizeText(term);
+  if(!q)return false;
+  if(q.includes(" "))return t.includes(q);
+  return new Set(t.split(/\s+/)).has(q);
+}
 function textHasAny(text,terms){
-  return terms.some(t=>text.includes(t));
+  return terms.some(t=>phraseOrTokenMatch(text,t));
 }
 function textHasAllGroups(text,groups){
-  return groups.every(group=>group.some(t=>text.includes(t)));
+  return groups.every(group=>group.some(t=>phraseOrTokenMatch(text,t)));
 }
 function intentMatches(text,phrases=[],groups=[]){
-  if(phrases.some(p=>text.includes(p)))return true;
+  if(phrases.some(p=>normalizeText(text).includes(normalizeText(p))))return true;
   return groups.length?textHasAllGroups(text,groups):false;
 }
 function moodAnswer(){
@@ -717,6 +729,207 @@ function answerEnglishPersonalQuestion(rawText){
   if(/(what do you remember about me|what did i tell you|what do you know about me)/.test(text)){const person=known||"persona no reconocida";const mine=state.memories.filter(m=>m.person===person).slice(-1);say(mine.length?`The last thing I remember is: "${mine[0].text}"`:"I don't have a clear memory about you yet.");return true;}
   if(/(are you real|are you alive|are you a robot|what are you)/.test(text)){say("I'm Robotito, a virtual panda. I'm not alive like a person, but I can see, listen, remember, learn from classes, and react.");return true;}
   return false;
+}
+
+
+function parseSpokenNumber(s){
+  const n=Number(String(s).replace(",","."));
+  return Number.isFinite(n)?n:null;
+}
+function answerArithmetic(rawText,lang="es"){
+  let s=normalizeText(rawText)
+    .replace(/cuanto es|cuanto da|cuanto seria|cuanto son|calculame|calcula|resolve|resolver|what is|what's|calculate|work out/g," ")
+    .replace(/dividido entre|dividido por|dividido|divided by|over/g," / ")
+    .replace(/multiplicado por|por|times|multiplied by/g," * ")
+    .replace(/mas|plus/g," + ")
+    .replace(/menos|minus/g," - ")
+    .replace(/coma/g,".")
+    .replace(/\s+/g," ").trim();
+  const symbolic=String(rawText).match(/-?\d+(?:[.,]\d+)?\s*[+\-*/x×÷]\s*-?\d+(?:[.,]\d+)?/);
+  if(symbolic)s=symbolic[0].replace(/x|×/g,"*").replace(/÷/g,"/").replace(/,/g,".");
+  const m=s.match(/(-?\d+(?:\.\d+)?)\s*([+\-*/])\s*(-?\d+(?:\.\d+)?)/);
+  if(!m)return false;
+  const a=parseSpokenNumber(m[1]),b=parseSpokenNumber(m[3]),op=m[2];
+  if(a===null||b===null)return false;
+  let value;
+  if(op==="+")value=a+b;
+  else if(op==="-")value=a-b;
+  else if(op==="*")value=a*b;
+  else if(op==="/"){
+    if(b===0){say(lang==="en"?"You can't divide by zero.":"No se puede dividir entre cero.");return true;}
+    value=a/b;
+  }
+  if(!Number.isFinite(value))return false;
+  const pretty=Number(value.toFixed(10));
+  say(lang==="en"?`${a} ${op} ${b} is ${pretty}.`:`${a} ${op} ${b} da ${pretty}.`);
+  return true;
+}
+
+function geolocationOnce(){
+  if(state.locationCoords)return Promise.resolve(state.locationCoords);
+  if(state.locationDenied||!navigator.geolocation)return Promise.reject(new Error("location"));
+  return new Promise((resolve,reject)=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      state.locationCoords={lat:pos.coords.latitude,lon:pos.coords.longitude,accuracy:pos.coords.accuracy};
+      resolve(state.locationCoords);
+    },err=>{
+      state.locationDenied=true;
+      reject(err);
+    },{enableHighAccuracy:false,timeout:9000,maximumAge:15*60*1000});
+  });
+}
+function weatherCodeText(code,lang="es"){
+  const en=lang==="en";
+  if(code===0)return en?"clear skies":"cielo despejado";
+  if([1,2].includes(code))return en?"partly cloudy":"algo nublado";
+  if(code===3)return en?"overcast":"cubierto";
+  if([45,48].includes(code))return en?"foggy":"con niebla";
+  if([51,53,55,56,57].includes(code))return en?"drizzly":"con llovizna";
+  if([61,63,65,66,67,80,81,82].includes(code))return en?"rainy":"con lluvia";
+  if([71,73,75,77,85,86].includes(code))return en?"snowy":"con nieve";
+  if([95,96,99].includes(code))return en?"stormy":"con tormenta";
+  return en?"mixed conditions":"tiempo variable";
+}
+async function getWeatherNow(){
+  if(state.weatherCache&&Date.now()-state.weatherCache.at<10*60*1000)return state.weatherCache.data;
+  const {lat,lon}=await geolocationOnce();
+  const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon)
+    +"&current=temperature_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover,wind_speed_10m"
+    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&forecast_days=1&timezone=auto";
+  const res=await fetch(url);
+  if(!res.ok)throw new Error("weather");
+  const data=await res.json();
+  state.weatherCache={at:Date.now(),data};
+  return data;
+}
+async function handleWeatherAndDayQuestions(rawText){
+  const text=normalizeText(rawText),lang=responseLanguage(rawText);
+  const weatherAsk=/(clima|tiempo|temperatura|llueve|llover|frio|calor|viento|weather|temperature|raining|rain|wind)/.test(text)
+    && /(hoy|ahora|afuera|aca|aqui|actual|today|now|outside|here|como|how|que|what)/.test(text);
+  const nightAsk=/(es de noche|ya es de noche|esta de noche|es de dia|ya es de dia|todavia es de dia|is it night|is it nighttime|is it day|is it daytime)/.test(text);
+  if(!weatherAsk&&!nightAsk)return false;
+  try{
+    const w=await getWeatherNow();
+    const cur=w.current||{},daily=w.daily||{};
+    if(nightAsk){
+      const day=Number(cur.is_day)===1;
+      say(lang==="en"?(day?"Yes, it is daytime where you are.":"Yes, it is nighttime where you are."):(day?"Sí, donde estás todavía es de día.":"Sí, donde estás ya es de noche."));
+      return true;
+    }
+    const desc=weatherCodeText(Number(cur.weather_code),lang);
+    const temp=Math.round(Number(cur.temperature_2m));
+    const feels=Math.round(Number(cur.apparent_temperature));
+    const hi=Math.round(Number(daily.temperature_2m_max?.[0]));
+    const lo=Math.round(Number(daily.temperature_2m_min?.[0]));
+    const rain=Number(daily.precipitation_probability_max?.[0]??0);
+    if(lang==="en"){
+      say(`At your current location it's about ${temp} degrees, feels like ${feels}, and it's ${desc}. Today's high is around ${hi}, the low around ${lo}, with up to ${rain}% chance of precipitation.`,7000);
+    }else{
+      say(`En tu ubicación actual hay unos ${temp} grados, sensación de ${feels}, y está ${desc}. Hoy la máxima ronda ${hi}, la mínima ${lo}, y la probabilidad máxima de precipitación es de ${rain}%.`,7000);
+    }
+    return true;
+  }catch(e){
+    const hour=new Date().getHours();
+    if(nightAsk){
+      const night=hour>=20||hour<6;
+      say(lang==="en"?(night?"By your device clock, it's nighttime.":"By your device clock, it's daytime."):(night?"Por la hora de tu dispositivo, sí: es de noche.":"Por la hora de tu dispositivo, todavía es de día."));
+      return true;
+    }
+    say(lang==="en"?"I need location permission to tell you the weather where you are.":"Necesito permiso de ubicación del navegador para decirte el clima donde estás.");
+    return true;
+  }
+}
+
+function ctxRoundRect(ctx,x,y,w,h,r){
+  const rr=Math.min(r,w/2,h/2);
+  ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();
+}
+function prepareDrawing(){
+  const cv=$("#drawingCanvas"),ctx=cv?.getContext("2d");
+  if(!ctx)return null;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle="#fffdfb";ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.lineWidth=5;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#4d4650";
+  return {cv,ctx};
+}
+function drawCuteThing(kind,item){
+  const prep=prepareDrawing();if(!prep)return;
+  const {ctx}=prep,w=440,h=320;
+  const circle=(x,y,r,fill=null)=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}ctx.stroke();};
+  const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
+  const eye=(x,y)=>{ctx.fillStyle="#27222a";ctx.beginPath();ctx.arc(x,y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x-2,y-2,2,0,Math.PI*2);ctx.fill();};
+  ctx.strokeStyle="#4d4650";
+  if(kind==="sun"){circle(220,145,58,"#ffd879");for(let a=0;a<Math.PI*2;a+=Math.PI/6)line(220+78*Math.cos(a),145+78*Math.sin(a),220+105*Math.cos(a),145+105*Math.sin(a));eye(200,140);eye(240,140);ctx.beginPath();ctx.arc(220,153,22,.2,Math.PI-.2);ctx.stroke();}
+  else if(kind==="heart"){ctx.fillStyle="#f3a4bd";ctx.beginPath();ctx.moveTo(220,250);ctx.bezierCurveTo(80,165,120,70,220,135);ctx.bezierCurveTo(320,70,360,165,220,250);ctx.fill();ctx.stroke();}
+  else if(kind==="star"){ctx.fillStyle="#f7d57e";ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?45:95,x=220+Math.cos(a)*r,y=155+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();ctx.stroke();eye(198,150);eye(242,150);}
+  else if(kind==="flower"){ctx.fillStyle="#8ecb83";line(220,160,220,280);ctx.beginPath();ctx.ellipse(190,230,40,18,-.4,0,Math.PI*2);ctx.fill();ctx.stroke();for(let a=0;a<Math.PI*2;a+=Math.PI/3){ctx.fillStyle="#f3a7c0";circle(220+55*Math.cos(a),130+55*Math.sin(a),32,"#f3a7c0");}circle(220,130,31,"#ffd36f");}
+  else if(kind==="tree"){ctx.fillStyle="#a97955";ctx.fillRect(200,180,40,100);ctx.strokeRect(200,180,40,100);circle(175,150,60,"#8bc985");circle(235,130,66,"#86c77f");circle(270,175,55,"#78b972");}
+  else if(kind==="house"){ctx.fillStyle="#f9dfcf";ctx.fillRect(115,145,210,135);ctx.strokeRect(115,145,210,135);ctx.fillStyle="#d88991";ctx.beginPath();ctx.moveTo(90,150);ctx.lineTo(220,60);ctx.lineTo(350,150);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle="#a97955";ctx.fillRect(195,205,52,75);ctx.strokeRect(195,205,52,75);ctx.fillStyle="#bfe2ef";ctx.fillRect(135,180,45,40);ctx.strokeRect(135,180,45,40);ctx.fillRect(265,180,45,40);ctx.strokeRect(265,180,45,40);}
+  else if(["cat","dog","panda","rabbit","bear"].includes(kind)){circle(220,155,82,"#fff");if(kind==="cat"){ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(155,105);ctx.lineTo(145,45);ctx.lineTo(195,82);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(285,105);ctx.lineTo(295,45);ctx.lineTo(245,82);ctx.fill();ctx.stroke();}else{circle(165,90,31,kind==="panda"?"#27242a":"#fff");circle(275,90,31,kind==="panda"?"#27242a":"#fff");}if(kind==="panda"){ctx.fillStyle="#27242a";ctx.beginPath();ctx.ellipse(187,145,27,34,.25,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(253,145,27,34,-.25,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";circle(187,145,12,"#fff");circle(253,145,12,"#fff");}eye(188,145);eye(252,145);ctx.fillStyle="#2d2830";ctx.beginPath();ctx.ellipse(220,175,14,10,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(220,183,22,.15,Math.PI-.15);ctx.stroke();}
+  else if(kind==="fish"){ctx.fillStyle="#9fd8dc";ctx.beginPath();ctx.ellipse(210,160,95,58,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(300,160);ctx.lineTo(370,105);ctx.lineTo(370,215);ctx.closePath();ctx.fill();ctx.stroke();eye(165,145);ctx.beginPath();ctx.arc(155,176,22,.1,Math.PI-.1);ctx.stroke();}
+  else if(kind==="car"){ctx.fillStyle="#ef9eb2";ctxRoundRect(ctx,100,145,240,80,25);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(145,145);ctx.lineTo(185,100);ctx.lineTo(270,100);ctx.lineTo(310,145);ctx.closePath();ctx.fill();ctx.stroke();circle(155,225,30,"#353039");circle(290,225,30,"#353039");}
+  else if(kind==="book"){ctx.fillStyle="#c8b9ea";ctxRoundRect(ctx,130,70,180,190,16);ctx.fill();ctx.stroke();line(160,70,160,260);ctx.fillStyle="#fff";ctx.font="bold 28px system-ui";ctx.fillText("BOOK",185,160);}
+  else if(kind==="cup"){ctx.fillStyle="#f4c8d7";ctxRoundRect(ctx,145,90,145,150,20);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(292,155,48,-Math.PI/2,Math.PI/2);ctx.stroke();ctx.beginPath();ctx.moveTo(175,70);ctx.bezierCurveTo(160,45,190,35,175,10);ctx.stroke();ctx.beginPath();ctx.moveTo(225,70);ctx.bezierCurveTo(210,45,240,35,225,10);ctx.stroke();}
+  else if(kind==="cloud"){ctx.fillStyle="#dcebf5";circle(175,165,48,"#dcebf5");circle(225,130,62,"#dcebf5");circle(285,165,52,"#dcebf5");ctx.fillRect(150,165,165,55);ctx.strokeRect(150,165,165,55);}
+  else if(kind==="rainbow"){const cols=["#ef8f9d","#f3b86d","#ead86d","#8dcc8b","#83bdd9","#9d91d5"];cols.forEach((col,i)=>{ctx.strokeStyle=col;ctx.lineWidth=18;ctx.beginPath();ctx.arc(220,245,145-i*19,Math.PI,Math.PI*2);ctx.stroke();});}
+  else if(kind==="moon"){ctx.fillStyle="#f5e4a8";circle(220,150,90,"#f5e4a8");ctx.fillStyle="#fffdfb";ctx.beginPath();ctx.arc(260,120,88,0,Math.PI*2);ctx.fill();}
+  else{
+    ctx.font="110px Apple Color Emoji,Segoe UI Emoji,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(item?.emoji||"✨",220,145);
+    ctx.font="700 24px system-ui";ctx.fillStyle="#4d4650";ctx.fillText(objectDisplayName(item,state.lastDetectedLanguage||"es"),220,260);
+  }
+}
+function drawRequestedThing(rawText,lang="es"){
+  const text=normalizeText(rawText);
+  const m=text.match(/(?:dibujame|dibuj[aá]|haceme un dibujo de|hazme un dibujo de|quiero un dibujo de|draw me|draw a|draw an|can you draw)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
+  if(!m)return false;
+  let query=m[1].replace(/\b(por favor|please)\b/g,"").trim();
+  const item=window.ROBOTITO_OBJECTS?.find?.(query);
+  const aliases={
+    sol:"sun",sun:"sun",corazon:"heart",heart:"heart",estrella:"star",star:"star",flor:"flower",flower:"flower",
+    arbol:"tree",tree:"tree",casa:"house",house:"house",gato:"cat",cat:"cat",perro:"dog",dog:"dog",
+    panda:"panda",conejo:"rabbit",rabbit:"rabbit",oso:"bear",bear:"bear",pez:"fish",fish:"fish",
+    auto:"car",coche:"car",car:"car",libro:"book",book:"book",taza:"cup",cup:"cup",nube:"cloud",cloud:"cloud",
+    arcoiris:"rainbow",rainbow:"rainbow",luna:"moon",moon:"moon"
+  };
+  let kind=null;
+  for(const [a,k] of Object.entries(aliases)){if(query===a||query.includes(a)){kind=k;break;}}
+  if(!kind&&item)kind=item.id;
+  drawCuteThing(kind||"generic",item);
+  $("#drawingTitle").textContent=lang==="en"?("Robotito drew "+(item?objectDisplayName(item,"en"):query)):("Robotito dibujó "+(item?objectDisplayName(item,"es"):query));
+  $("#drawingShowcase").classList.remove("hidden");
+  clearTimeout(drawRequestedThing.t);
+  drawRequestedThing.t=setTimeout(()=>$("#drawingShowcase").classList.add("hidden"),8000);
+  say(lang==="en"?"I drew it for you.":"Te lo dibujé.");
+  return true;
+}
+
+function animateAffection(){
+  if(state.sleeping)return;
+  robot.classList.add("heart-eyes");
+  setTimeout(()=>robot.classList.remove("heart-eyes"),1200);
+}
+function playSnore(){
+  const ctx=state.audioContext;
+  if(!ctx||ctx.state!=="running")return;
+  try{
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type="sine";osc.frequency.setValueAtTime(92,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(58,ctx.currentTime+.72);
+    gain.gain.setValueAtTime(.0001,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.025,ctx.currentTime+.14);gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.82);
+    osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.85);
+  }catch{}
+}
+function startSnoring(){
+  if(state.snoreTimer)return;
+  const loop=()=>{
+    if(!state.sleeping){state.snoreTimer=null;return;}
+    playSnore();
+    state.snoreTimer=setTimeout(loop,4300+Math.random()*2300);
+  };
+  state.snoreTimer=setTimeout(loop,900);
+}
+function stopSnoring(){
+  clearTimeout(state.snoreTimer);
+  state.snoreTimer=null;
 }
 
 function answerEasyQuestion(rawText){
@@ -884,6 +1097,15 @@ function answerEasyQuestion(rawText){
     [["que"],["sos","eres","animal"]]
   )){
     say("Soy Robotito, un panda virtual.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["es de noche","ya es de noche","estamos de noche","es de dia","ya es de dia","todavia es de dia","todavía es de día"],
+    [["noche","dia"],["es","ya","todavia"]]
+  )){
+    const h=new Date().getHours(),night=h>=20||h<6;
+    say(night?"Sí, por la hora de tu dispositivo es de noche.":"No, por la hora de tu dispositivo todavía es de día.");
     return true;
   }
 
@@ -1691,10 +1913,13 @@ async function handleSpeech(rawText){
     say("Mi dulce creadora, la más bella a toda hora; si digo otra cosa… me borra sin demora.");
     return;
   }
-  if(showRequestedObject(rawText,responseLanguage(rawText)))return;
+  const detectedLang=responseLanguage(rawText);
+  if(drawRequestedThing(rawText,detectedLang))return;
+  if(showRequestedObject(rawText,detectedLang))return;
   if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
-  const detectedLang=responseLanguage(rawText);
+  if(answerArithmetic(rawText,detectedLang))return;
+  if(await handleWeatherAndDayQuestions(rawText))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
   if(answerEasyQuestion(rawText)) return;
   const commonAnswer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(rawText,detectedLang);
@@ -1757,7 +1982,11 @@ async function handleSpeech(rawText){
     changeMoodScore(-5);
     adjustBond(who,{affection:-.80,trust:-1.15,irritation:1.80});
     setMood("sad","Eso lo dejó un poquito triste.");
-    say("…");
+    say("Eso no me gustó.");
+    return;
+  }
+  if(/[?¿]/.test(rawText)||/^(que|como|cual|cuando|donde|por que|porque|quien|cuanto|puedes|podes|what|how|which|when|where|why|who|can|do|does|is|are)\b/.test(text)){
+    say(detectedLang==="en"?"I don't know that one yet, but I understood the question.":"Esa todavía no la sé, pero entendí que me hiciste una pregunta.");
   }
 }
 
@@ -1801,6 +2030,7 @@ function dayPartGreeting(){
 function wakeFromNight(){
   state.nightSleep=false;
   state.sleeping=false;
+  stopSnoring();
   robot.classList.remove("sleeping");
   setMood("calm","Robotito está despierto otra vez.");
 }
@@ -1809,12 +2039,14 @@ function sleepForNight(){
   state.sleeping=true;
   robot.classList.add("sleeping");
   setMood("sleepy","Robotito se fue a dormir porque le dijeron buenas noches.");
+  startSnoring();
 }
 function handleSocialSpeech(text){
   const known=state.currentVoicePerson||state.currentPerson;
   const name=known?", "+known:"";
   const enName=known?", "+known:"";
 
+  if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){say(responseLanguage(text)==="en"?"Bless you!":"¡Salud!");return true;}
   if(/\b(good morning)\b/.test(text)){wakeFromNight();say("Good morning"+enName+".");return true;}
   if(/\b(good afternoon)\b/.test(text)){wakeFromNight();say("Good afternoon"+enName+".");return true;}
   if(/\b(good night|goodnight)\b/.test(text)){say("Good night"+enName+". Sleep well.");setTimeout(sleepForNight,700);return true;}
@@ -1863,7 +2095,7 @@ function greetingFor(p){
   const timed=dayPartGreeting()+", "+p.name+".";
   let choices;
   if(category==="loves"){
-    choices=[`¡${p.name}! Te extrañé un poquito ♡`,`¡${p.name}! *mini saltito panda*`,`Ah, sos vos. Mi persona favorita apareció.`,timed];
+    choices=[`¡${p.name}! Te extrañé un poquito ♡`,`¡${p.name}! Me alegra muchísimo verte.`,`Ah, sos vos. Mi persona favorita apareció.`,timed];
   }else if(category==="likes"||category==="trusts"){
     choices=[`¡Hola, ${p.name}! Me alegra verte.`,`Te reconocí, ${p.name}.`,`Mirá quién volvió: ${p.name}.`,timed];
   }else if(category==="afraid"){
@@ -1899,7 +2131,7 @@ function recognize(det){
     p.lastGreetingAt=Date.now();
     save(KEYS.people,state.people);
     say(greetingFor(p));
-    if((p.relationship??50)>=68) animatePet();
+    if(["loves","likes"].includes(bondCategory(p)))animateAffection();
     checkBirthday(p);
   }
 }
@@ -2128,7 +2360,8 @@ function petRobot(){
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.75,trust:.50,fear:-.18,irritation:-.30});
   setMood("happy","Robotito recibió mimos.");
   animatePet();
-  say(sample(["♡","Mmm… más mimitos.","Eso sí me gusta 🐼","*se acerca un poquito*"]));
+  animateAffection();
+  say(sample(["Mmm… más mimitos.","Eso sí me gusta.","Me encantan los mimos."]));
 }
 
 function scareRobot(){
@@ -2178,25 +2411,29 @@ function inactivityTick(){
   }
 
   if(quietFor>150){
-    if(!state.sleeping) say("Zzz…");
     state.sleeping=true;
     robot.classList.add("sleeping");
+    startSnoring();
     setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
     state.energy=clamp(state.energy+.35,0,100);
   }else if(quietFor>95){
     state.sleeping=false;
+    stopSnoring();
     robot.classList.remove("sleeping");
     setMood("sleepy","Robotito está cabeceando de sueño.");
     state.energy=clamp(state.energy-.05,0,100);
   }else if(quietFor>45){
     state.sleeping=false;
+    stopSnoring();
     robot.classList.remove("sleeping");
     setMood("bored","Robotito se está aburriendo un poquito y mira alrededor.");
     state.energy=clamp(state.energy-.02,0,100);
   }else{
-    if(state.sleeping) say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó? 👀"]));
+    const wasSleeping=state.sleeping;
     state.sleeping=false;
+    stopSnoring();
     robot.classList.remove("sleeping");
+    if(wasSleeping)say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó?"]));
     state.energy=clamp(state.energy-.02,0,100);
   }
 }
