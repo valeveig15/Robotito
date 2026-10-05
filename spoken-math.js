@@ -330,7 +330,7 @@
     const n=strip(s);
     const hasNumber=/\d/.test(n)||[...NUM_WORDS].some(w=>new RegExp("\\b"+w+"\\b").test(n));
     if(!hasNumber)return false;
-    return /[+\-*/×÷^%]|\b(mas|menos|por|multiplicado|dividido|entre|plus|minus|times|mais|vezes|raiz|root|cuadrada|cubica|elevado|power|cuadrado|cubo|factorial|mitad|doble|triple|metade|dobro|triplo|percent|ciento|cento)\b/.test(n);
+    return /[+\-*/×÷^%]|\b(mas|menos|por|multiplicado|dividido|entre|plus|minus|times|mais|vezes|raiz|root|cuadrada|cubica|elevado|power|cuadrado|cubo|cuarta|quinta|sexta|septima|octava|factorial|mitad|doble|triple|metade|dobro|triplo|percent|ciento|cento)\b/.test(n);
   }
 
   function solve(rawText,lang="es"){
