@@ -7,11 +7,63 @@ const KEYS = {
   goodreads: "robotito.goodreads.v1",
   lastFed: "robotito.lastFed.v2",
   lastBook: "robotito.lastBook.v1",
-  greetings: "robotito.greetings.v1"
+  greetings: "robotito.greetings.v1",
+  avatar: "robotito.avatar.v1"
 };
+
+const ROBOTITO_AVATARS = [
+  {id:"panda",emoji:"🐼",es:"Panda",en:"Panda",pt:"Panda"},
+  {id:"brown-bear",emoji:"🐻",es:"Oso pardo",en:"Brown bear",pt:"Urso pardo"},
+  {id:"polar-bear",emoji:"🐻‍❄️",es:"Oso polar",en:"Polar bear",pt:"Urso polar"},
+  {id:"dog",emoji:"🐶",es:"Perro",en:"Dog",pt:"Cachorro"},
+  {id:"monkey",emoji:"🐵",es:"Mono",en:"Monkey",pt:"Macaco"},
+  {id:"cat",emoji:"🐱",es:"Gato",en:"Cat",pt:"Gato"},
+  {id:"red-panda",emoji:"🦊",es:"Panda rojo",en:"Red panda",pt:"Panda-vermelho"},
+  {id:"iguana",emoji:"🦎",es:"Iguana",en:"Iguana",pt:"Iguana"},
+  {id:"armadillo",emoji:"🛡️",es:"Armadillo",en:"Armadillo",pt:"Tatu"},
+  {id:"penguin",emoji:"🐧",es:"Pingüino",en:"Penguin",pt:"Pinguim"},
+  {id:"elephant",emoji:"🐘",es:"Elefante",en:"Elephant",pt:"Elefante"},
+  {id:"turtle",emoji:"🐢",es:"Tortuga",en:"Turtle",pt:"Tartaruga"},
+  {id:"squirrel",emoji:"🐿️",es:"Ardilla",en:"Squirrel",pt:"Esquilo"},
+  {id:"mouse",emoji:"🐭",es:"Ratón",en:"Mouse",pt:"Rato"},
+  {id:"hamster",emoji:"🐹",es:"Hámster",en:"Hamster",pt:"Hamster"},
+  {id:"rabbit",emoji:"🐰",es:"Conejo",en:"Rabbit",pt:"Coelho"},
+  {id:"lion",emoji:"🦁",es:"León",en:"Lion",pt:"Leão"},
+  {id:"tiger",emoji:"🐯",es:"Tigre",en:"Tiger",pt:"Tigre"},
+  {id:"panther",emoji:"🐈‍⬛",es:"Pantera",en:"Panther",pt:"Pantera"},
+  {id:"fox",emoji:"🦊",es:"Zorro",en:"Fox",pt:"Raposa"},
+  {id:"koala",emoji:"🐨",es:"Koala",en:"Koala",pt:"Coala"},
+  {id:"pig",emoji:"🐷",es:"Chancho",en:"Pig",pt:"Porquinho"},
+  {id:"cow",emoji:"🐮",es:"Vaca",en:"Cow",pt:"Vaca"},
+  {id:"frog",emoji:"🐸",es:"Sapo",en:"Frog",pt:"Sapo"},
+  {id:"owl",emoji:"🦉",es:"Búho",en:"Owl",pt:"Coruja"},
+  {id:"wolf",emoji:"🐺",es:"Lobo",en:"Wolf",pt:"Lobo"},
+  {id:"horse",emoji:"🐴",es:"Caballo",en:"Horse",pt:"Cavalo"},
+  {id:"dinosaur",emoji:"🦖",es:"Dinosaurio",en:"Dinosaur",pt:"Dinossauro"},
+  {id:"crocodile",emoji:"🐊",es:"Cocodrilo",en:"Crocodile",pt:"Crocodilo"},
+  {id:"zebra",emoji:"🦓",es:"Cebra",en:"Zebra",pt:"Zebra"},
+  {id:"deer",emoji:"🦌",es:"Venado",en:"Deer",pt:"Cervo"},
+  {id:"hippopotamus",emoji:"🦛",es:"Hipopótamo",en:"Hippopotamus",pt:"Hipopótamo"},
+  {id:"giraffe",emoji:"🦒",es:"Jirafa",en:"Giraffe",pt:"Girafa"},
+  {id:"kangaroo",emoji:"🦘",es:"Canguro",en:"Kangaroo",pt:"Canguru"},
+  {id:"gorilla",emoji:"🦍",es:"Gorila",en:"Gorilla",pt:"Gorila"},
+  {id:"sheep",emoji:"🐑",es:"Oveja",en:"Sheep",pt:"Ovelha"},
+  {id:"goat",emoji:"🐐",es:"Cabra",en:"Goat",pt:"Cabra"},
+  {id:"peacock",emoji:"🦚",es:"Pavo real",en:"Peacock",pt:"Pavão"},
+  {id:"swan",emoji:"🦢",es:"Cisne",en:"Swan",pt:"Cisne"},
+  {id:"flamingo",emoji:"🦩",es:"Flamenco",en:"Flamingo",pt:"Flamingo"},
+  {id:"skunk",emoji:"🦨",es:"Zorrillo",en:"Skunk",pt:"Gambá"},
+  {id:"raccoon",emoji:"🦝",es:"Mapache",en:"Raccoon",pt:"Guaxinim"},
+  {id:"otter",emoji:"🦦",es:"Nutria",en:"Otter",pt:"Lontra"},
+  {id:"sloth",emoji:"🦥",es:"Perezoso",en:"Sloth",pt:"Preguiça"},
+  {id:"beaver",emoji:"🦫",es:"Castor",en:"Beaver",pt:"Castor"},
+  {id:"hedgehog",emoji:"🦔",es:"Erizo",en:"Hedgehog",pt:"Ouriço"}
+];
+
 
 const state = {
   started: false,
+  avatar: localStorage.getItem(KEYS.avatar) || "panda",
   mood: "calm",
   moodScore: 55,
   energy: 100,
@@ -426,6 +478,7 @@ function setMood(mood, reason=""){
   const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"};
   $("#moodLabel").textContent=labels[mood]||mood;
   if(reason) $("#statusText").textContent=reason;
+  updateAvatarMoodIcon(mood);
 }
 
 function ensureBond(p){
@@ -1340,6 +1393,111 @@ function moodAnswer(){
 function capabilitiesAnswer(){
   return "Puedo reconocerte por cara y voz, recordar cosas, escuchar clases, resumirlas, ayudarte a estudiar, contar dedos, reconocer algunos objetos, recomendar libros, mirar tus tareas y resolver o dibujar algunos ejercicios de circunferencias.";
 }
+
+function avatarById(id){
+  return ROBOTITO_AVATARS.find(item=>item.id===id) || ROBOTITO_AVATARS[0];
+}
+function avatarLanguage(){
+  return ["es","en","pt"].includes(state.languageMode)?state.languageMode:"es";
+}
+function avatarName(avatar,lang=avatarLanguage()){
+  return avatar?.[lang] || avatar?.es || "Panda";
+}
+function updateAvatarAria(){
+  if(!robot)return;
+  const avatar=avatarById(state.avatar);
+  const lang=avatarLanguage();
+  const name=avatarName(avatar,lang);
+  robot.setAttribute("aria-label",lang==="en"
+    ?`Robotito, virtual ${name} avatar`
+    :lang==="pt"?`Robotito, avatar virtual de ${name}`:`Robotito, avatar virtual de ${name}`);
+}
+function updateAvatarMoodIcon(mood=state.mood){
+  const icons={
+    calm:"✨",happy:"💖",sad:"💧",angry:"💢",scared:"😨",hungry:"🍓",sleepy:"💤",
+    curious:"❔",focused:"📚",bored:"☁️",affectionate:"💕",proud:"⭐",confused:"🌀",
+    excited:"🎉",embarrassed:"🌸",annoyed:"💭"
+  };
+  const badge=$("#animalAvatarMood");
+  if(badge)badge.textContent=icons[mood] || "✨";
+}
+function applyAvatar(id,{persist=true}={}){
+  const avatar=avatarById(id);
+  state.avatar=avatar.id;
+  if(persist)localStorage.setItem(KEYS.avatar,avatar.id);
+  if(robot){
+    for(const item of ROBOTITO_AVATARS)robot.classList.remove("avatar-"+item.id);
+    robot.classList.add("avatar-"+avatar.id);
+    robot.classList.toggle("avatar-custom",avatar.id!=="panda");
+    robot.dataset.avatar=avatar.id;
+  }
+  if($("#animalAvatarEmoji"))$("#animalAvatarEmoji").textContent=avatar.emoji;
+  if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatar);
+  if($("#startupMascot"))$("#startupMascot").textContent=avatar.emoji;
+  document.title="Robotito "+avatar.emoji;
+  updateAvatarAria();
+  updateAvatarMoodIcon();
+  return avatar;
+}
+function renderAvatarChoices(){
+  const container=$("#avatarChoices");
+  if(!container)return;
+  const lang=avatarLanguage();
+  container.setAttribute("aria-label",lang==="en"?"Available avatars":lang==="pt"?"Avatares disponíveis":"Avatares disponibles");
+  container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
+    const selected=avatar.id===state.avatar;
+    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
+      <span class="avatar-choice-emoji" aria-hidden="true">${avatar.emoji}</span>
+      <span class="avatar-choice-name">${escapeHtml(avatarName(avatar,lang))}</span>
+      ${avatar.id==="iguana"?'<span class="avatar-special">cambia de color</span>':""}
+    </button>`;
+  }).join("");
+}
+function showStartupStep(step){
+  const language=$("#languageStep");
+  const avatar=$("#avatarStep");
+  const isAvatar=step==="avatar";
+  if(language){
+    language.hidden=isAvatar;
+    language.classList.toggle("hidden",isAvatar);
+  }
+  if(avatar){
+    avatar.hidden=!isAvatar;
+    avatar.classList.toggle("hidden",!isAvatar);
+  }
+  $("#languageGateCard")?.classList.toggle("avatar-selecting",isAvatar);
+  $("#languageGate")?.setAttribute("aria-labelledby",isAvatar?"avatarStepTitle":"languageGateTitle");
+  if(isAvatar){
+    const lang=avatarLanguage();
+    $("#avatarStepTitle").textContent=lang==="en"?"Choose Robotito's avatar":lang==="pt"?"Escolha o avatar do Robotito":"Elegí el avatar de Robotito";
+    $("#avatarStepDescription").textContent=lang==="en"
+      ?"Choose the friend you want to see. Your choice will be saved on this device."
+      :lang==="pt"?"Escolha o amigo que você quer ver. Sua escolha ficará salva neste dispositivo."
+      :"Elegí el amigo que querés ver. La elección quedará guardada en este dispositivo.";
+    $("#backToLanguage").textContent=lang==="en"?"Back to language":lang==="pt"?"Voltar ao idioma":"Volver al idioma";
+    renderAvatarChoices();
+    setTimeout(()=>$("#avatarChoices .selected, #avatarChoices .avatar-choice")?.focus(),0);
+  }
+}
+function finishStartupAvatar(id){
+  applyAvatar(id);
+  const gate=$("#languageGate");
+  if(gate){
+    gate.classList.add("hidden");
+    gate.hidden=true;
+    gate.setAttribute("aria-hidden","true");
+    gate.style.display="none";
+  }
+  const mode=avatarLanguage();
+  $("#startBtn").disabled=false;
+  $("#startBtn").textContent=mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos";
+  $("#statusText").textContent=mode==="en"
+    ?"Robotito is ready to wake up."
+    :mode==="pt"?"Robotito está pronto para despertar.":"Robotito está listo para despertar.";
+  applyDayNightMode(new Date());
+  flushPendingBatteryAlert();
+}
+
 function setLanguageMode(mode){
   if(!["es","en","pt"].includes(mode))return;
   state.languageMode=mode;
@@ -1354,21 +1512,9 @@ function setLanguageMode(mode){
 function chooseStartupLanguage(mode){
   if(!["es","en","pt"].includes(mode))return;
   setLanguageMode(mode);
-  const gate=$("#languageGate");
-  if(gate){
-    gate.classList.add("hidden");
-    gate.hidden=true;
-    gate.setAttribute("aria-hidden","true");
-    gate.style.display="none";
-  }
   document.documentElement.lang=mode;
-  $("#startBtn").disabled=false;
-  $("#startBtn").textContent=mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos";
-  $("#statusText").textContent=mode==="en"
-    ?"Robotito is ready to wake up."
-    :mode==="pt"?"Robotito está pronto para despertar.":"Robotito está listo para despertar.";
-  applyDayNightMode(new Date());
-  flushPendingBatteryAlert();
+  applyAvatar(state.avatar,{persist:false});
+  showStartupStep("avatar");
 }
 function handleLanguageCommand(text){
   if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english|fale.*ingles|fale.*ingl[eê]s/.test(text)){
@@ -4401,7 +4547,12 @@ function ambientMood(){
 }
 
 function bindUI(){
-  $$("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
+  $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
+  $("#avatarChoices")?.addEventListener("click",event=>{
+    const choice=event.target.closest("[data-avatar-id]");
+    if(choice)finishStartupAvatar(choice.dataset.avatarId);
+  });
+  $("#backToLanguage")?.addEventListener("click",()=>showStartupStep("language"));
   $("#startBtn").addEventListener("click",startSenses);
   $("#languageMode")?.addEventListener("change",e=>{
     const mode=e.target.value;
@@ -4545,6 +4696,11 @@ window.ROBOTITO_BATTERY={
   message:batteryAlertMessage
 };
 
+window.ROBOTITO_AVATARS={
+  list:ROBOTITO_AVATARS.map(item=>({...item})),
+  byId:id=>({...avatarById(id)})
+};
+
 window.ROBOTITO_QUESTION_ROUTING={
   hasExplicitClassReference,
   isDefinitionQuestion,
@@ -4568,6 +4724,8 @@ async function init(){
   migrateOldData();
   purgeNamedPeople();
   bindUI();
+  applyAvatar(state.avatar,{persist:false});
+  showStartupStep("language");
   ensureClassLineIds();
   window.ROBOTITO_CLASS_ORGANIZER?.migrate?.();
   buildMatcher();
