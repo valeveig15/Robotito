@@ -336,6 +336,14 @@
   function answerQuery(input,forcedLang){
     const t=norm(input), lang=forcedLang==="en"||forcedLang==="es"?forcedLang:langOf(input);
 
+    // Strong concept anchors disambiguate questions whose relational words are generic.
+    if((/\bsatelite\b/.test(t)||/\bmoon\b/.test(t)) && /\btierra\b|\bearth\b/.test(t)){
+      return answer("La Luna es el satélite natural de la Tierra.","The Moon is Earth's natural satellite.",lang);
+    }
+    if(/\b(?:que|quien|what)\b.*\b(?:gira|orbita|orbits?)\b.*\b(?:tierra|earth)\b/.test(t) && !/\bplaneta\b|\bplanet\b/.test(t)){
+      return answer("La Luna gira alrededor de la Tierra.","The Moon orbits Earth.",lang);
+    }
+
     // Animal sounds — intentionally forgiving because speech recognition often writes "ase" for "hace".
     const soundAnimal=findAnimal(t);
     const soundIntent=has(t,[
