@@ -27,6 +27,7 @@
       const label=state.speakerOverride;
       state.speakerOverride=null;
       learnSpeaker(label,feature);
+      state.lastSpeakerConfidence=1;
       return label;
     }
     const profiles=["me","teacher","classmate"]
@@ -34,9 +35,15 @@
       .filter(x=>x.mean);
     if(profiles.length){
       const ranked=profiles.map(x=>({label:x.label,d:featureDistance(feature,x.mean)})).sort((a,b)=>a.d-b.d);
-      if(ranked[0].d<.7)return ranked[0].label;
-      if(ranked.length>1&&ranked[0].d+.10<ranked[1].d)return ranked[0].label;
+      const best=ranked[0],second=ranked[1];
+      const closeness=Math.max(0,Math.min(1,1-best.d/1.05));
+      const margin=second?Math.max(0,Math.min(1,(second.d-best.d)/.42)):.45;
+      state.lastSpeakerConfidence=Math.max(.28,Math.min(.96,closeness*.72+margin*.28));
+      if(best.d<.7)return best.label;
+      if(second&&best.d+.10<second.d)return best.label;
     }
+    // Unknown voices are provisionally classmates, but explicitly marked low-confidence.
+    state.lastSpeakerConfidence=.24;
     return "classmate";
   }
   function classLinesForSubject(){
@@ -267,9 +274,11 @@ Respondé únicamente JSON válido:
     const feature=averageRecentVoiceFeature();
     const voicePrint=recentVoicePrint();
     const voiceMatch=recognizeVoicePerson(voicePrint,state.currentPerson);
-    const speaker=voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role)
-      ?voiceMatch.role
-      :classifySpeaker(feature);
+    const recognizedRole=voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role);
+    const speaker=recognizedRole?voiceMatch.role:classifySpeaker(feature);
+    const speakerConfidence=recognizedRole
+      ?Math.max(.55,Math.min(1,Number(voiceMatch.score)||0))
+      :Number(state.lastSpeakerConfidence)||.24;
 
     const academic=correctAcademicTranscript(text,[state.classSubject,state.classTopic].filter(Boolean).join(" — "));
     const line={
@@ -280,6 +289,7 @@ Respondé únicamente JSON válido:
       speaker,
       speakerName:voiceMatch?.name||null,
       voiceScore:voiceMatch?.score||null,
+      speakerConfidence,
       voicePrint,
       subject:state.classSubject||"Clase",
       topic:state.classTopic||"",
