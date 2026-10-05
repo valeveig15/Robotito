@@ -409,7 +409,6 @@ ${useful.join("\n").slice(0,7000)}`;
           size:file.size||0,
           subject,
           topic,
-          rawText:text,
           chunks,
           exercises,
           at:Date.now()
