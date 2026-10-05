@@ -111,7 +111,14 @@ function load(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
   catch { return fallback; }
 }
-function save(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) { console.warn("storage",e); toast("No pude guardar: el almacenamiento del navegador está lleno."); } }
+function save(key, value) {
+  if(window.ROBOTITO_STORE?.isHeavyKey?.(key)){
+    window.ROBOTITO_STORE.persistStateKey(key,value).catch?.(e=>console.warn("durable storage",e));
+    return;
+  }
+  try { localStorage.setItem(key, JSON.stringify(value)); }
+  catch(e) { console.warn("storage",e); toast("No pude guardar: el almacenamiento del navegador está lleno."); }
+}
 function clamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
 function sample(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 function normalizeText(s){
@@ -847,9 +854,13 @@ function processSpeechResult(text,speechMeta=null){
   const voiceMatch=recognizeVoicePerson(print,state.currentPerson);
   state.currentVoicePerson=voiceMatch?.name||null;
   autoRemember(text);
-  if(!state.classMode && state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
+  // During a class, classroom speech is material to learn — never a command for Robotito.
+  if(state.classMode){
+    void captureClassLine(text);
+    return;
+  }
+  if(state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
   handleSpeech(text);
-  if(state.classMode) captureClassLine(text);
 }
 
 function recognitionLanguage(){
@@ -948,12 +959,11 @@ function startListeningCycle(userGesture=false){
     state.recognition=null;
     state.speechRetryCount++;
     setListenState(state.languageMode==="en"?"recovering…":"recuperando…","problem");
-    if(state.speechRetryCount>=4){
-      
-      
-    }else if(state.started&&!state.speechBlocked){
+    if(state.started&&!state.speechBlocked&&state.recognitionWanted){
       clearTimeout(state.speechRestartTimer);
-      state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),600+state.speechRetryCount*250);
+      // Keep recovering instead of silently giving up after four failures.
+      const delay=document.hidden?2200:Math.min(5000,650+state.speechRetryCount*420);
+      state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),delay);
     }
   }
 }
@@ -2254,6 +2264,8 @@ function relevantSentenceForAnswer(e,question){
     .sort((a,b)=>b.score-a.score)[0].t;
 }
 function academicAnswerDepth(question){
+  const routed=window.ROBOTITO_ROUTER?.responseDepth?.(question);
+  if(routed)return routed;
   const q=normalizeText(question);
   const wantsDetail=/(paso a paso|detallad|explica(?:me)?|desarrolla|por que|porque|como funciona|ejemplo|formula|fórmula|demostra|demuestra|compara|diferencia)/.test(q);
   if(wantsDetail)return "detailed";
@@ -2298,13 +2310,6 @@ function fallbackAcademicAnswer(question,evidence){
 }
 async function composeAcademicAnswer(question,evidence){
   const depth=academicAnswerDepth(question);
-  const qn=normalizeText(question).replace(/\bcheques?\b/g,"choques");
-  if(depth==="definition"&&/\bchoque elastico\b/.test(qn)){
-    return "Un choque elástico es aquel en el que se conserva la energía cinética del sistema.";
-  }
-  if(depth==="definition"&&/\bchoque inelastico\b/.test(qn)){
-    return "Un choque inelástico es aquel en el que no se conserva la energía cinética del sistema.";
-  }
   const compact=evidence.map((e,i)=>{
     const text=relevantSentenceForAnswer(e,question);
     const source=e.sourceType==="material"
@@ -2685,6 +2690,9 @@ async function handleSpeech(rawText){
     say("No encontré evidencia suficiente en las transcripciones para contestar eso.",3800);
     return;
   }
+
+  // One intent router handles live knowledge, object vision and visual math before decorative fallbacks.
+  if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang}))return;
 
   if(drawRequestedThing(interpreted,detectedLang))return;
   if(showRequestedObject(interpreted,detectedLang))return;
@@ -3394,13 +3402,13 @@ async function enrollPerson(){
     const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
 
     if(existing){
-      existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-24);
+      existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-36);
       existing.birthday=birthday||existing.birthday;
       existing.role=role;
       existing.faceEnrolledAt=Date.now();
       existing.faceSampleCount=existing.descriptors.length;
       if(voicePrints.length){
-        existing.voicePrints=[...(existing.voicePrints||[]),...voicePrints].slice(-16);
+        existing.voicePrints=[...(existing.voicePrints||[]),...voicePrints].slice(-24);
         existing.voiceQuality=voiceCapture.quality;
         existing.voiceEnrolledAt=Date.now();
       }
@@ -3951,7 +3959,8 @@ document.addEventListener("visibilitychange",()=>{
   }
 });
 
-function init(){
+async function init(){
+  await window.ROBOTITO_STORE?.bootstrap?.(state);
   migrateOldData();
   purgeNamedPeople();
   bindUI();
