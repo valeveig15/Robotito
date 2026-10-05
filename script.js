@@ -219,6 +219,9 @@ function restartRecognitionAfterSpeech(){
   state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?850:420);
 }
 function speakResponse(text,forcedLang=null){
+  // Class Mode is intentionally silent: Robotito may show text, transcribe,
+  // verify and save information, but must never speak over the lesson.
+  if(state.classMode)return false;
   if(!state.voiceEnabled||!("speechSynthesis" in window))return false;
   const clean=cleanSpeechText(text);
   if(!clean)return false;
