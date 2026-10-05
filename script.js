@@ -1780,16 +1780,53 @@ function correctAcademicTranscript(text,subject){
   }).join("");
   return {text:corrected,changes};
 }
+function splitEvidenceSentences(text){
+  const clean=String(text||"").replace(/\s+/g," ").trim();
+  if(!clean)return [];
+  let parts=clean.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ0-9¿¡])/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===1&&clean.length>320){
+    parts=clean.split(/\s*[;•]\s*|\s+(?=(?:Además|También|Por eso|Entonces|En cambio|Sin embargo|Finalmente)\b)/i)
+      .map(x=>x.trim()).filter(Boolean);
+  }
+  return parts.length?parts:[clean];
+}
 function materialEvidenceLines(){
   const subj=normalizeText(state.classSubject||$("#classSubject")?.value||"");
   return state.academicMaterials
     .filter(m=>!subj||normalizeText(m.subject||"").includes(subj)||subj.includes(normalizeText(m.subject||"")))
-    .flatMap(m=>(m.chunks||[]).map((text,i)=>({text,correctedText:text,speaker:"material",subject:m.subject||"Material",at:m.at,sourceName:m.name,chunk:i+1})));
+    .flatMap(m=>(m.chunks||[]).flatMap((chunkText,chunkIndex)=>
+      splitEvidenceSentences(chunkText).map((text,sentenceIndex)=>({
+        text,
+        correctedText:text,
+        speaker:"material",
+        sourceType:"material",
+        subject:m.subject||"Material",
+        at:m.at,
+        sourceName:m.name,
+        chunk:chunkIndex+1,
+        sentence:sentenceIndex+1
+      }))
+    ));
+}
+function classEvidenceLines(){
+  return classLinesForSubject().flatMap(line=>{
+    const sourceText=line.correctedText||line.text||"";
+    const correctedParts=splitEvidenceSentences(sourceText);
+    const originalParts=splitEvidenceSentences(line.text||sourceText);
+    return correctedParts.map((text,i)=>({
+      ...line,
+      text:originalParts[i]||line.text||text,
+      correctedText:text,
+      sourceType:"class",
+      sourceName:line.speakerName||null,
+      sentence:i+1
+    }));
+  });
 }
 async function browserRewrite(prompt){
   try{
     if(window.LanguageModel?.create){
-      const session=await window.LanguageModel.create({temperature:.2,topK:3});
+      const session=await window.LanguageModel.create({temperature:.15,topK:2});
       const out=await session.prompt(prompt);
       session.destroy?.();
       return out?.trim()||null;
@@ -1797,296 +1834,224 @@ async function browserRewrite(prompt){
   }catch(e){console.warn("browser AI",e);}
   return null;
 }
-function fallbackAcademicAnswer(question,evidence){
-  const snippets=evidence.map(e=>(e.correctedText||e.text).replace(/\b(bueno|o sea|este|eh|tipo)\b/gi,"").replace(/\s+/g," ").trim()).filter(Boolean);
-  const q=normalizeText(question);
-  if(!snippets.length)return "No tengo suficiente información.";
-  if(q.startsWith("por que")||q.startsWith("porque"))return "La explicación que aparece en tus materiales es que "+snippets.join(" Además, ").replace(/^./,x=>x.toLowerCase());
-  if(q.startsWith("como"))return "El procedimiento o mecanismo que se explicó es el siguiente: "+snippets.join(" Luego, ");
-  if(q.startsWith("que es")||q.startsWith("que significa"))return "En tus materiales, se entiende como "+snippets.join(" ");
-  return "La respuesta, según lo trabajado en clase y el material cargado, es: "+snippets.join(" ");
+function academicTokenSet(text){
+  return new Set(contentWords(text).map(w=>w.replace(/(mente|ciones|cion|ando|iendo|ados|adas|ido|ida|es|s)$/,"")).filter(w=>w.length>2));
 }
-async function composeAcademicAnswer(question,evidence){
-  const evidenceText=evidence.map((e,i)=>`[${i+1}] ${e.correctedText||e.text}`).join("\n");
-  const prompt=`Respondé en español rioplatense a la pregunta del estudiante usando solamente la evidencia. Contestá la pregunta en tus propias palabras, de forma clara y breve. No inventes nada. Si la evidencia no alcanza, decilo. Pregunta: ${question}\nEvidencia:\n${evidenceText}`;
-  return await browserRewrite(prompt)||fallbackAcademicAnswer(question,evidence);
-}
-function keySentences(lines,max=7){
-  const candidates=lines.map(l=>(l.correctedText||l.text||"").trim()).filter(t=>t.length>28);
-  const seen=new Set(),out=[];
-  for(const t of candidates){
-    const key=contentWords(t).slice(0,5).join(" ");
-    if(key&&!seen.has(key)){seen.add(key);out.push(t);}
-    if(out.length>=max)break;
+function classEvidenceScore(question,e){
+  const qTerms=[...academicTokenSet(question)];
+  if(!qTerms.length)return 0;
+  const raw=normalizeText(e.correctedText||e.text||"");
+  const eTerms=academicTokenSet(raw);
+  let overlap=0;
+  for(const q of qTerms){
+    if(eTerms.has(q)||[...eTerms].some(w=>w.startsWith(q)||q.startsWith(w)))overlap++;
   }
-  return out;
-}
-async function generateAndSaveClassSummary(endedAt=Date.now()){
-  const all=classLinesForSubject().filter(l=>l.at>=state.classStartedAt-1000&&l.at<=endedAt+1000);
-  if(!all.length){summarizeClass();return null;}
-  const important=keySentences(all.filter(l=>l.speaker!=="me"),8);
-  const subject=state.classSubject||"Clase";
-  const prompt=`Hacé un resumen de estudio en español, claro y fiel, usando solo estas notas de la clase de ${subject}. Corregí redacción pero no agregues contenido externo. Incluí: tema central, ideas clave y conceptos a revisar. Notas:\n${important.join("\n")}`;
-  let summary=await browserRewrite(prompt);
-  if(!summary){
-    summary="Resumen de "+subject+": "+important.join(" ");
-  }
-  const entry={subject,startedAt:state.classStartedAt,endedAt,summary,lines:all.length,at:Date.now()};
-  state.classSummaries.push(entry);
-  state.classSummaries=state.classSummaries.slice(-100);
-  save("robotito.classSummaries.v1",state.classSummaries);
-  $("#classSummary").innerHTML='<div class="answer-card"><strong>Resumen automático</strong><p>'+escapeHtml(summary)+'</p><div class="answer-evidence">Generado al terminar la clase · '+new Date(entry.at).toLocaleString("es-UY")+'</div></div>';
-  return summary;
-}
-async function readAcademicFile(file){
-  const ext=(file.name.split(".").pop()||"").toLowerCase();
-  if(ext==="pdf"){
-    try{
-      const pdfjs=await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs");
-      pdfjs.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs";
-      const pdf=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
-      let text="";
-      for(let p=1;p<=pdf.numPages;p++){
-        const page=await pdf.getPage(p);
-        const tc=await page.getTextContent();
-        text+=tc.items.map(x=>x.str).join(" ")+"\n";
-      }
-      return text;
-    }catch(e){throw new Error("No pude leer ese PDF.");}
-  }
-  return await file.text();
-}
-function chunkText(text,size=1100){
-  const clean=text.replace(/\s+/g," ").trim();
-  const chunks=[];
-  for(let i=0;i<clean.length;i+=size)chunks.push(clean.slice(i,i+size));
-  return chunks;
-}
-async function importAcademicFiles(files){
-  if(!files.length)return;
-  for(const file of files){
-    try{
-      const text=await readAcademicFile(file);
-      state.academicMaterials.push({name:file.name,subject:$("#classSubject").value.trim()||state.classSubject||"Material académico",chunks:chunkText(text),at:Date.now()});
-    }catch(e){toast(e.message||("No pude leer "+file.name));}
-  }
-  state.academicMaterials=state.academicMaterials.slice(-50);
-  save("robotito.academicMaterials.v1",state.academicMaterials);
-  renderAcademicMaterials();
-  toast("Material académico cargado.");
-}
-function renderAcademicMaterials(){
-  const root=$("#academicFilesList");if(!root)return;
-  if(!state.academicMaterials.length){root.innerHTML='<p class="muted">Todavía no cargaste material.</p>';return;}
-  root.innerHTML=[...state.academicMaterials].reverse().slice(0,20).map(m=>'<div class="material-row"><strong>'+escapeHtml(m.name)+'</strong><div class="muted">'+escapeHtml(m.subject)+' · '+m.chunks.length+' fragmentos</div></div>').join("");
-}
-function parseCirclePrompt(raw){
-  const s=raw.replace(/²/g,"^2").replace(/−/g,"-");
-  let m=s.match(/centro\s*\(?\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*\)?.*radio\s*(?:=|de)?\s*(\d+(?:\.\d+)?)/i);
-  if(m)return {h:+m[1],k:+m[2],r:+m[3],method:"datos"};
-  const A=Number((s.match(/x\^2[^y]*?([+-]\s*\d+(?:\.\d+)?)\s*\*?\s*x/i)||[])[1]?.replace(/\s/g,"")||0);
-  const B=Number((s.match(/y\^2.*?([+-]\s*\d+(?:\.\d+)?)\s*\*?\s*y/i)||[])[1]?.replace(/\s/g,"")||0);
-  const cMatch=s.match(/([+-]\s*\d+(?:\.\d+)?)\s*=\s*0\s*$/);
-  if(/x\^2/i.test(s)&&/y\^2/i.test(s)){
-    const C=cMatch?Number(cMatch[1].replace(/\s/g,"")):0;
-    const h=-A/2,k=-B/2,r2=h*h+k*k-C;
-    if(r2>0)return {h,k,r:Math.sqrt(r2),A,B,C,method:"general"};
-  }
-  m=s.match(/\(\s*x\s*([+-])\s*(\d+(?:\.\d+)?)\s*\)\s*\^2\s*\+\s*\(\s*y\s*([+-])\s*(\d+(?:\.\d+)?)\s*\)\s*\^2\s*=\s*(\d+(?:\.\d+)?)/i);
-  if(m)return {h:m[1]==="-"?+m[2]:-m[2],k:m[3]==="-"?+m[4]:-m[4],r:Math.sqrt(+m[5]),method:"canonica"};
-  return null;
-}
-function drawCircle(sol){
-  const cv=$("#mathCanvas");if(!cv)return;const ctx=cv.getContext("2d"),w=cv.width,h=cv.height;
-  ctx.clearRect(0,0,w,h);ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
-  const span=Math.max(6,Math.abs(sol.h)+sol.r+2,Math.abs(sol.k)+sol.r+2),sx=w/(2*span),sy=h/(2*span),cx=w/2,cy=h/2;
-  ctx.strokeStyle="#d8cfd8";ctx.lineWidth=1;
-  for(let i=-Math.floor(span);i<=span;i++){ctx.beginPath();ctx.moveTo(cx+i*sx,0);ctx.lineTo(cx+i*sx,h);ctx.stroke();ctx.beginPath();ctx.moveTo(0,cy-i*sy);ctx.lineTo(w,cy-i*sy);ctx.stroke();}
-  ctx.strokeStyle="#5f5662";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
-  ctx.strokeStyle="#ef8fb0";ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx+sol.h*sx,cy-sol.k*sy,sol.r*sx,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle="#4d4650";ctx.beginPath();ctx.arc(cx+sol.h*sx,cy-sol.k*sy,4,0,Math.PI*2);ctx.fill();
-}
-function solveMathFromUI(){
-  const raw=$("#mathPrompt").value.trim();if(!raw)return;
-  const sol=parseCirclePrompt(raw);
-  if(!sol){$("#mathExplanation").innerHTML='<div class="study-chip">Todavía puedo resolver y representar circunferencias en forma canónica, general simple o a partir de centro y radio. Probá, por ejemplo: x² + y² - 6x + 4y - 12 = 0.</div>';return;}
-  const r2=sol.r*sol.r;
-  let explanation;
-  if(sol.method==="general") explanation=`Parto de x² + y² + Ax + By + C = 0. El centro es (-A/2,-B/2), por eso queda (${sol.h.toFixed(2)}, ${sol.k.toFixed(2)}). Al completar cuadrados resulta un radio de ${sol.r.toFixed(2)}. La forma canónica es (x-${sol.h.toFixed(2)})² + (y-${sol.k.toFixed(2)})² = ${r2.toFixed(2)}.`;
-  else explanation=`La circunferencia tiene centro (${sol.h}, ${sol.k}) y radio ${sol.r.toFixed(2)}. Su forma canónica es (x-${sol.h})² + (y-${sol.k})² = ${r2.toFixed(2)}.`;
-  $("#mathExplanation").innerHTML='<div class="answer-card"><strong>Resolución</strong><p>'+escapeHtml(explanation)+'</p></div>';
-  drawCircle(sol);say("Listo. La resolví y la dibujé.");
-}
-function objectDisplayName(item,lang="es"){
-  return lang==="en"?(item?.en?.[0]||item?.id||"object"):(item?.es?.[0]||item?.id||"objeto");
-}
-function showObjectCard(item,lang="es"){
-  if(!item)return false;
-  const root=$("#objectShowcase");
-  if(!root)return false;
-  $("#objectShowEmoji").textContent=item.emoji||"✨";
-  $("#objectShowName").textContent=objectDisplayName(item,lang);
-  $("#objectShowInfo").textContent=lang==="en"?("Category: "+item.category):("Categoría: "+item.category);
-  root.classList.remove("hidden");
-  clearTimeout(showObjectCard.t);
-  showObjectCard.t=setTimeout(()=>root.classList.add("hidden"),6000);
-  return true;
-}
-function showRequestedObject(rawText,lang="es"){
-  const normalized=normalizeText(rawText);
-  const m=normalized.match(/(?:mostrame|muestrame|mostra|mostrar|ensen[aá]me|quiero ver|quiero que me muestres|podes mostrarme|puedes mostrarme|me mostras|me muestras|dejame ver|show me|can you show me|could you show me|i want to see|let me see|display)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
-  if(!m)return false;
-  const query=m[1].replace(/\b(por favor|please)\b/g,"").trim();
-  const item=window.ROBOTITO_OBJECTS?.find?.(query);
-  if(!item)return false;
-  showObjectCard(item,lang);
-  say(lang==="en"?`Here is ${objectDisplayName(item,"en")}.`:`Acá tenés ${objectDisplayName(item,"es")}.`);
-  return true;
-}
-async function detectObjectNow(){
-  if(!state.started){toast("Primero despertá los sentidos.");return;}
-  const out=$("#objectResult");out.innerHTML='<div class="study-chip">Mirando…</div>';
-  try{
-    if(!state.objectModel&&window.cocoSsd)state.objectModel=await cocoSsd.load({base:"lite_mobilenet_v2"});
-    if(!state.imageModel&&window.mobilenet)state.imageModel=await mobilenet.load({version:2,alpha:.50});
-    const [boxes,classes]=await Promise.all([
-      state.objectModel?state.objectModel.detect(camera,12,.35):Promise.resolve([]),
-      state.imageModel?state.imageModel.classify(camera,5):Promise.resolve([])
-    ]);
-    let item=null,label="",score=0;
-    if(boxes.length){
-      const top=boxes.sort((a,b)=>b.score-a.score)[0];
-      item=window.ROBOTITO_OBJECTS?.findByModelLabel?.(top.class)||null;
-      label=top.class;score=top.score;
-    }
-    if(!item&&classes.length){
-      for(const p of classes){
-        item=window.ROBOTITO_OBJECTS?.findByModelLabel?.(p.className)||null;
-        if(item){label=p.className;score=p.probability;break;}
-      }
-    }
-    if(!item){
-      const fallback=classes[0]||boxes[0];
-      if(!fallback){
-        out.innerHTML='<div class="study-chip">No logro reconocer un objeto claro. Acercalo y dejalo quieto un segundo.</div>';
-        say("No lo reconozco bien todavía.");
-        return;
-      }
-      const raw=fallback.className||fallback.class||"objeto";
-      out.innerHTML='<div class="object-box"><div class="object-icon">👀</div><div><strong>Creo que puede ser '+escapeHtml(raw)+'</strong><div class="muted">Confianza aproximada: '+Math.round((fallback.probability||fallback.score||0)*100)+'%</div></div></div>';
-      say("Creo que puede ser "+raw+".");
-      return;
-    }
-    const lang=state.lastDetectedLanguage||"es";
-    const name=objectDisplayName(item,lang);
-    out.innerHTML='<div class="object-box"><div class="object-icon">'+escapeHtml(item.emoji)+'</div><div><strong>'+escapeHtml(name)+'</strong><div class="muted">Confianza aproximada: '+Math.round(score*100)+'%</div></div></div>';
-    showObjectCard(item,lang);
-    say(lang==="en"?("I think it's "+name+"."):("Creo que es "+name+"."));
-  }catch(e){
-    out.innerHTML='<div class="study-chip">No pude activar el reconocimiento de objetos.</div>';
-    console.warn(e);
-  }
-}
+  const coverage=overlap/qTerms.length;
+  if(overlap===0)return 0;
 
-function averageRecentVoiceFeature(){
-  const arr=state.recentAudioFeatures.filter(x=>Date.now()-x.t<2200);
-  if(!arr.length)return {rms:0,centroid:0,flat:0};
-  const avg=k=>arr.reduce((s,x)=>s+x[k],0)/arr.length;
-  return {rms:avg("rms"),centroid:avg("centroid"),flat:avg("flat")};
-}
-function featureDistance(a,b){
-  return Math.abs(a.rms-b.rms)*8 + Math.abs(a.centroid-b.centroid)*1.6 + Math.abs(a.flat-b.flat)*1.2;
-}
-function profileMean(list){
-  if(!list?.length)return null;
-  const avg=k=>list.reduce((s,x)=>s+x[k],0)/list.length;
-  return {rms:avg("rms"),centroid:avg("centroid"),flat:avg("flat")};
-}
-function learnSpeaker(label,feature){
-  if(!feature)return;
-  const arr=state.voiceProfiles[label]||[];
-  arr.push(feature);
-  state.voiceProfiles[label]=arr.slice(-20);
-  save("robotito.voiceProfiles.v1",state.voiceProfiles);
-}
-function classifySpeaker(feature){
-  if(state.speakerOverride){
-    const label=state.speakerOverride;
-    state.speakerOverride=null;
-    learnSpeaker(label,feature);
-    return label;
-  }
-  const profiles=["me","teacher","classmate"]
-    .map(label=>({label,mean:profileMean(state.voiceProfiles[label])}))
-    .filter(x=>x.mean);
-  if(profiles.length){
-    const ranked=profiles.map(x=>({label:x.label,d:featureDistance(feature,x.mean)})).sort((a,b)=>a.d-b.d);
-    if(ranked[0].d<.7)return ranked[0].label;
-    if(ranked.length>1&&ranked[0].d+.10<ranked[1].d)return ranked[0].label;
-  }
-  return "classmate";
-}
-function captureClassLine(text){
-  const feature=averageRecentVoiceFeature();
-  const voicePrint=recentVoicePrint();
-  const voiceMatch=recognizeVoicePerson(voicePrint);
-  let speaker=voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role)?voiceMatch.role:classifySpeaker(feature);
-  const correction=correctAcademicTranscript(text,state.classSubject);
-  const line={id:(crypto.randomUUID?.()||("line-"+Date.now()+"-"+Math.random().toString(16).slice(2))),text:text.trim(),correctedText:correction.text,corrections:correction.changes,speaker,speakerName:voiceMatch?.name||null,voiceScore:voiceMatch?.score||null,voicePrint,subject:state.classSubject||"Clase",at:Date.now(),feature};
-  state.classLines.push(line);
-  state.classLines=state.classLines.slice(-1000);
-  save("robotito.classLines.v1",state.classLines);
-  if(voiceMatch&&["me","teacher","classmate"].includes(voiceMatch.role)&&(state.voiceProfiles[speaker]||[]).length<4) learnSpeaker(speaker,feature);
-  renderClassTranscript();
-  $("#speakerPill").classList.remove("hidden");
-  $("#speakerLabel").textContent=speaker==="me"?"vos":speaker==="teacher"?"profesora":"compañero/a";
-}
-function startClassMode(){
-  if(!state.started){toast("Primero despertá los sentidos.");return;}
-  state.classMode=true;
-  state.classStartedAt=Date.now();
-  state.classSubject=$("#classSubject").value.trim()||"Clase";
-  $("#classBadge").textContent="escuchando";
-  $("#classBadge").classList.add("on");
-  $("#speakerPill").classList.remove("hidden");
-  setMood("focused","Robotito está concentrado escuchando la clase.");
-  say("Modo clase activado. Voy a escuchar y aprender.");
-}
-async function stopClassMode(){
-  if(!state.classMode)return;
-  const endedAt=Date.now();
-  state.classMode=false;
-  $("#classBadge").textContent="apagado";
-  $("#classBadge").classList.remove("on");
-  $("#speakerPill").classList.add("hidden");
-  setMood("proud","Robotito terminó de escuchar la clase y está preparando el resumen.");
-  const summary=await generateAndSaveClassSummary(endedAt);
-  say(summary?"Listo. Te preparé y guardé el resumen de la clase.":"Listo. Guardé la clase, aunque no tuve suficiente contenido para resumirla.");
-}
-function classLinesForSubject(){
-  const subj=normalizeText(state.classSubject||$("#classSubject").value||"");
-  if(!subj)return state.classLines.slice(-250);
-  const matched=state.classLines.filter(l=>normalizeText(l.subject).includes(subj)||subj.includes(normalizeText(l.subject)));
-  return (matched.length?matched:state.classLines).slice(-250);
-}
-function contentWords(text){
-  const stop=new Set(["que","como","para","por","una","uno","unos","unas","del","las","los","con","sin","sobre","esto","esta","este","son","fue","era","hay","muy","mas","pero","porque","cuando","donde","cual","cuales","quien","profesora","clase"]);
-  return normalizeText(text).split(" ").filter(w=>w.length>3&&!stop.has(w));
+  let score=overlap*3+coverage*5;
+  const phrase=contentWords(question).slice(0,5).join(" ");
+  if(phrase.length>8&&raw.includes(phrase))score+=5;
+
+  const qBigrams=[];
+  const qw=contentWords(question);
+  for(let i=0;i<qw.length-1;i++)qBigrams.push(qw[i]+" "+qw[i+1]);
+  for(const bg of qBigrams)if(raw.includes(bg))score+=1.5;
+
+  if(e.sourceType==="class"&&e.speaker==="teacher")score+=.35;
+  if(raw.length>420)score-=Math.min(2,(raw.length-420)/300);
+
+  // For longer questions, one accidental shared word is not enough.
+  if(qTerms.length>=3&&overlap===1&&coverage<.45)return 0;
+  return score;
 }
 function answerFromClass(question){
-  const words=contentWords(question);
-  const lines=[...classLinesForSubject(),...materialEvidenceLines()];
-  const ranked=lines.map(l=>{
-    const norm=normalizeText(l.correctedText||l.text);
-    let score=0;
-    words.forEach(w=>{if(norm.includes(w))score+=2;});
-    if(l.speaker==="teacher")score+=.5;
-    return {l,score};
-  }).sort((a,b)=>b.score-a.score);
-  const best=ranked.filter(x=>x.score>0).slice(0,3);
-  if(!best.length)return null;
-  return {evidence:best.map(x=>x.l), text:best.map(x=>x.l.correctedText||x.l.text).join(" ")};
+  const candidates=[...classEvidenceLines(),...materialEvidenceLines()];
+  const ranked=candidates
+    .map(e=>({e,score:classEvidenceScore(question,e)}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score);
+
+  if(!ranked.length)return null;
+
+  const best=[];
+  const seen=new Set();
+  for(const item of ranked){
+    const key=normalizeText(item.e.correctedText||item.e.text).slice(0,160);
+    if(seen.has(key))continue;
+    seen.add(key);
+    best.push(item.e);
+    if(best.length>=3)break;
+  }
+
+  const topScore=ranked[0].score;
+  // Reject very weak matches instead of pretending a random keyword is an answer.
+  if(topScore<4.2)return null;
+  return {evidence:best,score:topScore};
 }
+function relevantSentenceForAnswer(e,question){
+  const units=splitEvidenceSentences(e.correctedText||e.text||"");
+  if(!units.length)return "";
+  return units
+    .map(t=>({t,score:classEvidenceScore(question,{...e,correctedText:t,text:t})}))
+    .sort((a,b)=>b.score-a.score)[0].t;
+}
+function fallbackAcademicAnswer(question,evidence){
+  const best=evidence
+    .map(e=>relevantSentenceForAnswer(e,question))
+    .filter(Boolean)
+    .slice(0,2)
+    .map(t=>t.replace(/\b(bueno|o sea|este|eh|tipo)\b/gi,"").replace(/\s+/g," ").trim());
+
+  if(!best.length)return "No tengo información suficiente en la clase ni en el material cargado para responder eso.";
+
+  const first=best[0].replace(/^[,;:\-\s]+/,"");
+  const second=best[1]&&normalizeText(best[1])!==normalizeText(first)?best[1]:null;
+  const q=normalizeText(question);
+
+  let lead;
+  if(q.startsWith("por que")||q.startsWith("porque"))lead="La explicación principal es que ";
+  else if(q.startsWith("como"))lead="Lo que se explicó es que ";
+  else if(q.startsWith("que es")||q.startsWith("que significa")||q.startsWith("define"))lead="";
+  else lead="Según lo trabajado, ";
+
+  let answer=lead+first;
+  if(second&&answer.length<330)answer+=" "+second;
+  answer=answer.replace(/\s+/g," ").trim();
+  if(answer.length>430)answer=answer.slice(0,427).replace(/\s+\S*$/,"")+"…";
+  return answer;
+}
+async function composeAcademicAnswer(question,evidence){
+  const compact=evidence.map((e,i)=>{
+    const text=relevantSentenceForAnswer(e,question);
+    const source=e.sourceType==="material"
+      ?`material cargado: ${e.sourceName||e.subject||"archivo"}`
+      :`dicho en clase por ${classSpeakerLabel(e)}`;
+    return `[${i+1}] (${source}) ${text}`;
+  }).join("\n");
+
+  const prompt=`Respondé en español rioplatense usando SOLAMENTE la evidencia.
+Pregunta: ${question}
+Evidencia:
+${compact}
+
+Reglas:
+- Contestá primero la pregunta de manera directa, fluida y comprensible.
+- Máximo 2 a 4 oraciones y aproximadamente 80 palabras.
+- Sintetizá: no copies párrafos ni enumeres las fuentes.
+- No incluyas citas textuales, comillas ni etiquetas de fuente en la respuesta; la interfaz las muestra aparte.
+- Si la evidencia no alcanza para afirmar algo, decilo explícitamente.
+- No agregues conocimiento externo.`;
+
+  const rewritten=await browserRewrite(prompt);
+  if(rewritten){
+    const clean=rewritten.replace(/^["“]|["”]$/g,"").trim();
+    return clean.length>520?clean.slice(0,517).replace(/\s+\S*$/,"")+"…":clean;
+  }
+  return fallbackAcademicAnswer(question,evidence);
+}
+function classSpeakerLabel(e){
+  if(e.speakerName)return e.sourceName||e.speakerName;
+  if(e.speaker==="teacher")return "profesor/a";
+  if(e.speaker==="classmate")return "compañero/a";
+  if(e.speaker==="me")return "vos";
+  return "la clase";
+}
+function sourceKindLabel(e){
+  return e.sourceType==="material"||e.speaker==="material"?"Material cargado":"Dicho en clase";
+}
+function sourceDetailLabel(e){
+  if(e.sourceType==="material"||e.speaker==="material"){
+    return e.sourceName||e.subject||"archivo cargado";
+  }
+  const who=classSpeakerLabel(e);
+  const time=e.at?new Date(e.at).toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"}):"";
+  return time?who+" · "+time:who;
+}
+function shortEvidenceQuote(e,question,maxChars=210){
+  const source=e.sourceType==="class"?(e.text||e.correctedText||""):(e.text||e.correctedText||"");
+  const sentences=splitEvidenceSentences(source);
+  let quote=sentences
+    .map(t=>({t,score:classEvidenceScore(question,{...e,text:t,correctedText:t})}))
+    .sort((a,b)=>b.score-a.score)[0]?.t||source;
+  quote=quote.replace(/\s+/g," ").trim();
+  if(quote.length<=maxChars)return quote;
+
+  const terms=contentWords(question);
+  const lower=normalizeText(quote);
+  let at=-1;
+  for(const term of terms){
+    const p=lower.indexOf(term);
+    if(p>=0){at=p;break;}
+  }
+  if(at<0)at=0;
+  const start=Math.max(0,at-Math.floor(maxChars*.3));
+  let excerpt=quote.slice(start,start+maxChars);
+  if(start>0)excerpt="…"+excerpt.replace(/^\S*\s/,"");
+  if(start+maxChars<quote.length)excerpt=excerpt.replace(/\s\S*$/,"")+"…";
+  return excerpt.trim();
+}
+function classEvidenceForDisplay(question,evidence,max=2){
+  const selected=[];
+  const kinds=new Set();
+  for(const e of evidence){
+    const quote=shortEvidenceQuote(e,question);
+    if(!quote)continue;
+    const kind=sourceKindLabel(e);
+    // Prefer showing both kinds when both actually contributed.
+    if(selected.length===1&&kinds.has(kind)){
+      const alternative=evidence.find(x=>sourceKindLabel(x)!==kind);
+      if(alternative&&alternative!==e)continue;
+    }
+    selected.push({...e,quote});
+    kinds.add(kind);
+    if(selected.length>=max)break;
+  }
+  if(selected.length<max){
+    for(const e of evidence){
+      if(selected.some(x=>x===e||normalizeText(x.quote)===normalizeText(shortEvidenceQuote(e,question))))continue;
+      selected.push({...e,quote:shortEvidenceQuote(e,question)});
+      if(selected.length>=max)break;
+    }
+  }
+  return selected;
+}
+function renderAcademicAnswer(question,answer,evidence){
+  const root=$("#classAnswer");
+  if(!root)return;
+  const shown=classEvidenceForDisplay(question,evidence,2);
+  const sourceKinds=[...new Set(shown.map(sourceKindLabel))];
+
+  const citations=shown.map(e=>
+    '<div class="class-source-card">'+
+      '<div class="class-source-head"><strong>'+escapeHtml(sourceKindLabel(e))+'</strong><span>'+escapeHtml(sourceDetailLabel(e))+'</span></div>'+
+      '<blockquote>“'+escapeHtml(e.quote)+'”</blockquote>'+
+    '</div>'
+  ).join("");
+
+  const origin=sourceKinds.length===2
+    ?"Respuesta construida con lo dicho en clase y material cargado."
+    :sourceKinds[0]==="Material cargado"
+      ?"Respuesta construida a partir del material cargado."
+      :"Respuesta construida a partir de lo dicho en clase.";
+
+  root.innerHTML=
+    '<div class="answer-card class-grounded-answer">'+
+      '<strong>Respuesta</strong>'+
+      '<p class="class-answer-text">'+escapeHtml(answer)+'</p>'+
+      '<div class="class-origin">'+escapeHtml(origin)+'</div>'+
+      '<div class="class-quotes-title">Cita textual</div>'+
+      citations+
+    '</div>';
+}
+function spokenAcademicAnswer(question,answer,evidence){
+  const first=classEvidenceForDisplay(question,evidence,1)[0];
+  if(!first)return answer;
+  const kind=sourceKindLabel(first).toLowerCase();
+  const quote=first.quote.length>125?first.quote.slice(0,122).replace(/\s+\S*$/,"")+"…":first.quote;
+  return `${answer} Cita textual, ${kind}: “${quote}”`;
+}
+
 function summarizeClass(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"||l.speaker==="classmate");
   const out=$("#classSummary");
@@ -2106,17 +2071,16 @@ async function askClass(){
   const q=$("#classQuestion").value.trim();
   if(!q)return;
   robot.classList.add("thinking");setTimeout(()=>robot.classList.remove("thinking"),1200);
-  setMood("curious","Robotito está buscando en lo que aprendió de clase.");
+  setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
   const found=answerFromClass(q);
   if(!found){
-    $("#classAnswer").innerHTML='<div class="study-chip">No encontré eso en la clase ni en el material cargado.</div>';
-    say("No encontré eso en mis apuntes.",3500);
+    $("#classAnswer").innerHTML='<div class="study-chip">No encontré evidencia suficiente para responder eso en lo dicho en clase ni en el material cargado.</div>';
+    say("No encontré evidencia suficiente para responder eso en mis apuntes.",3500);
     return;
   }
   const answer=await composeAcademicAnswer(q,found.evidence);
-  const evidenceHtml=found.evidence.map((e,i)=>'<div class="answer-evidence"><strong>Fuente '+(i+1)+':</strong> '+escapeHtml(e.correctedText||e.text)+(e.correctedText&&e.correctedText!==e.text?'<br><span>Transcripción original: '+escapeHtml(e.text)+'</span>':'')+'</div>').join("");
-  $("#classAnswer").innerHTML='<div class="answer-card"><strong>Respuesta</strong><p>'+escapeHtml(answer)+'</p>'+evidenceHtml+'</div>';
-  say(answer.slice(0,280),5200);
+  renderAcademicAnswer(q,answer,found.evidence);
+  say(spokenAcademicAnswer(q,answer,found.evidence).slice(0,520),6500);
 }
 function makeFlashcards(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"&&l.text.length>30).slice(-8);
@@ -2360,10 +2324,11 @@ async function handleSpeech(rawText){
   }
 
   if(/(que aprendiste|que sabes de la clase|explicame la clase|resumime la clase|resume la clase)/.test(text)){
-    const found=answerFromClass(rawText);
+    const found=answerFromClass(interpreted);
     if(found){
-      const answer=await composeAcademicAnswer(rawText,found.evidence);
-      say(answer.slice(0,320),5600);
+      const answer=await composeAcademicAnswer(interpreted,found.evidence);
+      renderAcademicAnswer(interpreted,answer,found.evidence);
+      say(spokenAcademicAnswer(interpreted,answer,found.evidence).slice(0,520),6500);
       return;
     }
     summarizeClass();
@@ -2372,10 +2337,11 @@ async function handleSpeech(rawText){
   }
 
   if((state.classLines.length||state.academicMaterials.length) && /^(que|como|por que|porque|cual|cuando|donde|explica|define)/.test(text)){
-    const found=answerFromClass(rawText);
+    const found=answerFromClass(interpreted);
     if(found){
-      const answer=await composeAcademicAnswer(rawText,found.evidence);
-      say(answer.slice(0,320),5600);
+      const answer=await composeAcademicAnswer(interpreted,found.evidence);
+      renderAcademicAnswer(interpreted,answer,found.evidence);
+      say(spokenAcademicAnswer(interpreted,answer,found.evidence).slice(0,520),6500);
       return;
     }
   }
