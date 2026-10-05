@@ -12,7 +12,7 @@
   function isFactualQuestion(raw){
     const q=norm(raw);
     if(q.length<4||q.length>220)return false;
-    if(!/^(que|qué|quien|quién|cual|cuál|cuales|cuáles|como|cómo|cuando|cuándo|donde|dónde|por que|por qué|what|who|which|how|when|where|why|o que|quem|qual|como|quando|onde|por que)\b/.test(q))return false;
+    if(!/^(que|qué|quien|quién|cual|cuál|cuales|cuáles|como|cómo|cuando|cuándo|donde|dónde|por que|por qué|define|definime|defina|dame la definicion|decime que es|dime que es|explicame que es|what|who|which|how|when|where|why|define|o que|quem|qual|como|quando|onde|por que)\b/.test(q))return false;
     if(/\b(mi nombre|como estoy|tenes hambre|tienes hambre|recordas de mi|recuerdas de mi|libro|tarea|clase|profesor|profesora|companero|compañero|presidente|president|clima|tiempo hoy|weather)\b/.test(q))return false;
     return true;
   }
