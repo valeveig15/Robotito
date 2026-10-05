@@ -248,7 +248,7 @@ Reglas:
   async function explainExercise(exercise){
     let physics=null;
     if(isMomentumContext(exercise)){
-      physics=window.ROBOTITO_PHYSICS_MOMENTUM?.detailedStepByStep?.(exercise.statement)||null;
+      physics=window.ROBOTITO_PHYSICS_MOMENTUM?.detailedStepByStep?.([exercise.topic,exercise.statement].filter(Boolean).join(". "))||null;
     }
     const generated=await aiExplanation(exercise,physics);
     renderDetailed(exercise,physics,generated);
