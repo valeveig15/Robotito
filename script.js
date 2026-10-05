@@ -62,6 +62,11 @@ const state = {
   recentAudioFeatures: [],
   recentVoicePrints: [],
   currentVoicePerson: null,
+  ambientRms: .012,
+  voiceThreshold: .035,
+  faceMatchHistory: [],
+  lastFaceConfirmedAt: 0,
+  enrollmentActive: false,
   voiceProfiles: load("robotito.voiceProfiles.v1", {me:[],teacher:[],classmate:[]}),
   classSummaries: load("robotito.classSummaries.v1", []),
   academicMaterials: load("robotito.academicMaterials.v1", []),
@@ -214,6 +219,7 @@ function speakResponse(text,forcedLang=null){
   const clean=cleanSpeechText(text);
   if(!clean)return;
   speechSynthesis.cancel();
+  state.recentVoicePrints=[];
   state.speaking=true;
   if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
     window.RobotitoLocalASR.pause(true);
@@ -624,26 +630,57 @@ function cosineSimilarity(a,b){
   for(let i=0;i<a.length;i++){dot+=a[i]*b[i];na+=a[i]*a[i];nb+=b[i]*b[i];}
   return dot/(Math.sqrt(na)*Math.sqrt(nb)||1);
 }
-function recentVoicePrint(ms=2600){
+function recentVoicePrint(ms=3400){
   const now=Date.now();
   const vectors=state.recentVoicePrints.filter(x=>now-x.t<=ms).map(x=>x.vector);
   return averageVoiceVectors(vectors);
 }
-function recognizeVoicePerson(print){
+function voicePrintForWindow(startedAt,endedAt){
+  if(!startedAt||!endedAt)return recentVoicePrint();
+  const vectors=state.recentVoicePrints
+    .filter(x=>x.t>=startedAt-180&&x.t<=endedAt+260)
+    .map(x=>x.vector);
+  return averageVoiceVectors(vectors);
+}
+function recognizeVoicePerson(print,faceName=null){
   if(!print)return null;
   const scores=[];
   for(const p of state.people){
-    let personBest=-1;
-    for(const vp of (p.voicePrints||[])){
-      const score=cosineSimilarity(print,vp);
-      if(score>personBest)personBest=score;
+    const sims=(p.voicePrints||[])
+      .map(vp=>cosineSimilarity(print,vp))
+      .filter(x=>Number.isFinite(x)&&x>-1)
+      .sort((a,b)=>b-a);
+    if(!sims.length)continue;
+
+    const top=sims.slice(0,Math.min(4,sims.length));
+    let score;
+    if(top.length===1)score=top[0];
+    else{
+      const weights=[.40,.28,.20,.12].slice(0,top.length);
+      const denom=weights.reduce((a,b)=>a+b,0);
+      score=top.reduce((sum,x,i)=>sum+x*weights[i],0)/denom;
     }
-    if(personBest>-1)scores.push({name:p.name,role:p.role||"other",score:personBest});
+    const consistency=sims.filter(x=>x>=.72).length;
+    scores.push({
+      name:p.name,
+      role:p.role||"other",
+      score,
+      best:sims[0],
+      consistency,
+      profileCount:sims.length
+    });
   }
   scores.sort((a,b)=>b.score-a.score);
   const best=scores[0],second=scores[1];
-  if(!best||best.score<.80)return null;
-  if(second && best.score-second.score<.035)return null;
+  if(!best)return null;
+
+  const agreesWithFace=faceName&&best.name===faceName;
+  const threshold=agreesWithFace?.735:(best.profileCount>=3?.785:.82);
+  const margin=agreesWithFace?.012:.035;
+
+  if(best.score<threshold)return null;
+  if(best.profileCount>=3&&best.consistency<2&&!agreesWithFace)return null;
+  if(second&&best.score-second.score<margin&&!agreesWithFace)return null;
   return best;
 }
 
