@@ -1283,3 +1283,16 @@ button:active{transform:translateY(0) scale(.985)}
 @media(max-width:900px){
   .robotito{width:254px;height:326px}
 }
+
+
+/* vNext classroom speaker training */
+.speaker-training-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:9px;
+}
+.speaker-training-actions .tiny-btn{
+  flex:1 1 145px;
+  min-height:34px;
+}
