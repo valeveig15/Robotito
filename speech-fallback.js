@@ -5,7 +5,7 @@
   let ctx=null, source=null, processor=null, streamRef=null;
   let transcriber=null, modelPromise=null, active=false, paused=false;
   let language="es", onText=()=>{}, onStatus=()=>{};
-  let speaking=false, segment=[], segmentStart=0, lastVoiceAt=0, voiceFrames=0;
+  let speaking=false, segment=[], segmentStart=0, segmentStartEpoch=0, lastVoiceAt=0, voiceFrames=0;
   let queue=Promise.resolve();
 
   function status(text,kind=""){ try{onStatus(text,kind);}catch{} }
@@ -87,10 +87,10 @@
   }
 
   function resetSegment(){
-    speaking=false;segment=[];segmentStart=0;lastVoiceAt=0;voiceFrames=0;
+    speaking=false;segment=[];segmentStart=0;segmentStartEpoch=0;lastVoiceAt=0;voiceFrames=0;
   }
 
-  function enqueueTranscription(raw){
+  function enqueueTranscription(raw,meta=null){
     if(!raw||raw.length<1000)return;
     const sr=ctx?.sampleRate||48000;
     const audio=resample(raw,sr,16000);
@@ -105,7 +105,7 @@
         .replace(/^\[[^\]]+\]\s*/,"")
         .replace(/\s+/g," ");
       if(text && text.length>1 && !/^\.{1,3}$/.test(text)){
-        onText(text);
+        onText(text,meta||null);
       }
       if(active&&!paused)status(statusText("escuchando","listening","escutando"),"listening");
     }).catch(err=>{
@@ -116,11 +116,14 @@
 
   function finalize(){
     if(!speaking){resetSegment();return;}
+    const endedAt=Date.now();
+    const startedAt=segmentStartEpoch||endedAt;
     const duration=(performance.now()-segmentStart)/1000;
     const enough=duration>=0.45&&voiceFrames>=2;
     const raw=enough?concat(segment):null;
+    const meta=enough?{startedAt,endedAt,duration}:null;
     resetSegment();
-    if(raw)enqueueTranscription(raw);
+    if(raw)enqueueTranscription(raw,meta);
   }
 
   async function start({stream,lang="es",onTranscript,statusCallback}){
@@ -162,6 +165,7 @@
         if(!speaking){
           speaking=true;
           segmentStart=now;
+          segmentStartEpoch=Date.now();
           segment=[];
           voiceFrames=0;
         }
