@@ -3871,59 +3871,220 @@ function updateLibraryStats(){
   $("#libraryStats").textContent=`${state.library.length} libros · ${read} leídos · ${tbr} por leer`;
 }
 
+function bookText(book){
+  return normalizeText([
+    book.title||book["Title"],
+    ...(book.authors||[book["Author"]]).filter(Boolean),
+    ...(book.categories||[]),
+    book.description||book["My Review"],
+    book["Bookshelves"]
+  ].join(" "));
+}
+
+const BOOK_STOP_WORDS=new Set([
+  "algo","algun","alguna","algunos","algunas","libro","libros","leer","lectura","quiero","quisiera",
+  "busco","recomienda","recomendame","recomiendame","para","pero","porque","como","con","sin","que",
+  "una","uno","unos","unas","del","las","los","por","muy","mas","más","sea","tenga","sobre","tipo",
+  "historia","novela","donde","este","esta","esto","entre","aunque","tambien","también"
+]);
+
+const BOOK_CONCEPTS=[
+  {terms:["fantasia","fantastico","magia","magico","hechizos"],query:"fantasy magic",labels:["fantasía","magia"]},
+  {terms:["ciencia ficcion","espacio","alienigenas","futuro","robots"],query:"science fiction space",labels:["ciencia ficción","espacio"]},
+  {terms:["romance","romantico","amor","enemies to lovers"],query:"romance love",labels:["romance"]},
+  {terms:["misterio","detective","crimen","asesinato","thriller"],query:"mystery detective thriller",labels:["misterio","suspenso"]},
+  {terms:["terror","miedo","horror","escalofriante"],query:"horror",labels:["terror"]},
+  {terms:["distopia","distopico","apocalipsis","postapocaliptico"],query:"dystopian post apocalyptic",labels:["distopía"]},
+  {terms:["mitologia","mitos","dioses","griega"],query:"mythology retelling",labels:["mitología"]},
+  {terms:["familia encontrada","found family","amistad","grupo de amigos"],query:"found family friendship",labels:["amistad","familia encontrada"]},
+  {terms:["academia oscura","dark academia","universidad","internado"],query:"dark academia",labels:["academia oscura"]},
+  {terms:["acogedor","tranquilo","cozy","tierno","reconfortante"],query:"cozy heartwarming",labels:["lectura reconfortante"]},
+  {terms:["triste","emocional","llorar","desgarrador"],query:"emotional heartbreaking",labels:["emocional"]},
+  {terms:["divertido","gracioso","humor","comedia"],query:"humorous funny",labels:["humor"]},
+  {terms:["aventura","accion","viaje","mision"],query:"adventure action",labels:["aventura"]},
+  {terms:["historico","epoca","historia real"],query:"historical fiction",labels:["ficción histórica"]},
+  {terms:["juvenil","adolescente","young adult"],query:"young adult",labels:["juvenil"]},
+  {terms:["corto","cortito","breve","rapido"],query:"short novel",labels:["lectura breve"]},
+  {terms:["largo","saga","extenso"],query:"epic series",labels:["historia extensa"]}
+];
+
+const LOCAL_BOOK_CATALOG=[
+  {title:"El castillo ambulante",authors:["Diana Wynne Jones"],categories:["fantasía","romance","aventura"],description:"Fantasía cálida, divertida y mágica, con romance, humor y personajes entrañables."},
+  {title:"La casa en el mar más azul",authors:["TJ Klune"],categories:["fantasía","familia encontrada","reconfortante"],description:"Una historia tierna sobre pertenencia, prejuicios y una peculiar familia encontrada."},
+  {title:"Seis de cuervos",authors:["Leigh Bardugo"],categories:["fantasía","aventura","crimen","familia encontrada"],description:"Una banda de jóvenes inadaptados prepara un golpe imposible en un mundo de fantasía."},
+  {title:"El nombre del viento",authors:["Patrick Rothfuss"],categories:["fantasía","magia","aventura"],description:"Fantasía épica centrada en la vida, los talentos y los misterios de un héroe legendario."},
+  {title:"Proyecto Hail Mary",authors:["Andy Weir"],categories:["ciencia ficción","espacio","humor","amistad"],description:"Una aventura científica en el espacio, ingeniosa y emotiva, con un gran vínculo de amistad."},
+  {title:"Los siete maridos de Evelyn Hugo",authors:["Taylor Jenkins Reid"],categories:["romance","drama","emocional"],description:"Una estrella de Hollywood cuenta su vida, sus ambiciones y una historia de amor decisiva."},
+  {title:"Asesinato en el Orient Express",authors:["Agatha Christie"],categories:["misterio","detective","crimen"],description:"Un misterio clásico de habitación cerrada con múltiples sospechosos y un giro memorable."},
+  {title:"La canción de Aquiles",authors:["Madeline Miller"],categories:["mitología","romance","triste","histórico"],description:"Relectura emotiva de la mitología griega centrada en Aquiles y Patroclo."},
+  {title:"Los juegos del hambre",authors:["Suzanne Collins"],categories:["distopía","acción","juvenil"],description:"Una distopía juvenil de ritmo rápido sobre supervivencia, poder y rebelión."},
+  {title:"La paciente silenciosa",authors:["Alex Michaelides"],categories:["thriller","misterio","psicológico"],description:"Un thriller psicológico sobre una pintora que deja de hablar después de un crimen."},
+  {title:"Buenos presagios",authors:["Terry Pratchett","Neil Gaiman"],categories:["fantasía","humor","apocalipsis"],description:"Una comedia fantástica irreverente sobre un ángel, un demonio y el fin del mundo."},
+  {title:"La biblioteca de la medianoche",authors:["Matt Haig"],categories:["fantasía","emocional","reflexivo"],description:"Una historia accesible sobre arrepentimientos, vidas posibles y el deseo de seguir viviendo."}
+];
+
+function analyzeBookPrompt(prompt){
+  const normalized=normalizeText(prompt);
+  const words=normalized.split(/\s+/).filter(w=>w.length>2&&!BOOK_STOP_WORDS.has(w));
+  const concepts=BOOK_CONCEPTS.filter(c=>c.terms.some(t=>normalized.includes(normalizeText(t))));
+  const negative=[];
+  const negativeRe=/(?:sin|no quiero|evita|evitar)\s+([a-záéíóúñ ]{3,35})/gi;
+  let match;
+  while((match=negativeRe.exec(prompt)))negative.push(...normalizeText(match[1]).split(/\s+/).filter(w=>w.length>3));
+  const queryParts=[prompt,...concepts.map(c=>c.query)];
+  return {
+    normalized,
+    words:[...new Set(words)],
+    concepts,
+    negative:[...new Set(negative)],
+    query:[...new Set(queryParts.join(" ").split(/\s+/).filter(Boolean))].slice(0,22).join(" ")
+  };
+}
+
+function scoreBookCandidate(book,profile){
+  const hay=bookText(book);
+  let score=0;
+  const matched=[];
+  profile.words.forEach(word=>{
+    if(hay.includes(word)){score+=word.length>7?3:2;matched.push(word);}
+  });
+  profile.concepts.forEach(concept=>{
+    if(concept.terms.concat(concept.labels).some(term=>hay.includes(normalizeText(term)))){
+      score+=5;
+      matched.push(concept.labels[0]);
+    }
+  });
+  profile.negative.forEach(word=>{if(hay.includes(word))score-=12;});
+  if(book.language==="es")score+=.5;
+  return {score,matched:[...new Set(matched)].slice(0,3)};
+}
+
 function scoreBook(book,prompt){
-  const words=normalizeText(prompt).split(/\s+/).filter(x=>x.length>3);
-  const hay=normalizeText([book["Title"],book["Author"],book["Bookshelves"],book["My Review"]].join(" "));
-  let s=0;
-  words.forEach(w=>{if(hay.includes(w))s+=2;});
-  if((book["Exclusive Shelf"]||"")==="to-read")s+=1;
-  return s;
+  return scoreBookCandidate({
+    title:book["Title"],
+    authors:[book["Author"]],
+    categories:String(book["Bookshelves"]||"").split(","),
+    description:book["My Review"]||""
+  },analyzeBookPrompt(prompt)).score+((book["Exclusive Shelf"]||"")==="to-read"?1:0);
+}
+
+function recommendationReason(book,profile,matched=[]){
+  const reasons=[...matched];
+  if(!reasons.length){
+    profile.concepts.forEach(c=>{
+      if(c.terms.concat(c.labels).some(t=>bookText(book).includes(normalizeText(t))))reasons.push(c.labels[0]);
+    });
+  }
+  if(reasons.length)return "Puede encajar por "+[...new Set(reasons)].slice(0,3).join(", ")+".";
+  return "Es una alternativa cercana al tipo de lectura que describiste.";
+}
+
+async function fetchBookCandidates(profile){
+  const queries=[profile.query,profile.concepts.map(c=>c.query).join(" ")].filter(Boolean);
+  const all=[];
+  for(const query of [...new Set(queries)].slice(0,2)){
+    const response=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&printType=books&langRestrict=es`);
+    if(!response.ok)throw new Error("No se pudo consultar el catálogo");
+    const data=await response.json();
+    all.push(...(data.items||[]).map(item=>({
+      id:item.id,
+      title:item.volumeInfo?.title||"",
+      authors:item.volumeInfo?.authors||[],
+      categories:item.volumeInfo?.categories||[],
+      description:item.volumeInfo?.description||"",
+      thumbnail:item.volumeInfo?.imageLinks?.thumbnail||"",
+      language:item.volumeInfo?.language||"",
+      infoLink:item.volumeInfo?.infoLink||""
+    })).filter(book=>book.title));
+  }
+  const seen=new Set();
+  return all.filter(book=>{
+    const key=normalizeText(book.title);
+    if(seen.has(key))return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 async function recommendBook(promptOverride=null){
   const prompt=(promptOverride||$("#bookPrompt").value).trim();
-  if(!prompt)return toast("Decime qué tipo de libro querés.");
+  if(!prompt)return toast("Describime qué te gustaría leer.");
 
   const only=$("#onlyOwned").checked;
   const exclude=$("#excludeRead").checked;
-  $("#bookResults").innerHTML='<div class="card">Pensando… 📚</div>';
+  const profile=analyzeBookPrompt(prompt);
+  $("#bookResults").innerHTML='<div class="card">Pensando en tus gustos… 📚</div>';
 
-  if(state.library.length){
-    let pool=state.library.filter(b=>!exclude||(b["Exclusive Shelf"]||"").toLowerCase()!=="read");
-    const ranked=pool.map(b=>({b,s:scoreBook(b,prompt)})).sort((a,b)=>b.s-a.s);
-    const goodMatch=ranked[0]&&ranked[0].s>0;
+  const readTitles=new Set(state.library
+    .filter(book=>(book["Exclusive Shelf"]||"").toLowerCase()==="read")
+    .map(book=>normalizeText(book["Title"])));
 
-    if((only||goodMatch)&&ranked[0]){
-      const choice=ranked[0].b;
-      showBook({title:choice["Title"],authors:[choice["Author"]],description:choice["My Review"]||"Está en tu biblioteca.",thumbnail:""},true);
+  if(only){
+    if(!state.library.length){
+      $("#bookResults").innerHTML='<div class="card"><strong>No hace falta Goodreads para recibir recomendaciones.</strong><p>Desmarcá «Solo de mi biblioteca» y buscaré opciones nuevas a partir de tu descripción.</p></div>';
+      say("No necesitás Goodreads. Desmarcá Solo de mi biblioteca y te recomiendo opciones nuevas.");
+      return;
+    }
+    const ranked=state.library
+      .filter(book=>!exclude||(book["Exclusive Shelf"]||"").toLowerCase()!=="read")
+      .map(book=>{
+        const normalized={
+          title:book["Title"],authors:[book["Author"]],categories:String(book["Bookshelves"]||"").split(","),
+          description:book["My Review"]||"Está en tu biblioteca."
+        };
+        const result=scoreBookCandidate(normalized,profile);
+        return {book:normalized,...result,owned:true};
+      })
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,3);
+    if(ranked.length){
+      showBookRecommendations(ranked,profile,prompt);
       return;
     }
   }
 
   try{
-    const res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(prompt)}&maxResults=12&printType=books`);
-    const data=await res.json();
-    const readTitles=new Set(state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").map(b=>normalizeText(b["Title"])));
-    const items=(data.items||[]).map(x=>x.volumeInfo).filter(v=>v.title);
-    const filtered=exclude?items.filter(v=>!readTitles.has(normalizeText(v.title))):items;
-    const v=filtered[0]||items[0];
-    if(!v)throw new Error("sin resultados");
-    showBook({title:v.title,authors:v.authors||[],description:v.description||"Sin descripción disponible.",thumbnail:v.imageLinks?.thumbnail||""},false);
-  }catch{
-    $("#bookResults").innerHTML='<div class="card">No pude buscar libros ahora. Si importaste Goodreads, probá “Solo de mi biblioteca”.</div>';
+    let candidates=await fetchBookCandidates(profile);
+    if(exclude&&readTitles.size)candidates=candidates.filter(book=>!readTitles.has(normalizeText(book.title)));
+    let ranked=candidates
+      .map(book=>({book,...scoreBookCandidate(book,profile),owned:false}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,3);
+
+    if(!ranked.length)throw new Error("sin resultados");
+    showBookRecommendations(ranked,profile,prompt);
+  }catch(error){
+    const ranked=LOCAL_BOOK_CATALOG
+      .filter(book=>!exclude||!readTitles.has(normalizeText(book.title)))
+      .map(book=>({book,...scoreBookCandidate(book,profile),owned:false}))
+      .sort((a,b)=>b.score-a.score)
+      .slice(0,3);
+    if(ranked.length){
+      showBookRecommendations(ranked,profile,prompt,true);
+      return;
+    }
+    $("#bookResults").innerHTML='<div class="card">No pude buscar libros ahora. Probá describiendo el género, el tono o algún libro parecido.</div>';
     say("No pude encontrar una recomendación ahora mismo.");
   }
 }
 
-function showBook(book,owned){
-  save(KEYS.lastBook,{title:book.title,at:Date.now()});
-  $("#bookResults").innerHTML=`<div class="book-card">
-    ${book.thumbnail?`<img src="${book.thumbnail.replace("http:","https:")}" alt="">`:"<div></div>"}
+function showBookRecommendations(results,profile,prompt,localFallback=false){
+  const first=results[0]?.book;
+  if(!first)return;
+  save(KEYS.lastBook,{title:first.title,at:Date.now(),prompt});
+  const intro=localFallback
+    ? '<p class="recommendation-note">No pude consultar el catálogo en línea, así que usé una selección disponible en Robotito.</p>'
+    : "";
+  $("#bookResults").innerHTML=intro+results.map(({book,matched,owned})=>`<div class="book-card">
+    ${book.thumbnail?`<img src="${book.thumbnail.replace("http:","https:")}" alt="Portada de ${escapeHtml(book.title)}">`:"<div class=\"book-placeholder\">📖</div>"}
     <div><strong>${escapeHtml(book.title)}</strong>
-    <p>${escapeHtml(book.authors.join(", "))}</p>
-    <p>${escapeHtml((book.description||"").replace(/<[^>]+>/g,"").slice(0,280))}${book.description?.length>280?"…":""}</p>
-    <span class="relation">${owned?"Ya está en tu biblioteca":"Sugerencia nueva"}</span></div></div>`;
-  say(`Yo probaría con “${book.title}” 📚`,4500);
+    <p>${escapeHtml((book.authors||[]).join(", ")||"Autor no disponible")}</p>
+    <p class="book-match-reason">${escapeHtml(recommendationReason(book,profile,matched))}</p>
+    <p>${escapeHtml((book.description||"Sin descripción disponible.").replace(/<[^>]+>/g,"").slice(0,320))}${book.description?.length>320?"…":""}</p>
+    <span class="relation">${owned?"Ya está en tu biblioteca":"Sugerencia nueva"}</span>
+    ${book.infoLink?`<a class="book-more-link" href="${escapeHtml(book.infoLink)}" target="_blank" rel="noopener noreferrer">Ver más información ↗</a>`:""}
+    </div></div>`).join("");
+  say(`Encontré tres opciones. La que más encaja es “${first.title}” 📚`,5200);
 }
 
 function routinePromptTick(){
