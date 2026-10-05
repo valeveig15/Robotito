@@ -20,6 +20,7 @@ const ROBOTITO_AVATARS = [
   {id:"cat",emoji:"🐱",es:"Gato",en:"Cat",pt:"Gato"},
   {id:"red-panda",emoji:"🦊",es:"Panda rojo",en:"Red panda",pt:"Panda-vermelho"},
   {id:"iguana",emoji:"🦎",es:"Iguana",en:"Iguana",pt:"Iguana"},
+  {id:"chameleon",emoji:"🦎",es:"Camaleón",en:"Chameleon",pt:"Camaleão"},
   {id:"armadillo",emoji:"🛡️",es:"Armadillo",en:"Armadillo",pt:"Tatu"},
   {id:"penguin",emoji:"🐧",es:"Pingüino",en:"Penguin",pt:"Pinguim"},
   {id:"elephant",emoji:"🐘",es:"Elefante",en:"Elephant",pt:"Elefante"},
@@ -79,6 +80,7 @@ const state = {
   faceMatcher: null,
   lastSeenAt: Date.now(),
   lastHeardAt: Date.now(),
+  lastSpeciesCommentAt: 0,
   lastTranscriptAt: 0,
   audioLevel: 0,
   audioKind: "silencio",
@@ -1403,6 +1405,76 @@ function avatarLanguage(){
 function avatarName(avatar,lang=avatarLanguage()){
   return avatar?.[lang] || avatar?.es || "Panda";
 }
+function speciesProfile(id=state.avatar){
+  return window.ROBOTITO_SPECIES?.profile?.(id) || {
+    trait:"tiene una personalidad muy curiosa",
+    motion:"bounce",
+    lines:{
+      pet:"Me gustan los mimos.",
+      feed:"¡Gracias por darme de comer!",
+      play:"¡Vamos a jugar!",
+      idle:"Estoy mirando alrededor.",
+      surprise:"¡Qué susto!",
+      poke:"Eso no era una caricia.",
+      social:"Este abrazo estuvo muy lindo."
+    }
+  };
+}
+function speciesLine(action,id=state.avatar){
+  return window.ROBOTITO_SPECIES?.line?.(id,action)
+    || speciesProfile(id).lines?.[action]
+    || speciesProfile(id).lines?.idle
+    || "Estoy acá contigo.";
+}
+function speciesAct(action="play",ms=1700){
+  if(!robot)return;
+  const profile=speciesProfile();
+  const motion=profile.motion||"bounce";
+  [...robot.classList].filter(name=>name.startsWith("species-motion-")).forEach(name=>robot.classList.remove(name));
+  robot.classList.remove("species-reacting");
+  void robot.offsetWidth;
+  robot.classList.add("species-reacting","species-motion-"+motion);
+  robot.dataset.speciesAction=action;
+  setTimeout(()=>{
+    robot.classList.remove("species-reacting","species-motion-"+motion);
+    delete robot.dataset.speciesAction;
+  },ms);
+}
+function speciesIntroduction(id=state.avatar){
+  const avatar=avatarById(id);
+  const profile=speciesProfile(id);
+  return `Soy ${avatarName(avatar,"es")}. ${profile.trait.charAt(0).toUpperCase()+profile.trait.slice(1)}.`;
+}
+function handleSpeciesQuestion(rawText){
+  const text=normalizeText(rawText);
+  if(/\b(que|cual|what|which|qual)\s+(animal|especie|bicho)\b/.test(text)
+    ||/\b(que animal sos|que animal eres|what are you|qual animal voce e)\b/.test(text)){
+    say(speciesIntroduction(),4200);
+    speciesAct("introduce",1300);
+    return true;
+  }
+  if(/\b(que comes|que te gusta comer|cual es tu comida|what do you eat|what food|o que voce come)\b/.test(text)){
+    say(speciesLine("feed"),4200);
+    speciesAct("feed",1300);
+    return true;
+  }
+  if(/\b(que tiene de especial|que te hace especial|caracteristica de tu especie|contame de tu especie|tell me about your species|fale da sua especie|por que cambias de color)\b/.test(text)){
+    say(speciesIntroduction()+" "+speciesLine("idle"),5600);
+    speciesAct("introduce",1800);
+    return true;
+  }
+  return false;
+}
+function maybeSpeciesIdleComment(quietFor){
+  if(!state.started||quietFor<60||state.classMode||state.sleeping||state.nightSleep)return;
+  if(state.speaking||Date.now()<state.silentUntil)return;
+  if(Date.now()-state.lastSpeciesCommentAt<90000)return;
+  state.lastSpeciesCommentAt=Date.now();
+  const line=speciesLine("idle");
+  speciesAct("idle",1600);
+  say(line,4200);
+}
+
 function updateAvatarAria(){
   if(!robot)return;
   const avatar=avatarById(state.avatar);
@@ -1433,6 +1505,7 @@ function applyAvatar(id,{persist=true}={}){
     robot.classList.add("avatar-"+avatar.id);
     robot.classList.toggle("avatar-custom",avatar.id!=="panda");
     robot.dataset.avatar=avatar.id;
+    robot.dataset.speciesMotion=speciesProfile(avatar.id).motion||"bounce";
   }
   if($("#animalAvatarEmoji"))$("#animalAvatarEmoji").textContent=avatar.emoji;
   if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatar);
@@ -1449,10 +1522,11 @@ function renderAvatarChoices(){
   container.setAttribute("aria-label",lang==="en"?"Available avatars":lang==="pt"?"Avatares disponíveis":"Avatares disponibles");
   container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
     const selected=avatar.id===state.avatar;
-    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
+    const profile=speciesProfile(avatar.id);
+    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}: ${escapeHtml(profile.trait)}">
       <span class="avatar-choice-emoji" aria-hidden="true">${avatar.emoji}</span>
       <span class="avatar-choice-name">${escapeHtml(avatarName(avatar,lang))}</span>
-      ${avatar.id==="iguana"?'<span class="avatar-special">cambia de color</span>':""}
+      <span class="avatar-special">${escapeHtml(profile.trait)}</span>
     </button>`;
   }).join("");
 }
@@ -1496,7 +1570,7 @@ function finishStartupAvatar(id){
   $("#startBtn").textContent=mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos";
   $("#statusText").textContent=mode==="en"
     ?"Robotito is ready to wake up."
-    :mode==="pt"?"Robotito está pronto para despertar.":"Robotito está listo para despertar.";
+    :mode==="pt"?"Robotito está pronto para despertar.":speciesIntroduction(id);
   applyDayNightMode(new Date());
   flushPendingBatteryAlert();
 }
@@ -3194,6 +3268,8 @@ async function handleSpeech(rawText){
     return;
   }
 
+  if(handleSpeciesQuestion(interpreted))return;
+
   // Emotional meaning comes before generic knowledge so Robotito can react naturally
   // to affection, rejection, threats, sad stories, praise and apologies.
   if(window.ROBOTITO_EMOTION_DIALOGUE?.handle?.(interpreted,{rawText,who}))return;
@@ -4054,19 +4130,23 @@ function feedRobot(shared=false){
   state.hunger=0;
   changeMoodScore(shared?2:4);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.35:.60,trust:shared?.25:.45,irritation:-.18});
-  setMood("happy",shared?"Robotito cree que están comiendo juntos.":"Robotito comió y quedó contentísimo.");
+  const line=shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed");
+  setMood("happy",line);
+  speciesAct("feed",1600);
   animateEat();
-  say(shared?sample(["¿Comemos juntos? 🐼🍓","Ñam… yo también quiero.","Comida compartida = mejor comida."]):sample(["¡Ñam! 🍓","Eso estaba buenísimo.","Gracias por darme de comer 🐼"]));
+  say(line);
   updateMeters();
 }
 
 function petRobot(){
   changeMoodScore(5);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.75,trust:.50,fear:-.18,irritation:-.30});
-  setMood("happy","Robotito recibió mimos.");
+  const line=speciesLine("pet");
+  setMood("happy",line);
+  speciesAct("pet",1500);
   animatePet();
   animateAffection();
-  say(sample(["Mmm… más mimitos.","Eso sí me gusta.","Me encantan los mimos."]));
+  say(line);
 }
 
 function temporaryRobotClass(cls,ms=1400){
@@ -4078,43 +4158,52 @@ function temporaryRobotClass(cls,ms=1400){
 function hugRobot(){
   changeMoodScore(6);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:1.05,trust:.75,fear:-.30,irritation:-.45});
-  setMood("affectionate","Robotito recibió un abrazo.");
+  const line=speciesLine("hug");
+  setMood("affectionate",line);
   temporaryRobotClass("hugging",1700);
+  speciesAct("hug",1700);
   animateAffection();
-  say(sample(["Awww… abrazo de panda.","Este abrazo sí que no lo devuelvo.","Bueno, esto estuvo muy lindo."]));
+  say(line);
   setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1800);
 }
 function highFiveRobot(){
   changeMoodScore(3);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.35,trust:.30,irritation:-.10});
-  setMood("excited","Robotito chocó los cinco contigo.");
+  setMood("excited","Robotito celebró a su manera.");
   temporaryRobotClass("highfive",1200);
-  say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.","Eso salió bastante profesional."]));
+  speciesAct("highfive",1300);
+  say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.",speciesLine("play")]));
   setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
 }
 function playRobot(){
   changeMoodScore(4);
   if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
-  setMood("excited","Robotito está jugando.");
+  const line=speciesLine("play");
+  setMood("excited",line);
   temporaryRobotClass("playing",2300);
-  say(sample(["¡Dale, juguemos!","Okay, ahora sí me distrajiste.","Cinco minutos de caos panda."]));
+  speciesAct("play",2300);
+  say(line);
   setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},2400);
 }
 
 function scareRobot(){
   adjustBond(state.currentVoicePerson||state.currentPerson,{fear:2.40,trust:-.45,irritation:.40});
-  setMood("scared","Robotito se asustó por un instante.");
-  say(sample(["¡AH!","¡No hagas eso! 😳","…casi me da algo."]));
+  const line=speciesLine("surprise");
+  setMood("scared",line);
+  speciesAct("surprise",1000);
+  say(line);
   setTimeout(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
 }
 
 function pokeRobot(){
   changeMoodScore(-2);
   adjustBond(state.currentVoicePerson||state.currentPerson,{irritation:1.15,trust:-.35,affection:-.20});
-  setMood("annoyed","Robotito se molestó un poco.");
+  const line=speciesLine("poke");
+  setMood("annoyed",line);
+  speciesAct("poke",1200);
   animatePoke();
-  say(sample(["Ey.","No me pinches.","Eso no era una caricia.","Mmm…"]));
+  say(line);
   setTimeout(()=>setMood("calm","Ya se le pasó."),1200);
 }
 
@@ -4164,7 +4253,8 @@ function inactivityTick(){
     state.sleeping=false;
     stopSnoring();
     robot.classList.remove("sleeping");
-    setMood("bored","Robotito se está aburriendo un poquito y mira alrededor.");
+    setMood("bored",speciesLine("idle"));
+    maybeSpeciesIdleComment(quietFor);
     if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }else{
     const wasSleeping=state.sleeping;
