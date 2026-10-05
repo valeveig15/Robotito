@@ -99,6 +99,7 @@
       "  ?person p:P39 ?statement .",
       "  ?statement ps:P39 ?office .",
       "  { ?office wdt:P1001 wd:"+countryId+" . } UNION { ?office wdt:P17 wd:"+countryId+" . }",
+      "  ?office wdt:P279* wd:Q48352 .",
       "  ?office rdfs:label ?officeLabel .",
       "  FILTER(LANG(?officeLabel) = \"en\")",
       "  FILTER(CONTAINS(LCASE(STR(?officeLabel)), \"president\"))",
