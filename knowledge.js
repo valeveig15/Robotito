@@ -23,6 +23,7 @@
     "suele","suelen","normalmente","generalmente","principalmente","actualmente","hay","tiene","tienen","tener",
     "podes","puedes","podrias","podrías","decir","decime","dime","sabes","saber","quiero","quisiera",
     "explicame","explica","explicarme","contame","cuentame","recordame","respondeme","respuesta","pregunta","idea","casualidad",
+    "sobre","todo","sobre todo",
     "mas","más","more","most",
     "what","which","how","is","are","was","were","the","a","an","of","does","do","did","to","in","on","for","and","or",
     "please","tell","me","can","could","would","you"
@@ -419,7 +420,8 @@
 
     // Second chance: match the relation described in an answer, useful for reverse wording
     // such as "qué órgano bombea sangre" when the stored prompt is "qué hace el corazón".
-    const queryTokens=semanticTokens(t);
+    const relationGeneric=new Set(["animal","organo","parte","cosa","tipo","clase","lugar","ser"]);
+    const queryTokens=semanticTokens(t).filter(x=>!relationGeneric.has(x));
     let relationBest=null;
     if(queryTokens.length>=2){
       for(const [patterns,es,en] of direct){
