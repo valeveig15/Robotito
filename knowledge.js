@@ -172,7 +172,35 @@
     [["que es fosil","qué es fósil","what is a fossil"],"Un fósil es un resto, impresión o señal de un organismo del pasado preservado en materiales geológicos.","A fossil is a preserved remain, impression, or trace of an organism from the past."],
     [["por que flotan barcos","porque flotan barcos","why do boats float"],"Un barco flota cuando el empuje del agua puede equilibrar su peso; su forma permite desplazar suficiente agua.","A boat floats when the buoyant force from displaced water can balance its weight; its shape helps it displace enough water."],
     [["por que hielo flota","porque hielo flota","why does ice float"],"El hielo flota porque es menos denso que el agua líquida.","Ice floats because it is less dense than liquid water."],
-    [["por que vemos colores","porque vemos colores","why do we see colors"],"Vemos colores porque distintas longitudes de onda de la luz estimulan de forma diferente los receptores de nuestros ojos y el cerebro interpreta esas señales.","We see colors because different wavelengths of light stimulate receptors in our eyes differently and the brain interprets those signals."]
+    [["por que vemos colores","porque vemos colores","por que podemos ver colores","why do we see colors"],"Vemos colores porque distintas longitudes de onda de la luz estimulan de forma diferente los receptores de nuestros ojos y el cerebro interpreta esas señales.","We see colors because different wavelengths of light stimulate receptors in our eyes differently and the brain interprets those signals."],
+    [["cuantas letras alfabeto espanol","cuantas letras tiene el alfabeto","letras del abecedario","spanish alphabet letters"],"El alfabeto español actual tiene 27 letras.","The modern Spanish alphabet has 27 letters."],
+    [["cuantas vocales","cuales son las vocales","vocales del espanol","how many vowels"],"En español se enseñan cinco vocales: a, e, i, o, u.","Spanish is commonly taught with five vowel letters: a, e, i, o, u."],
+    [["cuanto mide un metro","centimetros en un metro","centímetros en un metro","centimeters in a meter"],"Un metro equivale a 100 centímetros.","One meter equals 100 centimeters."],
+    [["gramos en kilo","cuantos gramos tiene un kilo","grams in a kilogram"],"Un kilogramo equivale a 1.000 gramos.","One kilogram equals 1,000 grams."],
+    [["mililitros litro","cuantos mililitros tiene un litro","milliliters in a liter"],"Un litro equivale a 1.000 mililitros.","One liter equals 1,000 milliliters."],
+    [["dias febrero","cuantos dias tiene febrero","days in february"],"Febrero tiene 28 días normalmente y 29 en los años bisiestos.","February normally has 28 days and 29 in leap years."],
+    [["meses 31 dias","meses tienen 31 dias","months have 31 days"],"Enero, marzo, mayo, julio, agosto, octubre y diciembre tienen 31 días.","January, March, May, July, August, October, and December have 31 days."],
+    [["meses 30 dias","meses tienen 30 dias","months have 30 days"],"Abril, junio, septiembre y noviembre tienen 30 días.","April, June, September, and November have 30 days."],
+    [["por que bostezamos","porque bostezamos","why do we yawn"],"El bostezo aparece con frecuencia cuando estamos cansados o cambiando de estado de alerta; su función exacta todavía se investiga.","Yawning often occurs when we are tired or changing alertness; its exact function is still being studied."],
+    [["por que estornudamos","porque estornudamos","why do we sneeze"],"Estornudar es un reflejo que ayuda a expulsar irritantes de la nariz y las vías respiratorias superiores.","Sneezing is a reflex that helps expel irritants from the nose and upper airways."],
+    [["por que tenemos hipo","porque tenemos hipo","why do we hiccup"],"El hipo ocurre por contracciones involuntarias del diafragma seguidas por el cierre de la glotis.","Hiccups happen when the diaphragm contracts involuntarily and the glottis then closes."],
+    [["por que lloramos","porque lloramos","why do we cry"],"Las lágrimas lubrican y protegen los ojos; también podemos llorar como parte de respuestas emocionales.","Tears lubricate and protect the eyes, and crying can also be part of emotional responses."],
+    [["que planeta tiene anillos","planeta con anillos","which planet has rings"],"Saturno es famoso por su gran sistema de anillos, aunque los cuatro planetas gigantes del Sistema Solar tienen anillos.","Saturn is famous for its large ring system, although all four giant planets in the Solar System have rings."],
+    [["cuanto tarda luz sol tierra","luz del sol tarda","sunlight reach earth"],"La luz del Sol tarda aproximadamente 8 minutos y 20 segundos en llegar a la Tierra.","Sunlight takes about 8 minutes and 20 seconds to reach Earth."],
+    [["animal mas grande mundo","animal más grande del mundo","biggest animal in the world"],"La ballena azul es el animal más grande conocido.","The blue whale is the largest known animal."],
+    [["animal mas pequeno","animal más pequeño","smallest animal"],"No existe una única respuesta sin especificar el grupo: hay animales microscópicos y especies diminutas en muchos grupos.","There is no single answer without specifying the group: there are microscopic animals and tiny species in many groups."],
+    [["cuantos corazones pulpo","how many hearts octopus"],"Un pulpo tiene tres corazones.","An octopus has three hearts."],
+    [["cuantos cerebros pulpo","octopus brains"],"El pulpo tiene un cerebro central y grandes redes neuronales en sus brazos; a veces se describe informalmente como si tuviera varios 'cerebros', pero no son nueve cerebros completos.","An octopus has a central brain and large neural networks in its arms; it is sometimes informally described as having several 'brains', but it does not have nine complete brains."],
+    [["que comen gatos","what do cats eat"],"Los gatos son carnívoros obligados y necesitan nutrientes que obtienen de alimentos de origen animal.","Cats are obligate carnivores and require nutrients obtained from animal-based foods."],
+    [["que comen perros","what do dogs eat"],"Los perros son omnívoros adaptados a una dieta variada, aunque necesitan una alimentación nutricionalmente completa.","Dogs are adapted omnivores that can eat a varied diet, but they need nutritionally complete food."],
+    [["cuanto duerme gato","how much do cats sleep"],"Los gatos suelen dormir muchas horas al día; la cantidad varía con la edad, actividad y entorno.","Cats often sleep many hours a day; the amount varies with age, activity, and environment."],
+    [["por que ronronea gato","porque ronronea gato","why cat purr"],"Los gatos ronronean con frecuencia cuando están cómodos, aunque también pueden hacerlo en situaciones de estrés o dolor.","Cats often purr when comfortable, but they can also purr in situations involving stress or pain."],
+    [["por que perro jadea","porque perro jadea","why dogs pant"],"Los perros jadean principalmente para ayudar a regular su temperatura corporal.","Dogs pant mainly to help regulate body temperature."],
+    [["cuantos dientes perro","dog teeth"],"Un perro adulto suele tener 42 dientes.","An adult dog typically has 42 teeth."],
+    [["cuantos dientes gato","cat teeth"],"Un gato adulto suele tener 30 dientes.","An adult cat typically has 30 teeth."],
+    [["que es gravedad","qué es gravedad","what is gravity"],"La gravedad es la interacción por la que los cuerpos con masa se atraen; cerca de la Tierra hace que los objetos caigan hacia el suelo.","Gravity is the interaction by which masses attract each other; near Earth it makes objects fall toward the ground."],
+    [["que es electricidad","qué es electricidad","what is electricity"],"La electricidad engloba fenómenos relacionados con cargas eléctricas, su movimiento y los campos que producen.","Electricity includes phenomena involving electric charges, their motion, and the fields they produce."],
+    [["que es energia","qué es energía","what is energy"],"La energía es una magnitud física asociada con la capacidad de producir cambios o realizar trabajo.","Energy is a physical quantity associated with the capacity to cause change or do work."]
   ];
 
   const playfulSounds={
@@ -202,9 +230,16 @@
   function answerQuery(input,forcedLang){
     const t=norm(input), lang=forcedLang==="en"||forcedLang==="es"?forcedLang:langOf(input);
 
-    // Animal sounds
-    if(has(t,["que sonido hace","que ruido hace","como hace","como suena","que dice","imitame","imita un","hace el","hace un","what sound does","what noise does","what does a","what does the","how does a","imitate a"])){
-      const a=findAnimal(t);
+    // Animal sounds — intentionally forgiving because speech recognition often writes "ase" for "hace".
+    const soundAnimal=findAnimal(t);
+    const soundIntent=has(t,[
+      "que sonido hace","que sonido ase","que ruido hace","que ruido ase",
+      "como hace","como ase","como suena","que dice","que hace el","que hace un",
+      "que ase el","que ase un","imitame","imitame un","imita un","imita el",
+      "what sound does","what noise does","what does a","what does the","how does a","imitate a"
+    ]) || (soundAnimal && /\b(sonido|ruido|hace|ase|suena|dice|imita|imitame|sound|noise|says|say)\b/.test(t));
+    if(soundIntent){
+      const a=soundAnimal;
       if(a){
         const playful=playfulSounds[a.id];
         if(playful)return lang==="en"?playful[1]:playful[0];
