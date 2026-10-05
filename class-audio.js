@@ -236,7 +236,8 @@
   async function start(subject,topic="",sessionId=null){
     if(active)return {ok:false,reason:"already-recording"};
     if(!window.MediaRecorder)return {ok:false,reason:"unsupported"};
-    const source=state.stream;
+    // When the user explicitly shares a video tab, record that audio instead of the microphone.
+    const source=window.ROBOTITO_YOUTUBE_MATERIAL?.captureStream||state.stream;
     const tracks=source?.getAudioTracks?.().filter(t=>t.readyState==="live")||[];
     if(!tracks.length)return {ok:false,reason:"no-audio-track"};
 
