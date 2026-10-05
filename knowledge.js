@@ -20,6 +20,8 @@
   const STOP=new Set([
     "que","cual","cuales","como","de","del","el","la","los","las","un","una","unos","unas","es","son","era",
     "se","lo","le","les","al","y","o","por","para","con","sin","en","a","esto","esa","ese","eso","esta","este",
+    "suele","suelen","normalmente","generalmente","principalmente","actualmente","hay","tiene","tienen","tener",
+    "podes","puedes","podrias","podrías","decir","decime","dime","sabes","saber","quiero","quisiera",
     "mas","más","more","most",
     "what","which","how","is","are","was","were","the","a","an","of","does","do","did","to","in","on","for","and","or",
     "please","tell","me","can","could","would","you"
@@ -33,7 +35,7 @@
     ["alto","elevado","tallest","highest"],
     ["sonido","ruido","voz","sound","noise"],
     ["hacer","hace","hacen","dice","suena","emitir","emite","produce","sound"],
-    ["servir","sirve","sirven","funcion","función","funciona","hace"],
+    ["servir","sirve","sirven","funcion","función","funciona","hace","usar","usa","usan","uso","utiliza","utilizan"],
     ["razon","razón","motivo","causa","porque","debe","why"],
     ["verde","verdes","green"],
     ["tierra","terrestre","land"],
