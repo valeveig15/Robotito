@@ -1630,3 +1630,81 @@ button:active{transform:translateY(0) scale(.985)}
   .class-editor-actions{display:grid;grid-template-columns:1fr}
   .class-editor-actions button{width:100%}
 }
+
+
+/* v20 — paneles redimensionables en computadora */
+@media(min-width:901px){
+  .layout{
+    grid-template-columns:minmax(330px,1.6fr) 18px minmax(330px,.75fr);
+    gap:0;
+  }
+  .world,.panel{min-width:330px}
+}
+.layout-resizer{
+  position:relative;
+  width:18px;
+  min-width:18px;
+  cursor:col-resize;
+  touch-action:none;
+  user-select:none;
+  z-index:16;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  outline:none;
+}
+.layout-resizer:before{
+  content:"";
+  position:absolute;
+  top:18px;
+  bottom:18px;
+  left:7px;
+  width:4px;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(239,173,198,.28),rgba(150,211,199,.55),rgba(239,173,198,.28));
+  transition:width .18s,left .18s,box-shadow .18s,background .18s;
+}
+.layout-resizer-grip{
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:46px;
+  border:1px solid rgba(91,67,94,.13);
+  border-radius:999px;
+  background:rgba(255,255,255,.96);
+  color:#96788f;
+  box-shadow:0 5px 16px rgba(74,54,76,.10);
+  font-size:16px;
+  font-weight:1000;
+  letter-spacing:-3px;
+  padding-right:3px;
+  opacity:.72;
+  transform:scale(.88);
+  transition:transform .18s,opacity .18s,box-shadow .18s;
+}
+.layout-resizer:hover:before,
+.layout-resizer:focus-visible:before,
+body.layout-resizing .layout-resizer:before{
+  left:6px;
+  width:6px;
+  background:linear-gradient(180deg,#f4b5ce,#8fd1c4,#f4b5ce);
+  box-shadow:0 0 0 4px rgba(229,176,205,.11);
+}
+.layout-resizer:hover .layout-resizer-grip,
+.layout-resizer:focus-visible .layout-resizer-grip,
+body.layout-resizing .layout-resizer-grip{
+  opacity:1;
+  transform:scale(1);
+  box-shadow:0 7px 20px rgba(74,54,76,.16);
+}
+body.layout-resizing{
+  cursor:col-resize!important;
+  user-select:none!important;
+}
+body.layout-resizing *{cursor:col-resize!important}
+@media(max-width:900px){
+  .layout-resizer{display:none}
+  .world,.panel{min-width:0}
+}
