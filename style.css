@@ -1074,3 +1074,93 @@ body.mode-night .academic-subject-group{
   .class-session-item{padding:11px}
   .academic-file-row{align-items:flex-start}
 }
+
+
+/* v10.6 — detailed exercise solutions */
+.exercise-solution{
+  display:grid;
+  gap:12px;
+}
+.exercise-source{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:10px 12px;
+  border-radius:13px;
+  background:#f7f2f6;
+}
+.exercise-source strong{font-size:14px}
+.exercise-source span{
+  font-size:10px;
+  color:var(--muted);
+  text-align:right;
+}
+.exercise-statement{
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+}
+.exercise-statement strong,
+.exercise-explanation>strong{
+  display:block;
+  margin-bottom:7px;
+}
+.exercise-statement p{
+  margin:0;
+  line-height:1.5;
+  font-size:12px;
+}
+.exercise-explanation{
+  display:grid;
+  gap:8px;
+}
+.exercise-step{
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fffafd;
+}
+.exercise-step strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:12px;
+}
+.exercise-step p{
+  margin:0;
+  font-size:12px;
+  line-height:1.52;
+}
+.exercise-final{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 12px;
+  border-radius:12px;
+  background:#edf7f2;
+}
+.exercise-final span{
+  font-size:11px;
+  font-weight:800;
+  color:#557568;
+}
+.exercise-final strong{
+  font-size:14px;
+}
+.exercise-generated{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fffafd;
+  font-size:12px;
+  line-height:1.58;
+}
+body.mode-night .exercise-source,
+body.mode-night .exercise-step,
+body.mode-night .exercise-generated,
+body.mode-night .exercise-statement{
+  background:rgba(255,255,255,.94);
+}
