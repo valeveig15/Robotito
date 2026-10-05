@@ -549,3 +549,24 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
 .language-gate-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .language-gate-actions button{min-height:52px;font-size:15px}
 @media(max-width:480px){.language-gate-actions{grid-template-columns:1fr}}
+
+
+/* v8.1 — mobile push-to-talk must be obvious */
+@media(max-width:900px){
+  #mobileListenBtn{
+    display:inline-flex!important;
+    align-items:center;
+    justify-content:center;
+    min-height:48px;
+    padding:12px 16px;
+    font-size:14px;
+    border-radius:16px;
+    box-shadow:0 8px 22px rgba(72,103,95,.14);
+  }
+  #mobileListenBtn.hidden{display:none!important}
+}
+@media(max-width:560px){
+  .top-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #startBtn,#mobileListenBtn{width:100%}
+  #mobileListenBtn{grid-column:1/-1;font-size:15px;min-height:52px}
+}
