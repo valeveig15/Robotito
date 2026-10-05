@@ -347,7 +347,18 @@ ${useful.join("\n").slice(0,7000)}`;
       }
       return pages.join("\n");
     }
-    return await file.text();
+    const raw=await file.text();
+    if(name.endsWith(".srt")||name.endsWith(".vtt")||file.type==="text/vtt"||file.type==="application/x-subrip"){
+      return raw
+        .replace(/^\uFEFF?WEBVTT[^\n]*$/gim,"")
+        .replace(/^\s*\d+\s*$/gm,"")
+        .replace(/^\s*(?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}\s*-->\s*(?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}.*$/gm,"")
+        .replace(/^\s*(?:NOTE|STYLE|REGION)\b.*$/gim,"")
+        .replace(/<[^>]+>/g,"")
+        .replace(/\n{3,}/g,"\n\n")
+        .trim();
+    }
+    return raw;
   }
   function renderAcademicMaterials(){
     const root=document.querySelector("#academicFilesList");
