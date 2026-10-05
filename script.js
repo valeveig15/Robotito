@@ -32,6 +32,7 @@ const state = {
   recognitionWanted: true,
   speechRestartTimer: null,
   lastSpeechStartAt: 0,
+  speechRetryCount: 0,
   voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")===null
     ? !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
@@ -338,43 +339,87 @@ async function loadFaceModels(){
   ]);
 }
 
+function primeMobileSpeechFromGesture(){
+  state.recognitionWanted=true;
+  state.speechBlocked=false;
+  discardRecognition();
+  const r=createSpeechRecognition();
+  if(!r){
+    setListenState(state.languageMode==="en"?"not supported":"no compatible","problem");
+    $("#transcript").textContent=state.languageMode==="en"
+      ?"This mobile browser does not provide the Web Speech recognition service."
+      :"Este navegador móvil no ofrece el servicio Web Speech de reconocimiento.";
+    return Promise.resolve(false);
+  }
+  state.recognition=r;
+  return new Promise(resolve=>{
+    let settled=false;
+    const finish=value=>{if(settled)return;settled=true;resolve(value);};
+    r.addEventListener("start",()=>finish(true),{once:true});
+    r.addEventListener("error",()=>finish(false),{once:true});
+    setTimeout(()=>finish(false),7000);
+    try{
+      setListenState(state.languageMode==="en"?"activating microphone…":"activando micrófono…");
+      r.start();
+    }catch(e){
+      console.warn("initial speech start",e);
+      state.recognition=null;
+      finish(false);
+    }
+  });
+}
+
 async function startSenses(){
   if(state.started)return;
   if(state.languageMode!=="es"&&state.languageMode!=="en"){
     toast("Elegí Español o English primero.");
     return;
   }
+
   const mobile=isMobileSpeech();
-  $("#systemStatus").textContent=mobile?"Activando cámara…":"Pidiendo permisos…";
+  state.started=true;
+
+  // Critical mobile path: SpeechRecognition.start() is invoked synchronously
+  // from the user's one initial "Despertar sentidos" gesture, before any await.
+  const initialSpeech=mobile?primeMobileSpeechFromGesture():Promise.resolve(true);
+
+  $("#systemStatus").textContent=mobile
+    ?(state.languageMode==="en"?"Activating microphone…":"Activando micrófono…")
+    :"Pidiendo permisos…";
+
   try{
+    if(mobile){
+      // Wait for the speech service/permission to settle before asking for camera.
+      // This avoids overlapping microphone and camera permission dialogs on Android.
+      await initialSpeech;
+    }
+
     state.stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},
       audio:mobile?false:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
     });
     camera.srcObject=state.stream;
     await camera.play();
-    state.started=true;
 
-    // In mobile browsers, let SpeechRecognition own the microphone.
-    // Running getUserMedia(audio) and SpeechRecognition together can block one another.
-    if(!mobile) setupAudio(state.stream);
+    if(!mobile){
+      setupAudio(state.stream);
+      setupSpeechRecognition(true);
+    }
 
-    $("#startBtn").textContent="Sentidos activos";
+    $("#startBtn").textContent=state.languageMode==="en"?"Senses active":"Sentidos activos";
     $("#startBtn").disabled=true;
 
     if(mobile){
-      $("#mobileListenBtn")?.classList.remove("hidden");
-      $("#mobileListenBtn").textContent=state.languageMode==="en"?"🎙 Tap to speak":"🎙 Tocá para hablar";
-      setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+      $("#mobileListenBtn")?.classList.add("hidden");
       $("#systemStatus").textContent=state.languageMode==="en"
-        ?"Camera active. Tap the microphone button whenever you want to speak."
-        :"Cámara activa. Tocá el botón del micrófono cada vez que quieras hablar.";
+        ?"Camera active. Robotito is listening continuously."
+        :"Cámara activa. Robotito está escuchando de forma continua.";
+      if(!state.recognition && !state.speechBlocked)startListeningCycle(false);
     }else{
-      setupSpeechRecognition(true);
       $("#systemStatus").textContent="Cámara y micrófono activos.";
     }
 
-    // Load heavier vision models after the basic mobile interaction is already ready.
+    // Vision models load after listening is already active.
     loadFaceModels().then(()=>{
       setupHands();
       detectLoop();
@@ -383,9 +428,20 @@ async function startSenses(){
     say(state.languageMode==="en"?"I'm awake.":"Ya estoy despierto.");
   }catch(err){
     console.error(err);
+    state.stream?.getTracks?.().forEach(t=>t.stop());
+    state.stream=null;
+    // Keep speech alive even if camera permission fails.
+    if(mobile && state.recognition){
+      $("#systemStatus").textContent=state.languageMode==="en"
+        ?"Microphone active. Camera permission failed."
+        :"Micrófono activo. No pude activar la cámara.";
+      toast(state.languageMode==="en"?"I can hear you, but I need camera permission to see.":"Puedo escucharte, pero necesito permiso de cámara para verte.");
+      return;
+    }
     state.started=false;
-    $("#systemStatus").textContent="No pude activar la cámara.";
-    toast(state.languageMode==="en"?"I need camera permission.":"Necesito permiso de cámara.");
+    discardRecognition();
+    $("#systemStatus").textContent=state.languageMode==="en"?"I couldn't activate the sensors.":"No pude activar los sentidos.";
+    toast(state.languageMode==="en"?"Check microphone and camera permissions.":"Revisá los permisos de micrófono y cámara.");
   }
 }
 
@@ -581,19 +637,21 @@ function createSpeechRecognition(){
   if(!SR)return null;
   const r=new SR();
   r.lang=recognitionLanguage();
-  // Mobile browsers are more reliable with short single-utterance sessions.
-  r.continuous=!isMobileSpeech();
+  // Android Chrome supports continuous mode reasonably well; iOS is kept
+  // in short sessions but is restarted automatically.
+  r.continuous=!isIOSSpeech();
   r.interimResults=true;
   r.maxAlternatives=3;
 
   r.onstart=()=>{
     state.lastSpeechStartAt=Date.now();
-    setListenState("escuchando","listening");
-    $("#mobileListenBtn")?.classList.remove("hidden");
+    state.speechRetryCount=0;
+    setListenState(state.languageMode==="en"?"listening":"escuchando","listening");
+    $("#mobileListenBtn")?.classList.add("hidden");
   };
 
-  r.onspeechstart=()=>setListenState("te escucho","listening");
-  r.onspeechend=()=>{if(isMobileSpeech())setListenState("procesando");};
+  r.onspeechstart=()=>setListenState(state.languageMode==="en"?"I hear you":"te escucho","listening");
+  r.onspeechend=()=>{if(isMobileSpeech())setListenState(state.languageMode==="en"?"listening":"escuchando","listening");};
 
   r.onresult=ev=>{
     let finalText="";
@@ -613,43 +671,39 @@ function createSpeechRecognition(){
     console.warn("speech",e.error);
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){
       state.speechBlocked=true;
-      setListenState("bloqueado","problem");
+      setListenState(state.languageMode==="en"?"microphone blocked":"micrófono bloqueado","problem");
+      $("#mobileListenBtn")?.classList.remove("hidden");
+      $("#mobileListenBtn").textContent=state.languageMode==="en"?"🎙 Retry microphone":"🎙 Reintentar micrófono";
       $("#transcript").textContent=state.languageMode==="en"
-        ?"The browser blocked speech recognition. Check microphone permission and tap “Tap to speak”."
-        :"El navegador bloqueó el reconocimiento de voz. Revisá el permiso del micrófono y tocá “Tocá para hablar”.";
+        ?"Microphone permission is blocked. Enable microphone permission for this site and retry."
+        :"El permiso del micrófono está bloqueado. Habilitá el micrófono para este sitio y reintentá.";
       return;
     }
     if(e.error==="audio-capture"){
-      setListenState("sin micrófono","problem");
-      $("#transcript").textContent="No encuentro el micrófono. Revisá el permiso del navegador.";
+      state.speechRetryCount++;
+      setListenState(state.languageMode==="en"?"recovering microphone":"recuperando micrófono","problem");
       return;
     }
     if(e.error!=="aborted"&&e.error!=="no-speech"){
-      setListenState("reintentando","problem");
+      state.speechRetryCount++;
+      setListenState(state.languageMode==="en"?"recovering…":"recuperando…","problem");
     }
   };
 
   r.onend=()=>{
     if(state.recognition===r)state.recognition=null;
     if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
-    if(isMobileSpeech()){
-      setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
-      $("#mobileListenBtn")?.classList.remove("hidden");
-      return;
-    }
-    setListenState("reiniciando");
+    state.speechRetryCount=Math.min(8,state.speechRetryCount+1);
+    setListenState(state.languageMode==="en"?"reconnecting…":"reconectando…");
     clearTimeout(state.speechRestartTimer);
-    state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),220);
+    const delay=Math.min(2200,220+state.speechRetryCount*180);
+    state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),delay);
   };
   return r;
 }
 
 function startListeningCycle(userGesture=false){
   if(!state.started||state.speaking||!state.recognitionWanted)return;
-  if(isMobileSpeech()&&!userGesture){
-    setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
-    return;
-  }
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
@@ -664,8 +718,15 @@ function startListeningCycle(userGesture=false){
   }catch(e){
     console.warn("speech start",e);
     state.recognition=null;
-    setListenState("tocá para escuchar","problem");
-    if(!userGesture)$("#mobileListenBtn")?.classList.remove("hidden");
+    state.speechRetryCount++;
+    setListenState(state.languageMode==="en"?"recovering…":"recuperando…","problem");
+    if(state.speechRetryCount>=4){
+      $("#mobileListenBtn")?.classList.remove("hidden");
+      $("#mobileListenBtn").textContent=state.languageMode==="en"?"🎙 Retry microphone":"🎙 Reintentar micrófono";
+    }else if(state.started&&!state.speechBlocked){
+      clearTimeout(state.speechRestartTimer);
+      state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),600+state.speechRetryCount*250);
+    }
   }
 }
 
@@ -673,7 +734,7 @@ function setupSpeechRecognition(userGesture=false){
   state.recognitionWanted=true;
   state.speechBlocked=false;
   if(isMobileSpeech()){
-    $("#mobileListenBtn")?.classList.remove("hidden");
+    $("#mobileListenBtn")?.classList.add("hidden");
     $("#mobileSpeechHint")?.classList.remove("hidden");
   }
   startListeningCycle(userGesture);
@@ -2746,12 +2807,13 @@ function ambientMood(){
 function bindUI(){
   $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#startBtn").addEventListener("click",startSenses);
-  $("#mobileListenBtn")?.addEventListener("pointerdown",e=>{
-    e.preventDefault();
+  $("#mobileListenBtn")?.addEventListener("click",()=>{
     state.speechBlocked=false;
+    state.speechRetryCount=0;
     state.recognitionWanted=true;
     if("speechSynthesis" in window)speechSynthesis.cancel();
     state.speaking=false;
+    $("#mobileListenBtn")?.classList.add("hidden");
     startListeningCycle(true);
   });
   $("#languageMode")?.addEventListener("change",e=>setLanguageMode(e.target.value));
