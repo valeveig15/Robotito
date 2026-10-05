@@ -957,6 +957,26 @@ function updateDetectedLanguage(){
   return state.lastDetectedLanguage;
 }
 
+function speechAlternativeScore(alternative){
+  const raw=String(alternative?.transcript||"").trim();
+  if(!raw)return -Infinity;
+  const normalized=normalizeText(raw);
+  const tokens=normalized.split(" ").filter(Boolean);
+  let score=(Number(alternative?.confidence)||0)*4;
+  score+=Math.min(tokens.length,10)*.025;
+  if(state.languageMode==="es"&&normalizeSpanishSpeechIntent(raw)!==normalized)score+=.16;
+  if(/\b(robotito|clase|profesor|profesora|fisica|matematica|ejercicio|materia|tema|hambre|hora|fecha|dedos|objeto|presidente|recordas|acordas)\b/.test(normalized))score+=.22;
+  if(window.ROBOTITO_EMOTION_DIALOGUE?.classify?.(raw))score+=.28;
+  if(tokens.length>=3&&new Set(tokens).size===1)score-=.8;
+  if(/^(?:eh|em|mmm|ah)+$/.test(normalized))score-=.5;
+  return score;
+}
+function chooseSpeechAlternative(result){
+  return [...result]
+    .map(alternative=>({alternative,score:speechAlternativeScore(alternative)}))
+    .sort((a,b)=>b.score-a.score)[0]?.alternative||result[0];
+}
+
 function createSpeechRecognition(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR)return null;
@@ -983,7 +1003,7 @@ function createSpeechRecognition(){
     let interim="";
     for(let i=ev.resultIndex;i<ev.results.length;i++){
       const result=ev.results[i];
-      const best=[...result].sort((a,b)=>(b.confidence||0)-(a.confidence||0))[0]||result[0];
+      const best=chooseSpeechAlternative(result);
       const text=(best?.transcript||"").trim();
       if(result.isFinal)finalText+=(finalText?" ":"")+text;
       else interim+=(interim?" ":"")+text;
