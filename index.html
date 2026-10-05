@@ -17,6 +17,7 @@
   <script defer src="objects.js"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="speech-fallback.js"></script>
+  <script defer src="class-audio.js"></script>
   <script defer src="class-verification.js"></script>
   <script defer src="script.js"></script>
 </head>
@@ -283,6 +284,21 @@
             <div class="section-head"><h3>Transcripción en vivo</h3><span id="classDuration">00:00</span></div>
             <div id="classTranscript" class="class-transcript"><p class="muted">Todavía no empezó ninguna clase.</p></div>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head">
+            <div>
+              <h2>Grabaciones de clase</h2>
+              <p class="muted">El audio se guarda en este navegador para que puedas volver a escuchar la clase completa.</p>
+            </div>
+            <span id="classRecordingLive" class="recording-live">sin grabar</span>
+          </div>
+          <p id="classRecordingStatus" class="muted">Todavía no hay grabaciones guardadas en este dispositivo.</p>
+          <div id="classRecordingsList" class="class-recordings-list">
+            <p class="muted">Cuando termines una clase, el audio aparecerá acá.</p>
+          </div>
+          <p class="muted">Las grabaciones quedan solo en este dispositivo/navegador. Podés descargarlas para conservar una copia o borrarlas cuando ya no las necesites.</p>
         </div>
 
         <div class="card">
