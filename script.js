@@ -2213,7 +2213,7 @@ function renderPeople(){
     const row=document.createElement("div");
     row.className="person-row";
     row.innerHTML=`<strong>${escapeHtml(p.name)}</strong>
-      <div class="relation">${relationText(p.relationship??50)}</div>
+      <div class="relation">${relationText(p)}</div>
       <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"} · ${(p.voicePrints||[]).length?"voz aprendida":"voz no registrada"}</div>
       <div class="bond-detail">${bondDetail(p)}</div>`;
     root.appendChild(row);
@@ -2346,7 +2346,7 @@ function showBook(book,owned){
 function routinePromptTick(){
   if(!state.started||state.classMode||state.sleeping||document.hidden)return;
   const now=new Date(),h=now.getHours(),m=now.getMinutes();
-  const day=now.toISOString().slice(0,10);
+  const day=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   let slot=null,message=null;
   if(h>=8&&h<10){slot="breakfast";message="Buenos días… pregunta de panda responsable: ¿ya desayunaste?";}
   else if(h>=12&&h<14){slot="lunch";message="Viendo la hora… ¿ya almorzaste?";}
