@@ -14,6 +14,7 @@
     const router=window.ROBOTITO_ROUTER;
     const questionRouting=window.ROBOTITO_QUESTION_ROUTING;
     const commonKnowledge=window.ROBOTITO_COMMON_KNOWLEDGE;
+    const webKnowledge=window.ROBOTITO_WEB_KNOWLEDGE;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
@@ -58,6 +59,11 @@
     if(commonKnowledge){
       results.push(same(commonKnowledge.answer("¿Qué es permutación?","es"),"Una permutación es una ordenación de todos los elementos de un conjunto; el orden sí importa.","responde permutación sin depender de materiales"));
     }else results.push(truthy(false,"common knowledge loaded"));
+
+    if(webKnowledge){
+      results.push(same(webKnowledge.isFactualQuestion("Definime entropía"),true,"acepta pedido imperativo de definición"));
+      results.push(same(webKnowledge.isFactualQuestion("Me gusta la entropía"),false,"no confunde comentario con pregunta factual"));
+    }else results.push(truthy(false,"web knowledge loaded"));
 
     if(videoMaterial){
       results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de URL de YouTube"));
