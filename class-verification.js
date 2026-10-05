@@ -369,7 +369,7 @@ Respondé únicamente JSON válido:
     const recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
     $("#classBadge").textContent="apagado";
 
-    const summary=await generateAndSaveClassSummary(endedAt,recording);
+    const summary=await window.ROBOTITO_CLASS_ORGANIZER?.generateAndSaveClassSummary?.(endedAt,recording);
     state.selectedClassSessionId=state.classSessionId;
     state.classSessionId=null;
     window.ROBOTITO_CLASS_ORGANIZER?.render?.();
