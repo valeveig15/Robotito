@@ -2291,6 +2291,13 @@ function fallbackAcademicAnswer(question,evidence){
 }
 async function composeAcademicAnswer(question,evidence){
   const depth=academicAnswerDepth(question);
+  const qn=normalizeText(question).replace(/\bcheques?\b/g,"choques");
+  if(depth==="definition"&&/\bchoque elastico\b/.test(qn)){
+    return "Un choque elástico es aquel en el que se conserva la energía cinética del sistema.";
+  }
+  if(depth==="definition"&&/\bchoque inelastico\b/.test(qn)){
+    return "Un choque inelástico es aquel en el que no se conserva la energía cinética del sistema.";
+  }
   const compact=evidence.map((e,i)=>{
     const text=relevantSentenceForAnswer(e,question);
     const source=e.sourceType==="material"
