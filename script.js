@@ -62,6 +62,8 @@ const state = {
   classSummaries: load("robotito.classSummaries.v1", []),
   academicMaterials: load("robotito.academicMaterials.v1", []),
   objectModel: null,
+  imageModel: null,
+  routinePromptLog: load("robotito.routinePrompts.v1", {}),
   tasks: load("robotito.tasks.v1", []),
   tasksSheetUrl: localStorage.getItem("robotito.tasksSheetUrl.v1") || "",
   tasksSheetGid: localStorage.getItem("robotito.tasksSheetGid.v1") || "",
@@ -203,26 +205,78 @@ function setMood(mood, reason=""){
   if(reason) $("#statusText").textContent=reason;
 }
 
-function changeMoodScore(delta, personName=null){
-  state.moodScore=clamp(state.moodScore+delta,0,100);
-  if(personName){
-    const p=state.people.find(x=>x.name===personName);
-    if(p){
-      p.relationship=clamp((p.relationship??50)+delta,0,100);
-      p.lastInteractionAt=Date.now();
-      save(KEYS.people,state.people);
-      renderPeople();
-    }
+function ensureBond(p){
+  if(!p)return null;
+  if(!p.bond){
+    const old=clamp(p.relationship??50,0,100);
+    p.bond={
+      affection:clamp(50+(old-50)*.75,0,100),
+      trust:clamp(50+(old-50)*.55,0,100),
+      fear:clamp(8+Math.max(0,45-old)*.18,0,100),
+      irritation:clamp(8+Math.max(0,45-old)*.22,0,100),
+      updatedAt:Date.now()
+    };
   }
-  updateMeters();
+  const days=Math.max(0,(Date.now()-(p.bond.updatedAt||Date.now()))/86400000);
+  if(days>=1){
+    p.bond.fear=clamp(p.bond.fear-Math.min(2,days*.18),0,100);
+    p.bond.irritation=clamp(p.bond.irritation-Math.min(2,days*.15),0,100);
+    p.bond.updatedAt=Date.now();
+  }
+  return p.bond;
 }
-
-function relationText(v){
-  if(v>=82)return "te tiene muchísimo cariño";
-  if(v>=66)return "confía mucho";
-  if(v>=50)return "se siente cómodo";
-  if(v>=34)return "todavía está cauteloso";
-  return "está bastante molesto";
+function adjustBond(personName,delta={}){
+  if(!personName)return;
+  const p=state.people.find(x=>x.name===personName);
+  if(!p)return;
+  const b=ensureBond(p);
+  for(const key of ["affection","trust","fear","irritation"]){
+    if(Number.isFinite(delta[key]))b[key]=clamp(b[key]+delta[key],0,100);
+  }
+  b.updatedAt=Date.now();
+  p.relationship=Math.round((b.affection+b.trust+(100-b.fear)+(100-b.irritation))/4);
+  p.lastInteractionAt=Date.now();
+  save(KEYS.people,state.people);
+  renderPeople();
+}
+function bondCategory(p){
+  const b=ensureBond(p);
+  if(!b)return "neutral";
+  if(b.fear>=67)return "afraid";
+  if(b.irritation>=70&&b.affection<45)return "dislikes";
+  if(b.affection>=78&&b.trust>=68)return "loves";
+  if(b.affection>=63&&b.trust>=55)return "likes";
+  if(b.trust>=72)return "trusts";
+  if(b.fear>=42)return "wary";
+  if(b.irritation>=45)return "annoyed";
+  return "comfortable";
+}
+function relationText(personOrValue){
+  if(typeof personOrValue==="number"){
+    if(personOrValue>=75)return "le cae muy bien";
+    if(personOrValue<35)return "está bastante distante";
+    return "se siente cómodo";
+  }
+  const p=personOrValue;
+  const b=ensureBond(p);
+  switch(bondCategory(p)){
+    case "afraid": return "le da miedo";
+    case "dislikes": return "le cae mal";
+    case "loves": return "le tiene muchísimo cariño";
+    case "likes": return "le cae muy bien";
+    case "trusts": return "confía mucho";
+    case "wary": return "le genera cierta inquietud";
+    case "annoyed": return "está algo fastidiado";
+    default: return "se siente cómodo";
+  }
+}
+function bondDetail(p){
+  const b=ensureBond(p);
+  return `cariño ${Math.round(b.affection)} · confianza ${Math.round(b.trust)} · miedo ${Math.round(b.fear)} · fastidio ${Math.round(b.irritation)}`;
+}
+function changeMoodScore(delta){
+  state.moodScore=clamp(state.moodScore+delta,0,100);
+  updateMeters();
 }
 
 function updateMeters(){
@@ -255,8 +309,10 @@ function followFace(box){
   const vw=camera.videoWidth||640, vh=camera.videoHeight||480;
   const cx=(box.x+box.width/2)/vw;
   const cy=(box.y+box.height/2)/vh;
-  robot.style.left=clamp(21+cx*58,21,79)+"%";
+  const left=clamp(21+cx*58,21,79);
+  robot.style.left=left+"%";
   robot.style.top=clamp(37+cy*21,37,58)+"%";
+  if($("#groundShadow"))$("#groundShadow").style.left=left+"%";
   moveEyes((cx-.5)*2,(cy-.5)*2);
 }
 
@@ -953,7 +1009,7 @@ function answerEasyQuestion(rawText){
   )){
     const p=state.people.find(x=>x.name===known);
     if(!p)say("Todavía no te conozco lo suficiente como para decirlo.");
-    else say(`Nuestra relación está así: ${relationText(p.relationship??50)}.`);
+    else say(`Nuestra relación está así: ${relationText(p)}.`);
     return true;
   }
 
@@ -1044,6 +1100,29 @@ function answerEasyQuestion(rawText){
       if(mins<60)say(`Comí hace aproximadamente ${mins} minutos.`);
       else say(`Comí hace aproximadamente ${(mins/60).toFixed(1)} horas.`);
     }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["te doy miedo","te asusto","me tenes miedo","me tienes miedo","tenes miedo de mi","tienes miedo de mi"],
+    [["miedo","asusto"],["mi","me"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(!p)say("Todavía no te conozco lo suficiente.");
+    else {
+      const b=ensureBond(p);
+      say(b.fear>=67?"Sí. Me das miedo y necesito varias interacciones tranquilas para que eso cambie.":b.fear>=42?"Un poquito. Todavía estoy algo cauteloso con vos.":"No. No siento que me des miedo.");
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["confias en mi","confías en mí","me tenes confianza","me tienes confianza","te caigo bien","te caigo mal","me queres","me quieres"],
+    [["confia","confias","confías","caigo","queres","quieres","confianza"],["mi","me"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(!p)say("Todavía no te conozco lo suficiente.");
+    else say(`Ahora mismo ${relationText(p)}. Es un sentimiento bastante estable y cambia de a poquito.`);
     return true;
   }
 
@@ -1232,21 +1311,75 @@ function solveMathFromUI(){
   $("#mathExplanation").innerHTML='<div class="answer-card"><strong>Resolución</strong><p>'+escapeHtml(explanation)+'</p></div>';
   drawCircle(sol);say("Listo. La resolví y la dibujé.");
 }
+function objectDisplayName(item,lang="es"){
+  return lang==="en"?(item?.en?.[0]||item?.id||"object"):(item?.es?.[0]||item?.id||"objeto");
+}
+function showObjectCard(item,lang="es"){
+  if(!item)return false;
+  const root=$("#objectShowcase");
+  if(!root)return false;
+  $("#objectShowEmoji").textContent=item.emoji||"✨";
+  $("#objectShowName").textContent=objectDisplayName(item,lang);
+  $("#objectShowInfo").textContent=lang==="en"?("Category: "+item.category):("Categoría: "+item.category);
+  root.classList.remove("hidden");
+  clearTimeout(showObjectCard.t);
+  showObjectCard.t=setTimeout(()=>root.classList.add("hidden"),6000);
+  return true;
+}
+function showRequestedObject(rawText,lang="es"){
+  const normalized=normalizeText(rawText);
+  const m=normalized.match(/(?:mostrame|muestrame|mostra|mostrar|ensen[aá]me|show me|show|display)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
+  if(!m)return false;
+  const query=m[1].replace(/\b(por favor|please)\b/g,"").trim();
+  const item=window.ROBOTITO_OBJECTS?.find?.(query);
+  if(!item)return false;
+  showObjectCard(item,lang);
+  say(lang==="en"?`Here is ${objectDisplayName(item,"en")}.`:`Acá tenés ${objectDisplayName(item,"es")}.`);
+  return true;
+}
 async function detectObjectNow(){
   if(!state.started){toast("Primero despertá los sentidos.");return;}
   const out=$("#objectResult");out.innerHTML='<div class="study-chip">Mirando…</div>';
   try{
-    if(!state.objectModel){
-      if(!window.cocoSsd)throw new Error("El detector de objetos no cargó.");
-      state.objectModel=await cocoSsd.load({base:"lite_mobilenet_v2"});
+    if(!state.objectModel&&window.cocoSsd)state.objectModel=await cocoSsd.load({base:"lite_mobilenet_v2"});
+    if(!state.imageModel&&window.mobilenet)state.imageModel=await mobilenet.load({version:2,alpha:.50});
+    const [boxes,classes]=await Promise.all([
+      state.objectModel?state.objectModel.detect(camera,12,.35):Promise.resolve([]),
+      state.imageModel?state.imageModel.classify(camera,5):Promise.resolve([])
+    ]);
+    let item=null,label="",score=0;
+    if(boxes.length){
+      const top=boxes.sort((a,b)=>b.score-a.score)[0];
+      item=window.ROBOTITO_OBJECTS?.findByModelLabel?.(top.class)||null;
+      label=top.class;score=top.score;
     }
-    const preds=await state.objectModel.detect(camera,10,.45);
-    if(!preds.length){out.innerHTML='<div class="study-chip">No logro reconocer un objeto claro. Acercalo y dejalo quieto un segundo.</div>';say("No lo reconozco bien todavía.");return;}
-    const names={person:"persona",bottle:"botella",cup:"taza o vaso",book:"libro",cell_phone:"celular",laptop:"laptop",keyboard:"teclado",mouse:"mouse",chair:"silla",backpack:"mochila",scissors:"tijera",toothbrush:"cepillo de dientes",apple:"manzana",banana:"banana",orange:"naranja"};
-    const top=preds[0],name=names[top.class]||top.class;
-    out.innerHTML='<div class="object-box"><div class="object-icon">👀</div><div><strong>Creo que es '+escapeHtml(name)+'</strong><div class="muted">Confianza: '+Math.round(top.score*100)+'%</div></div></div>';
-    say("Creo que es "+name+".");
-  }catch(e){out.innerHTML='<div class="study-chip">No pude activar el reconocimiento de objetos.</div>';console.warn(e);}
+    if(!item&&classes.length){
+      for(const p of classes){
+        item=window.ROBOTITO_OBJECTS?.findByModelLabel?.(p.className)||null;
+        if(item){label=p.className;score=p.probability;break;}
+      }
+    }
+    if(!item){
+      const fallback=classes[0]||boxes[0];
+      if(!fallback){
+        out.innerHTML='<div class="study-chip">No logro reconocer un objeto claro. Acercalo y dejalo quieto un segundo.</div>';
+        say("No lo reconozco bien todavía.");
+        return;
+      }
+      const raw=fallback.className||fallback.class||"objeto";
+      out.innerHTML='<div class="object-box"><div class="object-icon">👀</div><div><strong>Creo que puede ser '+escapeHtml(raw)+'</strong><div class="muted">Confianza aproximada: '+Math.round((fallback.probability||fallback.score||0)*100)+'%</div></div></div>';
+      say("Creo que puede ser "+raw+".");
+      return;
+    }
+    const lang=state.lastDetectedLanguage||"es";
+    const name=objectDisplayName(item,lang);
+    out.innerHTML='<div class="object-box"><div class="object-icon">'+escapeHtml(item.emoji)+'</div><div><strong>'+escapeHtml(name)+'</strong><div class="muted">Confianza aproximada: '+Math.round(score*100)+'%</div></div></div>';
+    showObjectCard(item,lang);
+    say(lang==="en"?("I think it's "+name+"."):("Creo que es "+name+"."));
+  }catch(e){
+    out.innerHTML='<div class="study-chip">No pude activar el reconocimiento de objetos.</div>';
+    console.warn(e);
+  }
 }
 
 function averageRecentVoiceFeature(){
@@ -1552,8 +1685,13 @@ async function answerWhatLearnedToday(){
 
 async function handleSpeech(rawText){
   const text=normalizeText(rawText);
-  const who=state.currentPerson;
+  const who=state.currentVoicePerson||state.currentPerson;
 
+  if(/osito\s+osito.*(quien|quién).*(mas|más).*bella.*mundo/.test(text)){
+    say("Mi dulce creadora, la más bella a toda hora; si digo otra cosa… me borra sin demora.");
+    return;
+  }
+  if(showRequestedObject(rawText,responseLanguage(rawText)))return;
   if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
   const detectedLang=responseLanguage(rawText);
@@ -1610,12 +1748,14 @@ async function handleSpeech(rawText){
   const mean=["te odio","sos feo","callate","tonto","molesto","idiota"];
 
   if(nice.some(x=>text.includes(x))){
-    changeMoodScore(4,who);
+    changeMoodScore(4);
+    adjustBond(who,{affection:.7,trust:.45,irritation:-.25,fear:-.12});
     setMood("happy","Robotito escuchó algo lindo y se puso contento.");
     animatePet();
   }
   if(mean.some(x=>text.includes(x))){
-    changeMoodScore(-5,who);
+    changeMoodScore(-5);
+    adjustBond(who,{affection:-.55,trust:-.65,irritation:.7});
     setMood("sad","Eso lo dejó un poquito triste.");
     say("…");
   }
@@ -1719,40 +1859,22 @@ function handleSocialSpeech(text){
 }
 
 function greetingFor(p){
-  const rel=p.relationship??50;
+  const category=bondCategory(p);
   const timed=dayPartGreeting()+", "+p.name+".";
   let choices;
-
-  if(rel>=75){
-    choices=[
-      `¡${p.name}! Justo quería verte ♡`,
-      `Mirá quién llegó 🐼 Hola, ${p.name}.`,
-      `¡${p.name}! *mini saltito feliz*`,
-      `Holaaa, ${p.name} 🐼♡`,
-      `Ah, sos vos. Eso me pone de buen humor.`,
-      `¡Volviste, ${p.name}! Me alegra verte.`,
-      timed
-    ];
-  }else if(rel>=50){
-    choices=[
-      `Hola, ${p.name} 🐼`,
-      `¡Te reconocí, ${p.name}!`,
-      `Ey, ${p.name}. Volviste.`,
-      `Hola de nuevo, ${p.name}.`,
-      `Mmm… esa cara la conozco. Hola, ${p.name}.`,
-      `¿Qué tal, ${p.name}?`,
-      timed
-    ];
+  if(category==="loves"){
+    choices=[`¡${p.name}! Te extrañé un poquito ♡`,`¡${p.name}! *mini saltito panda*`,`Ah, sos vos. Mi persona favorita apareció.`,timed];
+  }else if(category==="likes"||category==="trusts"){
+    choices=[`¡Hola, ${p.name}! Me alegra verte.`,`Te reconocí, ${p.name}.`,`Mirá quién volvió: ${p.name}.`,timed];
+  }else if(category==="afraid"){
+    choices=[`Ah… hola, ${p.name}. Voy a mirarte desde acá.`,`Te reconocí, ${p.name}. Todavía me das un poquito de miedo.`,timed];
+  }else if(category==="dislikes"){
+    choices=[`Hola, ${p.name}. Espero que hoy seas amable conmigo.`,`Sí, te reconocí, ${p.name}.`,timed];
+  }else if(category==="annoyed"||category==="wary"){
+    choices=[`Hola, ${p.name}. Todavía estoy un poquito cauteloso.`,`Te vi, ${p.name}.`,timed];
   }else{
-    choices=[
-      `Ah… hola, ${p.name}.`,
-      `Te vi, ${p.name}. Estoy observando 👀`,
-      `Hola. Todavía me acuerdo de vos.`,
-      `Mmm, ${p.name}… veremos cómo te portás hoy.`,
-      timed
-    ];
+    choices=[`Hola, ${p.name}.`,`¡Te reconocí, ${p.name}!`,`¿Qué tal, ${p.name}?`,timed];
   }
-
   const last=state.greetingHistory[p.name];
   const filtered=choices.filter(x=>x!==last);
   const chosen=sample(filtered.length?filtered:choices);
@@ -1930,6 +2052,8 @@ async function enrollPerson(){
   }
 
   save(KEYS.people,state.people);
+  state.people.forEach(ensureBond);
+  save(KEYS.people,state.people);
   buildMatcher();
   renderPeople();
   $("#enrollStatus").textContent=voicePrints?.length?`Listo: ahora recuerdo la cara y la voz de ${name}.`:`Guardé la cara de ${name}, pero no escuché suficiente voz. Podés volver a registrarlo hablando más fuerte.`;
@@ -1991,7 +2115,8 @@ function animatePoke(){
 function feedRobot(shared=false){
   localStorage.setItem(KEYS.lastFed,String(Date.now()));
   state.hunger=0;
-  changeMoodScore(shared?2:4,state.currentPerson);
+  changeMoodScore(shared?2:4);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.25:.45,trust:shared?.18:.30,irritation:-.12});
   setMood("happy",shared?"Robotito cree que están comiendo juntos.":"Robotito comió y quedó contentísimo.");
   animateEat();
   say(shared?sample(["¿Comemos juntos? 🐼🍓","Ñam… yo también quiero.","Comida compartida = mejor comida."]):sample(["¡Ñam! 🍓","Eso estaba buenísimo.","Gracias por darme de comer 🐼"]));
@@ -1999,20 +2124,23 @@ function feedRobot(shared=false){
 }
 
 function petRobot(){
-  changeMoodScore(5,state.currentPerson);
+  changeMoodScore(5);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.35,fear:-.10,irritation:-.22});
   setMood("happy","Robotito recibió mimos.");
   animatePet();
   say(sample(["♡","Mmm… más mimitos.","Eso sí me gusta 🐼","*se acerca un poquito*"]));
 }
 
 function scareRobot(){
+  adjustBond(state.currentVoicePerson||state.currentPerson,{fear:.75,trust:-.18,irritation:.18});
   setMood("scared","Robotito se asustó por un instante.");
   say(sample(["¡AH!","¡No hagas eso! 😳","…casi me da algo."]));
   setTimeout(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
 }
 
 function pokeRobot(){
-  changeMoodScore(-2,state.currentPerson);
+  changeMoodScore(-2);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{irritation:.55,trust:-.22,affection:-.12});
   setMood("annoyed","Robotito se molestó un poco.");
   animatePoke();
   say(sample(["Ey.","No me pinches.","Eso no era una caricia.","Mmm…"]));
@@ -2086,7 +2214,8 @@ function renderPeople(){
     row.className="person-row";
     row.innerHTML=`<strong>${escapeHtml(p.name)}</strong>
       <div class="relation">${relationText(p.relationship??50)}</div>
-      <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"} · ${(p.voicePrints||[]).length?"voz aprendida":"voz no registrada"}</div>`;
+      <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"} · ${(p.voicePrints||[]).length?"voz aprendida":"voz no registrada"}</div>
+      <div class="bond-detail">${bondDetail(p)}</div>`;
     root.appendChild(row);
   });
 }
@@ -2214,6 +2343,21 @@ function showBook(book,owned){
   say(`Yo probaría con “${book.title}” 📚`,4500);
 }
 
+function routinePromptTick(){
+  if(!state.started||state.classMode||state.sleeping||document.hidden)return;
+  const now=new Date(),h=now.getHours(),m=now.getMinutes();
+  const day=now.toISOString().slice(0,10);
+  let slot=null,message=null;
+  if(h>=8&&h<10){slot="breakfast";message="Buenos días… pregunta de panda responsable: ¿ya desayunaste?";}
+  else if(h>=12&&h<14){slot="lunch";message="Viendo la hora… ¿ya almorzaste?";}
+  else if((h===16&&m>=15)||h===17||h===18){slot="snack";message="Mmm… hora de merienda. ¿Ya merendaste?";}
+  else if(h>=23||h<1){slot="bedtime";message="Miro la hora y pregunto muy seriamente: ¿no sería buena idea que te fueras a dormir dentro de poco?";}
+  if(!slot||state.routinePromptLog[slot]===day)return;
+  if(Date.now()-state.sessionStartedAt<5*60*1000)return;
+  state.routinePromptLog[slot]=day;
+  save("robotito.routinePrompts.v1",state.routinePromptLog);
+  say(message,6500);
+}
 function clockTick(){
   const d=new Date();
   $("#clock").textContent=d.toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"});
@@ -2372,6 +2516,8 @@ function init(){
   setInterval(updateClassDuration,1000);
   setInterval(ambientMood,2500);
   setInterval(taskReminderTick,30000);
+  setInterval(routinePromptTick,60000);
+  setTimeout(routinePromptTick,12000);
   if(state.tasksSheetUrl) refreshTasks();
 }
 
