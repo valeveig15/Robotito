@@ -29,7 +29,12 @@ const state = {
   recognition: null,
   speaking: false,
   speechBlocked: false,
-  voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
+  recognitionWanted: true,
+  speechRestartTimer: null,
+  lastSpeechStartAt: 0,
+  voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")===null
+    ? !/iPhone|iPad|iPod/i.test(navigator.userAgent)
+    : localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
   voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
   voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
   voiceRate: Number(localStorage.getItem("robotito.voiceRate.v1")||0.82),
@@ -111,9 +116,26 @@ function populateVoiceSelect(){
     localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
   }
 }
+function isMobileSpeech(){
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints>1 && innerWidth<1000);
+}
+function isIOSSpeech(){
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+function setListenState(text,kind=""){
+  const el=$("#listenState");
+  if(el){el.textContent=text;el.className="listen-state"+(kind?" "+kind:"");}
+}
+function discardRecognition(){
+  if(state.recognition){
+    try{state.recognition.onend=null;state.recognition.onerror=null;state.recognition.onresult=null;state.recognition.abort();}catch{}
+  }
+  state.recognition=null;
+}
 function restartRecognitionAfterSpeech(){
-  if(!state.started||state.speechBlocked||!state.recognition)return;
-  setTimeout(()=>{try{state.recognition.start();}catch{}},250);
+  if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
+  clearTimeout(state.speechRestartTimer);
+  state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?650:300);
 }
 function speakResponse(text){
   if(!state.voiceEnabled||!("speechSynthesis" in window))return;
@@ -121,7 +143,8 @@ function speakResponse(text){
   if(!clean)return;
   speechSynthesis.cancel();
   state.speaking=true;
-  try{state.recognition?.abort();}catch{}
+  discardRecognition();
+  setListenState("respondiendo");
   const utter=new SpeechSynthesisUtterance(clean);
   const voices=speechSynthesis.getVoices();
   const chosen=voices.find(v=>v.voiceURI===state.voiceURI)||chooseDefaultVoice(voices);
@@ -243,8 +266,8 @@ async function startSenses(){
     await loadFaceModels();
     setupHands();
     setupAudio(state.stream);
-    setupSpeechRecognition();
     state.started=true;
+    setupSpeechRecognition(true);
     $("#startBtn").textContent="Sentidos activos";
     $("#startBtn").disabled=true;
     $("#systemStatus").textContent="Cámara y micrófono activos.";
@@ -422,43 +445,108 @@ function setupAudio(stream){
   }catch(e){console.warn("audio",e);}
 }
 
-function setupSpeechRecognition(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){
-    $("#transcript").textContent="Tu navegador no ofrece reconocimiento de voz continuo.";
-    return;
-  }
+function processSpeechResult(text){
+  if(!text)return;
+  $("#transcript").textContent=text;
+  state.lastHeardAt=Date.now();
+  state.lastTranscriptAt=Date.now();
+  const voiceMatch=recognizeVoicePerson(recentVoicePrint());
+  state.currentVoicePerson=voiceMatch?.name||null;
+  autoRemember(text);
+  if(!state.classMode && state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
+  handleSpeech(text);
+  if(state.classMode) captureClassLine(text);
+}
 
+function createSpeechRecognition(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return null;
   const r=new SR();
   r.lang="es-UY";
-  r.continuous=true;
+  // Mobile browsers are more reliable with short single-utterance sessions.
+  r.continuous=!isMobileSpeech();
   r.interimResults=true;
-  r.maxAlternatives=1;
+  r.maxAlternatives=3;
+
+  r.onstart=()=>{
+    state.lastSpeechStartAt=Date.now();
+    setListenState("escuchando","listening");
+    $("#mobileListenBtn")?.classList.remove("hidden");
+  };
+
+  r.onspeechstart=()=>setListenState("te escucho","listening");
+  r.onspeechend=()=>{if(isMobileSpeech())setListenState("procesando");};
 
   r.onresult=ev=>{
-    const result=ev.results[ev.results.length-1];
-    const text=result[0].transcript.trim();
-    if(text) $("#transcript").textContent=result.isFinal?text:text+" …";
-    if(!result.isFinal)return;
-    if(!text)return;
-    $("#transcript").textContent=text;
-    state.lastHeardAt=Date.now();
-    state.lastTranscriptAt=Date.now();
-    const voiceMatch=recognizeVoicePerson(recentVoicePrint());
-    state.currentVoicePerson=voiceMatch?.name||null;
-    autoRemember(text);
-    if(!state.classMode && state.currentPerson) learnSpeaker("me",averageRecentVoiceFeature());
-    handleSpeech(text);
-    if(state.classMode) captureClassLine(text);
+    let finalText="";
+    let interim="";
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const result=ev.results[i];
+      const best=[...result].sort((a,b)=>(b.confidence||0)-(a.confidence||0))[0]||result[0];
+      const text=(best?.transcript||"").trim();
+      if(result.isFinal)finalText+=(finalText?" ":"")+text;
+      else interim+=(interim?" ":"")+text;
+    }
+    if(interim)$("#transcript").textContent=interim+" …";
+    if(finalText)processSpeechResult(finalText);
   };
-  let speechFails=0;
+
   r.onerror=e=>{
     console.warn("speech",e.error);
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){state.speechBlocked=true;$("#transcript").textContent="El navegador bloqueó el reconocimiento de voz.";}
-    else if(e.error!=="no-speech"&&e.error!=="aborted")speechFails++;
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+      state.speechBlocked=true;
+      setListenState("bloqueado","problem");
+      $("#transcript").textContent="El navegador bloqueó el micrófono/reconocimiento. Revisá los permisos y tocá “Escuchar ahora”.";
+      return;
+    }
+    if(e.error==="audio-capture"){
+      setListenState("sin micrófono","problem");
+      $("#transcript").textContent="No encuentro el micrófono. Revisá el permiso del navegador.";
+      return;
+    }
+    if(e.error!=="aborted"&&e.error!=="no-speech"){
+      setListenState("reintentando","problem");
+    }
   };
-  r.onend=()=>{ if(!state.started||state.speechBlocked||state.speaking)return; setTimeout(()=>{try{r.start();}catch{}},Math.min(5000,300+speechFails*700)); };
-  try{r.start(); state.recognition=r;}catch{}
+
+  r.onend=()=>{
+    if(state.recognition===r)state.recognition=null;
+    if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
+    setListenState("reiniciando");
+    clearTimeout(state.speechRestartTimer);
+    state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isMobileSpeech()?350:220);
+  };
+  return r;
+}
+
+function startListeningCycle(userGesture=false){
+  if(!state.started||state.speaking||!state.recognitionWanted)return;
+  discardRecognition();
+  const r=createSpeechRecognition();
+  if(!r){
+    setListenState("no compatible","problem");
+    $("#transcript").textContent="Este navegador no ofrece reconocimiento de voz. En iPhone probá Safari; en Android probá Chrome.";
+    return;
+  }
+  state.recognition=r;
+  try{
+    r.start();
+  }catch(e){
+    console.warn("speech start",e);
+    state.recognition=null;
+    setListenState("tocá para escuchar","problem");
+    if(!userGesture)$("#mobileListenBtn")?.classList.remove("hidden");
+  }
+}
+
+function setupSpeechRecognition(userGesture=false){
+  state.recognitionWanted=true;
+  state.speechBlocked=false;
+  if(isMobileSpeech()){
+    $("#mobileListenBtn")?.classList.remove("hidden");
+    $("#mobileSpeechHint")?.classList.remove("hidden");
+  }
+  startListeningCycle(userGesture);
 }
 
 function autoRemember(text){
@@ -1906,10 +1994,19 @@ function ambientMood(){
 
 function bindUI(){
   $("#startBtn").addEventListener("click",startSenses);
+  $("#mobileListenBtn")?.addEventListener("click",()=>{
+    state.speechBlocked=false;
+    state.recognitionWanted=true;
+    startListeningCycle(true);
+  });
   $("#voiceEnabled")?.addEventListener("change",e=>{
     state.voiceEnabled=e.target.checked;
     localStorage.setItem("robotito.voiceEnabled.v1",String(state.voiceEnabled));
-    if(!state.voiceEnabled&&"speechSynthesis" in window)speechSynthesis.cancel();
+    if(!state.voiceEnabled&&"speechSynthesis" in window){
+      speechSynthesis.cancel();
+      state.speaking=false;
+      restartRecognitionAfterSpeech();
+    }
   });
   $("#voiceSelect")?.addEventListener("change",e=>{
     state.voiceURI=e.target.value;
