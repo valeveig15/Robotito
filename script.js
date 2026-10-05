@@ -81,6 +81,8 @@ const state = {
   snoreTimer: null,
   blinkTimer: null,
   blinkCloseTimer: null,
+  blinkSequenceTimer: null,
+  lastBlinkAt: 0,
   heartEyeTimer: null,
   eyeLookX: 0,
   eyeLookY: 0,
@@ -369,31 +371,58 @@ function updateMeters(){
 
 function clearBlinkState(){
   clearTimeout(state.blinkCloseTimer);
+  clearTimeout(state.blinkSequenceTimer);
   state.blinkCloseTimer=null;
+  state.blinkSequenceTimer=null;
   robot.classList.remove("blink");
 }
 function eyesLocked(){
   return state.sleeping || robot.classList.contains("heart-eyes");
 }
-function performBlink(){
-  if(eyesLocked()||document.hidden)return;
-  clearBlinkState();
+function singleBlink(duration=115){
+  if(eyesLocked()||document.hidden)return false;
+  clearTimeout(state.blinkCloseTimer);
+  robot.classList.remove("blink");
+
   requestAnimationFrame(()=>{
-    if(eyesLocked())return;
+    if(eyesLocked()||document.hidden)return;
     robot.classList.add("blink");
+    state.lastBlinkAt=Date.now();
     state.blinkCloseTimer=setTimeout(()=>{
       robot.classList.remove("blink");
       state.blinkCloseTimer=null;
-    },125);
+    },duration);
   });
+  return true;
+}
+function performBlink(){
+  if(eyesLocked()||document.hidden)return;
+  const closeDuration=95+Math.random()*45;
+  if(!singleBlink(closeDuration))return;
+
+  // Humans occasionally make a quick double blink, but not constantly.
+  if(Math.random()<.13){
+    state.blinkSequenceTimer=setTimeout(()=>{
+      if(!eyesLocked()&&!document.hidden)singleBlink(90+Math.random()*30);
+      state.blinkSequenceTimer=null;
+    },190+Math.random()*95);
+  }
+}
+function nextBlinkDelay(){
+  // Most blinks fall around 3–6 s, with occasional longer relaxed pauses.
+  const r=Math.random();
+  if(r<.08)return 1800+Math.random()*900;
+  if(r<.86)return 3000+Math.random()*3200;
+  return 6200+Math.random()*3000;
 }
 function blinkLoop(){
   clearTimeout(state.blinkTimer);
   state.blinkTimer=setTimeout(()=>{
-    performBlink();
+    if(!document.hidden&&!eyesLocked())performBlink();
     blinkLoop();
-  },2800+Math.random()*3900);
+  },nextBlinkDelay());
 }
+
 function moveEyes(nx,ny,force=false){
   state.eyeLookX=clamp(nx,-1,1);
   state.eyeLookY=clamp(ny,-1,1);
@@ -3654,6 +3683,16 @@ function purgeNamedPeople(){
   save("robotito.people.v1",oldPeople);
   save("robotito.memories.v1",oldMem);
 }
+
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){
+    clearBlinkState();
+    clearTimeout(state.blinkTimer);
+  }else{
+    clearBlinkState();
+    blinkLoop();
+  }
+});
 
 function init(){
   migrateOldData();
