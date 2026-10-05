@@ -55,8 +55,13 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - Puede resumir la clase, extraer ideas importantes y crear tarjetas de estudio.
 - Responde preguntas sobre clases **en sus propias palabras** y además muestra la cita textual de donde obtuvo la evidencia.
 
-### Material académico y ejercicios
-- Carga de TXT, Markdown, CSV, JSON y PDF.
+### Material académico, videos y ejercicios
+- Carga de TXT, Markdown, CSV, JSON, PDF, SRT y VTT.
+- Los enlaces de YouTube pueden incorporarse de tres maneras:
+  - pegando la transcripción del video;
+  - cargando sus subtítulos SRT/VTT;
+  - compartiendo, con permiso explícito del navegador, la pestaña de YouTube con audio para que Whisper la transcriba localmente sin descargar el video.
+- Durante la captura de una pestaña intenta reconocer objetos generales visibles y guarda esas observaciones separadas, con una advertencia sobre sus límites.
 - Los materiales se asocian a materia y tema.
 - Indexa ejercicios de los archivos para recuperar exactamente “ejercicio 4”, “problema 2”, etc.
 - Puede explicar ejercicios paso a paso usando el material cargado.
@@ -103,6 +108,7 @@ Los módulos principales incluyen:
 - `robotito-store.js`: almacenamiento durable con IndexedDB.
 - `presidents.js`: presidentes actuales e históricos mediante Wikidata.
 - `web-knowledge.js`: conocimiento factual de respaldo.
+- `video-material.js`: transcripciones, captura autorizada de pestañas y observaciones visuales de videos.
 - `robotito-tests.js`: pruebas de regresión.
 
 ## Pruebas
@@ -115,7 +121,7 @@ para ejecutar las pruebas de regresión en la consola. También se pueden ejecut
 
 `ROBOTITO_TESTS.run()`
 
-Las pruebas cubren matemática hablada, precedencia, circunferencias, profundidad de respuesta, silencio temporizado y enrutamiento de objetos/presidentes.
+Las pruebas cubren matemática hablada, precedencia, circunferencias, profundidad de respuesta, silencio temporizado, enlaces de YouTube y enrutamiento de objetos/presidentes.
 
 ## Privacidad
 
