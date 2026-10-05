@@ -267,6 +267,33 @@
       return "Si el cambio de momentum Δp es el mismo, I=Δp también es el mismo. Como Fprom=Δp/Δt, aumentar el tiempo de interacción reduce la fuerza promedio. Es la idea detrás de airbags, acolchados y doblar los brazos al atrapar una pelota.";
     }
 
+    if(has(t,["dame un ejemplo de impulso","ejemplo de impulso","ejemplo impulso"])){
+      return "Ejemplo: una pelota de 0,50 kg pasa de 2 m/s a 8 m/s en la misma dirección. Δp = m(vf−vi) = 0,50·(8−2) = 3 kg·m/s. Entonces el impulso recibido es 3 N·s en el sentido positivo.";
+    }
+
+    if(has(t,["dame un ejemplo de cantidad de movimiento","ejemplo de momentum","ejemplo cantidad de movimiento"])){
+      return "Ejemplo: un carrito de 3 kg se mueve a 4 m/s. Su cantidad de movimiento es p = m·v = 3·4 = 12 kg·m/s en la dirección del movimiento.";
+    }
+
+    if(has(t,["dame un ejemplo de choque","ejemplo de choque","ejemplo totalmente inelastico","ejemplo totalmente inelástico"])){
+      return "Ejemplo: un carrito de 2 kg va a 6 m/s y choca con otro de 1 kg en reposo; quedan unidos. vf = (2·6 + 1·0)/(2+1) = 4 m/s. El momentum total se conserva, pero la energía cinética disminuye.";
+    }
+
+    if(has(t,["dame un ejercicio","poneme un ejercicio","poneme a prueba","hazme una pregunta","preguntame algo de impulso","preguntame algo de momentum"])){
+      const qs=[
+        "Ejercicio: una pelota de 0,20 kg cambia su velocidad de 5 m/s a −3 m/s. ¿Cuál es el impulso? Recordá usar I=m(vf−vi).",
+        "Ejercicio: una fuerza neta constante de 12 N actúa durante 0,50 s. ¿Qué impulso produce y cuánto cambia la cantidad de movimiento?",
+        "Ejercicio: un carrito de 2 kg a 4 m/s choca y queda unido a otro de 3 kg en reposo. ¿Cuál es la velocidad final?",
+        "Pregunta conceptual: si dos objetos reciben el mismo impulso, ¿tienen necesariamente el mismo cambio de velocidad? Pensá en el papel de la masa.",
+        "Pregunta conceptual: ¿por qué un airbag reduce la fuerza promedio si el cambio de momentum del pasajero es prácticamente el mismo?"
+      ];
+      return qs[Math.floor(Math.random()*qs.length)];
+    }
+
+    if(has(t,["resumen completo","resumime impulso","resumime cantidad de movimiento","resumen de choques","explicame todo impulso","explicame todo cantidad de movimiento"])){
+      return "Resumen: p⃗=m·v⃗ es la cantidad de movimiento. El impulso cambia el momentum: I⃗=Δp⃗ y, si F es constante, I⃗=F⃗Δt. En una gráfica F–t, el área es el impulso. Si el impulso externo neto sobre un sistema es cero o despreciable, Σp⃗i=Σp⃗f. En choques elásticos también se conserva la energía cinética; en inelásticos no; en totalmente inelásticos los cuerpos quedan unidos. En 1D hay que cuidar los signos; en 2D se conserva por componentes x e y. Retroceso y explosiones son aplicaciones de la misma conservación.";
+    }
+
     // More specific topics first.
     const ordered=[...topics].sort((a,b)=>Math.max(...b.keys.map(k=>k.length))-Math.max(...a.keys.map(k=>k.length)));
     for(const topic of ordered){
