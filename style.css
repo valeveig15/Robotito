@@ -266,3 +266,35 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
 .voice-controls input[type="range"]{padding:0;background:transparent;box-shadow:none}
 #voiceSelect{font-size:12px}
 @media(max-width:520px){.voice-controls{grid-template-columns:1fr}}
+
+
+/* v5.4 — softer eyes + Goodreads help */
+.eye-white-svg{fill:#fffdfd;filter:drop-shadow(0 1px 0 rgba(0,0,0,.05))}
+.iris-svg{fill:#514957}
+.pupil-svg{fill:#171419}
+.eye-spark{opacity:.95}
+.blink-line{stroke-width:3.2}
+.help-button{margin-top:10px}
+.help-panel{
+  margin-top:10px;
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:linear-gradient(145deg,#fff,#fff7fb);
+  font-size:12px;
+  line-height:1.5;
+}
+.help-panel h3{margin:0 0 8px;font-size:14px}
+.help-panel ol{margin:8px 0 10px;padding-left:20px}
+.help-panel li{margin:4px 0}
+.goodreads-link{
+  display:inline-block;
+  margin:4px 0 7px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#f5eaf1;
+  color:#5b485b;
+  text-decoration:none;
+  font-weight:800;
+}
+.goodreads-link:hover{text-decoration:underline}
