@@ -7,7 +7,8 @@
   const HEAVY=new Set([
     "robotito.classLines.v1",
     "robotito.classSummaries.v1",
-    "robotito.academicMaterials.v1"
+    "robotito.academicMaterials.v1",
+    "robotito.memories.v2"
   ]);
 
   function openDb(){
@@ -88,15 +89,17 @@
   async function bootstrap(stateObj){
     if(!stateObj)return false;
     try{
-      const [lines,summaries,materials]=await Promise.all([
+      const [lines,summaries,materials,memories]=await Promise.all([
         migrateKey("robotito.classLines.v1",Array.isArray(stateObj.classLines)?stateObj.classLines:[]),
         migrateKey("robotito.classSummaries.v1",Array.isArray(stateObj.classSummaries)?stateObj.classSummaries:[]),
-        migrateKey("robotito.academicMaterials.v1",Array.isArray(stateObj.academicMaterials)?stateObj.academicMaterials:[])
+        migrateKey("robotito.academicMaterials.v1",Array.isArray(stateObj.academicMaterials)?stateObj.academicMaterials:[]),
+        migrateKey("robotito.memories.v2",Array.isArray(stateObj.memories)?stateObj.memories:[])
       ]);
 
       stateObj.classLines=Array.isArray(lines)?lines:[];
       stateObj.classSummaries=Array.isArray(summaries)?summaries:[];
       stateObj.academicMaterials=Array.isArray(materials)?materials:[];
+      stateObj.memories=Array.isArray(memories)?memories:[];
 
       // Once the durable copy exists, free the small localStorage quota.
       for(const key of HEAVY){
