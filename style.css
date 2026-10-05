@@ -247,3 +247,22 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
   font-size:11px;
   font-weight:800;
 }
+
+
+/* v5.3 — stable sadness + voice controls */
+.mood-sad .brow-left,
+.mood-sad .brow-right,
+.mood-sad .brow{
+  transform:none !important;
+}
+.mood-sad .eye-white-svg{
+  transform-box:fill-box;
+  transform-origin:center;
+  transform:scaleY(.88);
+}
+.voice-toggle{margin-top:4px}
+.voice-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.voice-controls label{margin:7px 0}
+.voice-controls input[type="range"]{padding:0;background:transparent;box-shadow:none}
+#voiceSelect{font-size:12px}
+@media(max-width:520px){.voice-controls{grid-template-columns:1fr}}
