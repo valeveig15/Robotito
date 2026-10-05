@@ -3559,6 +3559,39 @@ function petRobot(){
   say(sample(["Mmm… más mimitos.","Eso sí me gusta.","Me encantan los mimos."]));
 }
 
+function temporaryRobotClass(cls,ms=1400){
+  robot.classList.remove(cls);
+  void robot.offsetWidth;
+  robot.classList.add(cls);
+  setTimeout(()=>robot.classList.remove(cls),ms);
+}
+function hugRobot(){
+  changeMoodScore(6);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:1.05,trust:.75,fear:-.30,irritation:-.45});
+  setMood("affectionate","Robotito recibió un abrazo.");
+  temporaryRobotClass("hugging",1700);
+  animateAffection();
+  say(sample(["Awww… abrazo de panda.","Este abrazo sí que no lo devuelvo.","Bueno, esto estuvo muy lindo."]));
+  setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1800);
+}
+function highFiveRobot(){
+  changeMoodScore(3);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.35,trust:.30,irritation:-.10});
+  setMood("excited","Robotito chocó los cinco contigo.");
+  temporaryRobotClass("highfive",1200);
+  say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.","Eso salió bastante profesional."]));
+  setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
+}
+function playRobot(){
+  changeMoodScore(4);
+  state.energy=clamp(state.energy-2,0,100);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
+  setMood("excited","Robotito está jugando.");
+  temporaryRobotClass("playing",2300);
+  say(sample(["¡Dale, juguemos!","Okay, ahora sí me distrajiste.","Cinco minutos de caos panda."]));
+  setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},2400);
+}
+
 function scareRobot(){
   adjustBond(state.currentVoicePerson||state.currentPerson,{fear:2.40,trust:-.45,irritation:.40});
   setMood("scared","Robotito se asustó por un instante.");
@@ -3939,6 +3972,9 @@ function bindUI(){
     const a=btn.dataset.action;
     if(a==="feed")feedRobot(false);
     else if(a==="pet")petRobot();
+    else if(a==="hug")hugRobot();
+    else if(a==="highfive")highFiveRobot();
+    else if(a==="play")playRobot();
     else if(a==="surprise")scareRobot();
     else if(a==="poke")pokeRobot();
   });
