@@ -5,7 +5,8 @@
   let ctx=null, source=null, processor=null, streamRef=null;
   let transcriber=null, modelPromise=null, active=false, paused=false;
   let language="es", onText=()=>{}, onStatus=()=>{};
-  let speaking=false, segment=[], segmentStart=0, segmentStartEpoch=0, lastVoiceAt=0, voiceFrames=0;
+  let speaking=false, segment=[], preRoll=[], segmentStart=0, segmentStartEpoch=0, lastVoiceAt=0, voiceFrames=0;
+  let noiseFloor=.0075, lastTranscript="", lastTranscriptAt=0;
   let queue=Promise.resolve();
 
   function status(text,kind=""){ try{onStatus(text,kind);}catch{} }
@@ -37,10 +38,16 @@
       const opts={progress_callback};
       if(navigator.gpu)opts.device="webgpu";
       try{
-        transcriber=await pipeline("automatic-speech-recognition","onnx-community/whisper-tiny",opts);
-      }catch(err){
-        console.warn("Whisper WebGPU failed, falling back to WASM",err);
-        transcriber=await pipeline("automatic-speech-recognition","onnx-community/whisper-tiny",{device:"wasm",progress_callback});
+        // Whisper Base is noticeably more accurate with short questions and Rioplatense Spanish.
+        transcriber=await pipeline("automatic-speech-recognition","onnx-community/whisper-base",opts);
+      }catch(baseErr){
+        console.warn("Whisper Base failed, trying the lighter model",baseErr);
+        try{
+          transcriber=await pipeline("automatic-speech-recognition","onnx-community/whisper-tiny",{device:"wasm",progress_callback});
+        }catch(tinyErr){
+          console.warn("Whisper fallback failed",tinyErr);
+          throw tinyErr;
+        }
       }
       return transcriber;
     })();
@@ -87,7 +94,7 @@
   }
 
   function resetSegment(){
-    speaking=false;segment=[];segmentStart=0;segmentStartEpoch=0;lastVoiceAt=0;voiceFrames=0;
+    speaking=false;segment=[];preRoll=[];segmentStart=0;segmentStartEpoch=0;lastVoiceAt=0;voiceFrames=0;
   }
 
   function enqueueTranscription(raw,meta=null){
@@ -99,12 +106,24 @@
       const model=await loadModel();
       if(!active||paused)return;
       status(statusText("Entendiendo…","Understanding…","Entendendo…"),"processing");
-      const opts={task:"transcribe",language:language==="en"?"english":language==="pt"?"portuguese":"spanish"};
+      const opts={
+        task:"transcribe",
+        language:language==="en"?"english":language==="pt"?"portuguese":"spanish",
+        chunk_length_s:20,
+        stride_length_s:3,
+        num_beams:2,
+        condition_on_prev_tokens:false
+      };
       const result=await model(audio,opts);
       const text=String(result?.text||"").trim()
         .replace(/^\[[^\]]+\]\s*/,"")
+        .replace(/^\([^\)]+\)\s*/,"")
         .replace(/\s+/g," ");
-      if(text && text.length>1 && !/^\.{1,3}$/.test(text)){
+      const normalized=text.toLowerCase().replace(/[^a-záéíóúüñ0-9]+/g," ").trim();
+      const duplicate=normalized&&normalized===lastTranscript&&Date.now()-lastTranscriptAt<4500;
+      if(text && text.length>1 && !duplicate && !/^\.{1,3}$/.test(text)){
+        lastTranscript=normalized;
+        lastTranscriptAt=Date.now();
         onText(text,meta||null);
       }
       if(active&&!paused)status(statusText("escuchando","listening","escutando"),"listening");
@@ -119,7 +138,7 @@
     const endedAt=Date.now();
     const startedAt=segmentStartEpoch||endedAt;
     const duration=(performance.now()-segmentStart)/1000;
-    const enough=duration>=0.45&&voiceFrames>=2;
+    const enough=duration>=0.58&&voiceFrames>=3;
     const raw=enough?concat(segment):null;
     const meta=enough?{startedAt,endedAt,duration}:null;
     resetSegment();
@@ -159,14 +178,26 @@
       const data=new Float32Array(e.inputBuffer.getChannelData(0));
       const rms=rmsOf(data);
       const now=performance.now();
-      // Conservative voice activity threshold to ignore room noise.
-      const voice=rms>0.018;
+
+      // Learn the room noise continuously and adapt to quiet or loud voices.
+      if(!speaking&&rms<Math.max(.03,noiseFloor*2.2)){
+        noiseFloor=noiseFloor*.965+rms*.035;
+      }
+      const voiceThreshold=Math.max(.009,Math.min(.032,noiseFloor*2.35+0.0025));
+      const voice=rms>voiceThreshold;
+
+      if(!speaking){
+        // Keep about 350–450 ms of audio so the first syllable is not cut off.
+        preRoll.push(data);
+        while(preRoll.length>5)preRoll.shift();
+      }
       if(voice){
         if(!speaking){
           speaking=true;
           segmentStart=now;
-          segmentStartEpoch=Date.now();
-          segment=[];
+          segmentStartEpoch=Date.now()-Math.round(preRoll.length*4096/ac.sampleRate*1000);
+          segment=preRoll.slice();
+          preRoll=[];
           voiceFrames=0;
         }
         lastVoiceAt=now;
@@ -174,9 +205,10 @@
         segment.push(data);
       }else if(speaking){
         segment.push(data);
-        if(now-lastVoiceAt>850)finalize();
+        // A slightly longer pause keeps natural sentences together.
+        if(now-lastVoiceAt>1050)finalize();
       }
-      if(speaking&&now-segmentStart>12000)finalize();
+      if(speaking&&now-segmentStart>16000)finalize();
     };
 
     await modelReady;
