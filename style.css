@@ -1843,3 +1843,199 @@ body.layout-resizing *{cursor:col-resize!important}
   .world-controls .quick-actions button{flex:0 0 102px}
   .robotito{top:38%;transform:translate(-50%,-50%) scale(.64)}
 }
+
+
+/* v12 — avatar picker and expressive animal companions */
+.language-gate-card{
+  max-height:min(92vh,820px);
+  overflow:auto;
+  scrollbar-gutter:stable;
+  transition:width .22s ease;
+}
+.language-gate-card.avatar-selecting{width:min(780px,100%)}
+.startup-step.hidden{display:none!important}
+.avatar-choice-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
+  gap:10px;
+  max-height:min(51vh,470px);
+  padding:3px 5px 10px 3px;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.avatar-choice{
+  position:relative;
+  min-height:104px;
+  padding:10px 7px 9px;
+  border:2px solid transparent;
+  border-radius:19px;
+  background:linear-gradient(145deg,#fff,#fff6fb);
+  color:var(--text);
+  box-shadow:0 7px 18px rgba(73,56,76,.07);
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.avatar-choice:hover,.avatar-choice:focus-visible{
+  transform:translateY(-2px);
+  border-color:#e7b9d0;
+  box-shadow:0 10px 24px rgba(73,56,76,.12);
+  outline:none;
+}
+.avatar-choice.selected{
+  border-color:#77b9aa;
+  background:linear-gradient(145deg,#effbf7,#fff7fb);
+  box-shadow:0 0 0 3px rgba(119,185,170,.14),0 10px 24px rgba(73,56,76,.1);
+}
+.avatar-choice-emoji{display:block;font-size:40px;line-height:1.2;margin-bottom:5px}
+.avatar-choice-name{display:block;font-size:13px;font-weight:900;line-height:1.15}
+.avatar-special{
+  display:block;
+  margin-top:5px;
+  color:#557d73;
+  font-size:10px;
+  font-weight:800;
+  line-height:1.1;
+}
+.avatar-back-button{
+  margin-top:14px;
+  min-height:44px;
+  padding:9px 18px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#fff;
+  color:var(--text);
+  font-weight:850;
+  cursor:pointer;
+}
+.animal-avatar{
+  position:absolute;
+  inset:2px 0 0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  isolation:isolate;
+}
+.robotito.avatar-custom .panda-svg{display:none!important}
+.robotito.avatar-custom .animal-avatar{display:flex}
+.animal-avatar-backdrop{
+  position:absolute;
+  left:22px;
+  top:38px;
+  width:216px;
+  height:238px;
+  z-index:-1;
+  border:2px solid rgba(255,255,255,.86);
+  border-radius:48% 48% 44% 44% / 43% 43% 52% 52%;
+  background:
+    radial-gradient(circle at 35% 24%,rgba(255,255,255,.96),transparent 34%),
+    linear-gradient(150deg,rgba(255,230,241,.94),rgba(218,244,237,.92));
+  box-shadow:inset 0 -16px 30px rgba(115,87,118,.08),0 18px 34px rgba(71,54,74,.13);
+}
+.animal-avatar-emoji{
+  display:block;
+  margin-top:-19px;
+  font-size:150px;
+  line-height:1;
+  filter:drop-shadow(0 12px 11px rgba(55,42,58,.17));
+  transform-origin:center 75%;
+  animation:avatarBreathe 3.4s ease-in-out infinite;
+}
+.animal-avatar-name{
+  position:absolute;
+  left:50%;
+  bottom:36px;
+  transform:translateX(-50%);
+  min-width:92px;
+  padding:6px 12px;
+  border:1px solid rgba(255,255,255,.9);
+  border-radius:999px;
+  background:rgba(255,255,255,.84);
+  box-shadow:0 5px 14px rgba(70,54,72,.1);
+  color:#534754;
+  font-size:13px;
+  font-weight:900;
+  text-align:center;
+  white-space:nowrap;
+  backdrop-filter:blur(6px);
+}
+.animal-avatar-mood{
+  position:absolute;
+  right:31px;
+  top:48px;
+  display:grid;
+  width:46px;
+  height:46px;
+  place-items:center;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:#fff8fc;
+  box-shadow:0 7px 17px rgba(69,52,71,.15);
+  font-size:24px;
+  animation:moodBadgeFloat 2.1s ease-in-out infinite;
+}
+.animal-avatar-heart-eyes{
+  position:absolute;
+  left:50%;
+  top:102px;
+  display:none;
+  transform:translateX(-50%);
+  z-index:2;
+  color:#ff5d91;
+  font-size:33px;
+  letter-spacing:24px;
+  text-indent:24px;
+  filter:drop-shadow(0 3px 3px rgba(126,48,79,.18));
+  pointer-events:none;
+}
+.robotito.avatar-custom.heart-eyes .animal-avatar-heart-eyes,
+.robotito.avatar-custom.pet-happy .animal-avatar-heart-eyes{display:block;animation:heartEyesPop .42s ease both}
+.robotito.avatar-custom.mood-happy .animal-avatar-backdrop,
+.robotito.avatar-custom.mood-affectionate .animal-avatar-backdrop{background:linear-gradient(150deg,#ffe2ef,#def8ed)}
+.robotito.avatar-custom.mood-sad .animal-avatar-backdrop{background:linear-gradient(150deg,#e6efff,#eff4fb)}
+.robotito.avatar-custom.mood-angry .animal-avatar-backdrop{background:linear-gradient(150deg,#ffe0d8,#fff0e6)}
+.robotito.avatar-custom.mood-scared .animal-avatar-backdrop{background:linear-gradient(150deg,#eee4ff,#e6f6ff)}
+.robotito.avatar-custom.mood-sleepy .animal-avatar-emoji{animation:avatarSleep 2.6s ease-in-out infinite}
+.robotito.avatar-custom.mood-angry .animal-avatar-emoji{animation:avatarAngry .3s ease-in-out 5}
+.robotito.avatar-custom.mood-scared .animal-avatar-emoji{animation:avatarScared .18s ease-in-out infinite}
+.robotito.avatar-custom.poked .animal-avatar-emoji{animation:avatarPoke .42s ease 2}
+.robotito.avatar-custom.dancing .animal-avatar-emoji{animation:avatarDance .72s ease-in-out infinite}
+.robotito.avatar-custom.eating .animal-avatar-emoji{animation:avatarNibble .28s ease-in-out infinite alternate}
+.robotito.avatar-custom.pet-happy .animal-avatar-emoji{animation:avatarNuzzle .7s ease-in-out 2}
+.robotito.avatar-iguana .animal-avatar-emoji{
+  filter:hue-rotate(var(--iguana-hue,0deg)) saturate(1.28) drop-shadow(0 12px 11px rgba(55,42,58,.17));
+  transition:filter .5s ease;
+}
+.robotito.avatar-iguana.mood-calm{--iguana-hue:0deg}
+.robotito.avatar-iguana.mood-happy{--iguana-hue:42deg}
+.robotito.avatar-iguana.mood-sad{--iguana-hue:175deg}
+.robotito.avatar-iguana.mood-angry{--iguana-hue:305deg}
+.robotito.avatar-iguana.mood-scared{--iguana-hue:225deg}
+.robotito.avatar-iguana.mood-hungry{--iguana-hue:72deg}
+.robotito.avatar-iguana.mood-sleepy{--iguana-hue:145deg}
+.robotito.avatar-iguana.mood-curious{--iguana-hue:95deg}
+@keyframes avatarBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.025)}}
+@keyframes moodBadgeFloat{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-5px) rotate(4deg)}}
+@keyframes heartEyesPop{0%{opacity:0;transform:translateX(-50%) scale(.45)}70%{transform:translateX(-50%) scale(1.16)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes avatarSleep{0%,100%{transform:translateY(3px) rotate(0)}50%{transform:translateY(7px) rotate(2deg)}}
+@keyframes avatarAngry{0%,100%{transform:translateX(0)}50%{transform:translateX(4px) rotate(2deg)}}
+@keyframes avatarScared{0%,100%{transform:translateX(-2px) rotate(-1deg)}50%{transform:translateX(2px) rotate(1deg)}}
+@keyframes avatarPoke{30%{transform:translateX(9px) rotate(5deg) scale(.96)}70%{transform:translateX(-5px) rotate(-3deg)}}
+@keyframes avatarDance{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-13px) rotate(7deg)}}
+@keyframes avatarNibble{from{transform:translateY(0) scale(1)}to{transform:translateY(4px) scale(1.045)}}
+@keyframes avatarNuzzle{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(-7deg) translate(-5px,-6px) scale(1.04)}}
+@media(max-width:600px){
+  .language-gate{padding:9px}
+  .language-gate-card{padding:20px 14px;border-radius:22px;max-height:96vh}
+  .language-panda{font-size:58px}
+  .avatar-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;max-height:55vh}
+  .avatar-choice{min-height:94px;padding:8px 4px;border-radius:15px}
+  .avatar-choice-emoji{font-size:34px}
+  .avatar-choice-name{font-size:12px}
+}
+@media(max-width:350px){
+  .avatar-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  .animal-avatar-emoji,.animal-avatar-mood{animation:none!important}
+}
