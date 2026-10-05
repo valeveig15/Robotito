@@ -349,6 +349,19 @@
       return answer("La Luna gira alrededor de la Tierra.","The Moon orbits Earth.",lang);
     }
 
+    // Rainbow questions need explicit disambiguation: formation, cause of colors, or color list.
+    if(/\barcoiris\b|\barco iris\b|\brainbow\b/.test(t)){
+      if(/\b(cuales|que colores|colores tiene|lista de colores|what colors|which colors)\b/.test(t)){
+        return answer("Tradicionalmente se describen siete colores: rojo, naranja, amarillo, verde, azul, añil y violeta.","Traditionally, seven colors are named: red, orange, yellow, green, blue, indigo, and violet.",lang);
+      }
+      if(/\b(por que.*colores|de donde.*colores|why.*colors)\b/.test(t)){
+        return answer("Los colores aparecen porque cada color de la luz se desvía un poco diferente al atravesar las gotas de agua, separando la luz blanca del Sol.","The colors appear because each color of light bends by a slightly different amount in water droplets, separating white sunlight.",lang);
+      }
+      if(/\b(como.*(?:forma|forman|hace|hacen|aparece|aparecen)|por que.*(?:forma|aparece)|de donde.*sale|how.*form|why.*appear)\b/.test(t)){
+        return answer("Un arcoíris se forma cuando la luz del Sol entra en gotas de agua, se desvía, se refleja dentro de ellas y al salir se separa en distintos colores.","A rainbow forms when sunlight enters water droplets, bends, reflects inside them, and separates into different colors as it comes back out.",lang);
+      }
+    }
+
     // Animal sounds — intentionally forgiving because speech recognition often writes "ase" for "hace".
     const soundAnimal=findAnimal(t);
     const soundIntent=has(t,[
