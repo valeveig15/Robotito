@@ -48,11 +48,11 @@
     },
     {
       keys:["choque elastico","choque elástico","colision elastica","colisión elástica"],
-      answer:"En un choque elástico se conservan tanto la cantidad de movimiento total como la energía cinética total. En una dimensión tenés dos ecuaciones independientes: m₁v₁i + m₂v₂i = m₁v₁f + m₂v₂f y ½m₁v₁i² + ½m₂v₂i² = ½m₁v₁f² + ½m₂v₂f²."
+      answer:"Un choque elástico es aquel en el que se conserva la energía cinética del sistema."
     },
     {
       keys:["choque inelastico","choque inelástico","colision inelastica","colisión inelástica"],
-      answer:"En un choque inelástico se conserva la cantidad de movimiento total del sistema aislado, pero no la energía cinética total: parte se transforma en deformación, calor, sonido u otras formas de energía. Los cuerpos no necesariamente quedan unidos."
+      answer:"Un choque inelástico es aquel en el que no se conserva la energía cinética del sistema."
     },
     {
       keys:["totalmente inelastico","totalmente inelástico","perfectamente inelastico","perfectamente inelástico","quedan pegados","quedan unidos"],
