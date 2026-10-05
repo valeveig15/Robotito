@@ -1435,3 +1435,135 @@ button:active{transform:translateY(0) scale(.985)}
   .question-help-content{padding:4px 12px 13px}
   .question-example-list{grid-template-columns:1fr}
 }
+
+
+/* v18 — Robotito más detallado, tierno y expresivo */
+.robotito{
+  width:292px;
+  height:366px;
+  filter:saturate(1.025);
+}
+.mood-aura{
+  width:254px;
+  height:254px;
+  left:19px;
+  top:24px;
+  opacity:.54;
+  filter:blur(16px);
+  box-shadow:0 0 48px color-mix(in srgb,var(--aura) 42%,transparent);
+  animation:auraBreathe 4.2s ease-in-out infinite;
+}
+.body-fur,.head-fur{fill:url(#robotitoFur)!important}
+.body-group>.fur-black,
+.head-group>.fur-black,
+.eye-patch-svg{fill:url(#robotitoDarkFur)!important}
+.head-shape{filter:url(#robotitoSoftDepth)}
+.belly-fur{fill:#fffafd!important;stroke:rgba(185,163,184,.13);stroke-width:1.3}
+.belly-glow{fill:rgba(255,255,255,.72);filter:blur(5px)}
+.body-fur-shine,.head-fur-shine{
+  fill:none;
+  stroke:rgba(255,255,255,.96);
+  stroke-width:5;
+  stroke-linecap:round;
+  opacity:.72;
+}
+.chest-heart{
+  fill:#f6c7d4;
+  opacity:.22;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:chestHeart 4.2s ease-in-out infinite;
+}
+.tail-group{transform-origin:30% 70%;animation:tailWiggle 5.8s ease-in-out infinite}
+.tail-fur{fill:url(#robotitoDarkFur)}
+.tail-glint{fill:rgba(255,255,255,.07)}
+.inner-ear{
+  fill:#6f596d;
+  opacity:.45;
+  transform-box:fill-box;
+  transform-origin:center;
+}
+.inner-ear-left{animation:innerEarL 7.5s ease-in-out infinite}
+.inner-ear-right{animation:innerEarR 7.5s ease-in-out infinite}
+.fur-tuft{
+  fill:none;
+  stroke:#eee7ed;
+  stroke-width:5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  opacity:.95;
+}
+.tuft-one{animation:tuftSway 5s ease-in-out infinite;transform-origin:160px 60px}
+.tuft-two{stroke-width:3.5;opacity:.7}
+.patch-shine{
+  fill:none;
+  stroke:rgba(255,255,255,.10);
+  stroke-width:5;
+  stroke-linecap:round;
+}
+.iris-svg{fill:url(#robotitoIris)!important}
+.eye-star{fill:#fff;opacity:.86;animation:eyeTwinkle 3.6s ease-in-out infinite}
+.eye-right .eye-star{animation-delay:.38s}
+.eye-spark{filter:drop-shadow(0 0 2px rgba(255,255,255,.9))}
+.cheek{fill:url(#robotitoBlush)!important;opacity:.78}
+.freckles{fill:#d98aa4;opacity:.45}
+.nose-svg{fill:url(#robotitoDarkFur)!important;filter:drop-shadow(0 2px 1px rgba(45,30,45,.16))}
+.nose-shine{fill:rgba(255,255,255,.48)}
+.tongue-svg{fill:#f18fae}
+.tongue-shine{fill:none;stroke:rgba(255,255,255,.55);stroke-width:1.5;stroke-linecap:round}
+.paw-pad{fill:#765d72!important}
+.toe-bean{fill:#917388;opacity:.9}
+.ambient-sparkles{pointer-events:none;opacity:.78}
+.sparkle{fill:#f5c8dc;filter:drop-shadow(0 0 4px rgba(241,166,197,.45))}
+.sparkle-b{fill:#addfd4}
+.sparkle-dot{fill:#fff;stroke:#eec0d3;stroke-width:1}
+.sparkle-a{animation:sparkleFloat 4.8s ease-in-out infinite}
+.sparkle-b{animation:sparkleFloat 5.6s 1.1s ease-in-out infinite}
+.dot-a{animation:sparklePulse 3.9s .4s ease-in-out infinite}
+.dot-b{animation:sparklePulse 4.5s 1.6s ease-in-out infinite}
+.dot-c{animation:sparklePulse 4.1s 2.3s ease-in-out infinite}
+.robotito:not(.dancing):not(.hugging):not(.highfive):not(.sleeping):hover .arm-right{
+  animation:tinyHello .72s ease-in-out 2;
+}
+.ground-shadow{animation:shadowBreathe 3.8s ease-in-out infinite}
+
+@keyframes auraBreathe{
+  0%,100%{transform:scale(.96);opacity:.46}
+  50%{transform:scale(1.04);opacity:.6}
+}
+@keyframes chestHeart{
+  0%,42%,100%{transform:scale(.94);opacity:.16}
+  50%{transform:scale(1.08);opacity:.28}
+  58%{transform:scale(1);opacity:.2}
+}
+@keyframes tailWiggle{
+  0%,70%,100%{transform:rotate(0)}
+  77%{transform:rotate(10deg)}
+  84%{transform:rotate(-7deg)}
+  91%{transform:rotate(4deg)}
+}
+@keyframes innerEarL{
+  0%,54%,66%,100%{transform:rotate(0)}
+  58%{transform:rotate(-4deg)}
+  62%{transform:rotate(2deg)}
+}
+@keyframes innerEarR{
+  0%,54%,66%,100%{transform:rotate(0)}
+  58%{transform:rotate(4deg)}
+  62%{transform:rotate(-2deg)}
+}
+@keyframes tuftSway{0%,100%{transform:rotate(0)}50%{transform:rotate(2deg)}}
+@keyframes eyeTwinkle{0%,38%,48%,100%{opacity:.82;transform:scale(1)}43%{opacity:1;transform:scale(1.28)}}
+@keyframes sparkleFloat{0%,100%{opacity:.28;transform:translateY(4px) scale(.82) rotate(0)}50%{opacity:1;transform:translateY(-7px) scale(1.1) rotate(18deg)}}
+@keyframes sparklePulse{0%,100%{opacity:.25;transform:scale(.75)}50%{opacity:.92;transform:scale(1.18)}}
+@keyframes tinyHello{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(-50deg) translate(-4px,-10px)}}
+@keyframes shadowBreathe{0%,100%{transform:translateX(-50%) scaleX(.96);opacity:.82}50%{transform:translateX(-50%) scaleX(1.04);opacity:1}}
+
+@media (max-width:720px){
+  .robotito{width:282px;height:354px}
+  .ambient-sparkles{opacity:.62}
+}
+@media (prefers-reduced-motion:reduce){
+  .mood-aura,.chest-heart,.tail-group,.inner-ear,.fur-tuft,.eye-star,
+  .sparkle,.sparkle-dot,.ground-shadow{animation:none!important}
+}
