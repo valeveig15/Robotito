@@ -303,7 +303,8 @@
   }
 
   function microMotion(){
-    if(document.hidden||!window.robot||!window.state)return;
+    if(document.hidden)return;
+    if(typeof state==="undefined"||typeof robot==="undefined")return;
     if(state.classMode||state.sleeping||state.speaking||state.enrollmentActive)return;
     if(Math.random()>.38)return;
     const moves=["micro-curious","micro-stretch","micro-shy","micro-bounce"];
