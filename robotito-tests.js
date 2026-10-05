@@ -12,6 +12,7 @@
     const math=window.ROBOTITO_SPOKEN_MATH;
     const circles=window.ROBOTITO_CIRCLE_MATH;
     const router=window.ROBOTITO_ROUTER;
+    const silence=window.ROBOTITO_SILENCE;
 
     if(math){
       results.push(same(math.solve("20 por ciento de 50","es").value,10,"20% de 50"));
@@ -40,6 +41,14 @@
       results.push(same(router.classify("¿Qué objeto es esto?").intent,"object","ruta objeto"));
       results.push(same(router.shapeAnswer("¿Qué es la gravedad?","La gravedad es una interacción física. Además tiene múltiples efectos y aplicaciones."),"La gravedad es una interacción física.","recorta definiciones al alcance pedido"));
     }else results.push(truthy(false,"router loaded"));
+
+    if(silence){
+      results.push(same(silence.parseDuration("callate"),25000,"silencio predeterminado de 25 segundos"));
+      results.push(same(silence.parseDuration("callate por 10 segundos"),10000,"silencio en segundos"));
+      results.push(same(silence.parseDuration("callate durante 2 minutos"),120000,"silencio en minutos"));
+      results.push(same(silence.parseDuration("callate durante media hora"),1800000,"silencio de media hora"));
+      results.push(same(silence.parseDuration("callate hasta que te diga"),Infinity,"silencio hasta nuevo aviso"));
+    }else results.push(truthy(false,"silence controls loaded"));
 
     if(window.ROBOTITO_PRESIDENTS){
       const p=window.ROBOTITO_PRESIDENTS.parseQuestion("¿Quién era presidente de Uruguay en 2010?");
