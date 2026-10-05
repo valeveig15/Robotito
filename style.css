@@ -837,3 +837,19 @@ body.mode-night .class-source-card{
   transition:width .22s ease;
 }
 body.mode-night .enroll-progress{background:rgba(255,255,255,.12)}
+
+
+/* v10.3 — class transcription verification */
+.class-web-check{margin:10px 0 4px}
+.fact-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 7px;border-radius:999px;
+  font-size:10px;font-weight:850;
+  background:#edf7f2;color:#42685b;
+}
+.fact-badge.pending{background:#f5f1e8;color:#776a49}
+.fact-badge.local{background:#f3eef8;color:#675975}
+.fact-sources{
+  margin-top:5px;font-size:10px;color:var(--muted);
+}
+.fact-sources a{color:inherit;text-decoration:underline}
