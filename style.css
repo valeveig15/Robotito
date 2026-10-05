@@ -447,3 +447,7 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
 @keyframes objectPop{from{opacity:0;transform:scale(.7) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
 
 .person-row .bond-detail{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* v6.1 — only one shadow, on the floor */
+.panda-svg{filter:none!important}
+.ear-svg{filter:none!important}
