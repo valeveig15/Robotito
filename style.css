@@ -1741,3 +1741,87 @@ body.layout-resizing *{cursor:col-resize!important}
   65%{transform:translateY(4px) scale(.96)}
   100%{transform:translateY(4px) scale(1)}
 }
+
+
+/* v23 — controles móviles sin superposición */
+.world-controls{display:contents}
+@media(max-width:900px){
+  .world{
+    min-height:650px;
+    padding-bottom:150px;
+  }
+  .world-controls{
+    position:absolute;
+    left:10px;
+    right:10px;
+    bottom:max(10px,env(safe-area-inset-bottom));
+    z-index:20;
+    display:grid;
+    gap:8px;
+    padding:8px;
+    border:1px solid rgba(78,59,80,.10);
+    border-radius:18px;
+    background:rgba(255,251,254,.84);
+    box-shadow:0 10px 28px rgba(74,55,76,.10);
+    backdrop-filter:blur(12px);
+  }
+  .world-controls .hud{
+    position:static;
+    display:flex;
+    flex-wrap:nowrap;
+    gap:6px;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scrollbar-width:thin;
+    padding:0 0 3px;
+  }
+  .world-controls .hud-pill{
+    flex:0 0 auto;
+    white-space:nowrap;
+    padding:7px 9px;
+    font-size:10px;
+    background:rgba(255,255,255,.92);
+  }
+  .world-controls .quick-actions{
+    position:static;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:6px;
+  }
+  .world-controls .quick-actions button{
+    min-width:0;
+    min-height:40px;
+    padding:7px 5px;
+    font-size:10px;
+    line-height:1.15;
+    white-space:normal;
+  }
+  .robotito{top:39%}
+  .speech-bubble{top:5%;max-width:88%}
+}
+@media(max-width:560px){
+  .world{min-height:690px;padding-bottom:190px}
+  .world-controls .quick-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .world-controls .quick-actions button{font-size:10px;min-height:39px}
+  .robotito{top:36%;transform:translate(-50%,-50%) scale(.78)}
+}
+@media(max-width:380px){
+  .world{min-height:710px}
+  .world-controls{left:7px;right:7px;padding:7px}
+  .world-controls .quick-actions button{font-size:9.5px;padding:6px 3px}
+  .robotito{transform:translate(-50%,-50%) scale(.72)}
+}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  .layout{grid-template-columns:1fr!important}
+  .layout-resizer{display:none!important}
+  .panel{max-height:none}
+  .world{min-height:520px;padding-bottom:104px}
+  .world-controls .quick-actions{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+  }
+  .world-controls .quick-actions button{flex:0 0 102px}
+  .robotito{top:38%;transform:translate(-50%,-50%) scale(.64)}
+}
