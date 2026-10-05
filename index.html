@@ -614,8 +614,8 @@
 
       <section class="tabpage" id="tab-books">
         <div class="card">
-          <h2>Goodreads</h2>
-          <p class="muted">Importá el CSV de tu biblioteca para evitar recomendaciones repetidas y buscar entre tus pendientes.</p>
+          <h2>Tu biblioteca (opcional)</h2>
+          <p class="muted"><strong>No necesitás Goodreads para recibir recomendaciones.</strong> Si querés, podés importar el CSV únicamente para que Robotito conozca tus lecturas, evite repetirlas y también busque entre tus pendientes.</p>
           <label class="file-label">
             Importar CSV
             <input id="goodreadsFile" type="file" accept=".csv,text/csv" />
@@ -638,14 +638,16 @@
         </div>
         <div class="card">
           <h2>¿Qué querés leer?</h2>
-          <label>Pedido
-            <textarea id="bookPrompt" rows="3" placeholder="Ej. fantasía oscura con romance y final feliz"></textarea>
+          <p class="muted">Describilo con tus palabras. Podés contarle el género, el tono, los temas, la extensión, la edad del lector, un libro parecido y también qué cosas querés evitar.</p>
+          <label>Descripción
+            <textarea id="bookPrompt" rows="4" placeholder="Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante."></textarea>
           </label>
           <div class="book-options">
             <label class="check"><input id="onlyOwned" type="checkbox" /> Solo de mi biblioteca</label>
             <label class="check"><input id="excludeRead" type="checkbox" checked /> Evitar leídos</label>
           </div>
-          <button id="recommendBtn" type="button" class="primary full">Recomendarme un libro</button>
+          <button id="recommendBtn" type="button" class="primary full">Buscar recomendaciones</button>
+          <p class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
         </div>
         <div id="bookResults" class="book-results"></div>
       </section>
