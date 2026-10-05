@@ -16,6 +16,7 @@
     const commonKnowledge=window.ROBOTITO_COMMON_KNOWLEDGE;
     const webKnowledge=window.ROBOTITO_WEB_KNOWLEDGE;
     const battery=window.ROBOTITO_BATTERY;
+    const avatars=window.ROBOTITO_AVATARS;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
@@ -75,6 +76,14 @@
       results.push(same(battery.bucket(4),5,"mantiene alerta por debajo de 5%"));
       results.push(truthy(battery.message(5,"es").includes("no me quiero apagar"),"mensaje crítico expresa miedo a apagarse"));
     }else results.push(truthy(false,"battery integration loaded"));
+
+    if(avatars){
+      const ids=avatars.list.map(item=>item.id);
+      results.push(same(avatars.list.length,46,"ofrece 46 avatares únicos"));
+      results.push(same(new Set(ids).size,ids.length,"no repite elefante ni ratón"));
+      results.push(same(avatars.byId("iguana").emoji,"🦎","incluye iguana"));
+      results.push(same(avatars.byId("missing").id,"panda","usa panda como avatar seguro"));
+    }else results.push(truthy(false,"avatar catalog loaded"));
 
     if(videoMaterial){
       results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de URL de YouTube"));
