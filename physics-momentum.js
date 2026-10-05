@@ -144,16 +144,16 @@
       /(-?\d+(?:[.,]\d+)?)\s*kg/
     ]);
     const vi=extractNumber(t,[
-      /(?:vi|v inicial|velocidad inicial|parte a|inicialmente)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
+      /(?:\bvi\b|v inicial|velocidad inicial|parte a|inicialmente)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
     ]);
     const vf=extractNumber(t,[
-      /(?:vf|v final|velocidad final|termina a|queda a)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
+      /(?:\bvf\b|v final|velocidad final|termina a|queda a)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
     ]);
     const v1=extractNumber(t,[
-      /(?:v1|v 1|velocidad 1|velocidad del primero|primer cuerpo)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
+      /(?:\bv1\b|v 1|velocidad 1|velocidad del primero|primer cuerpo)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
     ]);
     const v2=extractNumber(t,[
-      /(?:v2|v 2|velocidad 2|velocidad del segundo|segundo cuerpo)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
+      /(?:\bv2\b|v 2|velocidad 2|velocidad del segundo|segundo cuerpo)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)?/
     ]);
     const force=extractNumber(t,[
       /(?:fuerza|f neta|fuerza neta|f)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*n\b/,
