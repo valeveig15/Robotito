@@ -1274,6 +1274,13 @@ function parseSpokenNumber(s){
   return Number.isFinite(n)?n:null;
 }
 function answerArithmetic(rawText,lang="es"){
+  const advanced=window.ROBOTITO_SPOKEN_MATH?.solve?.(rawText,lang);
+  if(advanced?.handled){
+    say(advanced.text,4200,lang);
+    return true;
+  }
+
+  // Legacy binary-operation fallback.
   let s=normalizeText(rawText)
     .replace(/cuanto es|cuanto da|cuanto seria|cuanto son|calculame|calcula|resolve|resolver|what is|what's|calculate|work out/g," ")
     .replace(/dividido entre|dividido por|dividido|divided by|over/g," / ")
