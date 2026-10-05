@@ -2459,7 +2459,7 @@ function handleSocialSpeech(text){
   const name=known?", "+known:"";
   const enName=known?", "+known:"";
 
-  if(/\b(achu|achis|achoo|atchoo|atishoo)/.test(text)){
+  if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){
     const lang=responseLanguage();
     sayInLanguage(lang==="en"?"Bless you!":lang==="pt"?"Saúde!":"¡Salud!",lang);
     return true;
