@@ -57,57 +57,68 @@
     {
       test:/\b(?:los\s+)?humanos?\s+(?:tienen?|tenemos?)\s+(?:un|uno|una|1)\s+ojos?\b/i,
       corrected:"Los humanos normalmente tienen dos ojos.",
-      query:"ser humano dos ojos anatomía"
+      query:"ser humano dos ojos anatomía",
+      support:[["dos","ojos"],["2","ojos"]]
     },
     {
       test:/\b(?:un\s+)?adulto\s+(?:tiene|tienen)\s+(?!206\b)\d+\s+huesos\b/i,
       corrected:"Un adulto suele tener 206 huesos.",
-      query:"esqueleto humano adulto 206 huesos"
+      query:"esqueleto humano adulto 206 huesos",
+      support:[["206","huesos"]]
     },
     {
       test:/\b(?:una\s+)?semana\s+(?:tiene|son)\s+(?!7\b)\d+\s+dias?\b/i,
       corrected:"Una semana tiene siete días.",
-      query:"semana siete días"
+      query:"semana siete días",
+      support:[["siete","dias"],["7","dias"]]
     },
     {
       test:/\b(?:un\s+)?ano\s+(?:tiene|son)\s+(?!12\b)\d+\s+meses\b/i,
       corrected:"Un año tiene doce meses.",
-      query:"año doce meses"
+      query:"año doce meses",
+      support:[["doce","meses"],["12","meses"]]
     },
     {
       test:/\b(?:una\s+)?hora\s+(?:tiene|son)\s+(?!60\b)\d+\s+minutos\b/i,
       corrected:"Una hora tiene 60 minutos.",
-      query:"hora 60 minutos"
+      query:"hora 60 minutos",
+      support:[["60","minutos"]]
     },
     {
       test:/\b(?:un\s+)?minuto\s+(?:tiene|son)\s+(?!60\b)\d+\s+segundos\b/i,
       corrected:"Un minuto tiene 60 segundos.",
-      query:"minuto 60 segundos"
+      query:"minuto 60 segundos",
+      support:[["60","segundos"]]
     },
     {
       test:/\b(?:el\s+)?corazon\s+humano\s+(?:tiene|posee)\s+(?!4\b)\d+\s+(?:camaras|cavidades)\b/i,
       corrected:"El corazón humano tiene cuatro cámaras: dos aurículas y dos ventrículos.",
-      query:"corazón humano cuatro cámaras aurículas ventrículos"
+      query:"corazón humano cuatro cámaras aurículas ventrículos",
+      support:[["cuatro","camaras"],["4","camaras"],["dos","auriculas","dos","ventriculos"]]
     },
     {
       test:/\b(?:un\s+)?pulpo\s+(?:tiene|posee)\s+(?!3\b)\d+\s+corazones\b/i,
       corrected:"Un pulpo tiene tres corazones.",
-      query:"pulpo tres corazones"
+      query:"pulpo tres corazones",
+      support:[["tres","corazones"],["3","corazones"]]
     },
     {
       test:/\b(?:los\s+)?insectos\s+(?:tienen|poseen)\s+(?!6\b)\d+\s+patas\b/i,
       corrected:"Los insectos tienen seis patas.",
-      query:"insectos seis patas"
+      query:"insectos seis patas",
+      support:[["seis","patas"],["6","patas"]]
     },
     {
       test:/\b(?:las\s+)?aranas\s+(?:tienen|poseen)\s+(?!8\b)\d+\s+patas\b/i,
       corrected:"Las arañas tienen ocho patas.",
-      query:"arañas ocho patas"
+      query:"arañas ocho patas",
+      support:[["ocho","patas"],["8","patas"]]
     },
     {
       test:/\b(?:el\s+)?sistema\s+solar\s+(?:tiene|posee)\s+(?!8\b)\d+\s+planetas\b/i,
       corrected:"El Sistema Solar tiene ocho planetas.",
-      query:"Sistema Solar ocho planetas"
+      query:"Sistema Solar ocho planetas",
+      support:[["ocho","planetas"],["8","planetas"]]
     }
   ];
 
@@ -149,11 +160,13 @@
           const ej=await er.json();
           const page=Object.values(ej?.query?.pages||{})[0];
           const extract=String(page?.extract||"").replace(/\s+/g," ").trim().slice(0,1800);
-          if(extract){
+          const snippet=String(hit.snippet||"").replace(/<[^>]+>/g," ").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,"&").replace(/\s+/g," ").trim();
+          if(extract||snippet){
             evidence.push({
               title,
               url:"https://es.wikipedia.org/wiki/"+encodeURIComponent(title.replace(/ /g,"_")),
-              extract
+              extract,
+              snippet
             });
           }
         }catch{}
@@ -166,8 +179,12 @@
   }
   function evidenceSupportsProposal(proposal,evidence){
     if(!proposal||!evidence.length)return false;
+    const body=normalizeText(evidence.map(e=>(e.snippet||"")+" "+(e.extract||"")).join(" "));
+    const rule=FACT_RULES.find(r=>r.corrected===proposal.corrected);
+    if(rule?.support?.length){
+      return rule.support.some(group=>group.every(term=>body.includes(normalizeText(term))));
+    }
     const keyWords=contentWords(proposal.corrected).filter(w=>!/^(humanos|adulto|tiene|suele|sistema)$/.test(w));
-    const body=normalizeText(evidence.map(e=>e.extract).join(" "));
     if(!keyWords.length)return false;
     const hits=keyWords.filter(w=>body.includes(w)).length;
     return hits>=Math.min(2,keyWords.length);
