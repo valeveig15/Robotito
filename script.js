@@ -2570,6 +2570,25 @@ async function handleSpeech(rawText){
     return;
   }
   const detectedLang=responseLanguage(rawText);
+
+  // Questions grounded in saved classes get first chance before generic knowledge,
+  // drawings or object reactions. This prevents a class question from falling into
+  // a decorative fallback instead of using the transcript.
+  const hasClassMemory=state.classLines.length||state.academicMaterials.length;
+  const explicitClassReference=/(clase|transcripcion|transcripción|apunte|apuntes|profesor|profesora|profe|dijo|dijeron|explico|explicó|vimos|estudiamos|aprendimos|material cargado|segun la clase|según la clase)/.test(text);
+  if(hasClassMemory && looksLikeClassQuestion(interpreted)){
+    robot.classList.add("thinking");
+    setTimeout(()=>robot.classList.remove("thinking"),900);
+    const answered=await answerClassQuestion(interpreted,{speak:true,render:true,announceMissing:false});
+    if(answered)return;
+  }
+  if(hasClassMemory && explicitClassReference){
+    const root=$("#classAnswer");
+    if(root)root.innerHTML='<div class="study-chip">No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
+    say("No encontré evidencia suficiente en las transcripciones para contestar eso.",3800);
+    return;
+  }
+
   if(drawRequestedThing(interpreted,detectedLang))return;
   if(showRequestedObject(interpreted,detectedLang))return;
   if(await handleSayInLanguageCommand(interpreted))return;
@@ -2643,15 +2662,6 @@ async function handleSpeech(rawText){
     return;
   }
 
-  if((state.classLines.length||state.academicMaterials.length) && /^(que|como|por que|porque|cual|cuando|donde|explica|define)/.test(text)){
-    const found=answerFromClass(interpreted);
-    if(found){
-      const answer=await composeAcademicAnswer(interpreted,found.evidence);
-      renderAcademicAnswer(interpreted,answer,found.evidence);
-      say(spokenAcademicAnswer(interpreted,answer,found.evidence).slice(0,520),6500);
-      return;
-    }
-  }
   const nice=["te quiero","te amo","sos lindo","sos tierno","gracias robotito","que lindo","hermoso","precioso"];
   const mean=["te odio","sos feo","callate","tonto","molesto","idiota"];
 
