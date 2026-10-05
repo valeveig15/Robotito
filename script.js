@@ -33,7 +33,7 @@ const state = {
   speechRestartTimer: null,
   lastSpeechStartAt: 0,
   voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")===null
-    ? !/iPhone|iPad|iPod/i.test(navigator.userAgent)
+    ? !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
   voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
   voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
@@ -157,7 +157,12 @@ function discardRecognition(){
 function restartRecognitionAfterSpeech(){
   if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
-  state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?650:300);
+  if(isMobileSpeech()){
+    setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+    $("#mobileListenBtn")?.classList.remove("hidden");
+    return;
+  }
+  state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),300);
 }
 function speakResponse(text){
   if(!state.voiceEnabled||!("speechSynthesis" in window))return;
@@ -339,28 +344,48 @@ async function startSenses(){
     toast("Elegí Español o English primero.");
     return;
   }
-  $("#systemStatus").textContent="Pidiendo permisos…";
+  const mobile=isMobileSpeech();
+  $("#systemStatus").textContent=mobile?"Activando cámara…":"Pidiendo permisos…";
   try{
     state.stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},
-      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+      audio:mobile?false:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
     });
     camera.srcObject=state.stream;
     await camera.play();
-    await loadFaceModels();
-    setupHands();
-    setupAudio(state.stream);
     state.started=true;
-    setupSpeechRecognition(true);
+
+    // In mobile browsers, let SpeechRecognition own the microphone.
+    // Running getUserMedia(audio) and SpeechRecognition together can block one another.
+    if(!mobile) setupAudio(state.stream);
+
     $("#startBtn").textContent="Sentidos activos";
     $("#startBtn").disabled=true;
-    $("#systemStatus").textContent="Cámara y micrófono activos.";
+
+    if(mobile){
+      $("#mobileListenBtn")?.classList.remove("hidden");
+      $("#mobileListenBtn").textContent=state.languageMode==="en"?"🎙 Tap to speak":"🎙 Tocá para hablar";
+      setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+      $("#systemStatus").textContent=state.languageMode==="en"
+        ?"Camera active. Tap the microphone button whenever you want to speak."
+        :"Cámara activa. Tocá el botón del micrófono cada vez que quieras hablar.";
+    }else{
+      setupSpeechRecognition(true);
+      $("#systemStatus").textContent="Cámara y micrófono activos.";
+    }
+
+    // Load heavier vision models after the basic mobile interaction is already ready.
+    loadFaceModels().then(()=>{
+      setupHands();
+      detectLoop();
+    }).catch(err=>console.warn("face models",err));
+
     say(state.languageMode==="en"?"I'm awake.":"Ya estoy despierto.");
-    detectLoop();
   }catch(err){
     console.error(err);
-    $("#systemStatus").textContent="No pude activar cámara o micrófono.";
-    toast("Necesito permiso de cámara y micrófono.");
+    state.started=false;
+    $("#systemStatus").textContent="No pude activar la cámara.";
+    toast(state.languageMode==="en"?"I need camera permission.":"Necesito permiso de cámara.");
   }
 }
 
@@ -589,7 +614,9 @@ function createSpeechRecognition(){
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){
       state.speechBlocked=true;
       setListenState("bloqueado","problem");
-      $("#transcript").textContent="El navegador bloqueó el micrófono/reconocimiento. Revisá los permisos y tocá “Escuchar ahora”.";
+      $("#transcript").textContent=state.languageMode==="en"
+        ?"The browser blocked speech recognition. Check microphone permission and tap “Tap to speak”."
+        :"El navegador bloqueó el reconocimiento de voz. Revisá el permiso del micrófono y tocá “Tocá para hablar”.";
       return;
     }
     if(e.error==="audio-capture"){
@@ -605,15 +632,24 @@ function createSpeechRecognition(){
   r.onend=()=>{
     if(state.recognition===r)state.recognition=null;
     if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
+    if(isMobileSpeech()){
+      setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+      $("#mobileListenBtn")?.classList.remove("hidden");
+      return;
+    }
     setListenState("reiniciando");
     clearTimeout(state.speechRestartTimer);
-    state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isMobileSpeech()?350:220);
+    state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),220);
   };
   return r;
 }
 
 function startListeningCycle(userGesture=false){
   if(!state.started||state.speaking||!state.recognitionWanted)return;
+  if(isMobileSpeech()&&!userGesture){
+    setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+    return;
+  }
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
@@ -623,6 +659,7 @@ function startListeningCycle(userGesture=false){
   }
   state.recognition=r;
   try{
+    setListenState(state.languageMode==="en"?"starting…":"iniciando…");
     r.start();
   }catch(e){
     console.warn("speech start",e);
@@ -2281,14 +2318,58 @@ function formatBirthday(iso){
   const m=String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m?`${m[3]}/${m[2]}/${m[1]}`:"";
 }
+async function captureMobileVoicePrints(){
+  discardRecognition();
+  let stream=null,ctx=null;
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:true},video:false});
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    await ctx.resume();
+    const source=ctx.createMediaStreamSource(stream);
+    const analyser=ctx.createAnalyser();
+    analyser.fftSize=1024;
+    source.connect(analyser);
+    const freq=new Uint8Array(analyser.frequencyBinCount);
+    const time=new Uint8Array(analyser.fftSize);
+    const vectors=[];
+    const start=Date.now();
+    while(Date.now()-start<5200){
+      analyser.getByteFrequencyData(freq);
+      analyser.getByteTimeDomainData(time);
+      let sum=0;for(const v of time){const x=(v-128)/128;sum+=x*x;}
+      const rms=Math.sqrt(sum/time.length);
+      if(rms>.04)vectors.push(makeVoicePrint(freq,time,ctx.sampleRate));
+      await new Promise(r=>setTimeout(r,95));
+    }
+    if(vectors.length<10)return null;
+    const groups=[],size=Math.max(4,Math.floor(vectors.length/3));
+    for(let i=0;i<vectors.length;i+=size){
+      const avg=averageVoiceVectors(vectors.slice(i,i+size));
+      if(avg)groups.push(avg);
+    }
+    return groups.slice(0,4);
+  }catch(e){
+    console.warn("mobile voice enrollment",e);
+    return null;
+  }finally{
+    stream?.getTracks().forEach(t=>t.stop());
+    try{await ctx?.close();}catch{}
+    setListenState(state.languageMode==="en"?"tap to speak":"tocá para hablar");
+  }
+}
+
 async function captureEnrollmentVoice(){
+  $("#enrollStatus").textContent=state.languageMode==="en"
+    ?"Now speak naturally for a few seconds so I can learn your voice…"
+    :"Ahora hablá durante unos segundos para que aprenda tu voz…";
+  if(isMobileSpeech()){
+    return await captureMobileVoicePrints();
+  }
   const start=Date.now();
-  $("#enrollStatus").textContent="Ahora hablá durante unos segundos. Mejor si decís dos o tres frases naturales…";
   say("Ahora hablá unos segundos. Decí dos o tres frases naturales para que aprenda mejor tu voz.",5200);
   await new Promise(r=>setTimeout(r,5600));
   const vectors=state.recentVoicePrints.filter(x=>x.t>=start&&x.rms>.045).map(x=>x.vector);
   if(vectors.length<10)return null;
-  // Divide the recording in several averaged examples instead of one single voice sample.
   const groups=[];
   const size=Math.max(3,Math.floor(vectors.length/3));
   for(let i=0;i<vectors.length;i+=size){
@@ -2665,9 +2746,12 @@ function ambientMood(){
 function bindUI(){
   $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#startBtn").addEventListener("click",startSenses);
-  $("#mobileListenBtn")?.addEventListener("click",()=>{
+  $("#mobileListenBtn")?.addEventListener("pointerdown",e=>{
+    e.preventDefault();
     state.speechBlocked=false;
     state.recognitionWanted=true;
+    if("speechSynthesis" in window)speechSynthesis.cancel();
+    state.speaking=false;
     startListeningCycle(true);
   });
   $("#languageMode")?.addEventListener("change",e=>setLanguageMode(e.target.value));
