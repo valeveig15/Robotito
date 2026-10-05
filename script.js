@@ -158,7 +158,7 @@ function discardRecognition(){
 function restartRecognitionAfterSpeech(){
   if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
-  $("#mobileListenBtn")?.classList.add("hidden");
+  
   setListenState(state.languageMode==="en"?"reconnecting…":"reconectando…");
   state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),isIOSSpeech()?850:420);
 }
@@ -416,7 +416,7 @@ async function startSenses(){
     if(mobile){
       discardRecognition();
       state.recognitionWanted=false;
-      $("#mobileListenBtn")?.classList.add("hidden");
+      
       $("#mobileSpeechHint")?.classList.remove("hidden");
       $("#mobileSpeechHint").textContent=state.languageMode==="en"
         ?"Robotito uses continuous local speech recognition on mobile. The first load may take a little longer while the speech model is prepared."
@@ -681,7 +681,7 @@ function createSpeechRecognition(){
     state.lastSpeechStartAt=Date.now();
     state.speechRetryCount=0;
     setListenState(state.languageMode==="en"?"listening":"escuchando","listening");
-    $("#mobileListenBtn")?.classList.add("hidden");
+    
   };
 
   r.onspeechstart=()=>setListenState(state.languageMode==="en"?"I hear you":"te escucho","listening");
@@ -706,8 +706,8 @@ function createSpeechRecognition(){
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){
       state.speechBlocked=true;
       setListenState(state.languageMode==="en"?"microphone blocked":"micrófono bloqueado","problem");
-      $("#mobileListenBtn")?.classList.remove("hidden");
-      $("#mobileListenBtn").textContent=state.languageMode==="en"?"🎙 Retry microphone":"🎙 Reintentar micrófono";
+      
+      
       $("#transcript").textContent=state.languageMode==="en"
         ?"Microphone permission is blocked. Enable microphone permission for this site and retry."
         :"El permiso del micrófono está bloqueado. Habilitá el micrófono para este sitio y reintentá.";
@@ -755,8 +755,8 @@ function startListeningCycle(userGesture=false){
     state.speechRetryCount++;
     setListenState(state.languageMode==="en"?"recovering…":"recuperando…","problem");
     if(state.speechRetryCount>=4){
-      $("#mobileListenBtn")?.classList.remove("hidden");
-      $("#mobileListenBtn").textContent=state.languageMode==="en"?"🎙 Retry microphone":"🎙 Reintentar micrófono";
+      
+      
     }else if(state.started&&!state.speechBlocked){
       clearTimeout(state.speechRestartTimer);
       state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),600+state.speechRetryCount*250);
@@ -768,7 +768,7 @@ function setupSpeechRecognition(userGesture=false){
   state.recognitionWanted=true;
   state.speechBlocked=false;
   if(isMobileSpeech()){
-    $("#mobileListenBtn")?.classList.add("hidden");
+    
     $("#mobileSpeechHint")?.classList.remove("hidden");
   }
   startListeningCycle(userGesture);
@@ -823,9 +823,18 @@ function setLanguageMode(mode){
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
 }
 function chooseStartupLanguage(mode){
+  if(mode!=="es"&&mode!=="en")return;
   setLanguageMode(mode);
-  $("#languageGate")?.classList.add("hidden");
+  const gate=$("#languageGate");
+  if(gate){
+    gate.classList.add("hidden");
+    gate.hidden=true;
+    gate.setAttribute("aria-hidden","true");
+    gate.style.display="none";
+  }
+  document.documentElement.lang=mode==="en"?"en":"es";
   $("#startBtn").disabled=false;
+  $("#startBtn").textContent=mode==="en"?"Wake up senses":"Despertar sentidos";
   $("#statusText").textContent=mode==="en"?"Robotito is ready to wake up.":"Robotito está listo para despertar.";
 }
 function handleLanguageCommand(text){
@@ -2820,28 +2829,14 @@ function ambientMood(){
 function bindUI(){
   $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#startBtn").addEventListener("click",startSenses);
-  $("#mobileListenBtn")?.addEventListener("click",async()=>{
-    state.speechBlocked=false;
-    state.speechRetryCount=0;
-    if("speechSynthesis" in window)speechSynthesis.cancel();
-    state.speaking=false;
-    $("#mobileListenBtn")?.classList.add("hidden");
-    if(isMobileSpeech()&&state.stream&&window.RobotitoLocalASR){
-      try{
-        await window.RobotitoLocalASR.stop();
-        await window.RobotitoLocalASR.start({
-          stream:state.stream,
-          lang:state.languageMode,
-          onTranscript:text=>{updateDetectedLanguage(text);processSpeechResult(text);},
-          statusCallback:(text,kind)=>setListenState(text,kind)
-        });
-      }catch(e){console.warn("local ASR recovery",e);}
-    }else{
-      state.recognitionWanted=true;
-      startListeningCycle(true);
-    }
+  $("#languageMode")?.addEventListener("change",e=>{
+    const mode=e.target.value;
+    setLanguageMode(mode);
+    document.documentElement.lang=mode==="en"?"en":"es";
+    $("#startBtn").textContent=state.started
+      ?(mode==="en"?"Senses active":"Sentidos activos")
+      :(mode==="en"?"Wake up senses":"Despertar sentidos");
   });
-  $("#languageMode")?.addEventListener("change",e=>setLanguageMode(e.target.value));
   $("#voiceEnabled")?.addEventListener("change",e=>{
     state.voiceEnabled=e.target.checked;
     localStorage.setItem("robotito.voiceEnabled.v1",String(state.voiceEnabled));
@@ -2962,7 +2957,13 @@ function init(){
   renderAcademicMaterials();
   summarizeClass();
   $("#startBtn").disabled=true;
-  $("#languageGate")?.classList.remove("hidden");
+  const gate=$("#languageGate");
+  if(gate){
+    gate.hidden=false;
+    gate.removeAttribute("aria-hidden");
+    gate.style.display="";
+    gate.classList.remove("hidden");
+  }
   if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
