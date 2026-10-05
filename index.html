@@ -415,6 +415,33 @@
           </div>
         </div>
 
+        <dialog id="classSessionEditor" class="class-session-editor" aria-labelledby="classSessionEditorTitle">
+          <form id="classSessionEditorForm" method="dialog">
+            <div class="class-editor-head">
+              <div>
+                <span class="class-editor-kicker">CORREGIR CLASE GUARDADA</span>
+                <h2 id="classSessionEditorTitle">Editar datos de la clase</h2>
+              </div>
+              <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar">×</button>
+            </div>
+            <p class="muted">Podés corregir cómo quedó agendada sin perder la transcripción, el resumen ni la grabación.</p>
+            <input id="editClassSessionId" type="hidden" />
+            <label>Materia
+              <input id="editClassSubject" type="text" required placeholder="Ej. Física" />
+            </label>
+            <label>Tema
+              <input id="editClassTopic" type="text" required placeholder="Ej. Choques elásticos" />
+            </label>
+            <label>Fecha y hora
+              <input id="editClassDateTime" type="datetime-local" required />
+            </label>
+            <div class="class-editor-actions">
+              <button id="cancelClassSessionEdit" type="button">Cancelar</button>
+              <button id="saveClassSessionEdit" class="primary" type="submit">Guardar cambios</button>
+            </div>
+          </form>
+        </dialog>
+
         <div class="card">
           <div class="section-head">
             <div>
