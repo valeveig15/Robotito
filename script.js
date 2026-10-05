@@ -2308,11 +2308,58 @@ function classEvidenceScore(question,e){
 
   return score;
 }
+function hasExplicitClassReference(raw){
+  const t=normalizeText(raw);
+  return /\b(clase|transcripcion|apunte|apuntes|profesor|profesora|profe|dijo|dijeron|explico|vimos|estudiamos|aprendimos|hicimos|material cargado|segun la clase|en la materia|en el curso)\b/.test(t);
+}
+function definitionQuestionCore(raw){
+  return normalizeText(raw)
+    .replace(/^(?:segun|de acuerdo con)\s+(?:la\s+)?(?:clase|transcripcion|profesor|profesora|profe|material)(?:\s+cargado)?\s*/,"")
+    .replace(/^(?:en\s+la\s+clase|en\s+el\s+curso|en\s+la\s+materia)\s*/,"")
+    .trim();
+}
+function isDefinitionQuestion(raw){
+  const q=definitionQuestionCore(raw);
+  return /^(?:que\s+(?:es|son|significa)|cual(?:es)?\s+es\s+la\s+definicion|defini|define|definime|dame\s+la\s+definicion|que\s+se\s+entiende\s+por)\b/.test(q);
+}
+function definitionSubject(raw){
+  return definitionQuestionCore(raw)
+    .replace(/^(?:que\s+(?:es|son|significa)|cual(?:es)?\s+es\s+la\s+definicion(?:\s+de)?|defini(?:me)?|define|dame\s+la\s+definicion(?:\s+de)?|que\s+se\s+entiende\s+por)\s+/,"")
+    .replace(/^(?:un|una|el|la|los|las)\s+/,"")
+    .replace(/\s+(?:segun|en)\s+(?:la\s+)?(?:clase|materia|transcripcion).*$/,"")
+    .trim();
+}
+function definitionEvidenceQuality(question,evidence){
+  if(!isDefinitionQuestion(question))return 1;
+  const subject=definitionSubject(question);
+  if(!subject)return 0;
+  const raw=normalizeText(evidence?.correctedText||evidence?.text||"");
+  if(!raw)return 0;
+  const subjectTokens=contentWords(subject).map(normalizeText).filter(Boolean);
+  if(!subjectTokens.length)return 0;
+  const subjectPhrase=normalizeText(subject);
+  let at=raw.indexOf(subjectPhrase);
+  if(at<0){
+    const anchor=subjectTokens.sort((a,b)=>b.length-a.length)[0];
+    at=raw.indexOf(anchor);
+  }
+  if(at<0)return 0;
+
+  // A definition needs an explanatory relation near the requested concept.
+  // Merely using it in a calculation ("por permutación nos da x") is not evidence.
+  const before=raw.slice(Math.max(0,at-90),at);
+  const after=raw.slice(at,Math.min(raw.length,at+150));
+  const linkedAfter=/^[^.!?]{0,45}\b(?:es|son|significa|consiste|consisten|representa|representan|indica|indican|mide|miden|se define|se definen|se llama|se llaman|se denomina|se denominan|se calcula|se calculan|se obtiene|se obtienen|se caracteriza|se caracterizan)\b/.test(after.slice(subjectPhrase.length>0&&raw.indexOf(subjectPhrase)===at?subjectPhrase.length:0));
+  const linkedBefore=/(?:se define|se llama|se denomina|se entiende|definimos|llamamos|denominamos)(?:\s+como)?[^.!?]{0,55}$/.test(before);
+  const explanatory=/\b(?:consiste(?:n)? en|se caracteriza(?:n)? por|sirve(?:n)? para)\b/.test(after.slice(0,120));
+  return linkedAfter||linkedBefore||explanatory?1:0;
+}
 function answerFromClass(question){
   const candidates=[...classEvidenceLines(),...materialEvidenceLines()];
+  const definition=isDefinitionQuestion(question);
   const ranked=candidates
     .map(e=>({e,score:classEvidenceScore(question,e)}))
-    .filter(x=>x.score>0)
+    .filter(x=>x.score>0&&(!definition||definitionEvidenceQuality(question,x.e)>0))
     .sort((a,b)=>b.score-a.score);
 
   if(!ranked.length)return null;
@@ -2338,8 +2385,7 @@ function answerFromClass(question){
 function looksLikeClassQuestion(text){
   const t=normalizeText(text);
   if(!t)return false;
-  const explicit=/(clase|transcripcion|transcripción|apunte|apuntes|profesor|profesora|profe|dijo|dijeron|explico|explicó|vimos|estudiamos|aprendimos|material cargado|segun la clase|según la clase)/.test(t);
-  if(explicit)return true;
+  if(hasExplicitClassReference(t))return true;
   const questionish=/^(que|como|por que|porque|cual|cuando|donde|quien|cuanto|explica|explicame|define|decime|dime|contame|recordame|me podes|me puedes|sabes)/.test(t)
     ||/[?¿]/.test(String(text));
   if(!questionish)return false;
@@ -2361,6 +2407,42 @@ async function answerClassQuestion(question,{speak=true,render=true,announceMiss
   if(speak)say(spokenAcademicAnswer(question,answer,found.evidence).slice(0,520),6500);
   return true;
 }
+function renderGeneralAcademicAnswer(question,text,source="",url=""){
+  const root=$("#classAnswer");
+  if(!root)return;
+  const sourceHtml=source
+    ?'<div class="class-origin">Fuente: '+(url?'<a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(source)+'</a>':escapeHtml(source))+'</div>'
+    :"";
+  root.innerHTML='<div class="answer-card"><strong>Respuesta</strong><p class="class-answer-text">'+escapeHtml(text)+'</p>'+sourceHtml+'</div>';
+}
+async function answerGeneralAcademicQuestion(question,{speak=true,render=true}={}){
+  const lang=responseLanguage();
+  let answer=null,source="",url="";
+
+  if(lang==="es"){
+    answer=window.ROBOTITO_PHYSICS_MOMENTUM?.answer?.(question)
+      || window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(question,"es");
+    if(answer)source="Conocimiento general de Robotito";
+  }else{
+    answer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(question,lang);
+    if(answer)source="Conocimiento general de Robotito";
+  }
+
+  if(!answer){
+    const depth=window.ROBOTITO_ROUTER?.responseDepth?.(question)||academicAnswerDepth(question);
+    const web=await window.ROBOTITO_WEB_KNOWLEDGE?.answer?.(question,lang,depth);
+    if(web?.handled&&web.text){
+      answer=web.text;
+      source=web.source||"Fuente de consulta";
+      url=web.url||"";
+    }
+  }
+  if(!answer)return false;
+  const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(question,answer)||answer;
+  if(render)renderGeneralAcademicAnswer(question,shaped,source,url);
+  if(speak)say(shaped,readingDisplayTime(shaped,4200),lang);
+  return true;
+}
 function relevantSentenceForAnswer(e,question){
   const units=splitEvidenceSentences(e.correctedText||e.text||"");
   if(!units.length)return "";
@@ -2374,8 +2456,8 @@ function academicAnswerDepth(question){
   const q=normalizeText(question);
   const wantsDetail=/(paso a paso|detallad|explica(?:me)?|desarrolla|por que|porque|como funciona|ejemplo|formula|fórmula|demostra|demuestra|compara|diferencia)/.test(q);
   if(wantsDetail)return "detailed";
-  const simpleDefinition=/^(?:que es|que significa|defini|define|cual es la definicion|cuál es la definición)\b/.test(q)
-    || /\b(?:que es|que significa)\s+(?:un|una|el|la)?\s*[^?]{1,80}$/.test(q);
+  const simpleDefinition=isDefinitionQuestion(question)
+    || /\b(?:que es|que son|que significa|que se entiende por)\s+(?:un|una|el|la|los|las)?\s*[^?]{1,80}$/.test(q);
   if(simpleDefinition)return "definition";
   return "normal";
 }
@@ -2575,7 +2657,12 @@ async function askClass(){
   try{
     const exerciseHandled=await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
-    await answerClassQuestion(q,{speak:true,render:true,announceMissing:true});
+    const classAnswered=await answerClassQuestion(q,{speak:true,render:true,announceMissing:false});
+    if(classAnswered)return;
+    const generalAnswered=await answerGeneralAcademicQuestion(q,{speak:true,render:true});
+    if(generalAnswered)return;
+    if(out)out.innerHTML='<div class="study-chip">No encontré evidencia suficiente en las clases, los materiales ni las fuentes generales disponibles.</div>';
+    say("No encontré información suficiente para contestar eso.",3600);
   }catch(e){
     console.warn("class answer",e);
     if(out)out.innerHTML='<div class="study-chip">Tuve un problema al buscar en las transcripciones. La pregunta no se perdió: probá de nuevo.</div>';
@@ -2787,18 +2874,16 @@ async function handleSpeech(rawText){
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
   if(await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(interpreted,{spoken:true}))return;
 
-  // Questions grounded in saved classes get first chance before generic knowledge,
-  // drawings or object reactions. This prevents a class question from falling into
-  // a decorative fallback instead of using the transcript.
+  // Saved classes are used first only when the person explicitly asks about
+  // the class, teacher, transcript or uploaded material. General questions must
+  // go through curated/general knowledge before class-memory fallback.
   const hasClassMemory=state.classLines.length||state.academicMaterials.length;
-  const explicitClassReference=/(clase|transcripcion|transcripción|apunte|apuntes|profesor|profesora|profe|dijo|dijeron|explico|explicó|vimos|estudiamos|aprendimos|material cargado|segun la clase|según la clase)/.test(text);
-  if(hasClassMemory && looksLikeClassQuestion(interpreted)){
+  const explicitClassReference=hasExplicitClassReference(interpreted);
+  if(hasClassMemory && explicitClassReference){
     robot.classList.add("thinking");
     setTimeout(()=>robot.classList.remove("thinking"),900);
     const answered=await answerClassQuestion(interpreted,{speak:true,render:true,announceMissing:false});
     if(answered)return;
-  }
-  if(hasClassMemory && explicitClassReference){
     const root=$("#classAnswer");
     if(root)root.innerHTML='<div class="study-chip">No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
     say("No encontré evidencia suficiente en las transcripciones para contestar eso.",3800);
@@ -2924,6 +3009,10 @@ async function handleSpeech(rawText){
       const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,webAnswer.text)||webAnswer.text;
       say(shaped,readingDisplayTime(shaped,4200),detectedLang);
       return;
+    }
+    if(hasClassMemory&&looksLikeClassQuestion(interpreted)){
+      const answered=await answerClassQuestion(interpreted,{speak:true,render:true,announceMissing:false});
+      if(answered)return;
     }
     say(detectedLang==="en"?"I don't know that one yet, but I understood the question.":"Esa todavía no la sé, pero entendí que me hiciste una pregunta.");
   }
@@ -4288,6 +4377,14 @@ function purgeNamedPeople(){
   save("robotito.people.v1",oldPeople);
   save("robotito.memories.v1",oldMem);
 }
+
+window.ROBOTITO_QUESTION_ROUTING={
+  hasExplicitClassReference,
+  isDefinitionQuestion,
+  definitionSubject,
+  definitionEvidenceQuality,
+  shouldUseClassFirst:raw=>hasExplicitClassReference(raw)
+};
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){
