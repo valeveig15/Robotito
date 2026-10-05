@@ -259,7 +259,7 @@
   function responseDepth(raw){
     const q=norm(raw);
     if(/\b(paso a paso|detallad|explicame|explica|desarrolla|demostra|demuestra|como funciona|por que|porque|compara|diferencia)\b/.test(q))return "detailed";
-    if(/^(que es|que significa|define|defini|cual es la definicion)\b/.test(q))return "definition";
+    if(/^(que (?:es|son|significa)|que se entiende por|define|defini|definime|cual(?:es)? es la definicion|dame la definicion)\b/.test(q))return "definition";
     return "normal";
   }
 
