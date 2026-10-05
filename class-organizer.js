@@ -247,6 +247,101 @@ ${useful.join("\n").slice(0,7000)}`;
     if(typeof summarizeClass==="function")summarizeClass();
     document.querySelector("#classTranscript")?.scrollIntoView({behavior:"smooth",block:"nearest"});
   }
+  function dateTimeLocalValue(timestamp){
+    const d=new Date(timestamp||Date.now());
+    const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+    return local.toISOString().slice(0,16);
+  }
+  function openSessionEditor(id){
+    const session=sessionsFromLines().find(x=>x.sessionId===id);
+    if(!session)return;
+    if(state.classMode&&state.classSessionId===id){
+      toast("Terminá la clase antes de editar sus datos.");
+      return;
+    }
+    const dialog=document.querySelector("#classSessionEditor");
+    if(!dialog)return;
+    document.querySelector("#editClassSessionId").value=id;
+    document.querySelector("#editClassSubject").value=session.subject||"";
+    document.querySelector("#editClassTopic").value=session.topic||"";
+    document.querySelector("#editClassDateTime").value=dateTimeLocalValue(session.startedAt);
+    if(typeof dialog.showModal==="function")dialog.showModal();
+    else dialog.setAttribute("open","");
+    setTimeout(()=>document.querySelector("#editClassSubject")?.focus(),30);
+  }
+  function closeSessionEditor(){
+    const dialog=document.querySelector("#classSessionEditor");
+    if(!dialog)return;
+    if(typeof dialog.close==="function")dialog.close();
+    else dialog.removeAttribute("open");
+  }
+  async function saveSessionEdit(event){
+    event?.preventDefault?.();
+    const id=document.querySelector("#editClassSessionId")?.value||"";
+    const subject=String(document.querySelector("#editClassSubject")?.value||"").trim();
+    const topic=String(document.querySelector("#editClassTopic")?.value||"").trim();
+    const dateValue=document.querySelector("#editClassDateTime")?.value||"";
+    const newStartedAt=new Date(dateValue).getTime();
+    const session=sessionsFromLines().find(x=>x.sessionId===id);
+    if(!id||!session)return;
+    if(!subject||!topic||!Number.isFinite(newStartedAt)){
+      toast("Completá la materia, el tema, la fecha y la hora.");
+      return;
+    }
+    const oldStartedAt=Number(session.startedAt)||newStartedAt;
+    const delta=newStartedAt-oldStartedAt;
+    const oldEndedAt=Number(session.endedAt)||oldStartedAt;
+    const duration=Math.max(0,oldEndedAt-oldStartedAt);
+
+    state.classLines.forEach(line=>{
+      if(line.sessionId!==id)return;
+      line.subject=subject;
+      line.topic=topic;
+      if(Number.isFinite(Number(line.at)))line.at=Number(line.at)+delta;
+    });
+    save("robotito.classLines.v1",state.classLines);
+
+    state.classSummaries=(state.classSummaries||[]).map(summary=>{
+      if(summary.sessionId!==id)return summary;
+      return {
+        ...summary,
+        subject,
+        topic,
+        startedAt:newStartedAt,
+        endedAt:newStartedAt+duration
+      };
+    });
+    save(SUMMARY_KEY,state.classSummaries);
+
+    if(state.selectedClassSessionId===id){
+      state.classSubject=subject;
+      state.classTopic=topic;
+      const subjectInput=document.querySelector("#classSubject");
+      const topicInput=document.querySelector("#classTopic");
+      if(subjectInput)subjectInput.value=subject;
+      if(topicInput)topicInput.value=topic;
+    }
+
+    try{
+      const audio=window.ROBOTITO_CLASS_AUDIO;
+      const recordings=await audio?.listRecordings?.()||[];
+      for(const recording of recordings.filter(r=>r.sessionId===id||r.id===id)){
+        const patch={subject,topic,startedAt:newStartedAt};
+        if(Number.isFinite(Number(recording.transcriptFrom)))patch.transcriptFrom=Number(recording.transcriptFrom)+delta;
+        await audio.updateMetadata?.(recording.id,patch);
+      }
+      await audio?.render?.();
+    }catch(error){
+      console.warn("class edit audio metadata",error);
+    }
+
+    closeSessionEditor();
+    render();
+    if(typeof renderClassTranscript==="function"&&state.selectedClassSessionId===id)renderClassTranscript();
+    if(typeof summarizeClass==="function"&&state.selectedClassSessionId===id)summarizeClass();
+    toast("Clase actualizada correctamente.");
+  }
+
   function render(){
     const root=document.querySelector("#classLibrary");
     if(!root)return;
@@ -271,12 +366,15 @@ ${useful.join("\n").slice(0,7000)}`;
                   const date=new Date(session.startedAt||Date.now()).toLocaleString("es-UY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
                   const duration=session.endedAt&&session.startedAt?Math.max(0,Math.round((session.endedAt-session.startedAt)/60000)):null;
                   const point=(session.points||[])[0]||"";
-                  return '<button type="button" class="class-session-item" data-session-id="'+esc(session.sessionId)+'">'+
-                    '<span class="class-session-date">'+esc(date)+'</span>'+
-                    '<strong>'+esc(topic)+'</strong>'+
-                    '<span class="muted">'+session.lineCount+' fragmentos'+(duration!==null?' · '+duration+' min':'')+'</span>'+
-                    (point?'<span class="class-session-preview">'+esc(point.slice(0,150))+(point.length>150?'…':'')+'</span>':'')+
-                  '</button>';
+                  return '<div class="class-session-row">'+
+                    '<button type="button" class="class-session-item" data-session-id="'+esc(session.sessionId)+'">'+
+                      '<span class="class-session-date">'+esc(date)+'</span>'+
+                      '<strong>'+esc(topic)+'</strong>'+
+                      '<span class="muted">'+session.lineCount+' fragmentos'+(duration!==null?' · '+duration+' min':'')+'</span>'+
+                      (point?'<span class="class-session-preview">'+esc(point.slice(0,150))+(point.length>150?'…':'')+'</span>':'')+
+                    '</button>'+
+                    '<button type="button" class="ghost class-session-edit" data-session-id="'+esc(session.sessionId)+'" aria-label="Editar '+esc(topic)+'">✏️ Editar</button>'+
+                  '</div>';
                 }).join("")+
                 '</div>'+
               '</details>'
@@ -287,6 +385,9 @@ ${useful.join("\n").slice(0,7000)}`;
 
     root.querySelectorAll(".class-session-item").forEach(btn=>
       btn.addEventListener("click",()=>selectSession(btn.dataset.sessionId))
+    );
+    root.querySelectorAll(".class-session-edit").forEach(btn=>
+      btn.addEventListener("click",()=>openSessionEditor(btn.dataset.sessionId))
     );
   }
 
@@ -436,7 +537,7 @@ ${useful.join("\n").slice(0,7000)}`;
 
   window.ROBOTITO_CLASS_ORGANIZER={
     migrate,render,inferTopic,finalizeSession,generateAndSaveClassSummary,
-    sessionsFromLines,selectSession,currentSessionLines,parseLegacyLabel,
+    sessionsFromLines,selectSession,openSessionEditor,saveSessionEdit,currentSessionLines,parseLegacyLabel,
     migrateAudioRecordings,renderAcademicMaterials,importAcademicFiles
   };
   window.generateAndSaveClassSummary=generateAndSaveClassSummary;
@@ -448,5 +549,11 @@ ${useful.join("\n").slice(0,7000)}`;
     render();
     renderAcademicMaterials();
     migrateAudioRecordings();
+    document.querySelector("#classSessionEditorForm")?.addEventListener("submit",saveSessionEdit);
+    document.querySelector("#cancelClassSessionEdit")?.addEventListener("click",closeSessionEditor);
+    document.querySelector("#closeClassSessionEditor")?.addEventListener("click",closeSessionEditor);
+    document.querySelector("#classSessionEditor")?.addEventListener("click",event=>{
+      if(event.target===event.currentTarget)closeSessionEditor();
+    });
   });
 })();
