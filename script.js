@@ -38,13 +38,16 @@ const state = {
   voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
   voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
   voiceRate: Number(localStorage.getItem("robotito.voiceRate.v1")||0.82),
-  languageMode: localStorage.getItem("robotito.languageMode.v1")||"auto",
+  languageMode: "",
   lastDetectedLanguage: "es",
   autoListenLanguage: "es",
   stream: null,
   analyser: null,
   lastDetections: [],
   handNearMouth: false,
+  handNearMouthDistance: 1,
+  handNearMouthSince: 0,
+  mouthHistory: [],
   handsBusy: false,
   visibleFingers: 0,
   visibleHands: 0,
@@ -103,9 +106,8 @@ function cleanSpeechText(text){
     .replace(/\s+/g," ")
     .trim();
 }
-function responseLanguage(text){
-  if(state.languageMode==="es"||state.languageMode==="en")return state.languageMode;
-  return window.ROBOTITO_COMMON_KNOWLEDGE?.detectLanguage?.(text)||state.lastDetectedLanguage||"es";
+function responseLanguage(){
+  return state.languageMode==="en"?"en":"es";
 }
 function chooseDefaultVoice(voices,targetLang="es"){
   const pref=targetLang==="en"?/^en([-_]|$)/i:/^es([-_]|$)/i;
@@ -333,6 +335,10 @@ async function loadFaceModels(){
 
 async function startSenses(){
   if(state.started)return;
+  if(state.languageMode!=="es"&&state.languageMode!=="en"){
+    toast("Elegí Español o English primero.");
+    return;
+  }
   $("#systemStatus").textContent="Pidiendo permisos…";
   try{
     state.stream=await navigator.mediaDevices.getUserMedia({
@@ -349,7 +355,7 @@ async function startSenses(){
     $("#startBtn").textContent="Sentidos activos";
     $("#startBtn").disabled=true;
     $("#systemStatus").textContent="Cámara y micrófono activos.";
-    say("Ya estoy despierto 🐼");
+    say(state.languageMode==="en"?"I'm awake.":"Ya estoy despierto.");
     detectLoop();
   }catch(err){
     console.error(err);
@@ -538,16 +544,11 @@ function processSpeechResult(text){
 }
 
 function recognitionLanguage(){
-  if(state.languageMode==="en")return "en-US";
-  if(state.languageMode==="es")return "es-UY";
-  return state.autoListenLanguage==="en"?"en-US":"es-UY";
+  return state.languageMode==="en"?"en-US":"es-UY";
 }
-function updateDetectedLanguage(text){
-  if(state.languageMode!=="auto")return state.languageMode;
-  const detected=window.ROBOTITO_COMMON_KNOWLEDGE?.detectLanguage?.(text)||"es";
-  state.lastDetectedLanguage=detected;
-  state.autoListenLanguage=detected;
-  return detected;
+function updateDetectedLanguage(){
+  state.lastDetectedLanguage=state.languageMode==="en"?"en":"es";
+  return state.lastDetectedLanguage;
 }
 
 function createSpeechRecognition(){
@@ -602,7 +603,6 @@ function createSpeechRecognition(){
   };
 
   r.onend=()=>{
-    if(state.languageMode==="auto"&&!r._hadFinal)state.autoListenLanguage=state.autoListenLanguage==="es"?"en":"es";
     if(state.recognition===r)state.recognition=null;
     if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
     setListenState("reiniciando");
@@ -680,13 +680,20 @@ function capabilitiesAnswer(){
   return "Puedo reconocerte por cara y voz, recordar cosas, escuchar clases, resumirlas, ayudarte a estudiar, contar dedos, reconocer algunos objetos, recomendar libros, mirar tus tareas y resolver o dibujar algunos ejercicios de circunferencias.";
 }
 function setLanguageMode(mode){
+  if(mode!=="es"&&mode!=="en")return;
   state.languageMode=mode;
+  state.lastDetectedLanguage=mode;
+  state.autoListenLanguage=mode;
   localStorage.setItem("robotito.languageMode.v1",mode);
   if($("#languageMode"))$("#languageMode").value=mode;
-  if(mode==="en"){state.lastDetectedLanguage="en";state.autoListenLanguage="en";}
-  if(mode==="es"){state.lastDetectedLanguage="es";state.autoListenLanguage="es";}
   populateVoiceSelect();
   if(state.started){discardRecognition();startListeningCycle(true);}
+}
+function chooseStartupLanguage(mode){
+  setLanguageMode(mode);
+  $("#languageGate")?.classList.add("hidden");
+  $("#startBtn").disabled=false;
+  $("#statusText").textContent=mode==="en"?"Robotito is ready to wake up.":"Robotito está listo para despertar.";
 }
 function handleLanguageCommand(text){
   if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english/.test(text)){
@@ -697,11 +704,6 @@ function handleLanguageCommand(text){
   if(/(hablame|habla|responde|contesta).*(espanol|español|castellano)|speak spanish|answer in spanish/.test(text)){
     setLanguageMode("es");
     say("Perfecto. Voy a hablar en español.");
-    return true;
-  }
-  if(/modo automatico|idioma automatico|automatic language|auto language/.test(text)){
-    setLanguageMode("auto");
-    say("Voy a intentar detectar automáticamente si me hablás en español o en inglés.");
     return true;
   }
   return false;
@@ -1576,7 +1578,7 @@ function showObjectCard(item,lang="es"){
 }
 function showRequestedObject(rawText,lang="es"){
   const normalized=normalizeText(rawText);
-  const m=normalized.match(/(?:mostrame|muestrame|mostra|mostrar|ensen[aá]me|show me|show|display)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
+  const m=normalized.match(/(?:mostrame|muestrame|mostra|mostrar|ensen[aá]me|quiero ver|quiero que me muestres|podes mostrarme|puedes mostrarme|me mostras|me muestras|dejame ver|show me|can you show me|could you show me|i want to see|let me see|display)\s+(?:un|una|el|la|a|an|the)?\s*(.+)$/);
   if(!m)return false;
   const query=m[1].replace(/\b(por favor|please)\b/g,"").trim();
   const item=window.ROBOTITO_OBJECTS?.find?.(query);
@@ -1931,7 +1933,7 @@ async function answerWhatLearnedToday(){
   say(answer.slice(0,320),5600);
 }
 
-async function handleSpeech(rawText){
+async async function handleSpeech(rawText){
   const text=normalizeText(rawText);
   const who=state.currentVoicePerson||state.currentPerson;
 
@@ -2199,6 +2201,8 @@ function setupHands(){
       const face=state.lastDetections[0];
       if(!face||!landmarks.length){
         state.handNearMouth=false;
+        state.handNearMouthDistance=1;
+        state.handNearMouthSince=0;
         return;
       }
 
@@ -2207,10 +2211,16 @@ function setupHands(){
       const mx=mouth.reduce((a,p)=>a+p.x,0)/mouth.length/vw;
       const my=mouth.reduce((a,p)=>a+p.y,0)/mouth.length/vh;
 
-      state.handNearMouth=landmarks.some(hand=>{
-        const tips=[4,8,12,16,20].map(i=>hand[i]);
-        return tips.some(p=>Math.hypot(p.x-mx,p.y-my)<.15);
-      });
+      let minDist=1;
+      for(const hand of landmarks){
+        const points=[4,8,12,16,20,5,9].map(i=>hand[i]);
+        for(const p of points)minDist=Math.min(minDist,Math.hypot(p.x-mx,p.y-my));
+      }
+      const near=minDist<.085;
+      if(near&&!state.handNearMouth)state.handNearMouthSince=Date.now();
+      if(!near)state.handNearMouthSince=0;
+      state.handNearMouth=near;
+      state.handNearMouthDistance=minDist;
     });
 
     const loop=async()=>{
@@ -2235,15 +2245,27 @@ function mouthOpenRatio(landmarks){
 
 let eatHits=0, lastSharedMeal=0;
 function detectEating(det){
+  const now=Date.now();
   const ratio=mouthOpenRatio(det.landmarks);
-  if(ratio>.11&&state.handNearMouth) eatHits+=2;
-  else if(state.handNearMouth) eatHits+=1;
-  else eatHits=Math.max(0,eatHits-1);
+  state.mouthHistory.push({t:now,ratio});
+  state.mouthHistory=state.mouthHistory.filter(x=>now-x.t<2800);
 
-  if(eatHits>=4 && Date.now()-lastSharedMeal>30000){
-    lastSharedMeal=Date.now();
+  const values=state.mouthHistory.map(x=>x.ratio);
+  const mouthMotion=values.length>=3?Math.max(...values)-Math.min(...values):0;
+  const handStable=state.handNearMouth && state.handNearMouthDistance<.085 && state.handNearMouthSince && now-state.handNearMouthSince>650;
+  const mouthReallyOpen=ratio>.145;
+  const chewingLikeMotion=mouthMotion>.032;
+  const notCurrentlyTalking=now-state.lastTranscriptAt>2200;
+  const convincing=handStable && mouthReallyOpen && chewingLikeMotion && notCurrentlyTalking;
+
+  if(convincing)eatHits=Math.min(8,eatHits+1);
+  else eatHits=Math.max(0,eatHits-2);
+
+  if(eatHits>=4 && now-lastSharedMeal>120000){
+    lastSharedMeal=now;
     feedRobot(true);
     eatHits=0;
+    state.mouthHistory=[];
   }
 }
 
@@ -2641,6 +2663,7 @@ function ambientMood(){
 }
 
 function bindUI(){
+  $("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#startBtn").addEventListener("click",startSenses);
   $("#mobileListenBtn")?.addEventListener("click",()=>{
     state.speechBlocked=false;
@@ -2669,7 +2692,7 @@ function bindUI(){
     state.voiceRate=Number(e.target.value);
     localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));
   });
-  $("#testVoiceBtn")?.addEventListener("click",()=>speakResponse("Mi nombre es Robotito. Estoy listo para ayudarte."));
+  $("#testVoiceBtn")?.addEventListener("click",()=>speakResponse(state.languageMode==="en"?"My name is Robotito. I'm ready to help you.":"Mi nombre es Robotito. Estoy listo para ayudarte."));
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personBirthday")?.addEventListener("input",e=>{
     const digits=e.target.value.replace(/\D/g,"").slice(0,8);
@@ -2767,7 +2790,9 @@ function init(){
   renderClassTranscript();
   renderAcademicMaterials();
   summarizeClass();
-  if($("#languageMode"))$("#languageMode").value=state.languageMode;
+  $("#startBtn").disabled=true;
+  $("#languageGate")?.classList.remove("hidden");
+  if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
