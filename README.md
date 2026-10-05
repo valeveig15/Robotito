@@ -12,6 +12,7 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - El susto dura menos de un segundo y después vuelve a la normalidad.
 - Interacciones: acariciar, alimentar, abrazar, chocar los cinco, jugar, asustar y molestar.
 - También entiende por voz pedidos como “abrazame”, “chocá los cinco” y “juguemos”.
+- Silencio temporizado por voz: “callate” lo deja sin hablar durante 25 segundos; “callate por 2 minutos” respeta la duración indicada; “ya podés hablar” lo reactiva antes. Mientras está callado sigue escuchando, recordando y mostrando respuestas escritas.
 - Si no ve ni escucha a nadie, primero se aburre, luego cabecea y finalmente se duerme.
 - A las 3 horas sin comer aparece hambre; a las 4 horas se enoja por hambre.
 - Si detecta mano cerca de la boca y movimiento compatible con estar comiendo, intenta comer contigo.
@@ -114,7 +115,7 @@ para ejecutar las pruebas de regresión en la consola. También se pueden ejecut
 
 `ROBOTITO_TESTS.run()`
 
-Las pruebas cubren matemática hablada, precedencia, circunferencias, profundidad de respuesta y enrutamiento de objetos/presidentes.
+Las pruebas cubren matemática hablada, precedencia, circunferencias, profundidad de respuesta, silencio temporizado y enrutamiento de objetos/presidentes.
 
 ## Privacidad
 
