@@ -18,6 +18,8 @@
       results.push(same(math.solve("raiz cubica de 27","es").value,3,"raíz cúbica de 27"));
       results.push(same(math.solve("dos mas tres por cuatro","es").value,14,"precedencia multiplicación"));
       results.push(same(math.solve("dos elevado a la cuarta","es").value,16,"potencia ordinal"));
+      results.push(same(math.solve("-2^2","es").value,-4,"signo unario después de potencia"));
+      results.push(same(math.solve("2^-2","es").value,.25,"exponente negativo"));
     }else results.push(truthy(false,"spoken math loaded"));
 
     if(circles){
@@ -36,7 +38,15 @@
       results.push(same(router.classify("Explicame paso a paso el ejercicio").depth,"detailed","respuesta detallada pedida"));
       results.push(same(router.classify("¿Quién es el presidente de Uruguay?").intent,"president","ruta presidentes"));
       results.push(same(router.classify("¿Qué objeto es esto?").intent,"object","ruta objeto"));
+      results.push(same(router.shapeAnswer("¿Qué es la gravedad?","La gravedad es una interacción física. Además tiene múltiples efectos y aplicaciones."),"La gravedad es una interacción física.","recorta definiciones al alcance pedido"));
     }else results.push(truthy(false,"router loaded"));
+
+    if(window.ROBOTITO_PRESIDENTS){
+      const p=window.ROBOTITO_PRESIDENTS.parseQuestion("¿Quién era presidente de Uruguay en 2010?");
+      results.push(same(p?.country,"uruguay","identifica país en pregunta presidencial"));
+      results.push(same(p?.year,2010,"identifica año en pregunta presidencial"));
+      results.push(same(p?.intent,"historical","distingue presidente histórico"));
+    }else results.push(truthy(false,"president knowledge loaded"));
 
     const passed=results.filter(x=>x.ok).length;
     const failed=results.length-passed;
