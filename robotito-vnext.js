@@ -344,4 +344,11 @@
   window.detectObjectNow=detectObjectNow;
   window.ROBOTITO_CIRCLE_MATH={parse:parseCirclePrompt,explain:circleExplanation,draw:drawCircle,solve:solveMathFromUI};
   window.ROBOTITO_ROUTER={classify,responseDepth,shapeAnswer,handle};
+  // Stable architectural entrypoint: understand → choose depth → retrieve/act → respond.
+  window.ROBOTITO_PIPELINE={
+    understand:classify,
+    answerDepth:responseDepth,
+    shapeAnswer,
+    respond:handle
+  };
 })();
