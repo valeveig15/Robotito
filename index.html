@@ -27,6 +27,7 @@
   <script defer src="class-verification.js"></script>
   <script defer src="script.js"></script>
   <script defer src="robotito-vnext.js"></script>
+  <script defer src="video-material.js"></script>
   <script defer src="robotito-tests.js"></script>
 </head>
 <body>
@@ -341,12 +342,56 @@
           <div id="classSummary" class="study-output"><p class="muted">Al terminar o durante una clase, Robotito puede extraer los puntos más importantes.</p></div>
         </div>
 
+        <div class="card video-material-card">
+          <div class="section-head">
+            <div>
+              <h2>Video de YouTube</h2>
+              <p class="muted">Robotito puede incorporar un video sin descargarlo: usando su transcripción o escuchando, con tu permiso, el audio de una pestaña compartida.</p>
+            </div>
+            <span class="status-badge">video</span>
+          </div>
+
+          <label>Enlace del video
+            <input id="youtubeUrl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" />
+          </label>
+          <label>Título del video
+            <input id="youtubeVideoTitle" type="text" placeholder="Se completa automáticamente cuando es posible" />
+          </label>
+
+          <div class="button-grid two">
+            <button id="prepareYoutubeBtn" type="button">Comprobar enlace</button>
+            <button id="openYoutubeBtn" type="button">Abrir en YouTube</button>
+          </div>
+
+          <div class="video-capture-actions">
+            <button id="startYoutubeCaptureBtn" type="button" class="primary">🎧 Escuchar pestaña con audio</button>
+            <button id="stopYoutubeCaptureBtn" type="button" class="ghost" disabled>■ Terminar video</button>
+          </div>
+          <p id="youtubeCaptureStatus" class="video-capture-status muted">Pegá un enlace para comenzar.</p>
+          <video id="youtubeCapturePreview" class="youtube-capture-preview" muted autoplay playsinline hidden></video>
+          <p id="youtubeVisualStatus" class="muted">La visión del video reconocerá objetos generales cuando compartas la pestaña.</p>
+
+          <details class="youtube-transcript-help">
+            <summary>Usar la transcripción o los subtítulos</summary>
+            <ol>
+              <li>Abrí el video en YouTube.</li>
+              <li>En la descripción o menú del video elegí <strong>Mostrar transcripción</strong>, si está disponible.</li>
+              <li>Copiá el texto completo y pegalo aquí. También podés cargar archivos <code>.srt</code> o <code>.vtt</code> en «Cargar material académico».</li>
+            </ol>
+          </details>
+          <label>Transcripción del video
+            <textarea id="youtubeTranscript" rows="7" placeholder="Pegá aquí la transcripción o los subtítulos…"></textarea>
+          </label>
+          <button id="saveYoutubeTranscriptBtn" type="button" class="primary full">Guardar transcripción como material</button>
+          <p class="muted video-privacy-note">Al usar «Escuchar pestaña», el navegador te pedirá elegir qué pestaña compartir. Seleccioná la de YouTube y activá «Compartir audio». La transcripción se realiza localmente y queda en este navegador.</p>
+        </div>
+
         <div class="card">
           <h2>Cargar material académico</h2>
           <p class="muted">Podés cargar apuntes o material de apoyo en TXT, Markdown, CSV, JSON o PDF. Robotito lo suma a lo que sabe de la materia.</p>
           <label class="file-label">
             Cargar material
-            <input id="academicFiles" type="file" multiple accept=".txt,.md,.csv,.json,.pdf,text/plain,text/markdown,text/csv,application/json,application/pdf" />
+            <input id="academicFiles" type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.srt,.vtt,text/plain,text/markdown,text/csv,application/json,application/pdf,text/vtt,application/x-subrip" />
           </label>
           <div id="academicFilesList" class="study-output"><p class="muted">Todavía no cargaste material.</p></div>
         </div>
