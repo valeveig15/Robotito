@@ -6,7 +6,8 @@
     .replace(/[\u0300-\u036f]/g,"")
     .replace(/[×·]/g,"*").replace(/÷/g,"/")
     .replace(/[^a-z0-9+\-*/=.,²^\s]/g," ")
-    .replace(/\s+/g," ").trim();
+    .replace(/\s+/g," ").trim()
+    .replace(/\bcheques?\b/g,"choque");
 
   const nfmt=n=>{
     if(!Number.isFinite(n))return String(n);
