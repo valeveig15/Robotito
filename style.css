@@ -583,3 +583,52 @@ select:focus{border-color:#efafc2;box-shadow:0 0 0 3px rgba(239,175,194,.12)}
 }
 .language-gate-card p span{font-size:.95em}
 .language-gate-actions .primary{cursor:pointer;touch-action:manipulation}
+
+
+/* v9 — stable eye state machine + 3-language chooser */
+.language-gate-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+.iris{
+  transition:transform .12s ease-out,opacity .07s linear;
+  will-change:transform;
+}
+.eye-white-svg,.blink-line,.heart-eye{
+  transition:opacity .07s linear;
+}
+.robotito:not(.sleeping):not(.heart-eyes):not(.blink) .blink-line{
+  opacity:0!important;
+}
+.robotito.blink:not(.sleeping):not(.heart-eyes) .blink-line{
+  opacity:1!important;
+}
+.robotito.blink:not(.sleeping):not(.heart-eyes) .eye-white-svg,
+.robotito.blink:not(.sleeping):not(.heart-eyes) .iris{
+  opacity:0!important;
+}
+.robotito:not(.sleeping):not(.heart-eyes):not(.blink) .eye-white-svg,
+.robotito:not(.sleeping):not(.heart-eyes):not(.blink) .iris{
+  opacity:1!important;
+}
+.robotito.heart-eyes:not(.sleeping) .heart-eye{
+  opacity:1!important;
+}
+.robotito.heart-eyes:not(.sleeping) .eye-white-svg,
+.robotito.heart-eyes:not(.sleeping) .iris,
+.robotito.heart-eyes:not(.sleeping) .blink-line{
+  opacity:0!important;
+}
+.robotito.sleeping .heart-eye{
+  opacity:0!important;
+}
+.robotito.sleeping .eye-white-svg,
+.robotito.sleeping .iris{
+  opacity:0!important;
+}
+.robotito.sleeping .blink-line{
+  opacity:1!important;
+}
+.mood-sleepy:not(.sleeping):not(.blink):not(.heart-eyes) .blink-line{
+  opacity:0!important;
+}
+@media(max-width:620px){
+  .language-gate-actions{grid-template-columns:1fr}
+}
