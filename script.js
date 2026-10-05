@@ -2306,6 +2306,20 @@ async function handleSpeech(rawText){
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
   if(detectedLang==="pt" && answerPortuguesePersonalQuestion(interpreted)) return;
   if(detectedLang==="es" && answerEasyQuestion(interpreted)) return;
+
+  // Dedicated physics knowledge has priority over generic knowledge and class-memory retrieval.
+  if(detectedLang==="es"){
+    const physicsAnswer=window.ROBOTITO_PHYSICS_MOMENTUM?.answer?.(interpreted);
+    if(physicsAnswer){say(physicsAnswer,7600);return;}
+  }else{
+    const qEs=await translateShortPhrase(interpreted,detectedLang,"es");
+    const physicsEs=qEs?window.ROBOTITO_PHYSICS_MOMENTUM?.answer?.(qEs):null;
+    if(physicsEs){
+      const translated=await translateShortPhrase(physicsEs,"es",detectedLang);
+      if(translated){sayInLanguage(translated,detectedLang,8000);return;}
+    }
+  }
+
   if(detectedLang==="pt"){
     const qEs=await translateShortPhrase(interpreted,"pt","es");
     const answerEs=qEs?window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(qEs,"es"):null;
