@@ -2713,13 +2713,19 @@ async function handleSpeech(rawText){
   // Dedicated physics knowledge has priority over generic knowledge and class-memory retrieval.
   if(detectedLang==="es"){
     const physicsAnswer=window.ROBOTITO_PHYSICS_MOMENTUM?.answer?.(interpreted);
-    if(physicsAnswer){say(physicsAnswer,7600);return;}
+    if(physicsAnswer){
+      const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,physicsAnswer)||physicsAnswer;
+      say(shaped,7600);return;
+    }
   }else{
     const qEs=await translateShortPhrase(interpreted,detectedLang,"es");
     const physicsEs=qEs?window.ROBOTITO_PHYSICS_MOMENTUM?.answer?.(qEs):null;
     if(physicsEs){
       const translated=await translateShortPhrase(physicsEs,"es",detectedLang);
-      if(translated){sayInLanguage(translated,detectedLang,8000);return;}
+      if(translated){
+        const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,translated)||translated;
+        sayInLanguage(shaped,detectedLang,8000);return;
+      }
     }
   }
 
@@ -2728,11 +2734,17 @@ async function handleSpeech(rawText){
     const answerEs=qEs?window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(qEs,"es"):null;
     if(answerEs){
       const answerPt=await translateShortPhrase(answerEs,"es","pt");
-      if(answerPt){sayInLanguage(answerPt,"pt",5200);return;}
+      if(answerPt){
+        const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,answerPt)||answerPt;
+        sayInLanguage(shaped,"pt",5200);return;
+      }
     }
   }else{
     const commonAnswer=window.ROBOTITO_COMMON_KNOWLEDGE?.answer?.(interpreted,detectedLang);
-    if(commonAnswer){say(commonAnswer,4800);return;}
+    if(commonAnswer){
+      const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,commonAnswer)||commonAnswer;
+      say(shaped,4800);return;
+    }
   }
 
   if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
@@ -2790,6 +2802,13 @@ async function handleSpeech(rawText){
     return;
   }
   if(/[?¿]/.test(rawText)||/^(que|como|cual|cuando|donde|por que|porque|quien|cuanto|puedes|podes|what|how|which|when|where|why|who|can|do|does|is|are)\b/.test(text)){
+    const depth=window.ROBOTITO_ROUTER?.responseDepth?.(interpreted)||"normal";
+    const webAnswer=await window.ROBOTITO_WEB_KNOWLEDGE?.answer?.(interpreted,detectedLang,depth);
+    if(webAnswer?.handled&&webAnswer.text){
+      const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,webAnswer.text)||webAnswer.text;
+      say(shaped,readingDisplayTime(shaped,4200),detectedLang);
+      return;
+    }
     say(detectedLang==="en"?"I don't know that one yet, but I understood the question.":"Esa todavía no la sé, pero entendí que me hiciste una pregunta.");
   }
 }
