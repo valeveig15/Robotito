@@ -817,3 +817,23 @@ body.mode-night .class-origin{
 body.mode-night .class-source-card{
   background:rgba(255,255,255,.94);
 }
+
+
+/* v10.2 — guided face + voice enrollment */
+.enroll-progress{
+  width:100%;
+  height:7px;
+  margin:8px 0 10px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#eee7ed;
+  box-shadow:inset 0 1px 2px rgba(64,47,65,.06);
+}
+#enrollProgressBar{
+  width:0%;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#a8d4c6,#e7abc0);
+  transition:width .22s ease;
+}
+body.mode-night .enroll-progress{background:rgba(255,255,255,.12)}
