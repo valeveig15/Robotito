@@ -22,6 +22,7 @@
     "se","lo","le","les","al","y","o","por","para","con","sin","en","a","esto","esa","ese","eso","esta","este",
     "suele","suelen","normalmente","generalmente","principalmente","actualmente","hay","tiene","tienen","tener",
     "podes","puedes","podrias","podrías","decir","decime","dime","sabes","saber","quiero","quisiera",
+    "explicame","explica","explicarme","contame","cuentame","recordame","respondeme","respuesta","pregunta","idea","casualidad",
     "mas","más","more","most",
     "what","which","how","is","are","was","were","the","a","an","of","does","do","did","to","in","on","for","and","or",
     "please","tell","me","can","could","would","you"
@@ -407,6 +408,36 @@
       }
     }
     if(bestDirect)return answer(bestDirect.es,bestDirect.en,lang);
+
+    // Second chance: match the relation described in an answer, useful for reverse wording
+    // such as "qué órgano bombea sangre" when the stored prompt is "qué hace el corazón".
+    const queryTokens=semanticTokens(t);
+    let relationBest=null;
+    if(queryTokens.length>=2){
+      for(const [patterns,es,en] of direct){
+        if(!es)continue;
+        const candidateText=lang==="en"?(en||""):es;
+        const candidateTokens=semanticTokens(candidateText);
+        if(!candidateTokens.length)continue;
+        let hits=0;
+        const used=new Set();
+        for(const qw of queryTokens){
+          let found=-1;
+          for(let i=0;i<candidateTokens.length;i++){
+            if(used.has(i))continue;
+            if(candidateTokens[i]===qw||editDistanceOne(candidateTokens[i],qw)){found=i;break;}
+          }
+          if(found>=0){used.add(found);hits++;}
+        }
+        if(hits<2)continue;
+        const qCoverage=hits/queryTokens.length;
+        const relationScore=qCoverage*.88+(hits/Math.max(hits,candidateTokens.length))*.12;
+        if(qCoverage>=.62&&(!relationBest||relationScore>relationBest.score)){
+          relationBest={score:relationScore,es,en};
+        }
+      }
+    }
+    if(relationBest)return answer(relationBest.es,relationBest.en,lang);
     return null;
   }
 
