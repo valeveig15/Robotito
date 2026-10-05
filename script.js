@@ -2076,6 +2076,7 @@ function splitEvidenceSentences(text){
 }
 function materialEvidenceLines(){
   const selectedSubject=normalizeText(state.classSubject||$("#classSubject")?.value||"");
+  const selectedTopic=normalizeText(state.classTopic||$("#classTopic")?.value||"");
   return state.academicMaterials.flatMap(m=>(m.chunks||[]).flatMap((chunkText,chunkIndex)=>
     splitEvidenceSentences(chunkText).map((text,sentenceIndex)=>({
       text,
@@ -2090,13 +2091,18 @@ function materialEvidenceLines(){
       subjectPreferred:!!selectedSubject&&(
         normalizeText(m.subject||"").includes(selectedSubject)||
         selectedSubject.includes(normalizeText(m.subject||""))
+      ),
+      topicPreferred:!!selectedTopic&&(
+        normalizeText(m.topic||"").includes(selectedTopic)||
+        selectedTopic.includes(normalizeText(m.topic||""))
       )
     }))
   ));
 }
 function classEvidenceLines(){
   const selectedSubject=normalizeText(state.classSubject||$("#classSubject")?.value||"");
-  // Search ALL saved transcripts. The selected subject is a ranking hint, never a hard filter.
+  const selectedTopic=normalizeText(state.classTopic||$("#classTopic")?.value||"");
+  // Search ALL saved transcripts. Subject and topic are ranking hints, never hard filters.
   return state.classLines.flatMap(line=>{
     const sourceText=line.correctedText||line.text||"";
     const correctedParts=splitEvidenceSentences(sourceText);
@@ -2111,6 +2117,10 @@ function classEvidenceLines(){
       subjectPreferred:!!selectedSubject&&(
         normalizeText(line.subject||"").includes(selectedSubject)||
         selectedSubject.includes(normalizeText(line.subject||""))
+      ),
+      topicPreferred:!!selectedTopic&&(
+        normalizeText(line.topic||"").includes(selectedTopic)||
+        selectedTopic.includes(normalizeText(line.topic||""))
       )
     }));
   });
@@ -2162,7 +2172,8 @@ function classEvidenceScore(question,e){
   }
 
   // Subject context helps but never excludes older transcripts.
-  if(e.subjectPreferred)score+=1.2;
+  if(e.subjectPreferred)score+=1.0;
+  if(e.topicPreferred)score+=1.8;
   if(e.sourceType==="class"&&e.speaker==="teacher")score+=.45;
 
   // Penalize accidental one-word hits in multi-concept questions.
