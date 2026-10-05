@@ -241,6 +241,106 @@
     return null;
   }
 
+  function detailedStepByStep(text){
+    const v=values(text),t=v.t;
+    const steps=[];
+    const push=(title,body)=>steps.push({title,body});
+
+    const speed=v.vf??v.vi??extractNumber(t,[/(?:velocidad|rapidez|\bv\b)[^0-9-]*(-?\d+(?:[.,]\d+)?)\s*(?:m\/s|m s)/]);
+
+    if((has(t,["cantidad de movimiento","momentum","momento lineal"])||/\bp\b/.test(t)) && v.mass!==null && speed!==null){
+      const p=v.mass*speed;
+      push("1. Identifico los datos",`Masa m = ${nfmt(v.mass)} kg y velocidad v = ${nfmt(speed)} m/s.`);
+      push("2. Identifico qué se busca","La cantidad de movimiento p.");
+      push("3. Elijo la fórmula","Para un cuerpo de masa constante: p = m·v.");
+      push("4. Sustituyo los datos",`p = ${nfmt(v.mass)} kg · ${nfmt(speed)} m/s.`);
+      push("5. Hago la cuenta",`p = ${nfmt(p)} kg·m/s.`);
+      push("6. Interpreto el resultado",`El módulo de la cantidad de movimiento es ${nfmt(Math.abs(p))} kg·m/s. El signo, si lo hay, indica el sentido respecto del eje elegido.`);
+      return {kind:"momentum",steps,result:`${nfmt(p)} kg·m/s`};
+    }
+
+    if(has(t,["impulso"]) && v.force!==null && v.time!==null){
+      const I=v.force*v.time;
+      push("1. Identifico los datos",`Fuerza neta constante F = ${nfmt(v.force)} N e intervalo Δt = ${nfmt(v.time)} s.`);
+      push("2. Identifico qué se busca","El impulso I producido durante ese intervalo.");
+      push("3. Elijo la fórmula","Si la fuerza neta es constante: I = F·Δt.");
+      push("4. Sustituyo los datos",`I = ${nfmt(v.force)} N · ${nfmt(v.time)} s.`);
+      push("5. Hago la cuenta",`I = ${nfmt(I)} N·s.`);
+      push("6. Relaciono con el momentum",`Como I = Δp, la cantidad de movimiento cambia en ${nfmt(I)} kg·m/s. N·s y kg·m/s son unidades equivalentes para el impulso.`);
+      return {kind:"impulse-force-time",steps,result:`${nfmt(I)} N·s`};
+    }
+
+    if(v.mass!==null && v.vi!==null && v.vf!==null &&
+       (has(t,["impulso","cambio de cantidad","delta p"])||has(t,["calcula","resolver","resolve","determina","halla"]))){
+      const dv=v.vf-v.vi;
+      const dp=v.mass*dv;
+      push("1. Identifico los datos",`m = ${nfmt(v.mass)} kg, vi = ${nfmt(v.vi)} m/s y vf = ${nfmt(v.vf)} m/s.`);
+      push("2. Defino el eje y cuido los signos","Las velocidades son vectoriales. Si una velocidad va en el sentido opuesto al eje elegido, debe entrar con signo negativo.");
+      push("3. Calculo el cambio de velocidad",`Δv = vf − vi = ${nfmt(v.vf)} − (${nfmt(v.vi)}) = ${nfmt(dv)} m/s.`);
+      push("4. Uso impulso–momentum","I = Δp = m·Δv = m(vf − vi).");
+      push("5. Sustituyo y calculo",`I = ${nfmt(v.mass)}·(${nfmt(v.vf)} − (${nfmt(v.vi)})) = ${nfmt(dp)} N·s.`);
+      push("6. Interpreto el signo",dp<0
+        ? "El resultado negativo significa que el impulso apunta en el sentido negativo del eje elegido; no significa que su magnitud sea negativa."
+        : "El resultado positivo significa que el impulso apunta en el sentido positivo del eje elegido.");
+      return {kind:"impulse-dp",steps,result:`${nfmt(dp)} N·s`};
+    }
+
+    if(has(t,["fuerza promedio","fuerza media","fuerza neta"]) && v.time!==null && v.impulse!==null){
+      const F=v.impulse/v.time;
+      push("1. Identifico los datos",`Impulso I = ${nfmt(v.impulse)} N·s y tiempo Δt = ${nfmt(v.time)} s.`);
+      push("2. Elijo la relación","Para la fuerza promedio: I = Fprom·Δt, entonces Fprom = I/Δt.");
+      push("3. Sustituyo",`Fprom = ${nfmt(v.impulse)} / ${nfmt(v.time)}.`);
+      push("4. Calculo",`Fprom = ${nfmt(F)} N.`);
+      push("5. Verifico unidades","(N·s)/s = N, por lo que la unidad final es correcta.");
+      return {kind:"average-force",steps,result:`${nfmt(F)} N`};
+    }
+
+    if(has(t,["fuerza promedio","fuerza media","fuerza neta"]) && v.time!==null && v.mass!==null && v.vi!==null && v.vf!==null){
+      const dv=v.vf-v.vi;
+      const dp=v.mass*dv;
+      const F=dp/v.time;
+      push("1. Identifico los datos",`m = ${nfmt(v.mass)} kg, vi = ${nfmt(v.vi)} m/s, vf = ${nfmt(v.vf)} m/s y Δt = ${nfmt(v.time)} s.`);
+      push("2. Calculo Δp",`Δp = m(vf−vi) = ${nfmt(v.mass)}·(${nfmt(v.vf)}−(${nfmt(v.vi)})) = ${nfmt(dp)} kg·m/s.`);
+      push("3. Relaciono fuerza e impulso","Fprom = Δp/Δt.");
+      push("4. Sustituyo y calculo",`Fprom = ${nfmt(dp)} / ${nfmt(v.time)} = ${nfmt(F)} N.`);
+      push("5. Interpreto el signo",F<0
+        ? "El signo negativo indica que la fuerza promedio apunta en el sentido negativo del eje."
+        : "El signo positivo indica que la fuerza promedio apunta en el sentido positivo del eje.");
+      return {kind:"average-force-dp",steps,result:`${nfmt(F)} N`};
+    }
+
+    if(has(t,["totalmente inelastico","totalmente inelástico","perfectamente inelastico","perfectamente inelástico","quedan pegados","quedan unidos","se pegan"]) &&
+       v.mass1!==null&&v.mass2!==null&&v.v1!==null&&v.v2!==null){
+      const numerator=v.mass1*v.v1+v.mass2*v.v2;
+      const totalMass=v.mass1+v.mass2;
+      const vfout=numerator/totalMass;
+      push("1. Reconozco el tipo de choque","Los cuerpos quedan unidos, así que es un choque totalmente inelástico.");
+      push("2. Defino el sistema y los signos","Tomo a los dos cuerpos como sistema y elijo un sentido positivo. Las velocidades opuestas deben llevar signos opuestos.");
+      push("3. Escribo conservación del momentum","Si el impulso externo durante el choque es despreciable: m₁v₁ + m₂v₂ = (m₁+m₂)vf.");
+      push("4. Sustituyo",`${nfmt(v.mass1)}·(${nfmt(v.v1)}) + ${nfmt(v.mass2)}·(${nfmt(v.v2)}) = (${nfmt(v.mass1)}+${nfmt(v.mass2)})vf.`);
+      push("5. Calculo el momentum inicial",`p inicial = ${nfmt(numerator)} kg·m/s.`);
+      push("6. Despejo y calculo vf",`vf = ${nfmt(numerator)} / ${nfmt(totalMass)} = ${nfmt(vfout)} m/s.`);
+      push("7. Interpreto","El signo de vf indica el sentido final del conjunto. En un choque totalmente inelástico se conserva el momentum, pero no la energía cinética.");
+      return {kind:"inelastic-collision",steps,result:`${nfmt(vfout)} m/s`};
+    }
+
+    if(has(t,["choque elastico","choque elástico","colision elastica","colisión elástica"]) &&
+       v.mass1!==null&&v.mass2!==null&&v.v1!==null&&v.v2!==null){
+      const den=v.mass1+v.mass2;
+      const v1f=((v.mass1-v.mass2)/den)*v.v1+(2*v.mass2/den)*v.v2;
+      const v2f=(2*v.mass1/den)*v.v1+((v.mass2-v.mass1)/den)*v.v2;
+      push("1. Reconozco el tipo de choque","Es un choque elástico unidimensional: se conservan tanto el momentum total como la energía cinética.");
+      push("2. Fijo un eje y signos","Asigno signo a cada velocidad según su sentido antes del choque.");
+      push("3. Escribo las dos conservaciones","Momentum: m₁v₁i+m₂v₂i=m₁v₁f+m₂v₂f. Energía cinética: ½m₁v₁i²+½m₂v₂i²=½m₁v₁f²+½m₂v₂f².");
+      push("4. Sustituyo los datos",`m₁=${nfmt(v.mass1)} kg, v₁i=${nfmt(v.v1)} m/s, m₂=${nfmt(v.mass2)} kg y v₂i=${nfmt(v.v2)} m/s.`);
+      push("5. Resuelvo el sistema",`Para un choque elástico 1D: v₁f=${nfmt(v1f)} m/s y v₂f=${nfmt(v2f)} m/s.`);
+      push("6. Interpreto los signos","Un resultado negativo indica movimiento en sentido opuesto al eje positivo elegido.");
+      return {kind:"elastic-collision",steps,result:`v₁f = ${nfmt(v1f)} m/s; v₂f = ${nfmt(v2f)} m/s`};
+    }
+
+    return null;
+  }
+
   function answer(query){
     const t=norm(query);
 
@@ -308,6 +408,7 @@
   window.ROBOTITO_PHYSICS_MOMENTUM={
     answer,
     solve,
+    detailedStepByStep,
     commonMistakes,
     sourceNote:"Núcleo de fórmulas alineado con los apuntes de Física de la usuaria; teoría ampliada para estudio y resolución."
   };
