@@ -2785,6 +2785,10 @@ async function handleSpeech(rawText){
     return;
   }
 
+  // Emotional meaning comes before generic knowledge so Robotito can react naturally
+  // to affection, rejection, threats, sad stories, praise and apologies.
+  if(window.ROBOTITO_EMOTION_DIALOGUE?.handle?.(interpreted,{rawText,who}))return;
+
   // One intent router handles live knowledge, object vision and visual math before decorative fallbacks.
   if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang}))return;
 
