@@ -2481,3 +2481,166 @@ body.layout-resizing *{cursor:col-resize!important}
   .animal-avatar-emoji .avatar-main-svg{width:248px;height:300px}
   .avatar-choice-emoji .avatar-choice-svg{width:60px;height:72px}
 }
+
+/* v21 — personajes expresivos con la calidad visual del panda original */
+.avatar-character .avatar-special{
+  display:initial;
+  min-height:0;
+  margin:0;
+  overflow:visible;
+  color:inherit;
+  font-size:inherit;
+  font-weight:inherit;
+  line-height:normal;
+}
+.robotito.avatar-custom .animal-avatar-emoji{
+  filter:drop-shadow(0 10px 9px rgba(55,42,58,.12));
+  animation:avatarSoftFloat 4.6s ease-in-out infinite;
+}
+.robotito.avatar-custom .avatar-character .avatar-whole{
+  transform-box:fill-box;
+  transform-origin:center 82%;
+}
+.robotito.avatar-custom:not(.dancing):not(.sleeping):not(.poked):not(.species-reacting) .avatar-character .avatar-body-group{
+  animation:avatarSoftBreath 4.1s ease-in-out infinite;
+}
+.avatar-character .avatar-head-group,
+.avatar-character .avatar-body-group,
+.avatar-character .avatar-arm,
+.avatar-character .avatar-leg,
+.avatar-character .avatar-trunk,
+.avatar-character .avatar-wing,
+.avatar-character .avatar-tail{
+  transform-box:fill-box;
+}
+.avatar-character .avatar-head-group{transform-origin:center 72%}
+.avatar-character .avatar-arm-left{transform-origin:80% 18%}
+.avatar-character .avatar-arm-right{transform-origin:20% 18%}
+.avatar-character .avatar-leg{transform-origin:center 20%}
+.avatar-character .avatar-trunk{transform-origin:50% 8%}
+.avatar-character .avatar-wing-left{transform-origin:80% 18%}
+.avatar-character .avatar-wing-right{transform-origin:20% 18%}
+.avatar-character .avatar-eye-group{animation:none}
+.avatar-character .avatar-iris{fill:#62566d}
+.avatar-character:is(.avatar-cat,.avatar-red-panda,.avatar-iguana,.avatar-chameleon,.avatar-panther,.avatar-fox,.avatar-tiger,.avatar-crocodile,.avatar-frog,.avatar-owl,.avatar-wolf,.avatar-peacock) .avatar-iris{fill:#718c52}
+.avatar-character:is(.avatar-polar-bear,.avatar-dolphin,.avatar-swan,.avatar-flamingo,.avatar-unicorn,.avatar-robot) .avatar-iris{fill:#68a9c8}
+.avatar-character:is(.avatar-dog,.avatar-monkey,.avatar-lion,.avatar-cow,.avatar-deer,.avatar-giraffe,.avatar-kangaroo,.avatar-otter,.avatar-beaver) .avatar-iris{fill:#9a6a3f}
+.avatar-character .avatar-pupil,
+.avatar-character .avatar-iris,
+.avatar-character .avatar-eye-shine{transition:transform .16s ease,opacity .12s ease}
+.avatar-character .avatar-eye-left .avatar-pupil,
+.avatar-character .avatar-eye-left .avatar-iris{transform-origin:52% 56%}
+.avatar-character .avatar-eye-right .avatar-pupil,
+.avatar-character .avatar-eye-right .avatar-iris{transform-origin:48% 56%}
+.robotito.avatar-custom.mood-curious .avatar-eye-left .avatar-pupil,
+.robotito.avatar-custom.mood-curious .avatar-eye-left .avatar-iris{transform:translate(-2px,-2px)}
+.robotito.avatar-custom.mood-curious .avatar-eye-right .avatar-pupil,
+.robotito.avatar-custom.mood-curious .avatar-eye-right .avatar-iris{transform:translate(-2px,-2px)}
+.avatar-character .blink-line{
+  opacity:0;
+  fill:none;
+  stroke:#433a46;
+  stroke-width:3.5;
+  stroke-linecap:round;
+}
+.robotito.avatar-custom.blink:not(.sleeping):not(.heart-eyes) .avatar-character .blink-line,
+.robotito.avatar-custom.sleeping .avatar-character .blink-line{opacity:.92!important}
+.robotito.avatar-custom.blink:not(.sleeping):not(.heart-eyes) .avatar-character .eye-white-svg,
+.robotito.avatar-custom.blink:not(.sleeping):not(.heart-eyes) .avatar-character .iris,
+.robotito.avatar-custom.sleeping .avatar-character .eye-white-svg,
+.robotito.avatar-custom.sleeping .avatar-character .iris{opacity:0!important}
+.avatar-character .avatar-whiskers{transform-box:fill-box;transform-origin:center;animation:whiskerQuiver 6.8s ease-in-out infinite}
+.avatar-character .avatar-face-mask{filter:drop-shadow(0 2px 2px rgba(55,42,58,.05))}
+.avatar-character .avatar-tooth{filter:drop-shadow(0 1px 1px rgba(50,35,51,.1))}
+.avatar-character .avatar-tail-detail{pointer-events:none}
+.avatar-character .avatar-shell{filter:drop-shadow(0 4px 4px rgba(55,42,58,.09))}
+.avatar-character .avatar-mane{filter:drop-shadow(0 5px 5px rgba(71,46,42,.10))}
+.avatar-character .avatar-horn{filter:drop-shadow(0 0 5px rgba(221,140,255,.32))}
+.avatar-character .avatar-feather-detail{animation:featherShimmer 5.2s ease-in-out infinite}
+
+.robotito.avatar-dog .avatar-tail-wag{animation:gentleDogWag .7s ease-in-out infinite alternate}
+.robotito.avatar-rabbit .avatar-ear-left{animation:rabbitEarLeft 4.8s ease-in-out infinite}
+.robotito.avatar-rabbit .avatar-ear-right{animation:rabbitEarRight 4.8s ease-in-out infinite}
+.robotito.avatar-elephant .avatar-trunk{animation:trunkSway 3.2s ease-in-out infinite}
+.robotito.avatar-chameleon .avatar-eye-left{animation:chameleonLookLeft 3.8s ease-in-out infinite}
+.robotito.avatar-chameleon .avatar-eye-right{animation:chameleonLookRight 4.2s ease-in-out infinite}
+.robotito.avatar-turtle .avatar-shell{animation:shellBreathe 4s ease-in-out infinite}
+.robotito.avatar-armadillo .avatar-shell{animation:shellBreathe 3.6s ease-in-out infinite reverse}
+.robotito.avatar-peacock .avatar-tail-fan{animation:peacockProud 3.3s ease-in-out infinite}
+.robotito.avatar-dolphin .avatar-tail{animation:dolphinTail 1.5s ease-in-out infinite alternate}
+.robotito.avatar-penguin .avatar-wing-left{animation:penguinFlipperL 3.4s ease-in-out infinite}
+.robotito.avatar-penguin .avatar-wing-right{animation:penguinFlipperR 3.4s ease-in-out infinite}
+.robotito.avatar-giraffe .avatar-head-group{animation:giraffeLook 5.6s ease-in-out infinite}
+.robotito.avatar-robot .avatar-antenna{animation:robotAntenna 1.8s ease-in-out infinite}
+
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-head-group{
+  animation:customPetNuzzle .72s ease-in-out 2!important;
+}
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-tail{
+  animation:detailedFastTail .18s ease-in-out infinite alternate!important;
+}
+.robotito.avatar-custom.eating .avatar-character .avatar-head-group{
+  animation:customEatNod .28s ease-in-out infinite alternate!important;
+}
+.robotito.avatar-custom.hugging .avatar-character .avatar-arm-left{
+  animation:customHugLeft .82s ease-in-out 2!important;
+}
+.robotito.avatar-custom.hugging .avatar-character .avatar-arm-right{
+  animation:customHugRight .82s ease-in-out 2!important;
+}
+.robotito.avatar-custom.highfive .avatar-character .avatar-arm-right{
+  animation:customHighFive .58s ease-in-out 2!important;
+}
+.robotito.avatar-custom.playing .avatar-character .avatar-whole{
+  animation:customPlayBounce .55s ease-in-out 4!important;
+}
+.robotito.avatar-custom.sleeping .avatar-character .avatar-whole{
+  animation:customSleepBreath 2.8s ease-in-out infinite!important;
+}
+.robotito.avatar-custom.dancing .avatar-character .avatar-whole{
+  animation:customDance  .72s ease-in-out infinite!important;
+}
+
+.avatar-choice:has(.avatar-character){
+  border-color:rgba(235,219,230,.76);
+  box-shadow:0 6px 18px rgba(72,54,75,.045),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.avatar-choice:has(.avatar-character):hover,
+.avatar-choice:has(.avatar-character):focus-visible{
+  border-color:#e8b5c8;
+  box-shadow:0 11px 25px rgba(95,65,94,.12),0 0 0 3px rgba(239,175,194,.10);
+}
+.avatar-choice:has(.avatar-character):hover .avatar-tail{animation:detailedFastTail .24s ease-in-out infinite alternate}
+.avatar-choice:has(.avatar-character):hover .avatar-ear-left{animation:detailedPetEar .38s ease-in-out 2}
+.avatar-choice:has(.avatar-character):hover .avatar-ear-right{animation:detailedPetEar .38s ease-in-out 2 reverse}
+
+@keyframes avatarSoftFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes avatarSoftBreath{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.012) translateY(-1px)}}
+@keyframes whiskerQuiver{0%,88%,100%{transform:rotate(0)}92%{transform:rotate(-1.2deg)}96%{transform:rotate(1.2deg)}}
+@keyframes featherShimmer{0%,100%{opacity:.42}50%{opacity:.68}}
+@keyframes gentleDogWag{from{transform:rotate(-14deg)}to{transform:rotate(18deg)}}
+@keyframes rabbitEarLeft{0%,78%,100%{transform:rotate(0)}84%{transform:rotate(-10deg)}90%{transform:rotate(4deg)}}
+@keyframes rabbitEarRight{0%,80%,100%{transform:rotate(0)}86%{transform:rotate(8deg)}92%{transform:rotate(-3deg)}}
+@keyframes trunkSway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(5deg) translateX(2px)}}
+@keyframes chameleonLookLeft{0%,100%{transform:translate(0)}35%{transform:translate(-3px,2px)}70%{transform:translate(2px,-2px)}}
+@keyframes chameleonLookRight{0%,100%{transform:translate(0)}35%{transform:translate(3px,-2px)}70%{transform:translate(-2px,2px)}}
+@keyframes shellBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025) translateY(-1px)}}
+@keyframes peacockProud{0%,100%{transform:scale(.97)}50%{transform:scale(1.035)}}
+@keyframes dolphinTail{from{transform:rotate(-7deg)}to{transform:rotate(9deg)}}
+@keyframes penguinFlipperL{0%,78%,100%{transform:rotate(0)}86%{transform:rotate(10deg)}}
+@keyframes penguinFlipperR{0%,78%,100%{transform:rotate(0)}86%{transform:rotate(-10deg)}}
+@keyframes giraffeLook{0%,82%,100%{transform:rotate(0)}88%{transform:rotate(-2.5deg)}94%{transform:rotate(1.5deg)}}
+@keyframes robotAntenna{0%,100%{opacity:.72}50%{opacity:1;filter:drop-shadow(0 0 5px #ff8db1)}}
+@keyframes customPetNuzzle{0%,100%{transform:rotate(0) translate(0)}50%{transform:rotate(-4deg) translate(-3px,2px)}}
+@keyframes customEatNod{to{transform:translateY(4px) rotate(1deg)}}
+@keyframes customHugLeft{0%,100%{transform:rotate(0)}50%{transform:rotate(-31deg) translate(14px,-1px)}}
+@keyframes customHugRight{0%,100%{transform:rotate(0)}50%{transform:rotate(31deg) translate(-14px,-1px)}}
+@keyframes customHighFive{0%,100%{transform:rotate(0)}50%{transform:rotate(-54deg) translate(-8px,-20px)}}
+@keyframes customPlayBounce{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(3deg)}}
+@keyframes customSleepBreath{0%,100%{transform:translateY(2px) scale(1)}50%{transform:translateY(6px) scale(1.012) rotate(1deg)}}
+@keyframes customDance{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-12px) rotate(5deg)}}
+
+@media(prefers-reduced-motion:reduce){
+  .robotito.avatar-custom .animal-avatar-emoji,
+  .robotito.avatar-custom .avatar-character *{animation:none!important}
+}
