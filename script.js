@@ -1211,7 +1211,61 @@ function setupAudio(stream){
   }catch(e){console.warn("audio",e);}
 }
 
+let pendingRecognitionText="";
+let pendingRecognitionMeta=null;
+let recognitionCommitTimer=null;
+
+function cleanRecognitionTranscript(input){
+  return String(input||"")
+    .replace(/\s+/g," ")
+    .replace(/(^|\s)([a-záéíóúüñ]+)(?:\s+\2)(?=\s|$)/gi,"$1$2")
+    .replace(/\b(?:eh|em|mmm|uh)\b(?:\s+\b(?:eh|em|mmm|uh)\b)*/gi," ")
+    .replace(/\s+([,.;!?])/g,"$1")
+    .trim();
+}
+
+function mergeRecognitionChunks(previous,next){
+  const left=cleanRecognitionTranscript(previous);
+  const right=cleanRecognitionTranscript(next);
+  if(!left)return right;
+  if(!right)return left;
+  const leftNorm=normalizeText(left),rightNorm=normalizeText(right);
+  if(leftNorm===rightNorm||leftNorm.endsWith(" "+rightNorm))return left;
+  if(rightNorm.startsWith(leftNorm+" "))return right;
+  const leftRaw=left.split(/\s+/),rightRaw=right.split(/\s+/);
+  const leftWords=leftNorm.split(" "),rightWords=rightNorm.split(" ");
+  let overlap=0;
+  for(let size=Math.min(7,leftWords.length,rightWords.length);size>0;size--){
+    if(leftWords.slice(-size).join(" ")===rightWords.slice(0,size).join(" ")){overlap=size;break;}
+  }
+  return cleanRecognitionTranscript(leftRaw.concat(rightRaw.slice(overlap)).join(" "));
+}
+
+function flushRecognitionChunks(){
+  clearTimeout(recognitionCommitTimer);
+  recognitionCommitTimer=null;
+  const text=pendingRecognitionText;
+  const meta=pendingRecognitionMeta;
+  pendingRecognitionText="";
+  pendingRecognitionMeta=null;
+  if(text){
+    updateDetectedLanguage(text);
+    processSpeechResult(text,meta);
+  }
+}
+
+function queueRecognitionChunk(text,meta=null){
+  const clean=cleanRecognitionTranscript(text);
+  if(!clean)return;
+  pendingRecognitionText=mergeRecognitionChunks(pendingRecognitionText,clean);
+  pendingRecognitionMeta=pendingRecognitionMeta||meta;
+  $("#transcript").textContent=pendingRecognitionText+" …";
+  clearTimeout(recognitionCommitTimer);
+  recognitionCommitTimer=setTimeout(flushRecognitionChunks,isMobileSpeech()?520:360);
+}
+
 function processSpeechResult(text,speechMeta=null){
+  text=cleanRecognitionTranscript(text);
   if(!text)return;
   $("#transcript").textContent=text;
   state.lastHeardAt=Date.now();
@@ -1247,7 +1301,8 @@ function speechAlternativeScore(alternative){
   let score=(Number(alternative?.confidence)||0)*4;
   score+=Math.min(tokens.length,10)*.025;
   if(state.languageMode==="es"&&normalizeSpanishSpeechIntent(raw)!==normalized)score+=.16;
-  if(/\b(robotito|clase|profesor|profesora|fisica|matematica|ejercicio|materia|tema|hambre|hora|fecha|dedos|objeto|presidente|recordas|acordas)\b/.test(normalized))score+=.22;
+  if(/\b(robotito|clase|profesor|profesora|fisica|matematica|quimica|biologia|ejercicio|materia|tema|hambre|hora|fecha|dedos|objeto|presidente|recordas|acordas|densidad|masa|volumen|permutacion|energia|impulso)\b/.test(normalized))score+=.24;
+  if(/\b(que|como|cual|quien|cuando|donde|por que|cuanto|explica|define|decime|dime)\b/.test(normalized))score+=.18;
   if(window.ROBOTITO_EMOTION_DIALOGUE?.classify?.(raw))score+=.28;
   if(tokens.length>=3&&new Set(tokens).size===1)score-=.8;
   if(/^(?:eh|em|mmm|ah)+$/.test(normalized))score-=.5;
@@ -1268,7 +1323,7 @@ function createSpeechRecognition(){
   // in short sessions but is restarted automatically.
   r.continuous=!isIOSSpeech();
   r.interimResults=true;
-  r.maxAlternatives=3;
+  r.maxAlternatives=5;
 
   r.onstart=()=>{
     state.lastSpeechStartAt=Date.now();
@@ -1291,7 +1346,7 @@ function createSpeechRecognition(){
       else interim+=(interim?" ":"")+text;
     }
     if(interim)$("#transcript").textContent=interim+" …";
-    if(finalText){ r._hadFinal=true; updateDetectedLanguage(finalText); processSpeechResult(finalText); }
+    if(finalText){ r._hadFinal=true; queueRecognitionChunk(finalText); }
   };
 
   r.onerror=e=>{
@@ -4922,6 +4977,12 @@ function purgeNamedPeople(){
   save("robotito.people.v1",oldPeople);
   save("robotito.memories.v1",oldMem);
 }
+
+window.ROBOTITO_SPEECH_QA={
+  cleanTranscript:cleanRecognitionTranscript,
+  mergeChunks:mergeRecognitionChunks,
+  alternativeScore:speechAlternativeScore
+};
 
 window.ROBOTITO_BATTERY={
   alertLevels:BATTERY_ALERT_LEVELS,
