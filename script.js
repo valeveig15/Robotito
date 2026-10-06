@@ -481,10 +481,19 @@ function detectGeneratedSpeechLanguage(text){
   if(ranked[0][1]<2||ranked[0][1]===ranked[1][1])return "und";
   return ranked[0][0];
 }
+function isLanguageNeutralSpeech(text){
+  const cleaned=cleanSpeechText(text).replace(/https?:\/\/\S+/gi,"").replace(/[\d\s.,:;!?%+\-=()\/\\]+/g,"").trim();
+  return !cleaned || /^[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚáéíóúÑñÜü'-]{0,24}$/.test(cleaned);
+}
 function speechNeedsLocalization(text,target=responseLanguage(),forcedLang=null){
   if(forcedLang)return false;
   const source=detectGeneratedSpeechLanguage(text);
-  return source!=="und"&&source!==target;
+  if(source===target)return false;
+  // Most legacy/generated app copy is Spanish. If English or Portuguese is
+  // selected, an uncertain sentence must be translated rather than spoken
+  // with the wrong accent. Numbers, formulas and proper names are neutral.
+  if(source==="und")return target!=="es"&&!isLanguageNeutralSpeech(text);
+  return true;
 }
 function localizedSpeechFallback(target){
   if(target==="en")return "I understood you, but I couldn't prepare that answer in English. Please try again.";
@@ -492,8 +501,9 @@ function localizedSpeechFallback(target){
   return "Te entendí, pero no pude preparar esa respuesta en español. Probá de nuevo.";
 }
 async function localizeGeneratedSpeech(text,target=responseLanguage()){
-  const source=detectGeneratedSpeechLanguage(text);
-  if(source==="und"||source===target)return String(text||"");
+  const detected=detectGeneratedSpeechLanguage(text);
+  if(detected===target||isLanguageNeutralSpeech(text))return String(text||"");
+  const source=detected==="und"?"es":detected;
   let translated=null;
   try{
     translated=await Promise.race([
@@ -541,6 +551,7 @@ function sayInLanguage(text,lang,ms=3500){
 }
 window.ROBOTITO_LANGUAGE_PIPELINE={
   detect:detectGeneratedSpeechLanguage,
+  isNeutral:isLanguageNeutralSpeech,
   needsLocalization:speechNeedsLocalization,
   fallback:localizedSpeechFallback,
   localize:localizeGeneratedSpeech
@@ -1679,6 +1690,7 @@ function finishStartupAvatar(id){
 function setLanguageMode(mode){
   if(!["es","en","pt"].includes(mode))return;
   state.languageMode=mode;
+  document.documentElement.lang=mode;
   state.lastDetectedLanguage=mode;
   state.autoListenLanguage=mode;
   localStorage.setItem("robotito.languageMode.v1",mode);
