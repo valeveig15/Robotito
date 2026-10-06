@@ -2039,3 +2039,118 @@ body.layout-resizing *{cursor:col-resize!important}
 @media(prefers-reduced-motion:reduce){
   .animal-avatar-emoji,.animal-avatar-mood{animation:none!important}
 }
+
+
+/* v13 — species personalities, custom animal icons and characteristic motions */
+.avatar-choice{min-height:124px}
+.avatar-special{
+  min-height:23px;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+.avatar-illustration{display:block;overflow:visible}
+.avatar-choice-emoji{display:flex;align-items:center;justify-content:center;min-height:48px}
+.avatar-choice-svg{width:48px;height:48px;filter:drop-shadow(0 4px 5px rgba(55,42,58,.14))}
+.avatar-main-svg{width:158px;height:158px;filter:drop-shadow(0 12px 11px rgba(55,42,58,.17))}
+.avatar-startup-svg{width:72px;height:72px;margin:0 auto}
+.avatar-brand-svg{display:inline-block;width:1.18em;height:1.18em;vertical-align:-.21em}
+.avatar-emoji-glyph.avatar-brand-svg{width:auto;height:auto}
+.animal-avatar-emoji:has(.avatar-illustration){font-size:0}
+.language-panda:has(.avatar-illustration){font-size:0}
+
+.robotito.avatar-chameleon .animal-avatar-emoji{
+  filter:hue-rotate(var(--chameleon-hue,0deg)) saturate(1.42) drop-shadow(0 12px 11px rgba(55,42,58,.17));
+  transition:filter .48s ease;
+}
+.robotito.avatar-chameleon.mood-calm{--chameleon-hue:0deg}
+.robotito.avatar-chameleon.mood-happy{--chameleon-hue:52deg}
+.robotito.avatar-chameleon.mood-sad{--chameleon-hue:180deg}
+.robotito.avatar-chameleon.mood-angry{--chameleon-hue:305deg}
+.robotito.avatar-chameleon.mood-scared{--chameleon-hue:238deg}
+.robotito.avatar-chameleon.mood-hungry{--chameleon-hue:78deg}
+.robotito.avatar-chameleon.mood-sleepy{--chameleon-hue:152deg}
+.robotito.avatar-chameleon.mood-curious{--chameleon-hue:105deg}
+.robotito.avatar-chameleon.mood-affectionate{--chameleon-hue:325deg}
+
+.robotito.species-reacting.species-motion-roll .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-roll .panda-whole{animation:speciesRoll .9s ease-in-out 1}
+.robotito.species-reacting.species-motion-stomp .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-stomp .panda-whole,
+.robotito.species-reacting.species-motion-roar .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-roar .panda-whole{animation:speciesStomp .58s ease-in-out 2}
+.robotito.species-reacting.species-motion-swim .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-swim .panda-whole,
+.robotito.species-reacting.species-motion-glide .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-glide .panda-whole{animation:speciesGlide 1.35s ease-in-out 1}
+.robotito.species-reacting.species-motion-sniff .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-sniff .panda-whole{animation:speciesSniff .42s ease-in-out 3}
+.robotito.species-reacting.species-motion-climb .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-climb .panda-whole{animation:speciesClimb 1.05s ease-in-out 1}
+.robotito.species-reacting.species-motion-pounce .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-pounce .panda-whole,
+.robotito.species-reacting.species-motion-prowl .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-prowl .panda-whole{animation:speciesPounce .85s cubic-bezier(.2,.8,.2,1) 1}
+.robotito.species-reacting.species-motion-stretch .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-stretch .panda-whole{animation:speciesStretch 1.15s ease-in-out 1}
+.robotito.species-reacting.species-motion-color .animal-avatar-emoji{
+  animation:speciesColor 1.15s ease-in-out 1;
+}
+.robotito.species-reacting.species-motion-curl .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-curl .panda-whole,
+.robotito.species-reacting.species-motion-hide .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-hide .panda-whole{animation:speciesCurl .86s ease-in-out 1}
+.robotito.species-reacting.species-motion-waddle .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-waddle .panda-whole{animation:speciesWaddle .58s ease-in-out 3}
+.robotito.species-reacting.species-motion-sway .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-sway .panda-whole,
+.robotito.species-reacting.species-motion-tail .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-tail .panda-whole{animation:speciesSway .62s ease-in-out 3}
+.robotito.species-reacting.species-motion-scurry .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-scurry .panda-whole{animation:speciesScurry .45s ease-in-out 4}
+.robotito.species-reacting.species-motion-hop .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-hop .panda-whole,
+.robotito.species-reacting.species-motion-bounce .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-bounce .panda-whole{animation:speciesHop .58s ease-out 3}
+.robotito.species-reacting.species-motion-gallop .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-gallop .panda-whole{animation:speciesGallop .46s ease-in-out 4}
+.robotito.species-reacting.species-motion-splash .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-splash .panda-whole{animation:speciesSplash .8s ease-out 2}
+.robotito.species-reacting.species-motion-graze .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-graze .panda-whole{animation:speciesGraze .62s ease-in-out 3}
+.robotito.species-reacting.species-motion-strut .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-strut .panda-whole{animation:speciesStrut .72s ease-in-out 3}
+.robotito.species-reacting.species-motion-balance .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-balance .panda-whole{animation:speciesBalance .9s ease-in-out 2}
+.robotito.species-reacting.species-motion-build .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-build .panda-whole{animation:speciesBuild .38s ease-in-out 5}
+.robotito.species-reacting.species-motion-sparkle .animal-avatar-emoji,
+.robotito.species-reacting.species-motion-sparkle .panda-whole{animation:speciesSparkle .82s ease-in-out 2}
+.robotito.species-reacting.species-motion-sparkle .animal-avatar-backdrop{box-shadow:0 0 34px rgba(255,116,211,.48),0 0 58px rgba(108,216,255,.30)}
+
+@keyframes speciesRoll{0%,100%{transform:rotate(0) translateY(0)}45%{transform:rotate(178deg) translateY(-9px) scale(.94)}75%{transform:rotate(354deg) translateY(0)}}
+@keyframes speciesStomp{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(-8px) scale(1.05)}65%{transform:translateY(4px) scaleX(1.08) scaleY(.93)}}
+@keyframes speciesGlide{0%,100%{transform:translateX(0) rotate(0)}35%{transform:translate(-24px,-7px) rotate(-6deg)}70%{transform:translate(23px,-5px) rotate(5deg)}}
+@keyframes speciesSniff{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(8px) rotate(4deg) scale(1.03)}}
+@keyframes speciesClimb{0%,100%{transform:translate(0,0) rotate(0)}45%{transform:translate(-10px,-25px) rotate(-8deg)}75%{transform:translate(8px,-13px) rotate(6deg)}}
+@keyframes speciesPounce{0%{transform:translateX(-15px) scale(.94)}45%{transform:translate(8px,-14px) scale(1.08)}70%{transform:translateX(16px) scale(1.02)}100%{transform:translateX(0) scale(1)}}
+@keyframes speciesStretch{0%,100%{transform:scale(1)}45%{transform:scaleX(1.12) scaleY(.91) translateY(5px)}70%{transform:scaleX(.96) scaleY(1.09) translateY(-5px)}}
+@keyframes speciesColor{0%,100%{transform:scale(1);filter:hue-rotate(0deg) saturate(1.4)}35%{transform:scale(1.07);filter:hue-rotate(125deg) saturate(1.8)}70%{filter:hue-rotate(255deg) saturate(1.8)}}
+@keyframes speciesCurl{0%,100%{transform:scale(1) rotate(0)}45%{transform:scale(.66) rotate(18deg) translateY(23px)}75%{transform:scale(.82) rotate(-8deg)}}
+@keyframes speciesWaddle{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-7px) rotate(-8deg)}75%{transform:translateX(7px) rotate(8deg)}}
+@keyframes speciesSway{0%,100%{transform:rotate(0)}35%{transform:rotate(-8deg) translateX(-5px)}70%{transform:rotate(8deg) translateX(5px)}}
+@keyframes speciesScurry{0%,100%{transform:translateX(0)}25%{transform:translateX(-16px) rotate(-4deg)}75%{transform:translateX(16px) rotate(4deg)}}
+@keyframes speciesHop{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(-24px) scaleX(.94) scaleY(1.08)}70%{transform:translateY(3px) scaleX(1.08) scaleY(.94)}}
+@keyframes speciesGallop{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(10px,-8px) rotate(3deg)}75%{transform:translate(-10px,-5px) rotate(-3deg)}}
+@keyframes speciesSplash{0%,100%{transform:translateY(0) rotate(0)}45%{transform:translateY(-25px) rotate(-12deg) scale(1.06)}70%{transform:translateY(2px) rotate(8deg)}}
+@keyframes speciesGraze{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(8deg) translate(6px,10px) scale(.97)}}
+@keyframes speciesStrut{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-8px) rotate(-4deg) scale(1.04)}75%{transform:translateX(8px) rotate(4deg) scale(1.04)}}
+@keyframes speciesBalance{0%,100%{transform:rotate(0)}35%{transform:rotate(-7deg) translateY(-5px)}70%{transform:rotate(7deg) translateY(-5px)}}
+@keyframes speciesBuild{0%,100%{transform:rotate(0) translateX(0)}50%{transform:rotate(-8deg) translateX(-5px) scale(1.03)}}
+@keyframes speciesSparkle{0%,100%{transform:translateY(0) rotate(0) scale(1);filter:drop-shadow(0 10px 10px rgba(76,43,86,.14))}45%{transform:translateY(-17px) rotate(-6deg) scale(1.08);filter:drop-shadow(0 0 16px #ff78d5) drop-shadow(0 0 22px #79dfff)}70%{transform:translateY(-5px) rotate(7deg) scale(1.03)}}
+
+@media(max-width:600px){
+  .avatar-choice{min-height:116px}
+  .avatar-choice-svg{width:43px;height:43px}
+}
