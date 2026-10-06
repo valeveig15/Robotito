@@ -397,7 +397,15 @@
       "Estoy olfateando el suelo con pasos diminutos.",
       "¡Púas arriba y cuerpo en bolita!",
       "No me pinches o vas a descubrir que yo también pincho.",
-      "Abrazo con cuidado: primero bajo un poco las púas.")
+      "Abrazo con cuidado: primero bajo un poco las púas."),
+    "robot":p("procesa datos, hace pitidos y aprende con cada interacción","bounce",
+      "Bip, bip… caricia detectada. Mi circuito de ternura está feliz.",
+      "Energía recibida. Mis baterías virtuales dicen: ¡gracias!",
+      "Activando protocolo de juego. Tres, dos, uno… ¡bip!",
+      "Estoy ordenando datos y aprendiendo algo nuevo sobre el mundo.",
+      "¡Alerta! Mis sensores registraron un susto inesperado.",
+      "Ese toque activó mi alarma de cosquillas electrónicas.",
+      "Abrazo robótico iniciado: suave, calentito y con muchos bips.")
   };
 
   function profile(id){return profiles[id]||profiles.panda;}
