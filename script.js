@@ -60,7 +60,8 @@ const ROBOTITO_AVATARS = [
   {id:"otter",emoji:"🦦",es:"Nutria",en:"Otter",pt:"Lontra"},
   {id:"sloth",emoji:"🦥",es:"Perezoso",en:"Sloth",pt:"Preguiça"},
   {id:"beaver",emoji:"🦫",es:"Castor",en:"Beaver",pt:"Castor"},
-  {id:"hedgehog",emoji:"🦔",es:"Erizo",en:"Hedgehog",pt:"Ouriço"}
+  {id:"hedgehog",emoji:"🦔",es:"Erizo",en:"Hedgehog",pt:"Ouriço"},
+  {id:"robot",emoji:"🤖",es:"Robot",en:"Robot",pt:"Robô"}
 ];
 
 
