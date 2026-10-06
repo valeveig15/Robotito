@@ -93,10 +93,12 @@
 
     if(species&&avatars){
       const audit=species.audit(avatars.list.map(item=>item.id));
-      results.push(same(audit.count,49,"hay una personalidad por avatar"));
+      results.push(same(audit.count,50,"hay una personalidad por avatar"));
       results.push(same(audit.missing.length,0,"cada especie tiene rasgo, movimiento y comentarios"));
       results.push(truthy(species.line("chameleon","surprise").includes("color"),"camaleón reacciona cambiando de color"));
       results.push(truthy(species.line("dolphin","play").includes("agua"),"delfín juega en el agua"));
+      results.push(truthy(species.line("robot","pet").toLowerCase().includes("bip"),"robot reacciona con sonidos electrónicos"));
+      results.push(same(avatars.list.at(-1).id,"robot","robot aparece al final del selector"));
     }else results.push(truthy(false,"species personalities loaded"));
 
     if(videoMaterial){
