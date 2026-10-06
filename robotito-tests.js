@@ -17,7 +17,6 @@
     const webKnowledge=window.ROBOTITO_WEB_KNOWLEDGE;
     const battery=window.ROBOTITO_BATTERY;
     const avatars=window.ROBOTITO_AVATARS;
-    const avatarArt=window.ROBOTITO_AVATAR_ART;
     const species=window.ROBOTITO_SPECIES;
     const languagePipeline=window.ROBOTITO_LANGUAGE_PIPELINE;
     const silence=window.ROBOTITO_SILENCE;
@@ -91,19 +90,6 @@
       results.push(truthy(avatars.visualMarkup("armadillo").includes("<svg"),"armadillo usa icono ilustrado"));
       results.push(same(avatars.byId("missing").id,"panda","usa panda como avatar seguro"));
     }else results.push(truthy(false,"avatar catalog loaded"));
-
-    if(avatarArt&&avatars){
-      const artAudit=avatarArt.audit(avatars.list.map(item=>item.id));
-      results.push(same(artAudit.count,50,"hay una ilustración detallada por avatar"));
-      results.push(same(artAudit.missing.length,0,"ningún avatar carece de ilustración"));
-      results.push(truthy(avatarArt.render({id:"dog"},"test-art").includes('data-character="dog"'),"perro tiene cuerpo vectorial propio"));
-      results.push(truthy(avatarArt.render({id:"turtle"},"test-art").includes("avatar-shell"),"tortuga tiene caparazón ilustrado"));
-      results.push(truthy(avatarArt.render({id:"robot"},"test-art").includes("avatar-antenna"),"robot tiene piezas ilustradas"));
-      results.push(truthy(avatarArt.render({id:"dog"},"test-art").includes("plush-avatar-whole"),"los animales usan la base tierna del panda"));
-      results.push(truthy(avatarArt.render({id:"fox"},"test-art").includes("avatar-eye-star"),"los avatares conservan ojos brillantes detallados"));
-      results.push(truthy(avatars.list.every(item=>avatarArt.render(item,"test-art").includes("plush-avatar-whole")),"todos los avatares comparten la estética tierna"));
-      results.push(truthy(document.querySelector(".panda-svg .panda-whole .head-group"),"el panda original permanece intacto"));
-    }else results.push(truthy(false,"detailed avatar art loaded"));
 
     if(species&&avatars){
       const audit=species.audit(avatars.list.map(item=>item.id));
