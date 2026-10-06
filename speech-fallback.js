@@ -88,6 +88,25 @@
     return out;
   }
 
+  function enhanceAudio(input){
+    if(!input?.length)return input;
+    let mean=0;
+    for(let i=0;i<input.length;i++)mean+=input[i];
+    mean/=input.length;
+    let energy=0,peak=0;
+    for(let i=0;i<input.length;i++){
+      const centered=input[i]-mean;
+      energy+=centered*centered;
+      peak=Math.max(peak,Math.abs(centered));
+    }
+    const rms=Math.sqrt(energy/Math.max(1,input.length));
+    if(rms<.0005)return input;
+    const gain=Math.max(.75,Math.min(6,.105/rms,.92/Math.max(.01,peak)));
+    const out=new Float32Array(input.length);
+    for(let i=0;i<input.length;i++)out[i]=Math.max(-1,Math.min(1,(input[i]-mean)*gain));
+    return out;
+  }
+
   function rmsOf(data){
     let sum=0;for(let i=0;i<data.length;i++){const x=data[i];sum+=x*x;}
     return Math.sqrt(sum/Math.max(1,data.length));
@@ -100,7 +119,7 @@
   function enqueueTranscription(raw,meta=null){
     if(!raw||raw.length<1000)return;
     const sr=ctx?.sampleRate||48000;
-    const audio=resample(raw,sr,16000);
+    const audio=enhanceAudio(resample(raw,sr,16000));
     queue=queue.then(async()=>{
       if(!active||paused)return;
       const model=await loadModel();
@@ -111,13 +130,15 @@
         language:language==="en"?"english":language==="pt"?"portuguese":"spanish",
         chunk_length_s:20,
         stride_length_s:3,
-        num_beams:2,
+        num_beams:4,
+        temperature:0,
         condition_on_prev_tokens:false
       };
       const result=await model(audio,opts);
       const text=String(result?.text||"").trim()
         .replace(/^\[[^\]]+\]\s*/,"")
         .replace(/^\([^\)]+\)\s*/,"")
+        .replace(/(^|\s)([a-záéíóúüñ]+)(?:\s+\2)(?=\s|$)/gi,"$1$2")
         .replace(/\s+/g," ");
       const normalized=text.toLowerCase().replace(/[^a-záéíóúüñ0-9]+/g," ").trim();
       const duplicate=normalized&&normalized===lastTranscript&&Date.now()-lastTranscriptAt<4500;
@@ -138,7 +159,7 @@
     const endedAt=Date.now();
     const startedAt=segmentStartEpoch||endedAt;
     const duration=(performance.now()-segmentStart)/1000;
-    const enough=duration>=0.58&&voiceFrames>=3;
+    const enough=duration>=0.42&&voiceFrames>=2;
     const raw=enough?concat(segment):null;
     const meta=enough?{startedAt,endedAt,duration}:null;
     resetSegment();
