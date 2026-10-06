@@ -109,11 +109,21 @@
     if(languagePipeline){
       results.push(same(languagePipeline.detect("Me gustan mucho los mimos tranquilos."),"es","detecta respuesta generada en español"));
       results.push(same(languagePipeline.detect("I really like gentle pats."),"en","detecta respuesta generada en inglés"));
+      results.push(same(languagePipeline.detect("Eu entendi você e estou feliz."),"pt","detecta respuesta generada en portugués"));
       results.push(same(languagePipeline.needsLocalization("Me gustan mucho los mimos tranquilos.","en",null),true,"inglés traduce respuestas españolas"));
       results.push(same(languagePipeline.needsLocalization("Mi nariz detectó algo rico a varios metros.","en",null),true,"inglés traduce frases españolas de baja confianza"));
       results.push(same(languagePipeline.needsLocalization("I really like gentle pats.","en",null),false,"inglés conserva respuestas ya inglesas"));
+      results.push(same(languagePipeline.needsLocalization("Me gustan mucho los mimos tranquilos.","pt",null),true,"portugués traduce respuestas españolas"));
+      results.push(same(languagePipeline.needsLocalization("Eu entendi você e estou feliz.","pt",null),false,"portugués conserva respuestas portuguesas"));
+      results.push(same(languagePipeline.needsLocalization("I really like gentle pats.","es",null),true,"español traduce respuestas inglesas inesperadas"));
+      results.push(same(languagePipeline.needsLocalization("Me gustan mucho los mimos tranquilos.","es",null),false,"español conserva respuestas españolas"));
       results.push(same(languagePipeline.needsLocalization("2 + 2 = 4","en",null),false,"fórmulas no se traducen"));
-      results.push(same(languagePipeline.detect(languagePipeline.fallback("en")),"en","la respuesta de emergencia también está en inglés"));
+      results.push(same(languagePipeline.detect(languagePipeline.fallback("en")),"en","la respuesta de emergencia está en inglés"));
+      results.push(same(languagePipeline.detect(languagePipeline.fallback("pt")),"pt","la respuesta de emergencia está en portugués"));
+      results.push(same(languagePipeline.detect(languagePipeline.fallback("es")),"es","la respuesta de emergencia está en español"));
+      results.push(same(languagePipeline.voiceMatches({lang:"en-US"},"en"),true,"voz inglesa coincide con inglés"));
+      results.push(same(languagePipeline.voiceMatches({lang:"es-UY"},"en"),false,"voz española no coincide con inglés"));
+      results.push(same(languagePipeline.voiceMatches({lang:"pt-BR"},"pt"),true,"voz portuguesa coincide con portugués"));
     }else results.push(truthy(false,"language pipeline loaded"));
 
     if(silence){
