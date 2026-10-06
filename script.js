@@ -254,6 +254,9 @@ function chooseDefaultVoice(voices,targetLang="es"){
     || voices[0]
     || null;
 }
+function voiceMatchesLanguage(voice,targetLang=responseLanguage()){
+  return !!voice&&new RegExp("^"+targetLang+"([-_]|$)","i").test(voice.lang||"");
+}
 function populateVoiceSelect(){
   const select=$("#voiceSelect");
   if(!select||!("speechSynthesis" in window))return;
@@ -263,7 +266,7 @@ function populateVoiceSelect(){
   const previous=state.voiceURI;
   select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
   const target=responseLanguage();
-  let chosen=voices.find(v=>v.voiceURI===previous)||chooseDefaultVoice(voices,target);
+  let chosen=voices.find(v=>v.voiceURI===previous&&voiceMatchesLanguage(v,target))||chooseDefaultVoice(voices,target);
   if(chosen){
     state.voiceURI=chosen.voiceURI;
     select.value=chosen.voiceURI;
@@ -404,7 +407,7 @@ function speakResponse(text,forcedLang=null){
   const utter=new SpeechSynthesisUtterance(clean);
   const voices=speechSynthesis.getVoices();
   const selected=voices.find(v=>v.voiceURI===state.voiceURI);
-  const selectedMatches=selected && new RegExp("^"+lang+"([-_]|$)","i").test(selected.lang||"");
+  const selectedMatches=voiceMatchesLanguage(selected,lang);
   const chosen=selectedMatches?selected:chooseDefaultVoice(voices,lang);
   if(chosen)utter.voice=chosen;
   utter.lang=chosen?.lang||languageLocale(lang);
@@ -554,7 +557,8 @@ window.ROBOTITO_LANGUAGE_PIPELINE={
   isNeutral:isLanguageNeutralSpeech,
   needsLocalization:speechNeedsLocalization,
   fallback:localizedSpeechFallback,
-  localize:localizeGeneratedSpeech
+  localize:localizeGeneratedSpeech,
+  voiceMatches:voiceMatchesLanguage
 };
 function toast(text){
   const t=$("#toast");
