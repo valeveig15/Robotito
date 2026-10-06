@@ -383,6 +383,15 @@ function speakResponse(text,forcedLang=null){
   if(!state.voiceEnabled||!("speechSynthesis" in window))return false;
   const clean=cleanSpeechText(text);
   if(!clean)return false;
+  const lang=forcedLang||responseLanguage();
+  const detectedLanguage=detectGeneratedSpeechLanguage(clean);
+  // Last line of defense: a mismatched voice must never pronounce a response
+  // written in another language (the original bug sounded like Spanish with
+  // an English accent).
+  if(detectedLanguage!=="und"&&detectedLanguage!==lang){
+    console.warn("Robotito blocked mismatched speech",{detectedLanguage,requestedLanguage:lang});
+    return false;
+  }
   speechSynthesis.cancel();
   state.recentVoicePrints=[];
   state.speaking=true;
@@ -394,7 +403,6 @@ function speakResponse(text,forcedLang=null){
   setListenState(state.languageMode==="en"?"responding":state.languageMode==="pt"?"respondendo":"respondiendo");
   const utter=new SpeechSynthesisUtterance(clean);
   const voices=speechSynthesis.getVoices();
-  const lang=forcedLang||responseLanguage();
   const selected=voices.find(v=>v.voiceURI===state.voiceURI);
   const selectedMatches=selected && new RegExp("^"+lang+"([-_]|$)","i").test(selected.lang||"");
   const chosen=selectedMatches?selected:chooseDefaultVoice(voices,lang);
@@ -446,22 +454,97 @@ function scheduleSpeechBubbleHide(token,deadline){
   };
   check();
 }
-function say(text, ms=3000, spokenLang=null){
+const SPEECH_LANGUAGE_HINTS={
+  es:["el","la","los","las","un","una","que","como","cual","donde","cuando","quien","porque","para","por","con","sin","del","al","pero","estoy","esta","estas","este","eso","aqui","ahora","muy","mas","tengo","tenes","tiene","quiero","puedo","puede","vamos","gracias","hola","bien","hambre","sueno","triste","feliz","asustado","enojado","caricia","mimos","comida","jugar","abrazo","panda","robotito"],
+  en:["the","a","an","what","which","where","when","who","why","how","because","for","with","without","but","i","i'm","my","you","your","we","it","is","are","am","this","that","here","now","very","have","has","want","can","could","will","would","please","thanks","hello","good","hungry","sleepy","sad","happy","scared","angry","hug","play","food","robotito"],
+  pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"]
+};
+function speechHintScore(normalized,hints){
+  const padded=" "+normalized+" ";
+  return hints.reduce((score,hint)=>score+(padded.includes(" "+hint+" ")?1:0),0);
+}
+function detectGeneratedSpeechLanguage(text){
+  const raw=cleanSpeechText(text);
+  const normalized=normalizeText(raw).replace(/[^a-z0-9' ]/g," ");
+  if(!normalized.trim())return "und";
+  const scores={
+    es:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.es),
+    en:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.en),
+    pt:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.pt)
+  };
+  if(/[¿¡ñ]/i.test(raw))scores.es+=3;
+  if(/[ãõç]/i.test(raw))scores.pt+=3;
+  if(/\b(?:the|this|that|with|without|please|thanks|hello|i'm|you're|don't|can't)\b/i.test(raw))scores.en+=2;
+  if(/\b(?:para|porque|estoy|tengo|quiero|puedo|gracias|hola|mimos|abrazo)\b/i.test(normalized))scores.es+=2;
+  if(/\b(?:voce|obrigado|ola|estou|tenho|quero|carinho|abraco)\b/i.test(normalized))scores.pt+=2;
+  const ranked=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  if(ranked[0][1]<2||ranked[0][1]===ranked[1][1])return "und";
+  return ranked[0][0];
+}
+function speechNeedsLocalization(text,target=responseLanguage(),forcedLang=null){
+  if(forcedLang)return false;
+  const source=detectGeneratedSpeechLanguage(text);
+  return source!=="und"&&source!==target;
+}
+function localizedSpeechFallback(target){
+  if(target==="en")return "I understood you, but I couldn't prepare that answer in English. Please try again.";
+  if(target==="pt")return "Eu entendi você, mas não consegui preparar essa resposta em português. Tente novamente.";
+  return "Te entendí, pero no pude preparar esa respuesta en español. Probá de nuevo.";
+}
+async function localizeGeneratedSpeech(text,target=responseLanguage()){
+  const source=detectGeneratedSpeechLanguage(text);
+  if(source==="und"||source===target)return String(text||"");
+  let translated=null;
+  try{
+    translated=await Promise.race([
+      translateShortPhrase(String(text||""),source,target),
+      new Promise(resolve=>setTimeout(()=>resolve(null),3000))
+    ]);
+  }catch(e){
+    console.warn("response localization",e);
+  }
+  if(!translated)return localizedSpeechFallback(target);
+  const translatedLanguage=detectGeneratedSpeechLanguage(translated);
+  if(translatedLanguage!=="und"&&translatedLanguage!==target)return localizedSpeechFallback(target);
+  return translated;
+}
+function commitSpeechMessage(text,ms,lang,token){
+  if(token!==state.speechBubbleToken)return;
   state.lastSaid=text;
   const b=$("#speechBubble");
   if(!b)return;
   b.textContent=text;
   b.classList.remove("hidden");
-
-  const token=++state.speechBubbleToken;
   const displayMs=readingDisplayTime(text,ms);
-  const deadline=Date.now()+displayMs;
-  scheduleSpeechBubbleHide(token,deadline);
-  speakResponse(text,spokenLang);
+  scheduleSpeechBubbleHide(token,Date.now()+displayMs);
+  speakResponse(text,lang);
+}
+function say(text, ms=3000, spokenLang=null){
+  const target=spokenLang||responseLanguage();
+  const b=$("#speechBubble");
+  if(!b)return;
+  const token=++state.speechBubbleToken;
+
+  if(speechNeedsLocalization(text,target,spokenLang)){
+    b.textContent=target==="en"?"Preparing the answer in English…":target==="pt"?"Preparando a resposta em português…":"Preparando la respuesta en español…";
+    b.classList.remove("hidden");
+    void localizeGeneratedSpeech(text,target).then(localized=>{
+      commitSpeechMessage(localized,ms,target,token);
+    });
+    return;
+  }
+
+  commitSpeechMessage(String(text||""),ms,target,token);
 }
 function sayInLanguage(text,lang,ms=3500){
   say(text,ms,lang);
 }
+window.ROBOTITO_LANGUAGE_PIPELINE={
+  detect:detectGeneratedSpeechLanguage,
+  needsLocalization:speechNeedsLocalization,
+  fallback:localizedSpeechFallback,
+  localize:localizeGeneratedSpeech
+};
 function toast(text){
   const t=$("#toast");
   t.textContent=text;
