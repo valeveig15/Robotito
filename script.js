@@ -456,7 +456,7 @@ function scheduleSpeechBubbleHide(token,deadline){
 }
 const SPEECH_LANGUAGE_HINTS={
   es:["el","la","los","las","un","una","que","como","cual","donde","cuando","quien","porque","para","por","con","sin","del","al","pero","estoy","esta","estas","este","eso","aqui","ahora","muy","mas","tengo","tenes","tiene","quiero","puedo","puede","vamos","gracias","hola","bien","hambre","sueno","triste","feliz","asustado","enojado","caricia","mimos","comida","jugar","abrazo","panda","robotito"],
-  en:["the","a","an","what","which","where","when","who","why","how","because","for","with","without","but","i","i'm","my","you","your","we","it","is","are","am","this","that","here","now","very","have","has","want","can","could","will","would","please","thanks","hello","good","hungry","sleepy","sad","happy","scared","angry","hug","play","food","robotito"],
+  en:["the","a","an","what","which","where","when","who","why","how","because","for","with","without","but","i","i'm","my","you","your","we","it","is","are","am","this","that","here","now","very","have","has","want","can","could","will","would","please","thanks","hello","good","yes","not","really","like","love","gentle","pats","ready","help","hungry","sleepy","sad","happy","scared","angry","hug","play","food","robotito"],
   pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"]
 };
 function speechHintScore(normalized,hints){
