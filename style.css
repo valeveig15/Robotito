@@ -1876,6 +1876,17 @@ body.layout-resizing *{cursor:col-resize!important}
   touch-action:manipulation;
   transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
 }
+.avatar-choice[data-avatar-id="robot"]{
+  grid-column:1 / -1;
+  justify-self:center;
+  width:min(138px,100%);
+  background:linear-gradient(145deg,#f4fbff,#fff6fb);
+  border-color:#b8d9e8;
+}
+.avatar-choice[data-avatar-id="robot"] .avatar-choice-emoji{
+  filter:drop-shadow(0 5px 8px rgba(60,120,150,.18));
+}
+
 .avatar-choice:hover,.avatar-choice:focus-visible{
   transform:translateY(-2px);
   border-color:#e7b9d0;
