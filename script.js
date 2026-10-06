@@ -1515,7 +1515,7 @@ const AVATAR_ICON_SVGS={
 };
 function avatarVisualMarkup(avatar,extraClass=""){
   const surfaceClass=String(extraClass||"");
-  const choiceSurface=/\bavatar-choice-svg\b/.test(surfaceClass);
+  const choiceSurface=/\bavatar-(?:choice|startup)-svg\b/.test(surfaceClass);
   const customEmoji=AVATAR_ICON_SVGS[avatar?.id];
 
   // En el selector inicial usamos el emoji nativo. Cuando Unicode no ofrece
@@ -1528,7 +1528,7 @@ function avatarVisualMarkup(avatar,extraClass=""){
     return `<span class="avatar-emoji-glyph ${escapeHtml(surfaceClass)}">${avatar?.emoji||"🐼"}</span>`;
   }
 
-  const detailedSurface=/avatar-(?:main|startup)-svg/.test(surfaceClass);
+  const detailedSurface=/avatar-main-svg/.test(surfaceClass);
   // El panda mantiene su diseño original. Los demás conservan sus
   // ilustraciones detalladas y animadas dentro de la escena.
   if(avatar?.id!=="panda"&&detailedSurface){
