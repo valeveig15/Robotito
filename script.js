@@ -40,8 +40,10 @@ const ROBOTITO_AVATARS = [
   {id:"owl",emoji:"🦉",es:"Búho",en:"Owl",pt:"Coruja"},
   {id:"wolf",emoji:"🐺",es:"Lobo",en:"Wolf",pt:"Lobo"},
   {id:"horse",emoji:"🐴",es:"Caballo",en:"Horse",pt:"Cavalo"},
+  {id:"unicorn",emoji:"🦄",es:"Unicornio",en:"Unicorn",pt:"Unicórnio"},
   {id:"dinosaur",emoji:"🦖",es:"Dinosaurio",en:"Dinosaur",pt:"Dinossauro"},
   {id:"crocodile",emoji:"🐊",es:"Cocodrilo",en:"Crocodile",pt:"Crocodilo"},
+  {id:"dolphin",emoji:"🐬",es:"Delfín",en:"Dolphin",pt:"Golfinho"},
   {id:"zebra",emoji:"🦓",es:"Cebra",en:"Zebra",pt:"Zebra"},
   {id:"deer",emoji:"🦌",es:"Venado",en:"Deer",pt:"Cervo"},
   {id:"hippopotamus",emoji:"🦛",es:"Hipopótamo",en:"Hippopotamus",pt:"Hipopótamo"},
@@ -1405,6 +1407,22 @@ function avatarLanguage(){
 function avatarName(avatar,lang=avatarLanguage()){
   return avatar?.[lang] || avatar?.es || "Panda";
 }
+const AVATAR_ICON_SVGS={
+  panther:'<svg class="avatar-illustration" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="pantherFur" x1="12" y1="8" x2="50" y2="58"><stop stop-color="#403746"/><stop offset="1" stop-color="#17141c"/></linearGradient></defs><path d="M13 24 9 8l16 9M51 24 55 8 39 17" fill="#211c27" stroke="#121016" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 31c0-13 8-21 20-21s20 8 20 21c0 16-9 25-20 25S12 47 12 31Z" fill="url(#pantherFur)" stroke="#121016" stroke-width="2.5"/><path d="M18 25c4-3 8-3 11 0M46 25c-4-3-8-3-11 0" fill="none" stroke="#09080b" stroke-width="2.4" stroke-linecap="round"/><ellipse cx="23" cy="30" rx="4.6" ry="5.4" fill="#d8ee72"/><ellipse cx="41" cy="30" rx="4.6" ry="5.4" fill="#d8ee72"/><path d="M23 27v6M41 27v6" stroke="#17141c" stroke-width="2" stroke-linecap="round"/><path d="m27 39 5-3 5 3-5 4Z" fill="#8f5d78"/><path d="M32 43c-3 0-5 2-6 4M32 43c3 0 5 2 6 4" fill="none" stroke="#b5a9b9" stroke-width="1.8" stroke-linecap="round"/><circle cx="20" cy="39" r="1" fill="#b5a9b9"/><circle cx="44" cy="39" r="1" fill="#b5a9b9"/></svg>',
+  armadillo:'<svg class="avatar-illustration" viewBox="0 0 72 64" aria-hidden="true"><defs><linearGradient id="armShell" x1="10" y1="12" x2="58" y2="53"><stop stop-color="#d7a783"/><stop offset="1" stop-color="#9a654e"/></linearGradient></defs><path d="M17 43C9 38 7 31 10 24c4-10 15-15 29-13 11 1 20 7 23 16 2 8-3 17-12 21-12 5-24 3-33-5Z" fill="url(#armShell)" stroke="#704536" stroke-width="2.5"/><path d="M18 18c-1 9 2 21 10 31M28 12c-1 13 2 27 9 39M39 12c1 13 4 26 8 36M49 16c2 10 4 19 2 30" fill="none" stroke="#f1cfad" stroke-width="2.4" stroke-linecap="round"/><path d="M56 25c7-2 13 1 14 6 1 4-3 7-9 7l-5-13Z" fill="#bd8667" stroke="#704536" stroke-width="2.5"/><path d="m62 25 3-8 4 9" fill="#c99573" stroke="#704536" stroke-width="2.3" stroke-linejoin="round"/><circle cx="64" cy="30" r="1.8" fill="#241a18"/><path d="M11 35 2 43l12-2" fill="#a46e54" stroke="#704536" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 48v7M45 49v6" stroke="#704536" stroke-width="4" stroke-linecap="round"/><path d="M21 56h7M42 56h7" stroke="#3f2b27" stroke-width="2.5" stroke-linecap="round"/></svg>'
+};
+function avatarVisualMarkup(avatar,extraClass=""){
+  const svg=AVATAR_ICON_SVGS[avatar?.id];
+  if(svg){
+    const safeClass=String(extraClass||"").replace(/[^a-z0-9_-]/gi,"");
+    return svg.replace('class="avatar-illustration"',`class="avatar-illustration ${safeClass}"`);
+  }
+  return `<span class="avatar-emoji-glyph ${escapeHtml(extraClass)}">${avatar?.emoji||"🐼"}</span>`;
+}
+function setAvatarVisual(element,avatar,extraClass=""){
+  if(element)element.innerHTML=avatarVisualMarkup(avatar,extraClass);
+}
+
 function speciesProfile(id=state.avatar){
   return window.ROBOTITO_SPECIES?.profile?.(id) || {
     trait:"tiene una personalidad muy curiosa",
@@ -1483,7 +1501,7 @@ function updateAvatarAria(){
   robot.setAttribute("aria-label",lang==="en"
     ?`Robotito, virtual ${name} avatar`
     :lang==="pt"?`Robotito, avatar virtual de ${name}`:`Robotito, avatar virtual de ${name}`);
-  if($("#avatarBrandIcon"))$("#avatarBrandIcon").textContent=avatar.emoji;
+  setAvatarVisual($("#avatarBrandIcon"),avatar,"avatar-brand-svg");
   if($("#avatarBrandEyebrow"))$("#avatarBrandEyebrow").textContent=lang==="en"
     ?"YOUR VIRTUAL COMPANION":lang==="pt"?"SEU COMPANHEIRO VIRTUAL":"TU COMPAÑERO VIRTUAL";
 }
@@ -1507,9 +1525,9 @@ function applyAvatar(id,{persist=true}={}){
     robot.dataset.avatar=avatar.id;
     robot.dataset.speciesMotion=speciesProfile(avatar.id).motion||"bounce";
   }
-  if($("#animalAvatarEmoji"))$("#animalAvatarEmoji").textContent=avatar.emoji;
+  setAvatarVisual($("#animalAvatarEmoji"),avatar,"avatar-main-svg");
   if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatar);
-  if($("#startupMascot"))$("#startupMascot").textContent=avatar.emoji;
+  setAvatarVisual($("#startupMascot"),avatar,"avatar-startup-svg");
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
   updateAvatarMoodIcon();
@@ -1524,7 +1542,7 @@ function renderAvatarChoices(){
     const selected=avatar.id===state.avatar;
     const profile=speciesProfile(avatar.id);
     return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}: ${escapeHtml(profile.trait)}">
-      <span class="avatar-choice-emoji" aria-hidden="true">${avatar.emoji}</span>
+      <span class="avatar-choice-emoji" aria-hidden="true">${avatarVisualMarkup(avatar,"avatar-choice-svg")}</span>
       <span class="avatar-choice-name">${escapeHtml(avatarName(avatar,lang))}</span>
       <span class="avatar-special">${escapeHtml(profile.trait)}</span>
     </button>`;
@@ -4791,7 +4809,8 @@ window.ROBOTITO_BATTERY={
 
 window.ROBOTITO_AVATARS={
   list:ROBOTITO_AVATARS.map(item=>({...item})),
-  byId:id=>({...avatarById(id)})
+  byId:id=>({...avatarById(id)}),
+  visualMarkup:id=>avatarVisualMarkup(avatarById(id),"test-avatar-svg")
 };
 
 window.ROBOTITO_QUESTION_ROUTING={
