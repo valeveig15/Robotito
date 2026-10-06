@@ -99,6 +99,10 @@
       results.push(truthy(avatarArt.render({id:"dog"},"test-art").includes('data-character="dog"'),"perro tiene cuerpo vectorial propio"));
       results.push(truthy(avatarArt.render({id:"turtle"},"test-art").includes("avatar-shell"),"tortuga tiene caparazón ilustrado"));
       results.push(truthy(avatarArt.render({id:"robot"},"test-art").includes("avatar-antenna"),"robot tiene piezas ilustradas"));
+      results.push(truthy(avatarArt.render({id:"dog"},"test-art").includes("plush-avatar-whole"),"los animales usan la base tierna del panda"));
+      results.push(truthy(avatarArt.render({id:"fox"},"test-art").includes("avatar-eye-star"),"los avatares conservan ojos brillantes detallados"));
+      results.push(truthy(avatars.list.every(item=>avatarArt.render(item,"test-art").includes("plush-avatar-whole")),"todos los avatares comparten la estética tierna"));
+      results.push(truthy(document.querySelector(".panda-svg .panda-whole .head-group"),"el panda original permanece intacto"));
     }else results.push(truthy(false,"detailed avatar art loaded"));
 
     if(species&&avatars){
