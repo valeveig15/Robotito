@@ -17,6 +17,7 @@
     const webKnowledge=window.ROBOTITO_WEB_KNOWLEDGE;
     const battery=window.ROBOTITO_BATTERY;
     const avatars=window.ROBOTITO_AVATARS;
+    const species=window.ROBOTITO_SPECIES;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
@@ -79,11 +80,23 @@
 
     if(avatars){
       const ids=avatars.list.map(item=>item.id);
-      results.push(same(avatars.list.length,46,"ofrece 46 avatares únicos"));
-      results.push(same(new Set(ids).size,ids.length,"no repite elefante ni ratón"));
-      results.push(same(avatars.byId("iguana").emoji,"🦎","incluye iguana"));
+      results.push(same(avatars.list.length,49,"ofrece 49 avatares únicos"));
+      results.push(same(new Set(ids).size,ids.length,"no repite animales"));
+      results.push(same(avatars.byId("chameleon").es,"Camaleón","incluye camaleón"));
+      results.push(same(avatars.byId("unicorn").emoji,"🦄","incluye unicornio"));
+      results.push(same(avatars.byId("dolphin").emoji,"🐬","incluye delfín"));
+      results.push(truthy(avatars.visualMarkup("panther").includes("<svg"),"pantera usa icono ilustrado"));
+      results.push(truthy(avatars.visualMarkup("armadillo").includes("<svg"),"armadillo usa icono ilustrado"));
       results.push(same(avatars.byId("missing").id,"panda","usa panda como avatar seguro"));
     }else results.push(truthy(false,"avatar catalog loaded"));
+
+    if(species&&avatars){
+      const audit=species.audit(avatars.list.map(item=>item.id));
+      results.push(same(audit.count,49,"hay una personalidad por avatar"));
+      results.push(same(audit.missing.length,0,"cada especie tiene rasgo, movimiento y comentarios"));
+      results.push(truthy(species.line("chameleon","surprise").includes("color"),"camaleón reacciona cambiando de color"));
+      results.push(truthy(species.line("dolphin","play").includes("agua"),"delfín juega en el agua"));
+    }else results.push(truthy(false,"species personalities loaded"));
 
     if(videoMaterial){
       results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de URL de YouTube"));
