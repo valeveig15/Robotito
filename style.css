@@ -2165,3 +2165,268 @@ body.layout-resizing *{cursor:col-resize!important}
   .avatar-choice{min-height:116px}
   .avatar-choice-svg{width:43px;height:43px}
 }
+
+/* v18 — detailed illustrated and animated avatar family */
+.avatar-character{
+  display:block;
+  overflow:visible;
+  transform-origin:center 78%;
+}
+.avatar-character .avatar-ground{
+  fill:rgba(65,52,70,.14);
+  filter:blur(1.8px);
+}
+.avatar-character .avatar-whole{
+  transform-box:fill-box;
+  transform-origin:center 76%;
+}
+.animal-avatar-emoji{
+  width:232px;
+  height:276px;
+  display:grid;
+  place-items:center;
+}
+.animal-avatar-emoji .avatar-main-svg{
+  width:232px;
+  height:276px;
+}
+.avatar-choice-emoji{
+  min-height:59px;
+  display:grid;
+  place-items:center;
+}
+.avatar-choice-emoji .avatar-choice-svg{
+  width:56px;
+  height:66px;
+  margin:-7px auto -1px;
+  filter:drop-shadow(0 5px 5px rgba(55,42,58,.14));
+}
+.language-panda svg.avatar-startup-svg{
+  width:96px;
+  height:112px;
+  margin:-20px auto -14px;
+  filter:drop-shadow(0 9px 8px rgba(55,42,58,.15));
+}
+.avatar-character .avatar-eye-white{fill:#fff}
+.avatar-character .avatar-iris{fill:#61566b}
+.avatar-character .avatar-pupil{fill:#211d25}
+.avatar-character .avatar-eye-shine{fill:#fff}
+.avatar-character .avatar-cheek{fill:#f49ab3;opacity:.52}
+.avatar-character .avatar-brow{
+  fill:none;
+  stroke:#443b47;
+  stroke-width:4.5;
+  stroke-linecap:round;
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:transform .22s ease;
+}
+.avatar-character .avatar-eye-group{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:detailedAvatarBlink 5.4s ease-in-out infinite;
+}
+.avatar-character .avatar-tail{
+  transform-box:fill-box;
+  transform-origin:left center;
+  animation:detailedTailSway 2.4s ease-in-out infinite;
+}
+.avatar-character .avatar-ear{
+  transform-box:fill-box;
+  transform-origin:center bottom;
+  animation:detailedEarTwitch 6.2s ease-in-out infinite;
+}
+.avatar-character .avatar-ear-right{animation-delay:.12s}
+.avatar-character .avatar-mouth{
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:transform .22s ease,stroke .22s ease;
+}
+.avatar-character .avatar-antenna{animation:moodBadgeFloat 1.7s ease-in-out infinite}
+.avatar-character .avatar-wing{transform-box:fill-box;transform-origin:center top}
+.avatar-character .avatar-spines{filter:drop-shadow(0 4px 3px rgba(55,42,58,.12))}
+.avatar-character .avatar-shell{filter:drop-shadow(0 5px 4px rgba(55,42,58,.12))}
+.robotito.avatar-custom.mood-happy .avatar-character .avatar-whole,
+.robotito.avatar-custom.mood-affectionate .avatar-character .avatar-whole{
+  animation:detailedHappyBounce .72s ease-in-out infinite alternate;
+}
+.robotito.avatar-custom.mood-sad .avatar-character .avatar-mouth{
+  transform:rotate(180deg) translateY(-5px);
+}
+.robotito.avatar-custom.mood-sad .avatar-character .avatar-brow-left{transform:rotate(12deg)}
+.robotito.avatar-custom.mood-sad .avatar-character .avatar-brow-right{transform:rotate(-12deg)}
+.robotito.avatar-custom.mood-angry .avatar-character .avatar-brow-left{transform:translateY(5px) rotate(18deg)}
+.robotito.avatar-custom.mood-angry .avatar-character .avatar-brow-right{transform:translateY(5px) rotate(-18deg)}
+.robotito.avatar-custom.mood-scared .avatar-character .avatar-pupil{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:detailedScaredEyes .18s ease-in-out infinite alternate;
+}
+.robotito.avatar-custom.mood-sleepy .avatar-character .avatar-eye-group{
+  animation:none;
+  transform:scaleY(.12);
+}
+.robotito.avatar-custom.eating .avatar-character .avatar-mouth{
+  animation:detailedNibble .24s ease-in-out infinite alternate;
+}
+.robotito.avatar-custom.dancing .avatar-character .avatar-wing-left,
+.robotito.avatar-custom.dancing .avatar-character .avatar-arm-left{animation:detailedWave .45s ease-in-out infinite alternate}
+.robotito.avatar-custom.dancing .avatar-character .avatar-wing-right,
+.robotito.avatar-custom.dancing .avatar-character .avatar-arm-right{animation:detailedWave .45s ease-in-out infinite alternate-reverse}
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-ear-left{animation:detailedPetEar .42s ease-in-out 3}
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-ear-right{animation:detailedPetEar .42s ease-in-out 3 reverse}
+.robotito.avatar-custom.heart-eyes .avatar-character .avatar-eye-group,
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-eye-group{opacity:.15}
+.robotito.avatar-custom.heart-eyes .animal-avatar-heart-eyes,
+.robotito.avatar-custom.pet-happy .animal-avatar-heart-eyes{
+  top:91px;
+  font-size:39px;
+  letter-spacing:32px;
+  text-indent:32px;
+}
+.robotito.avatar-chameleon .avatar-character,
+.robotito.avatar-iguana .avatar-character{
+  filter:hue-rotate(var(--chameleon-hue,var(--iguana-hue,0deg))) saturate(1.12);
+  transition:filter .5s ease;
+}
+.robotito.avatar-robot .avatar-character .avatar-iris{fill:#39a8cc}
+.robotito.avatar-robot .avatar-character .avatar-pupil{fill:#173b55}
+.robotito.avatar-peacock .avatar-character .avatar-tail-fan{animation:detailedFan 2.3s ease-in-out infinite alternate}
+.robotito.avatar-dog.species-reacting .avatar-character .avatar-tail-wag,
+.robotito.avatar-fox.species-reacting .avatar-character .avatar-tail,
+.robotito.avatar-wolf.species-reacting .avatar-character .avatar-tail{
+  animation:detailedFastTail .2s ease-in-out infinite alternate;
+}
+@keyframes detailedAvatarBlink{
+  0%,43%,47%,100%{transform:scaleY(1)}
+  45%,46%{transform:scaleY(.08)}
+}
+@keyframes detailedTailSway{
+  0%,100%{transform:rotate(-5deg)}
+  50%{transform:rotate(8deg)}
+}
+@keyframes detailedFastTail{
+  from{transform:rotate(-16deg)}
+  to{transform:rotate(19deg)}
+}
+@keyframes detailedEarTwitch{
+  0%,82%,100%{transform:rotate(0)}
+  86%{transform:rotate(-9deg)}
+  90%{transform:rotate(6deg)}
+}
+@keyframes detailedHappyBounce{
+  from{transform:translateY(0) scale(1)}
+  to{transform:translateY(-5px) scale(1.018)}
+}
+@keyframes detailedScaredEyes{
+  from{transform:translateX(-2px) scale(1.08)}
+  to{transform:translateX(2px) scale(1.08)}
+}
+@keyframes detailedNibble{
+  from{transform:scaleY(.72)}
+  to{transform:scaleY(1.18)}
+}
+@keyframes detailedWave{
+  from{transform:rotate(-8deg)}
+  to{transform:rotate(14deg)}
+}
+@keyframes detailedPetEar{
+  0%,100%{transform:rotate(0)}
+  50%{transform:rotate(12deg)}
+}
+@keyframes detailedFan{
+  from{transform:scale(.96)}
+  to{transform:scale(1.04)}
+}
+@media(max-width:620px){
+  .animal-avatar-emoji,
+  .animal-avatar-emoji .avatar-main-svg{
+    width:210px;
+    height:250px;
+  }
+  .avatar-choice-emoji .avatar-choice-svg{
+    width:52px;
+    height:61px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .avatar-character *,
+  .avatar-character{animation:none!important}
+}
+
+/* v19 — los avatares comparten el lenguaje visual del panda original */
+.animal-avatar-emoji,
+.animal-avatar-emoji .avatar-main-svg{
+  width:276px;
+  height:334px;
+}
+.avatar-character .plush-head,
+.avatar-character .plush-body{
+  filter:drop-shadow(0 5px 7px rgba(70,54,72,.08));
+}
+.avatar-character .avatar-fur-shine{
+  fill:none;
+  stroke:rgba(255,255,255,.76);
+  stroke-width:4;
+  stroke-linecap:round;
+  opacity:.72;
+}
+.avatar-character .avatar-head-shine{stroke-width:4.5}
+.avatar-character .avatar-fur-tuft{
+  fill:none;
+  stroke:rgba(255,255,255,.76);
+  stroke-width:3.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  opacity:.82;
+  transform-box:fill-box;
+  transform-origin:center bottom;
+  animation:tuftSway 5s ease-in-out infinite;
+}
+.avatar-character .plush-belly{
+  stroke:rgba(92,69,94,.08);
+  stroke-width:1.2;
+}
+.avatar-character .avatar-belly-glow{
+  fill:rgba(255,255,255,.44);
+  filter:blur(4px);
+}
+.avatar-character .avatar-chest-heart{
+  fill:#f4adc2;
+  opacity:.20;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:chestHeart 4.2s ease-in-out infinite;
+}
+.avatar-character .avatar-paw-pad{fill:#6f5c70;opacity:.72}
+.avatar-character .avatar-toe{fill:#aa8ca7;opacity:.7}
+.avatar-character .avatar-eye-white{
+  filter:drop-shadow(0 1.5px 1px rgba(52,39,54,.12));
+}
+.avatar-character .avatar-iris{fill:#574c62}
+.avatar-character .avatar-pupil{fill:#17141b}
+.avatar-character .avatar-eye-star{fill:#fff;opacity:.82;animation:eyeTwinkle 3.6s ease-in-out infinite}
+.avatar-character .avatar-eye-right .avatar-eye-star{animation-delay:.38s}
+.avatar-character .gentle-brow{
+  stroke-width:3.2;
+  opacity:.82;
+}
+.avatar-character .avatar-tongue{transform-box:fill-box;transform-origin:center top}
+.robotito.avatar-custom.eating .avatar-character .avatar-tongue{animation:detailedNibble .24s ease-in-out infinite alternate}
+.avatar-choice-emoji .avatar-choice-svg{
+  width:65px;
+  height:78px;
+  margin:-12px auto -4px;
+}
+.avatar-choice{min-height:132px}
+.language-panda svg.avatar-startup-svg{
+  width:116px;
+  height:140px;
+  margin:-30px auto -22px;
+}
+@media(max-width:620px){
+  .animal-avatar-emoji,
+  .animal-avatar-emoji .avatar-main-svg{width:248px;height:300px}
+  .avatar-choice-emoji .avatar-choice-svg{width:60px;height:72px}
+}
+
