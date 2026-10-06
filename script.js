@@ -1511,6 +1511,9 @@ const AVATAR_ICON_SVGS={
   armadillo:'<svg class="avatar-illustration" viewBox="0 0 72 64" aria-hidden="true"><defs><linearGradient id="armShell" x1="10" y1="12" x2="58" y2="53"><stop stop-color="#d7a783"/><stop offset="1" stop-color="#9a654e"/></linearGradient></defs><path d="M17 43C9 38 7 31 10 24c4-10 15-15 29-13 11 1 20 7 23 16 2 8-3 17-12 21-12 5-24 3-33-5Z" fill="url(#armShell)" stroke="#704536" stroke-width="2.5"/><path d="M18 18c-1 9 2 21 10 31M28 12c-1 13 2 27 9 39M39 12c1 13 4 26 8 36M49 16c2 10 4 19 2 30" fill="none" stroke="#f1cfad" stroke-width="2.4" stroke-linecap="round"/><path d="M56 25c7-2 13 1 14 6 1 4-3 7-9 7l-5-13Z" fill="#bd8667" stroke="#704536" stroke-width="2.5"/><path d="m62 25 3-8 4 9" fill="#c99573" stroke="#704536" stroke-width="2.3" stroke-linejoin="round"/><circle cx="64" cy="30" r="1.8" fill="#241a18"/><path d="M11 35 2 43l12-2" fill="#a46e54" stroke="#704536" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 48v7M45 49v6" stroke="#704536" stroke-width="4" stroke-linecap="round"/><path d="M21 56h7M42 56h7" stroke="#3f2b27" stroke-width="2.5" stroke-linecap="round"/></svg>'
 };
 function avatarVisualMarkup(avatar,extraClass=""){
+  const detailedSurface=/avatar-(?:main|choice|startup)-svg/.test(String(extraClass||""));
+  const detailed=detailedSurface?window.ROBOTITO_AVATAR_ART?.render?.(avatar,extraClass):null;
+  if(detailed)return detailed;
   const svg=AVATAR_ICON_SVGS[avatar?.id];
   if(svg){
     const safeClass=String(extraClass||"").replace(/[^a-z0-9_-]/gi,"");
