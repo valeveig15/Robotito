@@ -2354,6 +2354,58 @@ body.layout-resizing *{cursor:col-resize!important}
   .avatar-character{animation:none!important}
 }
 
+/* v20 — acabado tierno inspirado en el panda, sin modificar su SVG */
+.robotito.avatar-custom .animal-avatar-backdrop{
+  opacity:.34;
+  transform:scale(.94);
+  border-color:rgba(255,255,255,.62);
+  box-shadow:inset 0 -12px 24px rgba(115,87,118,.045),0 14px 28px rgba(71,54,74,.07);
+}
+.avatar-character .plush-avatar-whole{
+  filter:drop-shadow(0 9px 8px rgba(62,45,65,.11));
+}
+.avatar-character .plush-head{
+  stroke-width:1.4!important;
+  stroke-opacity:.13!important;
+}
+.avatar-character .plush-body{
+  stroke-width:1.5!important;
+  stroke-opacity:.13!important;
+}
+.avatar-character .avatar-eye-white{
+  fill:#fffdfd;
+  filter:drop-shadow(0 2px 2px rgba(42,31,44,.13));
+}
+.avatar-character .avatar-iris{
+  fill:#55495f;
+  filter:drop-shadow(0 1px 1px rgba(26,19,28,.18));
+}
+.avatar-character .avatar-pupil{fill:#171319}
+.avatar-character .avatar-eye-shine{filter:drop-shadow(0 0 2px rgba(255,255,255,.95))}
+.avatar-character .avatar-cheek{opacity:.7}
+.avatar-character .gentle-brow{
+  stroke-width:2.7;
+  opacity:.62;
+}
+.avatar-character .plush-muzzle{
+  filter:drop-shadow(0 2px 2px rgba(58,43,59,.07));
+}
+.avatar-character .avatar-mouth{stroke-width:3.15}
+.avatar-character .avatar-paw-pad{opacity:.6}
+.avatar-character .avatar-toe{opacity:.58}
+.avatar-character .avatar-shell{
+  filter:drop-shadow(0 5px 4px rgba(55,42,58,.10));
+}
+.avatar-choice:has(.avatar-character){
+  background:linear-gradient(165deg,rgba(255,255,255,.98),rgba(255,247,251,.92));
+}
+.avatar-choice:has(.avatar-character):hover .avatar-character{
+  transform:translateY(-2px) scale(1.045);
+}
+.avatar-choice .avatar-character{transition:transform .2s ease,filter .2s ease}
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-cheek,
+.robotito.avatar-custom.mood-affectionate .avatar-character .avatar-cheek{opacity:.92}
+
 /* v19 — los avatares comparten el lenguaje visual del panda original */
 .animal-avatar-emoji,
 .animal-avatar-emoji .avatar-main-svg{
@@ -2429,4 +2481,3 @@ body.layout-resizing *{cursor:col-resize!important}
   .animal-avatar-emoji .avatar-main-svg{width:248px;height:300px}
   .avatar-choice-emoji .avatar-choice-svg{width:60px;height:72px}
 }
-
