@@ -22,6 +22,7 @@
     const languagePipeline=window.ROBOTITO_LANGUAGE_PIPELINE;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
+    const speechQA=window.ROBOTITO_SPEECH_QA;
 
     if(math){
       results.push(same(math.solve("20 por ciento de 50","es").value,10,"20% de 50"));
@@ -148,6 +149,20 @@
       results.push(same(silence.parseDuration("callate durante media hora"),1800000,"silencio de media hora"));
       results.push(same(silence.parseDuration("callate hasta que te diga"),Infinity,"silencio hasta nuevo aviso"));
     }else results.push(truthy(false,"silence controls loaded"));
+
+
+    if(speechQA){
+      results.push(same(speechQA.cleanTranscript("qué qué es la densidad"),"qué es la densidad","limpia repeticiones del reconocimiento"));
+      results.push(same(speechQA.mergeChunks("qué es la","la densidad"),"qué es la densidad","une fragmentos de una misma pregunta"));
+      results.push(same(speechQA.mergeChunks("cuál es el animal","el animal más grande del mundo"),"cuál es el animal más grande del mundo","conserva solapamiento entre fragmentos"));
+      results.push(truthy(speechQA.alternativeScore({transcript:"qué es permutación",confidence:.7})>speechQA.alternativeScore({transcript:"mmm",confidence:.7}),"prioriza alternativas con intención clara"));
+    }else results.push(truthy(false,"speech quality helpers loaded"));
+
+    const world=document.querySelector("#world");
+    const scene=world?.querySelector(":scope > .world-scene");
+    const controls=world?.querySelector(":scope > .world-controls");
+    results.push(truthy(scene&&controls,"escena y controles móviles están separados"));
+    results.push(same(!!scene?.contains(controls),false,"los controles no pueden superponerse por pertenecer a la escena"));
 
     if(window.ROBOTITO_PRESIDENTS){
       const p=window.ROBOTITO_PRESIDENTS.parseQuestion("¿Quién era presidente de Uruguay en 2010?");
