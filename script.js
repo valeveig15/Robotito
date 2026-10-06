@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 56737)
-Total output lines: 4990
-
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
@@ -2126,7 +2123,585 @@ function answerPortuguesePersonalQuestion(rawText){
   if(/(quanta bateria|nivel da bateria|nível da bateria|quanta energia|esta carregando|está carregando)/.test(text)){
     const detalhe=state.batterySupported
       ?`A bateria do dispositivo está em ${Math.round(state.energy)}%${state.batteryCharging?" e está carregando":""}.`
-      :`Minha energia estimada está em ${Math.round(state.energy)}%. Este navegador não permite ler a bateria do disposi…6737 tokens truncated…al",
+      :`Minha energia estimada está em ${Math.round(state.energy)}%. Este navegador não permite ler a bateria do dispositivo.`;
+    sayInLanguage(detalhe,"pt");return true;
+  }
+  if(/(esta com sono|está com sono|esta cansado|está cansado|quer dormir)/.test(text)){sayInLanguage(state.sleeping?"Sim. Eu praticamente já estava dormindo.":state.energy<40?"Sim, estou cansado.":"Não muito. Ainda tenho energia.","pt");return true;}
+  if(/(que horas sao|que horas são|me diga as horas)/.test(text)){sayInLanguage("São "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+".","pt");return true;}
+  if(/(que dia e hoje|que dia é hoje|qual e a data|qual é a data)/.test(text)){sayInLanguage("Hoje é "+new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})+".","pt");return true;}
+  if(/(quantos dedos|conte meus dedos)/.test(text)){const fresh=Date.now()-state.lastHandSeenAt<2500;sayInLanguage(!fresh||!state.visibleHands?"Não consigo ver sua mão claramente agora.":`Vejo ${state.visibleFingers} dedos levantados.`,"pt");return true;}
+  if(/(o que voce pode fazer|o que você pode fazer|como pode me ajudar)/.test(text)){sayInLanguage("Posso reconhecer rostos e vozes, lembrar coisas, ouvir aulas, resumir, ajudar a estudar, contar dedos, reconhecer objetos, recomendar livros e responder muitas perguntas do dia a dia.","pt",6500);return true;}
+  if(/(o que voce ve|o que você vê|consegue me ver|quem voce ve|quem você vê)/.test(text)){sayInLanguage(!state.lastDetections.length?"Não vejo ninguém agora.":known?`Vejo ${known}.`:`Vejo ${state.lastDetections.length} pessoa ou pessoas, mas não reconheço todo mundo.`,"pt");return true;}
+  if(/(quem esta falando|quem está falando|reconhece minha voz)/.test(text)){sayInLanguage(state.currentVoicePerson?`Acho que ${state.currentVoicePerson} está falando.`:"Ouço uma voz, mas não consigo reconhecê-la com segurança.","pt");return true;}
+  if(/(voce e real|você é real|esta vivo|está vivo|voce e um robo|você é um robô)/.test(text)){sayInLanguage("Sou o Robotito, um panda virtual. Não estou vivo como uma pessoa, mas posso ver, ouvir, lembrar e reagir.","pt");return true;}
+  return false;
+}
+
+function answerEasyQuestion(rawText){
+  const text=normalizeText(rawText);
+  const known=state.currentVoicePerson||state.currentPerson;
+
+  if(intentMatches(text,
+    ["como te llamas","cual es tu nombre","que nombre tenes","que nombre tienes","decime tu nombre","dime tu nombre","tu nombre cual es","quien sos","quien eres","como es tu nombre"],
+    [["nombre"],["tu","te"]]
+  )){
+    say(sample(["Me llamo Robotito.","Soy Robotito.","Mi nombre es Robotito."]));
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["como me llamo","cual es mi nombre","que nombre tengo","sabes mi nombre","te acordas de mi nombre","te acuerdas de mi nombre","quien soy","quien soy yo","me reconoces"],
+    [["nombre"],["mi","me"]]
+  )){
+    if(known)say(sample([`Vos sos ${known}.`,`Te llamás ${known}. Te reconocí.`,`Sos ${known}. Me acuerdo de vos.`]));
+    else say("Todavía no sé quién sos. Registrá tu cara y tu voz y después sí me voy a acordar.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["como estas","como te va","como andas","que tal estas","como te sentis","como te sientes","todo bien","estas bien","que tal te va"],
+    [["como","que tal"],["estas","andas","sentis","sientes","va"]]
+  )){
+    say(moodAnswer());
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["tenes hambre","tienes hambre","estas con hambre","estas hambriento","queres comer","quieres comer","cuanta hambre tenes","cuanta hambre tienes","comiste"],
+    [["hambre","comer","comiste"],["tenes","tienes","estas","queres","quieres","cuanta"]]
+  )){
+    if(state.hunger>=95)say("Sí. Muchísima. Ya estoy enojado de hambre.");
+    else if(state.hunger>=75)say("Sí, tengo bastante hambre.");
+    else if(state.hunger>=35)say("Un poco. Todavía aguanto.");
+    else say("No mucho. Estoy bastante lleno.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuanta bateria tenes","cuanta bateria tienes","que porcentaje de bateria tenes","que porcentaje de bateria tienes","cuanta energia tenes","cuanta energia tienes","estas cargando","se esta cargando la bateria"],
+    [["bateria","energia","cargando"],["cuanta","porcentaje","tenes","tienes","estas"]]
+  )){
+    const detail=state.batterySupported
+      ?`La batería del dispositivo está en ${Math.round(state.energy)}%${state.batteryCharging?" y se está cargando":""}.`
+      :`Mi energía estimada está en ${Math.round(state.energy)}%. Este navegador no me permite leer la batería del dispositivo.`;
+    say(detail);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["tenes sueno","tienes sueno","estas cansado","estas dormido","te queres dormir","te quieres dormir","tenes sueño","tienes sueño"],
+    [["sueno","cansado","dormido","dormir"],["tenes","tienes","estas","queres","quieres"]]
+  )){
+    if(state.sleeping)say("Sí. De hecho, me estaba quedando dormido.");
+    else if(state.energy<35)say("Sí, estoy bastante cansado.");
+    else if(state.energy<65)say("Un poco, pero todavía estoy bien.");
+    else say("No. Tengo bastante energía.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que humor tenes","que humor tienes","de que humor estas","como te sentis de animo","como te sientes de animo","estas feliz","estas triste","estas enojado","estas contento"],
+    [["humor","animo"],["tenes","tienes","estas"]]
+  )){
+    say(moodAnswer());
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos dedos ves","cuantos dedos estoy mostrando","cuantos dedos hay","cuantos dedos te muestro","conta los dedos","cuenta los dedos","decime cuantos dedos ves"],
+    [["dedo","dedos"],["ves","mostrar","mostrando","muestro","conta","cuenta","cuantos"]]
+  )){
+    const fresh=Date.now()-state.lastHandSeenAt<2500;
+    if(!fresh||state.visibleHands===0)say("Ahora mismo no veo ninguna mano. Mostrámelas bien frente a la cámara.");
+    else if(state.visibleFingers===0)say("Veo manos, pero ningún dedo levantado.");
+    else say(`Veo ${state.visibleFingers} ${state.visibleFingers===1?"dedo":"dedos"} levantados.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que dia es","que fecha es","en que dia estamos","que fecha tenemos","decime la fecha","dime la fecha","hoy que dia es"],
+    [["dia","fecha"],["que","cual","hoy"]]
+  )){
+    const d=new Date();
+    say(d.toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que hora es","tenes hora","tienes hora","decime la hora","dime la hora","me decis la hora","me dices la hora"],
+    [["hora"],["que","tenes","tienes","decime","dime","decis","dices"]]
+  )){
+    const d=new Date();
+    say(`Son las ${d.toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"})}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que recordas de mi","que recuerdas de mi","que te dije","que sabes de mi","te acordas de lo que te dije","te acuerdas de lo que te dije","que te conte","que te conte antes"],
+    [["recordas","recuerdas","acordas","acuerdas","sabes"],["mi","de mi","te dije","te conte"]]
+  )){
+    const person=known||"persona no reconocida";
+    const mine=state.memories.filter(m=>m.person===person).slice(-5);
+    if(!mine.length)say("Todavía no tengo recuerdos claros tuyos.");
+    else say(`Lo último que recuerdo es: “${mine[mine.length-1].text}”`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que podes hacer","que puedes hacer","para que servis","para que sirves","que sabes hacer","que funciones tenes","que funciones tienes","en que me podes ayudar","en que me puedes ayudar"],
+    [["que","en que"],["podes","puedes","sabes","funciones","ayudar","servis","sirves"]]
+  )){
+    say(capabilitiesAnswer(),6500);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que ves","que estas viendo","a quien ves","me ves","podes verme","puedes verme","hay alguien enfrente tuyo"],
+    [["ves","viendo","ver"],["que","quien","me","alguien"]]
+  )){
+    if(state.lastDetections.length===0)say("Ahora mismo no veo a nadie.");
+    else if(known)say(`Veo a ${known}.`);
+    else say(`Veo ${state.lastDetections.length} ${state.lastDetections.length===1?"persona":"personas"}, pero no reconozco a todas.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["quien esta hablando","quien habla","quien te esta hablando","reconoces mi voz","sabes quien habla","de quien es esta voz"],
+    [["quien"],["habla","hablando","voz"]]
+  )){
+    if(state.currentVoicePerson)say(`Creo que está hablando ${state.currentVoicePerson}.`);
+    else say("Escucho una voz, pero no la reconozco con suficiente seguridad.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que escuchas","que estas escuchando","que ois","que estas oyendo","escuchas musica","es musica o ruido"],
+    [["escuchas","ois","oyendo"],["que","musica","ruido"]]
+  )){
+    say(`Ahora detecto ${state.audioKind}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["tengo tareas","que tareas tengo","que tengo que hacer","tengo algo pendiente","que tengo pendiente","hay algo para hacer","que deberes tengo"],
+    [["tarea","tareas","pendiente","hacer","deberes"],["tengo","que","hay"]]
+  )){
+    const tasks=pendingTasks();
+    if(!tasks.length)say("No veo tareas pendientes en la hoja conectada.");
+    else say(`Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. La primera es: ${tasks[0].task}.`,5200);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["estas escuchando la clase","estas en modo clase","modo clase esta activo","estas aprendiendo la clase"],
+    [["clase"],["escuchando","modo","aprendiendo","activo"]]
+  )){
+    say(state.classMode?`Sí. Estoy escuchando la clase de ${state.classSubject||"esta materia"}.`:"No. El modo clase está apagado.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos anos tenes","cuantos anos tienes","que edad tenes","que edad tienes"],
+    [["edad","anos"],["tenes","tienes","cuantos","que"]]
+  )){
+    say("No tengo una edad humana. Soy una mascota virtual.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que sos","que eres","que animal sos","que animal eres","sos un panda","eres un panda"],
+    [["que"],["sos","eres","animal"]]
+  )){
+    say("Soy Robotito, un panda virtual.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["es de noche","ya es de noche","estamos de noche","es de dia","ya es de dia","todavia es de dia","todavía es de día"],
+    [["noche","dia"],["es","ya","todavia"]]
+  )){
+    const night=isNightByClock(new Date());
+    say(night?"Sí. Robotito está en modo noche.":"No. Robotito está en modo día.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantas personas ves","cuanta gente ves","hay alguien","cuantos hay enfrente","cuantos estamos"],
+    [["persona","personas","gente"],["ves","hay","cuantas","cuantos"]]
+  )){
+    const n=state.lastDetections.length;
+    if(!n)say("Ahora mismo no veo a nadie.");
+    else say(`Veo ${n} ${n===1?"persona":"personas"}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantas manos ves","cuantas manos hay","ves mis manos","cuantas manos te muestro"],
+    [["mano","manos"],["ves","hay","cuantas","muestro"]]
+  )){
+    if(!state.visibleHands)say("Ahora mismo no veo ninguna mano.");
+    else say(`Veo ${state.visibleHands} ${state.visibleHands===1?"mano":"manos"}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que libro me recomendaste","cual era el libro que me recomendaste","recordame el libro recomendado","que libro dijiste"],
+    [["libro"],["recomendaste","recomendado","dijiste","recordame"]]
+  )){
+    const last=load(KEYS.lastBook,null);
+    say(last?`El último libro que te recomendé fue “${last.title}”.`:"Todavía no tengo una recomendación guardada.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que personas conoces","a quienes conoces","quien esta registrado","a quien reconoces"],
+    [["conoces","registrado","reconoces"],["quien","quienes","personas"]]
+  )){
+    const names=state.people.map(p=>p.name);
+    say(names.length?`Tengo registradas a ${names.join(", ")}.`:"Todavía no tengo personas registradas.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuando cumplo anos","cuando es mi cumpleanos","cuando es mi cumple","sabes mi cumpleanos","sabes cuando cumplo"],
+    [["cumplo","cumpleanos","cumple"],["cuando","sabes"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(p?.birthday)say(`Tu cumpleaños es el ${formatBirthday(p.birthday)}.`);
+    else say("No tengo tu cumpleaños registrado.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["tenes frio","tienes frio","tenes calor","tienes calor"],
+    [["frio","calor"],["tenes","tienes"]]
+  )){
+    say("No siento temperatura como una persona. Pero puedo hacerte compañía.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["sos real","eres real","estas vivo","estas viva","sos un robot","eres un robot"],
+    [["real","vivo","robot"],["sos","eres","estas"]]
+  )){
+    say("Soy una mascota virtual. No estoy vivo como una persona, pero puedo verte, escucharte, recordar cosas y reaccionar.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["te gusta leer","te gustan los libros","te gusta la musica","te gusta estudiar"],
+    [["gusta","gustan"],["leer","libros","musica","estudiar"]]
+  )){
+    if(text.includes("libro")||text.includes("leer"))say("Sí. Especialmente porque puedo ayudarte a elegir qué leer.");
+    else if(text.includes("musica"))say("Sí. Si detecto música, hasta intento bailar.");
+    else say("Me gusta aprender cosas con vos, sobre todo cuando después puedo ayudarte a estudiarlas.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que estas haciendo","que haces ahora","que haces","en que andas","que estas haciendo ahora"],
+    [["que"],["haces","haciendo","andas"]]
+  )){
+    if(state.classMode)say(`Estoy escuchando y aprendiendo la clase de ${state.classSubject||"esta materia"}.`);
+    else if(state.nightSleep||state.sleeping)say("Estoy durmiendo.");
+    else if(robot.classList.contains("dancing"))say("Estoy bailando porque detecté música.");
+    else if(state.hunger>=75)say("Estoy acá, pero bastante pendiente de que tengo hambre.");
+    else say("Estoy atento a lo que pasa y esperando que me hables.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que materia es","que materia estamos viendo","que clase estas escuchando","que clase es","que estas estudiando"],
+    [["materia","clase","estudiando"],["que"]]
+  )){
+    if(state.classMode)say(`Estoy escuchando ${state.classSubject||"una clase sin nombre"}.`);
+    else {
+      const last=[...state.classLines].sort((a,b)=>b.at-a.at)[0];
+      say(last?`La última materia que tengo registrada es ${last.subject||"una clase sin nombre"}.`:"Todavía no escuché ninguna clase.");
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantas clases escuchaste hoy","cuantas clases tuviste hoy","cuantas clases aprendiste hoy","escuchaste alguna clase hoy"],
+    [["clase","clases"],["hoy"],["cuantas","alguna","escuchaste","tuviste","aprendiste"]]
+  )){
+    const subjects=[...new Set(todayClassLines().map(l=>l.subject||"Clase"))];
+    if(!subjects.length)say("Hoy todavía no escuché ninguna clase.");
+    else say(`Hoy tengo registradas ${subjects.length} ${subjects.length===1?"clase":"clases"}: ${subjects.join(", ")}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cual fue la ultima clase","que clase escuchaste ultima","ultima clase que aprendiste","que fue lo ultimo que estudiaste"],
+    [["ultima","ultimo"],["clase","estudiaste","aprendiste"]]
+  )){
+    const last=[...state.classLines].sort((a,b)=>b.at-a.at)[0];
+    say(last?`La última clase que tengo registrada es ${last.subject||"una clase sin nombre"}.`:"Todavía no escuché ninguna clase.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["te caigo bien","te agrado","me queres","me quieres","que pensas de mi","que piensas de mi","como nos llevamos"],
+    [["mi","me"],["caigo","agrado","queres","quieres","pensas","piensas","llevamos"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(!p)say("Todavía no te conozco lo suficiente como para decirlo.");
+    else say(`Nuestra relación está así: ${relationText(p)}.`);
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["quien cumple anos hoy","quien cumple hoy","hay algun cumpleanos hoy","hay cumpleaños hoy"],
+    [["cumple","cumpleanos"],["hoy","quien","hay"]]
+  )){
+    const now=new Date();
+    const names=state.people.filter(p=>{
+      const m=String(p.birthday||"").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m&&Number(m[2])===now.getMonth()+1&&Number(m[3])===now.getDate();
+    }).map(p=>p.name);
+    say(names.length?`Hoy cumple ${names.join(", ")}.`:"No tengo registrado a nadie que cumpla años hoy.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuando cumple","cuando es el cumpleanos de","cuando es el cumple de","sabes el cumpleanos de"],
+    [["cumple","cumpleanos"],["cuando","sabes"]]
+  )){
+    const target=state.people.find(p=>text.includes(normalizeText(p.name)));
+    if(target?.birthday)say(`${target.name} cumple el ${formatBirthday(target.birthday)}.`);
+    else say("No encontré ese cumpleaños entre las personas registradas.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos libros lei","cuantos libros he leido","cuantos libros tengo leidos","cuantos libros ya lei"],
+    [["libro","libros"],["lei","leido","leidos"],["cuantos"]]
+  )){
+    if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
+    else {
+      const n=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").length;
+      say(`En el archivo de Goodreads veo ${n} libros leídos.`);
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuantos libros tengo pendientes","cuantos libros quiero leer","cuantos libros tengo por leer","cuantos libros hay en to read"],
+    [["libro","libros"],["pendiente","leer","to read"],["cuantos"]]
+  )){
+    if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
+    else {
+      const n=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="to-read").length;
+      say(`Tenés ${n} libros marcados para leer.`);
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que estoy leyendo","que libro estoy leyendo","cuales estoy leyendo","que tengo en currently reading"],
+    [["leyendo","currently reading"],["que","cuales","libro"]]
+  )){
+    if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
+    else {
+      const books=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="currently-reading").map(b=>b["Title"]).filter(Boolean);
+      say(books.length?`Tenés como lectura actual: ${books.join(", ")}.`:"No veo ningún libro marcado como lectura actual.");
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["que musica es","que cancion es","sabes que cancion esta sonando","reconoces la cancion"],
+    [["cancion","musica"],["que","sabes","reconoces"]]
+  )){
+    say(state.audioKind==="música"?"Sé que suena música, pero todavía no puedo identificar el nombre de la canción.":"Ahora mismo no detecto música con suficiente seguridad.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["repeti","repetilo","repite","decilo de nuevo","dilo de nuevo","que dijiste recien"],
+    [["repeti","repite","nuevo","dijiste"],["que","decilo","dilo","recien"]]
+  )){
+    if(state.lastSaid)say(state.lastSaid);
+    else say("Todavía no había dicho nada.");
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["cuando comiste","hace cuanto comiste","hace cuanto no comes","cuando fue la ultima vez que comiste"],
+    [["comiste","comes"],["cuando","cuanto","ultima"]]
+  )){
+    const last=Number(localStorage.getItem(KEYS.lastFed)||0);
+    if(!last)say("No tengo registrada una comida todavía.");
+    else {
+      const mins=Math.floor((Date.now()-last)/60000);
+      if(mins<60)say(`Comí hace aproximadamente ${mins} minutos.`);
+      else say(`Comí hace aproximadamente ${(mins/60).toFixed(1)} horas.`);
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["te doy miedo","te asusto","me tenes miedo","me tienes miedo","tenes miedo de mi","tienes miedo de mi"],
+    [["miedo","asusto"],["mi","me"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(!p)say("Todavía no te conozco lo suficiente.");
+    else {
+      const b=ensureBond(p);
+      say(b.fear>=67?"Sí. Me das miedo y necesito varias interacciones tranquilas para que eso cambie.":b.fear>=42?"Un poquito. Todavía estoy algo cauteloso con vos.":"No. No siento que me des miedo.");
+    }
+    return true;
+  }
+
+  if(intentMatches(text,
+    ["confias en mi","confías en mí","me tenes confianza","me tienes confianza","te caigo bien","te caigo mal","me queres","me quieres"],
+    [["confia","confias","confías","caigo","queres","quieres","confianza"],["mi","me"]]
+  )){
+    const p=state.people.find(x=>x.name===known);
+    if(!p)say("Todavía no te conozco lo suficiente.");
+    else say(`Ahora mismo ${relationText(p)}. Es un sentimiento bastante estable y cambia de a poquito.`);
+    return true;
+  }
+
+  return false;
+}
+
+
+
+function curriculumSubject(subject){
+  const cur=window.ROBOTITO_CURRICULUM;
+  if(!cur)return null;
+  const n=normalizeText(subject);
+  for(const [name,data] of Object.entries(cur.subjects||{})){
+    const aliases=[name,...(data.aliases||[])].map(normalizeText);
+    if(aliases.some(a=>n.includes(a)||a.includes(n)))return {name,...data};
+  }
+  return null;
+}
+function levenshtein(a,b){
+  a=normalizeText(a);b=normalizeText(b);
+  const m=Array.from({length:a.length+1},(_,i)=>[i]);
+  for(let j=1;j<=b.length;j++)m[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return m[a.length][b.length];
+}
+function correctAcademicTranscript(text,subject){
+  const info=curriculumSubject(subject);
+  if(!info)return {text,changes:[]};
+  const terms=(info.terms||[]).filter(t=>!t.includes(" "));
+  const words=text.split(/(\s+)/);
+  const changes=[];
+  const corrected=words.map(token=>{
+    if(/^\s+$/.test(token))return token;
+    const clean=normalizeText(token);
+    if(clean.length<5)return token;
+    let best=null,bestD=99;
+    for(const term of terms){
+      const t=normalizeText(term);
+      if(Math.abs(t.length-clean.length)>2)continue;
+      const d=levenshtein(clean,t);
+      if(d<bestD){bestD=d;best=term;}
+    }
+    if(best && bestD<=1 && normalizeText(best)!==clean){
+      changes.push({from:token,to:best});
+      const cap=/^[A-ZÁÉÍÓÚÑ]/.test(token);
+      return cap?best.charAt(0).toUpperCase()+best.slice(1):best;
+    }
+    return token;
+  }).join("");
+  return {text:corrected,changes};
+}
+function splitEvidenceSentences(text){
+  const clean=String(text||"").replace(/\s+/g," ").trim();
+  if(!clean)return [];
+  let parts=clean.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ0-9¿¡])/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===1&&clean.length>320){
+    parts=clean.split(/\s*[;•]\s*|\s+(?=(?:Además|También|Por eso|Entonces|En cambio|Sin embargo|Finalmente)\b)/i)
+      .map(x=>x.trim()).filter(Boolean);
+  }
+  return parts.length?parts:[clean];
+}
+const CLASS_STOPWORDS=new Set([
+  "que","cual","cuales","como","cuando","donde","quien","quienes","cuanto","cuantos","porque","por","para",
+  "de","del","la","el","las","los","un","una","unos","unas","y","o","en","a","con","sin","sobre","es","son",
+  "fue","era","eran","hay","habia","había","me","te","se","lo","le","esto","eso","esta","este","esa",
+  "decime","dime","contame","cuentame","explicame","explica","recordame","acordate","quiero","saber",
+  "clase","profesor","profesora","profe","dijo","dijeron","hablo","habló","explico","explicó"
+]);
+const CLASS_SYNONYM_GROUPS=[
+  ["impulso","impulsos"],
+  ["cantidad","momentum","momento"],
+  ["movimiento","movimientos"],
+  ["choque","choques","colision","colisión","colisiones"],
+  ["fuerza","fuerzas"],
+  ["velocidad","rapidez"],
+  ["masa","masas"],
+  ["energia","energía","energetico","energético"],
+  ["conservar","conserva","conservacion","conservación"],
+  ["vacuna","vacunas","vacunacion","vacunación"],
+  ["anticuerpo","anticuerpos","inmunidad","inmune"],
+  ["celula","célula","celulas","células"],
+  ["problema","problemas","dificultad","dificultades"],
+  ["causa","causas","razon","razón","motivo","motivos"],
+  ["consecuencia","consecuencias","efecto","efectos","resultado","resultados"],
+  ["ejemplo","ejemplos","caso","casos"],
+  ["definir","define","definicion","definición","significa","concepto"],
+  ["ventaja","ventajas","beneficio","beneficios"],
+  ["desventaja","desventajas","riesgo","riesgos"],
+  ["diferencia","diferencias","distingue","comparar","comparacion","comparación"]
+];
+const CLASS_SYNONYM_MAP=new Map();
+CLASS_SYNONYM_GROUPS.forEach((g,i)=>g.forEach(w=>CLASS_SYNONYM_MAP.set(normalizeText(w),"cg"+i)));
+
+function classStemToken(w){
+  let x=normalizeText(w);
+  if(!x)return "";
+  if(CLASS_SYNONYM_MAP.has(x))return CLASS_SYNONYM_MAP.get(x);
+  if(x.length>7)x=x.replace(/(?:amientos|imientos|aciones|adores|adoras|encias|mente)$/,"");
+  if(x.length>5)x=x.replace(/(?:ando|iendo|ados|adas|idos|idas|acion|ición|cion|iones)$/,"");
+  if(x.length>4)x=x.replace(/(?:es|os|as)$/,"");
+  else if(x.length>3)x=x.replace(/s$/,"");
+  return CLASS_SYNONYM_MAP.get(x)||x;
+}
+function classQueryTokens(text){
+  return normalizeText(text).split(" ")
+    .filter(Boolean)
+    .filter(w=>w.length>2&&!CLASS_STOPWORDS.has(w))
+    .map(classStemToken)
+    .filter(Boolean);
+}
+function classOneEditApart(a,b){
+  if(a===b)return true;
+  if(a.length<5||b.length<5||Math.abs(a.length-b.length)>1)return false;
+  let i=0,j=0,diff=0;
+  while(i<a.length&&j<b.length){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++diff>1)return false;
+    if(a.length>b.length)i++;
+    else if(b.length>a.length)j++;
+    else{i++;j++;}
+  }
+  return diff+(i<a.length||j<b.length?1:0)<=1;
+}
+function splitEvidenceSentences(text){
+  const clean=String(text||"").replace(/\s+/g," ").trim();
+  if(!clean)return [];
+  let parts=clean.split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ0-9¿¡])/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===1&&clean.length>320){
+    parts=clean.split(/\s*[;•]\s*|\s+(?=(?:Además|También|Por eso|Entonces|En cambio|Sin embargo|Finalmente)\b)/i)
+      .map(x=>x.trim()).filter(Boolean);
+  }
+  return parts.length?parts:[clean];
+}
+function materialEvidenceLines(){
+  const selectedSubject=normalizeText(state.classSubject||$("#classSubject")?.value||"");
+  const selectedTopic=normalizeText(state.classTopic||$("#classTopic")?.value||"");
+  return state.academicMaterials.flatMap(m=>(m.chunks||[]).flatMap((chunkText,chunkIndex)=>
+    splitEvidenceSentences(chunkText).map((text,sentenceIndex)=>({
+      text,
+      correctedText:text,
+      speaker:"material",
       sourceType:"material",
       subject:m.subject||"Material",
       at:m.at,
