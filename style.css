@@ -2834,3 +2834,24 @@ body.layout-resizing *{cursor:col-resize!important}
   .world-controls .quick-actions button{flex:0 0 108px}
   .robotito{top:50%!important;width:196px;height:246px}
 }
+
+/* v26 — iconos propios con volumen y acabado de emoji clásico */
+.avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{
+  width:54px;
+  height:54px;
+  margin:0;
+  filter:none;
+}
+.language-panda .custom-avatar-emoji.avatar-startup-svg{
+  width:70px;
+  height:70px;
+  filter:none;
+}
+.avatar-choice:hover .custom-avatar-emoji,
+.avatar-choice:focus-visible .custom-avatar-emoji{
+  filter:saturate(1.07) brightness(1.02);
+}
+@media(max-width:600px){
+  .avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{width:49px;height:49px}
+  .language-panda .custom-avatar-emoji.avatar-startup-svg{width:64px;height:64px}
+}
