@@ -17,6 +17,7 @@
     const webKnowledge=window.ROBOTITO_WEB_KNOWLEDGE;
     const battery=window.ROBOTITO_BATTERY;
     const avatars=window.ROBOTITO_AVATARS;
+    const avatarArt=window.ROBOTITO_AVATAR_ART;
     const species=window.ROBOTITO_SPECIES;
     const languagePipeline=window.ROBOTITO_LANGUAGE_PIPELINE;
     const silence=window.ROBOTITO_SILENCE;
@@ -90,6 +91,18 @@
       results.push(truthy(avatars.visualMarkup("armadillo").includes("<svg"),"armadillo usa icono ilustrado"));
       results.push(same(avatars.byId("missing").id,"panda","usa panda como avatar seguro"));
     }else results.push(truthy(false,"avatar catalog loaded"));
+
+    if(avatarArt&&avatars){
+      const nonPanda=avatars.list.filter(item=>item.id!=="panda");
+      results.push(same(avatarArt.customIds.length,49,"los otros 49 avatares tienen ilustración propia"));
+      results.push(same(avatarArt.render({id:"panda"},"test-art"),null,"el panda no se reemplaza"));
+      results.push(truthy(nonPanda.every(item=>avatarArt.render(item,"test-art")?.includes('data-character="'+item.id+'"')),"cada avatar usa el dibujo de su especie"));
+      results.push(truthy(nonPanda.every(item=>avatarArt.render(item,"test-art")?.includes("plush-avatar-whole")),"todos los avatares nuevos tienen cuerpo animado completo"));
+      results.push(truthy(document.querySelector(".panda-svg .panda-whole .head-group"),"el panda original permanece intacto"));
+      results.push(truthy(avatarArt.render({id:"turtle"},"test-art").includes("avatar-shell"),"la tortuga tiene caparazón propio"));
+      results.push(truthy(avatarArt.render({id:"elephant"},"test-art").includes("avatar-trunk"),"el elefante tiene trompa propia"));
+      results.push(truthy(avatarArt.render({id:"robot"},"test-art").includes("avatar-antenna"),"el robot tiene piezas propias"));
+    }else results.push(truthy(false,"custom avatar art loaded"));
 
     if(species&&avatars){
       const audit=species.audit(avatars.list.map(item=>item.id));
