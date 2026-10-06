@@ -1579,7 +1579,7 @@ function avatarVisualMarkup(avatar,extraClass=""){
   if(choiceSurface){
     if(customEmoji){
       const safeClass=surfaceClass.replace(/[^a-z0-9_-]/gi,"");
-      return customEmoji.replace('class="avatar-illustration custom-avatar-emoji"',`class="avatar-illustration custom-avatar-emoji ${safeClass}"`);
+      return customEmoji.replace('class="avatar-illustration custom-avatar-emoji',`class="avatar-illustration custom-avatar-emoji ${safeClass}`);
     }
     return `<span class="avatar-emoji-glyph ${escapeHtml(surfaceClass)}">${avatar?.emoji||"🐼"}</span>`;
   }
@@ -1593,7 +1593,7 @@ function avatarVisualMarkup(avatar,extraClass=""){
   }
   if(customEmoji){
     const safeClass=surfaceClass.replace(/[^a-z0-9_-]/gi,"");
-    return customEmoji.replace('class="avatar-illustration custom-avatar-emoji"',`class="avatar-illustration custom-avatar-emoji ${safeClass}"`);
+    return customEmoji.replace('class="avatar-illustration custom-avatar-emoji',`class="avatar-illustration custom-avatar-emoji ${safeClass}`);
   }
   return `<span class="avatar-emoji-glyph ${escapeHtml(surfaceClass)}">${avatar?.emoji||"🐼"}</span>`;
 }
