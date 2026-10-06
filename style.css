@@ -2855,3 +2855,21 @@ body.layout-resizing *{cursor:col-resize!important}
   .avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{width:49px;height:49px}
   .language-panda .custom-avatar-emoji.avatar-startup-svg{width:64px;height:64px}
 }
+
+/* v27 — proporciones compactas de emoji nativo */
+.avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{
+  width:58px;
+  height:58px;
+}
+.avatar-choice-emoji .avatar-emoji-glyph.avatar-choice-svg{
+  font-size:50px;
+}
+.language-panda .custom-avatar-emoji.avatar-startup-svg{
+  width:74px;
+  height:74px;
+}
+@media(max-width:600px){
+  .avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{width:52px;height:52px}
+  .avatar-choice-emoji .avatar-emoji-glyph.avatar-choice-svg{font-size:44px}
+  .language-panda .custom-avatar-emoji.avatar-startup-svg{width:68px;height:68px}
+}
