@@ -2701,3 +2701,136 @@ body.layout-resizing *{cursor:col-resize!important}
   overflow:visible;
   filter:drop-shadow(0 6px 7px rgba(55,42,58,.16));
 }
+
+
+/* v25 — separación estructural entre escena, estado y acciones en celular */
+.world-scene{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  border-radius:inherit;
+}
+@media(max-width:900px){
+  .layout{
+    display:flex!important;
+    flex-direction:column;
+    min-width:0;
+  }
+  .world{
+    display:flex;
+    flex-direction:column;
+    min-height:0!important;
+    padding:0!important;
+    overflow:hidden;
+  }
+  .world-scene{
+    position:relative;
+    inset:auto;
+    flex:0 0 auto;
+    width:100%;
+    min-height:clamp(430px,61svh,560px);
+    border-radius:inherit inherit 0 0;
+    background:
+      radial-gradient(circle at 50% 15%,rgba(255,255,255,.98),rgba(255,255,255,0) 30%),
+      radial-gradient(circle at 18% 32%,rgba(255,222,236,.26),transparent 28%),
+      radial-gradient(circle at 82% 35%,rgba(205,240,232,.32),transparent 30%),
+      linear-gradient(180deg,#fffaff 0 69%,#eee5db 69% 100%);
+  }
+  .world-controls{
+    position:relative!important;
+    inset:auto!important;
+    flex:0 0 auto;
+    z-index:20;
+    display:grid;
+    gap:8px;
+    margin:0;
+    padding:10px max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+    border:0;
+    border-top:1px solid rgba(78,59,80,.10);
+    border-radius:0;
+    background:rgba(255,251,254,.97);
+    box-shadow:0 -7px 22px rgba(74,55,76,.065);
+    backdrop-filter:blur(14px);
+  }
+  .world-controls .hud{
+    position:relative!important;
+    inset:auto!important;
+    display:flex;
+    flex-wrap:nowrap;
+    gap:6px;
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    padding:1px 0 4px;
+    scrollbar-width:thin;
+  }
+  .world-controls .hud-pill{
+    flex:0 0 auto;
+    min-width:max-content;
+    white-space:nowrap;
+  }
+  .world-controls .quick-actions{
+    position:relative!important;
+    inset:auto!important;
+    width:100%;
+    max-width:none;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:7px;
+  }
+  .world-controls .quick-actions button{
+    min-width:0;
+    width:100%;
+    min-height:42px;
+    padding:7px 5px;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .panel{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-height:none;
+    overflow:visible;
+  }
+  .tabs,.tabpage,.card,.meter-card{min-width:0}
+  .robotito{
+    top:50%!important;
+    width:248px;
+    height:310px;
+  }
+  .speech-bubble{
+    top:4%;
+    max-width:calc(100% - 28px);
+    max-height:104px;
+    overflow:auto;
+  }
+}
+@media(max-width:560px){
+  .world-scene{min-height:420px}
+  .world-controls .quick-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .robotito{
+    top:51%!important;
+    width:226px;
+    height:284px;
+    transform:translate(-50%,-50%);
+  }
+}
+@media(max-width:380px){
+  .world-scene{min-height:400px}
+  .world-controls .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .world-controls .quick-actions button{font-size:10px;min-height:40px}
+  .robotito{width:208px;height:262px}
+}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  .world-scene{min-height:350px}
+  .world-controls{padding-top:8px}
+  .world-controls .quick-actions{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+  }
+  .world-controls .quick-actions button{flex:0 0 108px}
+  .robotito{top:50%!important;width:196px;height:246px}
+}
