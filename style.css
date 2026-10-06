@@ -2682,3 +2682,22 @@ body.layout-resizing *{cursor:col-resize!important}
 @media(prefers-reduced-motion:reduce){
   .avatar-choice-emoji > *{transition:none}
 }
+
+.language-panda .avatar-emoji-glyph.avatar-startup-svg{
+  display:inline-grid;
+  place-items:center;
+  width:auto;
+  height:auto;
+  margin:0 auto;
+  font-size:64px;
+  line-height:1;
+  filter:drop-shadow(0 6px 7px rgba(55,42,58,.14));
+}
+.language-panda .custom-avatar-emoji.avatar-startup-svg{
+  display:block;
+  width:66px;
+  height:66px;
+  margin:0 auto;
+  overflow:visible;
+  filter:drop-shadow(0 6px 7px rgba(55,42,58,.16));
+}
