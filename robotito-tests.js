@@ -18,6 +18,7 @@
     const battery=window.ROBOTITO_BATTERY;
     const avatars=window.ROBOTITO_AVATARS;
     const species=window.ROBOTITO_SPECIES;
+    const languagePipeline=window.ROBOTITO_LANGUAGE_PIPELINE;
     const silence=window.ROBOTITO_SILENCE;
     const videoMaterial=window.ROBOTITO_YOUTUBE_MATERIAL;
 
@@ -104,6 +105,16 @@
       results.push(same(videoMaterial.parseYouTubeId("https://www.youtube.com/shorts/dQw4w9WgXcQ"),"dQw4w9WgXcQ","extrae ID de Shorts"));
       results.push(same(videoMaterial.parseYouTubeId("https://example.com/video"),null,"rechaza enlace que no es de YouTube"));
     }else results.push(truthy(false,"YouTube material controls loaded"));
+
+    if(languagePipeline){
+      results.push(same(languagePipeline.detect("Me gustan mucho los mimos tranquilos."),"es","detecta respuesta generada en español"));
+      results.push(same(languagePipeline.detect("I really like gentle pats."),"en","detecta respuesta generada en inglés"));
+      results.push(same(languagePipeline.needsLocalization("Me gustan mucho los mimos tranquilos.","en",null),true,"inglés traduce respuestas españolas"));
+      results.push(same(languagePipeline.needsLocalization("Mi nariz detectó algo rico a varios metros.","en",null),true,"inglés traduce frases españolas de baja confianza"));
+      results.push(same(languagePipeline.needsLocalization("I really like gentle pats.","en",null),false,"inglés conserva respuestas ya inglesas"));
+      results.push(same(languagePipeline.needsLocalization("2 + 2 = 4","en",null),false,"fórmulas no se traducen"));
+      results.push(same(languagePipeline.detect(languagePipeline.fallback("en")),"en","la respuesta de emergencia también está en inglés"));
+    }else results.push(truthy(false,"language pipeline loaded"));
 
     if(silence){
       results.push(same(silence.parseDuration("callate"),25000,"silencio predeterminado de 25 segundos"));
