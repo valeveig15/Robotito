@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261006-selector-emoji2" />
+  <link rel="stylesheet" href="style.css?v=20261006-mobile-speech1" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -20,7 +20,7 @@
   <script defer src="robotito-store.js"></script>
   <script defer src="presidents.js"></script>
   <script defer src="web-knowledge.js?v=20261005-routing3"></script>
-  <script defer src="speech-fallback.js"></script>
+  <script defer src="speech-fallback.js?v=20261006-mobile-speech1"></script>
   <script defer src="class-audio.js"></script>
   <script defer src="class-organizer.js"></script>
   <script defer src="class-exercises.js"></script>
@@ -29,10 +29,10 @@
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261006-avatar-quality2"></script>
   <script defer src="species-personality.js?v=20261006-robot1"></script>
-  <script defer src="script.js?v=20261006-selector-emoji2"></script>
+  <script defer src="script.js?v=20261006-mobile-speech1"></script>
   <script defer src="robotito-vnext.js?v=20261005-routing3"></script>
   <script defer src="video-material.js"></script>
-  <script defer src="robotito-tests.js?v=20261006-own-avatars2"></script>
+  <script defer src="robotito-tests.js?v=20261006-mobile-speech1"></script>
 </head>
 <body>
 <div id="languageGate" class="language-gate" role="dialog" aria-modal="true" aria-labelledby="languageGateTitle">
@@ -109,6 +109,7 @@
 
   <main class="layout">
     <section class="world" id="world" aria-label="Mundo de Robotito">
+      <div class="world-scene">
       <video id="camera" autoplay muted playsinline></video>
       <canvas id="visionCanvas"></canvas>
 
@@ -290,6 +291,8 @@
       <div id="birthdayScene" class="birthday-scene hidden">
         <div class="cake">🎂</div>
         <div id="birthdayText" class="birthday-text"></div>
+      </div>
+
       </div>
 
       <div class="world-controls">
