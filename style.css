@@ -2644,3 +2644,41 @@ body.layout-resizing *{cursor:col-resize!important}
   .robotito.avatar-custom .animal-avatar-emoji,
   .robotito.avatar-custom .avatar-character *{animation:none!important}
 }
+
+
+/* v22 — selector inicial con emojis nativos e iconos propios tipo emoji */
+.avatar-choice-emoji .avatar-emoji-glyph.avatar-choice-svg{
+  display:inline-grid;
+  place-items:center;
+  width:auto;
+  height:auto;
+  margin:0;
+  font-size:46px;
+  line-height:1;
+  filter:drop-shadow(0 4px 5px rgba(55,42,58,.14));
+}
+.avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{
+  width:50px;
+  height:50px;
+  margin:0;
+  overflow:visible;
+  filter:drop-shadow(0 4px 5px rgba(55,42,58,.15));
+}
+.avatar-choice{
+  min-height:118px;
+}
+.avatar-choice-emoji > *{
+  transition:transform .18s ease,filter .18s ease;
+}
+.avatar-choice:hover .avatar-choice-emoji > *,
+.avatar-choice:focus-visible .avatar-choice-emoji > *{
+  transform:translateY(-2px) scale(1.08);
+}
+@media(max-width:600px){
+  .avatar-choice{min-height:108px}
+  .avatar-choice-emoji .avatar-emoji-glyph.avatar-choice-svg{font-size:40px}
+  .avatar-choice-emoji .custom-avatar-emoji.avatar-choice-svg{width:44px;height:44px}
+}
+@media(prefers-reduced-motion:reduce){
+  .avatar-choice-emoji > *{transition:none}
+}
