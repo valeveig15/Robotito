@@ -81,7 +81,7 @@
 
     if(avatars){
       const ids=avatars.list.map(item=>item.id);
-      results.push(same(avatars.list.length,49,"ofrece 49 avatares únicos"));
+      results.push(same(avatars.list.length,50,"ofrece 50 avatares únicos"));
       results.push(same(new Set(ids).size,ids.length,"no repite animales"));
       results.push(same(avatars.byId("chameleon").es,"Camaleón","incluye camaleón"));
       results.push(same(avatars.byId("unicorn").emoji,"🦄","incluye unicornio"));
