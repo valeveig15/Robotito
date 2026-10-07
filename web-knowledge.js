@@ -10,6 +10,11 @@
   }
   function langCode(lang){return lang==="en"?"en":lang==="pt"?"pt":"es";}
   function isFactualQuestion(raw){
+    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(raw);
+    if(understood){
+      if(["definition","explanation","comparison","factual-question"].includes(understood.intent))return true;
+      if(["conversation","command","class-question","exercise","book-recommendation","calculation","object","statement","empty"].includes(understood.intent))return false;
+    }
     const q=norm(raw);
     if(q.length<4||q.length>220)return false;
     if(!/^(que|qué|quien|quién|cual|cuál|cuales|cuáles|como|cómo|cuando|cuándo|donde|dónde|por que|por qué|define|definime|defina|dame la definicion|decime que es|dime que es|explicame que es|what|who|which|how|when|where|why|define|o que|quem|qual|como|quando|onde|por que)\b/.test(q))return false;
@@ -34,12 +39,14 @@
   async function answer(raw,lang="es",depth="normal"){
     if(!isFactualQuestion(raw))return {handled:false};
     const code=langCode(lang);
+    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(raw);
+    const searchQuery=understood?.topic||raw;
     const key=code+"|"+norm(raw);
     const hit=cache.get(key);
     if(hit&&Date.now()-hit.at<6*60*60*1000)return hit.value;
     try{
       const api="https://"+code+".wikipedia.org/w/api.php";
-      const searchUrl=api+"?origin=*&format=json&action=query&list=search&srlimit=5&srprop=&srsearch="+encodeURIComponent(raw);
+      const searchUrl=api+"?origin=*&format=json&action=query&list=search&srlimit=5&srprop=&srsearch="+encodeURIComponent(searchQuery);
       const search=await getJson(searchUrl);
       const title=search.query?.search?.[0]?.title;
       if(!title)return {handled:false};

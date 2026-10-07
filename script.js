@@ -3231,12 +3231,15 @@ async function askClass(){
   robot.classList.add("thinking");
   setTimeout(()=>robot.classList.remove("thinking"),1200);
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
-  if(out)out.innerHTML='<div class="study-chip">Buscando en las transcripciones y el material cargado…</div>';
+  if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
-    const exerciseHandled=await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
+    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{};
+    const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
-    const classAnswered=await answerClassQuestion(q,{speak:true,render:true,announceMissing:false});
-    if(classAnswered)return;
+    if(understood.useClassMemory){
+      const classAnswered=await answerClassQuestion(q,{speak:true,render:true,announceMissing:false});
+      if(classAnswered)return;
+    }
     const generalAnswered=await answerGeneralAcademicQuestion(q,{speak:true,render:true});
     if(generalAnswered)return;
     if(out)out.innerHTML='<div class="study-chip">No encontré evidencia suficiente en las clases, los materiales ni las fuentes generales disponibles.</div>';
@@ -3443,6 +3446,7 @@ async function handleSpeech(rawText){
     return;
   }
   const detectedLang=responseLanguage(rawText);
+  const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
 
   // Silence is a voice command, so it takes priority over questions and other actions.
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
@@ -3450,13 +3454,13 @@ async function handleSpeech(rawText){
 
   // Exact exercise requests from uploaded academic material have top priority.
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
-  if(await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(interpreted,{spoken:true}))return;
+  if(understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(interpreted,{spoken:true}))return;
 
   // Saved classes are used first only when the person explicitly asks about
   // the class, teacher, transcript or uploaded material. General questions must
   // go through curated/general knowledge before class-memory fallback.
   const hasClassMemory=state.classLines.length||state.academicMaterials.length;
-  const explicitClassReference=hasExplicitClassReference(interpreted);
+  const explicitClassReference=understood.useClassMemory===true;
   if(hasClassMemory && explicitClassReference){
     robot.classList.add("thinking");
     setTimeout(()=>robot.classList.remove("thinking"),900);
@@ -3589,10 +3593,6 @@ async function handleSpeech(rawText){
       const shaped=window.ROBOTITO_ROUTER?.shapeAnswer?.(interpreted,webAnswer.text)||webAnswer.text;
       say(shaped,readingDisplayTime(shaped,4200),detectedLang);
       return;
-    }
-    if(hasClassMemory&&looksLikeClassQuestion(interpreted)){
-      const answered=await answerClassQuestion(interpreted,{speak:true,render:true,announceMissing:false});
-      if(answered)return;
     }
     say(detectedLang==="en"?"I don't know that one yet, but I understood the question.":"Esa todavía no la sé, pero entendí que me hiciste una pregunta.");
   }

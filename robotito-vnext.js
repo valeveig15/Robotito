@@ -257,6 +257,8 @@
   }
 
   function responseDepth(raw){
+    const centralized=window.ROBOTITO_INTENT_ENGINE?.responseDepth?.(raw);
+    if(centralized)return centralized;
     const q=norm(raw);
     if(/\b(paso a paso|detallad|explicame|explica|desarrolla|demostra|demuestra|como funciona|por que|porque|compara|diferencia)\b/.test(q))return "detailed";
     if(/^(que (?:es|son|significa)|que se entiende por|define|defini|definime|cual(?:es)? es la definicion|dame la definicion)\b/.test(q))return "definition";
@@ -264,6 +266,8 @@
   }
 
   function shapeAnswer(raw,answer){
+    const centralized=window.ROBOTITO_INTENT_ENGINE?.shapeAnswer?.(raw,answer);
+    if(centralized!==undefined)return centralized;
     const text=String(answer||"").replace(/\s+/g," ").trim();
     const depth=responseDepth(raw);
     if(!text)return text;
@@ -278,6 +282,7 @@
   }
 
   function classify(raw){
+    const central=window.ROBOTITO_INTENT_ENGINE?.classify?.(raw);
     const q=norm(raw);
     const depth=responseDepth(raw);
     if(window.ROBOTITO_PRESIDENTS?.parseQuestion?.(raw))return {intent:"president",depth};
@@ -285,10 +290,7 @@
     const circle=/\b(circunferencia|circle)\b/.test(q);
     const solve=/\b(resuelve|resolve|resolver|representa|representacion|grafica|grafico|dibuja|centro|radio|ecuacion|equation)\b/.test(q)||/[xy]\s*[²^]/i.test(raw);
     if(circle&&solve)return {intent:"circle-math",depth};
-    if(window.ROBOTITO_SPOKEN_MATH?.solve?.(raw,"es")?.handled)return {intent:"calculation",depth};
-    if(/\b(ejercicio|problema|actividad)\b/.test(q))return {intent:"exercise",depth};
-    if(depth==="definition")return {intent:"definition",depth};
-    if(depth==="detailed")return {intent:"explanation",depth};
+    if(central)return {...central,depth};
     return {intent:"other",depth};
   }
 

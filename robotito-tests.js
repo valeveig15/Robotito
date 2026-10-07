@@ -50,6 +50,16 @@
       results.push(same(router.classify("¿Quién es el presidente de Uruguay?").intent,"president","ruta presidentes"));
       results.push(same(router.classify("¿Qué objeto es esto?").intent,"object","ruta objeto"));
       results.push(same(router.shapeAnswer("¿Qué es la gravedad?","La gravedad es una interacción física. Además tiene múltiples efectos y aplicaciones."),"La gravedad es una interacción física.","recorta definiciones al alcance pedido"));
+      results.push(same(router.classify("¿Qué es permutación?").intent,"definition","permutación se entiende como definición general"));
+      results.push(same(router.classify("Explícame permutación").intent,"explanation","explicación no se confunde con definición"));
+      results.push(same(router.classify("Compara permutación y combinación").intent,"comparison","comparación tiene intención propia"));
+      results.push(same(router.classify("Explícame paso a paso el ejercicio 4").intent,"exercise","ejercicio tiene prioridad sobre explicación"));
+      results.push(same(router.classify("Explícame paso a paso el ejercicio 4").depth,"detailed","compatibilidad de profundidad detallada"));
+      results.push(same(window.ROBOTITO_INTENT_ENGINE.classify("Explícame paso a paso el ejercicio 4").depth,"step-by-step","política distingue paso a paso"));
+      results.push(same(window.ROBOTITO_INTENT_ENGINE.classify("Según la clase, ¿qué es permutación?").source,"class","referencia explícita autoriza memoria de clase"));
+      results.push(same(window.ROBOTITO_INTENT_ENGINE.classify("¿Qué es permutación?").useClassMemory,false,"definición general no autoriza memoria de clase"));
+      results.push(same(window.ROBOTITO_INTENT_ENGINE.classify("Recomendame un libro sobre duelo").intent,"book-recommendation","recomendación de libros tiene ruta propia"));
+      results.push(same(window.ROBOTITO_INTENT_ENGINE.classify("¿Cuánto es 18 por 7?").intent,"calculation","cálculo tiene ruta propia"));
     }else results.push(truthy(false,"router loaded"));
 
     if(questionRouting){
@@ -68,6 +78,9 @@
 
     if(webKnowledge){
       results.push(same(webKnowledge.isFactualQuestion("Definime entropía"),true,"acepta pedido imperativo de definición"));
+      results.push(same(webKnowledge.isFactualQuestion("Explícame la entropía"),true,"acepta explicaciones generales"));
+      results.push(same(webKnowledge.isFactualQuestion("Compara masa y peso"),true,"acepta comparaciones generales"));
+      results.push(same(webKnowledge.isFactualQuestion("Según la clase, explicame entropía"),false,"la web no suplanta una consulta explícita de clase"));
       results.push(same(webKnowledge.isFactualQuestion("Me gusta la entropía"),false,"no confunde comentario con pregunta factual"));
     }else results.push(truthy(false,"web knowledge loaded"));
 
