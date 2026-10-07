@@ -28,7 +28,7 @@
     "rabbit":a("#d4c9d2","#fff8fb","#877786","mammal","long","puff","none"),
     "lion":a("#d79a3f","#f2c56f","#8f582a","mammal","round","long","mane"),
     "tiger":a("#e99035","#f7c27a","#4a332a","mammal","round","long","stripes"),
-    "panther":a("#34313a","#595461","#18161d","mammal","point","long","none"),
+    "panther":a("#34313a","#665f6c","#18161d","mammal","round","long","none"),
     "fox":a("#d96b32","#f5cfad","#613526","mammal","point","bushy","mask"),
     "koala":a("#9299a3","#dce0e4","#575d66","mammal","fluffy","small","none"),
     "pig":a("#ef9eaa","#ffd0d5","#a95e6b","mammal","small","curl","none"),
