@@ -92,7 +92,7 @@
   }
   function requestedNumber(text){
     const raw=String(text||"");
-    let m=raw.match(/\b(?:ejercicio|ej\.?|problema|actividad)\s*(?:n(?:ro|umero|úmero)?\.?\s*[º°#]?\s*)?(\d{1,3}|[ivxlc]{1,6})\b/i);
+    let m=raw.match(/\b(?:ejercicio|ej\.?|problema|actividad|exercise|problem|exerc[ií]cio)\s*(?:(?:n(?:ro|umero|úmero)?|number|n[uú]mero)\.?\s*[º°#]?\s*)?(\d{1,3}|[ivxlc]{1,6})\b/i);
     if(m)return numberFromToken(m[1]);
 
     m=raw.match(/\b(?:ejercicio|problema|actividad)\s+(uno|una|primer[oa]?|dos|segund[oa]|tres|tercer[oa]|cuatro|cuart[oa]|cinco|quint[oa]|seis|sext[oa]|siete|s[eé]ptim[oa]|ocho|octav[oa]|nueve|noven[oa]|diez|d[eé]cim[oa])\b/i);
@@ -100,8 +100,8 @@
   }
   function looksLikeExerciseRequest(text){
     const t=norm(text);
-    if(!/\b(ejercicio|ej|problema|actividad)\b/.test(t))return false;
-    return requestedNumber(text)!==null || /\b(resolve|resolver|resolvelo|resu[eé]lvelo|explica|explicame|paso a paso|hacer|hace|solucion|solución)\b/i.test(String(text));
+    if(!/\b(ejercicio|ej|problema|actividad|exercise|problem|exercicio)\b/.test(t))return false;
+    return requestedNumber(text)!==null || /\b(resolve|resolver|resolvelo|resu[eé]lvelo|explica|explicame|paso a paso|hacer|hace|solucion|solución|solve|explain|solution)\b/i.test(String(text));
   }
   function unique(values){
     return [...new Set(values.filter(Boolean))].sort((a,b)=>b.length-a.length);

@@ -110,6 +110,9 @@ Los módulos principales incluyen:
 - `web-knowledge.js`: conocimiento factual de respaldo.
 - `video-material.js`: transcripciones, captura autorizada de pestañas y observaciones visuales de videos.
 - `robotito-tests.js`: pruebas de regresión.
+- `robotito-regression-suite.js`: batería completa y organizada por áreas.
+- `tests/core-regression.js`: pruebas rápidas sin navegador.
+- `tests/browser-regression.js`: carga real, DOM y cuatro tamaños responsive.
 
 ## Pruebas
 
@@ -122,6 +125,16 @@ para ejecutar las pruebas de regresión en la consola. También se pueden ejecut
 `ROBOTITO_TESTS.run()`
 
 Las pruebas cubren matemática hablada, precedencia, circunferencias, profundidad de respuesta, silencio temporizado, enlaces de YouTube y enrutamiento de objetos/presidentes.
+
+La batería completa también cubre comprensión de intención, conflictos entre conocimiento general y clases, idiomas, emociones, libros, cumpleaños, batería, micrófono, ejercicios, avatares y contratos de interfaz móvil. Se ejecuta automáticamente en GitHub Actions ante cada cambio en `main` y cada pull request.
+
+Desde una terminal:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:all
+```
 
 ## Privacidad
 

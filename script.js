@@ -4995,6 +4995,29 @@ window.ROBOTITO_BATTERY={
   message:batteryAlertMessage
 };
 
+window.ROBOTITO_BIRTHDAYS={
+  parse:parseBirthdayInput,
+  format:formatBirthday,
+  isToday:(iso,now=new Date())=>{
+    const match=String(iso||"").match(/^\d{4}-(\d{2})-(\d{2})$/);
+    return !!match&&now.getMonth()+1===Number(match[1])&&now.getDate()===Number(match[2]);
+  }
+};
+
+window.ROBOTITO_RUNTIME_POLICY={
+  canSpeak:({classMode=false,muted=false,voiceEnabled=true,synthesisAvailable=true}={})=>
+    !classMode&&!muted&&voiceEnabled&&synthesisAvailable,
+  classModeIsSilent:true,
+  microphoneMayKeepListeningWhileSilent:true
+};
+
+window.ROBOTITO_BOOKS={
+  analyze:analyzeBookPrompt,
+  score:scoreBookCandidate,
+  reason:recommendationReason,
+  catalog:LOCAL_BOOK_CATALOG.map(book=>({...book,authors:[...(book.authors||[])],categories:[...(book.categories||[])]}))
+};
+
 window.ROBOTITO_AVATARS={
   list:ROBOTITO_AVATARS.map(item=>({...item})),
   byId:id=>({...avatarById(id)}),

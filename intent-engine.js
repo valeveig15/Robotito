@@ -59,7 +59,7 @@
 
     const depthQuery=q.replace(RULES.class," ").trim();
     if(RULES.step.test(q))result.depth="step-by-step";
-    else if(result.intent==="definition"||RULES.define.test(depthQuery))result.depth="brief";
+    else if(result.intent==="definition"||(result.intent==="class-question"&&RULES.define.test(depthQuery)&&!/^(?:what is in|que (?:hay|vimos) en)\b/.test(depthQuery)&&!/^what is in\b.*\bclass\b/.test(q)))result.depth="brief";
     else if(result.intent==="comparison"||RULES.compare.test(depthQuery))result.depth="structured";
     else if(result.intent==="explanation"||result.intent==="exercise"||RULES.explain.test(depthQuery))result.depth="detailed";
     result.topic=extractTopic(raw,result.intent);

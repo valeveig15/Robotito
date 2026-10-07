@@ -197,7 +197,7 @@
   window.ROBOTITO_TESTS={run};
   document.addEventListener("DOMContentLoaded",()=>{
     if(new URLSearchParams(location.search).get("tests")==="1"){
-      setTimeout(run,500);
+      setTimeout(()=>window.ROBOTITO_TESTS.run(),500);
     }
   });
 })();
