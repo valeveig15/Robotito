@@ -101,10 +101,20 @@
       results.push(same(avatars.byId("chameleon").es,"Camaleón","incluye camaleón"));
       results.push(same(avatars.byId("unicorn").emoji,"🦄","incluye unicornio"));
       results.push(same(avatars.byId("dolphin").emoji,"🐬","incluye delfín"));
-      results.push(truthy(avatars.visualMarkup("panther").includes("<svg"),"pantera usa icono ilustrado propio"));
-      results.push(truthy(avatars.visualMarkup("armadillo").includes("<svg"),"armadillo usa icono ilustrado"));
+      results.push(truthy(avatars.visualMarkup("panther").includes("panther-reference.png"),"pantera usa exactamente el icono de referencia"));
+      results.push(truthy(avatars.visualMarkup("armadillo").includes("armadillo-reference.png"),"armadillo usa exactamente el icono de referencia"));
+      results.push(truthy(avatars.visualMarkup("chameleon").includes("chameleon-reference.png"),"camaleón usa exactamente el icono de referencia"));
+      results.push(truthy(avatars.visualMarkup("red-panda").includes("red-panda-reference.png"),"panda rojo usa exactamente el icono de referencia"));
       results.push(same(avatars.byId("missing").id,"panda","usa panda como avatar seguro"));
     }else results.push(truthy(false,"avatar catalog loaded"));
+
+    const pandaReference=window.ROBOTITO_PANDA_REFERENCE;
+    if(pandaReference){
+      results.push(same(pandaReference.states.length,8,"panda de referencia incluye ocho estados"));
+      results.push(same(pandaReference.views.length,4,"panda de referencia incluye cuatro vistas"));
+      results.push(truthy(pandaReference.exactReferenceAssets,"panda usa recursos exactos de la ficha"));
+      results.push(truthy(!!document.querySelector("#pandaReferenceAvatar"),"panda de referencia está integrado en la escena"));
+    }else results.push(truthy(false,"panda reference art loaded"));
 
     if(avatarArt&&avatars){
       const nonPanda=avatars.list.filter(item=>item.id!=="panda");

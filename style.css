@@ -2876,6 +2876,107 @@ body.layout-resizing *{cursor:col-resize!important}
 
 /* v31 — acabado común inspirado en las referencias tiernas y geométricas */
 .avatar-character .avatar-facets{opacity:.105;mix-blend-mode:soft-light}
+
+/* v32 — cuatro emojis exactos extraídos de la referencia aprobada */
+.avatar-choice-emoji .reference-avatar-icon.avatar-choice-svg{
+  display:block;
+  width:78px;
+  height:58px;
+  object-fit:contain;
+  margin:0;
+  filter:drop-shadow(0 3px 4px rgba(55,42,58,.14));
+}
+.language-panda .reference-avatar-icon.avatar-startup-svg{
+  display:block;
+  width:96px;
+  height:76px;
+  object-fit:contain;
+  margin:auto;
+}
+@media(max-width:600px){
+  .avatar-choice-emoji .reference-avatar-icon.avatar-choice-svg{width:70px;height:52px}
+  .language-panda .reference-avatar-icon.avatar-startup-svg{width:88px;height:68px}
+}
+
+/* v33 — panda low-poly exacto de la ficha de personaje */
+.panda-reference-avatar{display:none}
+.robotito.avatar-panda .panda-svg{display:none!important}
+.robotito.avatar-panda .panda-reference-avatar{
+  position:absolute;
+  left:50%;
+  bottom:-3px;
+  z-index:4;
+  display:block;
+  width:326px;
+  height:326px;
+  transform:translateX(-50%);
+  transform-origin:50% 92%;
+  background-image:url("assets/panda-reference/neutral.png");
+  background-repeat:no-repeat;
+  background-position:center bottom;
+  background-size:contain;
+  filter:drop-shadow(0 11px 8px rgba(34,47,49,.15));
+  transition:filter .2s ease;
+}
+.robotito.avatar-panda.panda-view-left .panda-reference-avatar{background-image:url("assets/panda-reference/side-left.png")}
+.robotito.avatar-panda.panda-view-right .panda-reference-avatar{background-image:url("assets/panda-reference/side-right.png")}
+.robotito.avatar-panda.panda-view-rear .panda-reference-avatar{background-image:url("assets/panda-reference/rear.png")}
+.robotito.avatar-panda.mood-happy .panda-reference-avatar,
+.robotito.avatar-panda.mood-affectionate .panda-reference-avatar,
+.robotito.avatar-panda.pet-happy .panda-reference-avatar,
+.robotito.avatar-panda.hugging .panda-reference-avatar,
+.robotito.avatar-panda.eating .panda-reference-avatar{background-image:url("assets/panda-reference/happy.png")}
+.robotito.avatar-panda.mood-sad .panda-reference-avatar,
+.robotito.avatar-panda.mood-embarrassed .panda-reference-avatar{background-image:url("assets/panda-reference/sad.png")}
+.robotito.avatar-panda.mood-angry .panda-reference-avatar,
+.robotito.avatar-panda.mood-annoyed .panda-reference-avatar{background-image:url("assets/panda-reference/angry.png")}
+.robotito.avatar-panda.mood-scared .panda-reference-avatar,
+.robotito.avatar-panda.poked .panda-reference-avatar,
+.robotito.avatar-panda.battery-critical .panda-reference-avatar{background-image:url("assets/panda-reference/surprised.png")}
+.robotito.avatar-panda.mood-curious .panda-reference-avatar,
+.robotito.avatar-panda.mood-confused .panda-reference-avatar{background-image:url("assets/panda-reference/curious.png")}
+.robotito.avatar-panda.sleeping .panda-reference-avatar,
+.robotito.avatar-panda.mood-sleepy .panda-reference-avatar{background-image:url("assets/panda-reference/sleeping.png")}
+.robotito.avatar-panda.greeting .panda-reference-avatar,
+.robotito.avatar-panda.highfive .panda-reference-avatar,
+.robotito.avatar-panda.dancing .panda-reference-avatar,
+.robotito.avatar-panda.playing .panda-reference-avatar{background-image:url("assets/panda-reference/greeting.png")}
+.robotito.avatar-panda .scare-mark{display:none!important}
+.robotito.avatar-panda.sleeping .panda-reference-avatar{animation:referencePandaSleep 2.8s ease-in-out infinite}
+.robotito.avatar-panda.pet-happy .panda-reference-avatar{animation:referencePandaNuzzle .7s ease-in-out 2}
+@keyframes referencePandaSleep{50%{transform:translateX(-50%) translateY(5px) scale(1.012)}}
+@keyframes referencePandaNuzzle{50%{transform:translateX(-50%) rotate(-2.5deg) scale(1.025)}}
+
+.panda-reference-landscape{display:none}
+.world.panda-reference-world .panda-reference-landscape{display:block;position:absolute;inset:0;z-index:0;pointer-events:none}
+.world.panda-reference-world .world-scene{
+  background:
+    radial-gradient(circle at 82% 12%,rgba(255,250,157,.74),transparent 15%),
+    linear-gradient(180deg,#52c3f4 0%,#91dcf5 52%,#b8df69 52%,#82c84a 100%);
+}
+.world.panda-reference-world .room-cloud{
+  background:rgba(255,255,255,.82);
+  border-radius:0;
+  clip-path:polygon(0 64%,17% 34%,32% 45%,48% 8%,66% 43%,83% 31%,100% 67%,88% 88%,13% 88%);
+  filter:drop-shadow(0 5px 0 rgba(118,203,236,.18));
+}
+.world.panda-reference-world .floor-glow{background:radial-gradient(ellipse,rgba(222,247,128,.78),rgba(222,247,128,0) 70%)}
+.world.panda-reference-world .lowpoly-mountain{position:absolute;bottom:31%;clip-path:polygon(0 100%,22% 54%,36% 68%,56% 0,75% 50%,100% 100%)}
+.world.panda-reference-world .mountain-far{left:6%;width:34%;height:31%;background:linear-gradient(135deg,#9ad8e9 0 34%,#6eafd0 35% 62%,#568ebe 63%)}
+.world.panda-reference-world .mountain-near{right:4%;width:39%;height:35%;background:linear-gradient(135deg,#b7e3ec 0 31%,#6ba6ca 32% 58%,#477eb0 59%)}
+.world.panda-reference-world .lowpoly-rock{position:absolute;bottom:72px;width:92px;height:68px;clip-path:polygon(6% 81%,18% 35%,48% 5%,79% 28%,96% 86%,55% 100%);background:linear-gradient(135deg,#a9a6b8 0 34%,#77788e 35% 67%,#555970 68%);filter:drop-shadow(0 6px 3px rgba(55,68,62,.14))}
+.world.panda-reference-world .rock-left{left:13%}.world.panda-reference-world .rock-right{right:14%;transform:scale(.72)}
+.world.panda-reference-world .lowpoly-grass{position:absolute;bottom:68px;width:110px;height:58px;background:linear-gradient(105deg,#59a934,#9ad841);clip-path:polygon(0 100%,10% 50%,19% 91%,30% 10%,42% 88%,57% 31%,68% 91%,84% 3%,91% 93%,100% 52%,100% 100%)}
+.world.panda-reference-world .grass-left{left:2%}.world.panda-reference-world .grass-right{right:1%;transform:scaleX(-1)}
+.world.panda-reference-world .bamboo{filter:drop-shadow(0 8px 5px rgba(49,91,38,.18));opacity:1}
+.world.panda-reference-world .bamboo:before,.world.panda-reference-world .bamboo:after{border-radius:3px;background:repeating-linear-gradient(0deg,transparent 0 43px,#3e852d 44px 49px,transparent 50px 55px),linear-gradient(90deg,#4b942d,#96ce3f 48%,#39822b)}
+.world.panda-reference-world .bamboo i{border-radius:0;clip-path:polygon(0 48%,42% 0,100% 17%,70% 72%,18% 100%);background:linear-gradient(135deg,#87cb39,#3e8e2f)}
+body.mode-night .world.panda-reference-world .world-scene{background:linear-gradient(180deg,#16385d 0%,#315d7d 52%,#365c36 52%,#233e2c 100%)}
+@media(max-width:600px){
+  .robotito.avatar-panda .panda-reference-avatar{width:306px;height:306px}
+  .world.panda-reference-world .lowpoly-rock{bottom:64px;transform:scale(.72)}
+  .world.panda-reference-world .rock-right{transform:scale(.58)}
+}
 .avatar-character .avatar-head-facets{opacity:.14}
 .avatar-character .avatar-body-facets{opacity:.10}
 .avatar-character .gentle-brow{opacity:.34;stroke-width:2.5}

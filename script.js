@@ -1572,6 +1572,22 @@ Object.assign(AVATAR_ICON_SVGS,{
   panther:'<svg class="avatar-illustration custom-avatar-emoji emoji-panther" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="pa4Fur" x1="18" y1="10" x2="53" y2="62"><stop stop-color="#4b4654"/><stop offset=".52" stop-color="#272532"/><stop offset="1" stop-color="#171620"/></linearGradient><filter id="pa4Soft" x="-18%" y="-22%" width="150%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.7" flood-color="#111019" flood-opacity=".28"/></filter></defs><g filter="url(#pa4Soft)" stroke-linecap="round" stroke-linejoin="round"><path d="m17.5 27-4-15.5 16 7.8m25 7.7 4-15.5-16 7.8" fill="#23212b" stroke="#14131a" stroke-width="1.8"/><path d="m17 15.2 8.1 5.3-6.7 4.8m36.6-10.1-8.1 5.3 6.7 4.8" fill="#716271" stroke="#14131a" stroke-width="1.2"/><path d="M11.5 37.2C11.5 22.3 21.4 13.6 36 13.6s24.5 8.7 24.5 23.6C60.5 53.3 50 62 36 62s-24.5-8.7-24.5-24.8Z" fill="url(#pa4Fur)" stroke="#121118" stroke-width="1.8"/><path d="M18.2 29.5c5.1-4 10.1-4.1 14.1-.5m21.5.5c-5.1-4-10.1-4.1-14.1-.5" fill="none" stroke="#111017" stroke-width="2.8"/><path d="M18.5 33.2c3.5-3.7 9-3.8 12.6-.2-3.4 5.2-9.4 5.2-12.6.2Zm35 0c-3.5-3.7-9-3.8-12.6-.2 3.4 5.2 9.4 5.2 12.6.2Z" fill="#d8ed63" stroke="#0e0d13" stroke-width="1.2"/><path d="M25 31.2v4.2m22-4.2v4.2" stroke="#121118" stroke-width="2"/><circle cx="23.4" cy="32.1" r=".8" fill="#fff"/><circle cx="45.4" cy="32.1" r=".8" fill="#fff"/><path d="M23.4 46c2.1-7 7-10.2 12.6-10.2S46.5 39 48.6 46c1.4 5-4.7 10.2-12.6 10.2S22 51 23.4 46Z" fill="#4f4651"/><path d="m31.1 42.1 4.9-2.6 4.9 2.6-4.9 4.2Z" fill="#17151b"/><path d="M36 46.2c-3.1 0-5.4 1.6-6.8 4m6.8-4c3.1 0 5.4 1.6 6.8 4" fill="none" stroke="#a79ba8" stroke-width="1.6"/><path d="M19.5 43.2 8 41.1m11.8 5.6-11.1 1.5m43.8-5 11.5-2.1m-11.8 5.6 11.1 1.5" fill="none" stroke="#918794" stroke-width="1.3" opacity=".8"/><circle cx="18.5" cy="42" r="1.1" fill="#9e929f"/><circle cx="53.5" cy="42" r="1.1" fill="#9e929f"/><ellipse cx="29" cy="17.8" rx="8" ry="2.7" fill="#fff" opacity=".12" stroke="none" transform="rotate(-15 29 17.8)"/></g></svg>'
 });
 AVATAR_ICON_SVGS.panther=AVATAR_ICON_SVGS.panther.replace('<path d="m17.5 27-4-15.5 16 7.8m25 7.7 4-15.5-16 7.8" fill="#23212b" stroke="#14131a" stroke-width="1.8"/><path d="m17 15.2 8.1 5.3-6.7 4.8m36.6-10.1-8.1 5.3 6.7 4.8" fill="#716271" stroke="#14131a" stroke-width="1.2"/>','<circle cx="18.5" cy="23" r="11" fill="#23212b" stroke="#14131a" stroke-width="1.8"/><circle cx="53.5" cy="23" r="11" fill="#23212b" stroke="#14131a" stroke-width="1.8"/><circle cx="18.5" cy="23" r="5.5" fill="#716271"/><circle cx="53.5" cy="23" r="5.5" fill="#716271"/>');
+
+// Full-body selector icons based on the four approved reference designs.
+// They intentionally use the classic emoji language: clear silhouette, soft
+// volume, very few details and no facial styling from the large avatars.
+Object.assign(AVATAR_ICON_SVGS,{
+  panther:'<svg class="avatar-illustration custom-avatar-emoji emoji-panther" viewBox="0 0 96 72" aria-hidden="true"><g stroke-linecap="round" stroke-linejoin="round"><path d="M66 35c9 0 10 13 17 13 5 0 7-4 5-7" fill="none" stroke="#242326" stroke-width="6"/><path d="M29 25c8-8 28-9 39-2 7 5 7 18 1 24-7 7-31 7-42 0-8-5-7-16 2-22Z" fill="#2e2d30"/><path d="M38 24c11-4 24-3 31 2-10-1-21 0-31 4Z" fill="#454347" opacity=".55"/><path d="M16 27c4-8 15-11 23-5 5 4 5 15-1 20-7 6-21 4-24-4-2-4-1-8 2-11Z" fill="#29282b"/><path d="m18 25 1-10 8 7m4-1 7-7 1 11" fill="#29282b" stroke="#202024" stroke-width="2"/><path d="m21 20 1-3 3 4m8 0 4-4v5" fill="none" stroke="#a06d6d" stroke-width="2.5"/><path d="M13 34c-4 2-5 6-1 8 4 2 9 0 12-3" fill="#222125"/><ellipse cx="24" cy="30" rx="3.2" ry="4" fill="#f2c62d"/><ellipse cx="24.4" cy="30" rx="1.15" ry="2.6" fill="#17161a"/><circle cx="23.3" cy="28.7" r=".7" fill="#fff"/><path d="m13 36 4 1-3 3" fill="#111114"/><path d="M33 45 31 58c0 3 7 3 8 0l2-10m17-1 1 11c1 3 8 3 8-1l1-14" fill="#29282b" stroke="#222125" stroke-width="3"/><path d="M29 58h10m20 0h9" stroke="#1c1b1f" stroke-width="3"/><ellipse cx="44" cy="24" rx="13" ry="3" fill="#fff" opacity=".08"/></g></svg>',
+  chameleon:'<svg class="avatar-illustration custom-avatar-emoji emoji-chameleon" viewBox="0 0 96 72" aria-hidden="true"><g stroke-linecap="round" stroke-linejoin="round"><path d="M13 57c19-8 45-8 70 0" fill="none" stroke="#8a4928" stroke-width="5"/><path d="m18 56-9-5 5 10m62-5 10-7-4 12" fill="#4e9c3d"/><path d="M40 25c10-9 29-8 39 1 9 8 9 26 0 33-7 5-18 1-17-8 1-7 11-9 15-4 3 4-1 9-5 7" fill="#69b62f" stroke="#4b9b2e" stroke-width="2"/><path d="M58 23c1 7 0 14-2 20m12-18c0 7-1 12-4 18m13-13c-1 5-3 9-6 13" fill="none" stroke="#378f36" stroke-width="5"/><path d="M22 27c4-11 18-16 28-9 7 5 8 17 1 24-7 7-24 6-30-2-3-4-3-9 1-13Z" fill="#78c83a"/><path d="m31 19 6-7 3 8m2 0 8-6 1 11" fill="#80cf3d"/><circle cx="32" cy="27" r="8" fill="#f2d64e"/><circle cx="32" cy="27" r="3.3" fill="#24251d"/><circle cx="30.7" cy="25.5" r="1.1" fill="#fff"/><circle cx="19" cy="35" r="1.2" fill="#39762c"/><path d="M19 40c5 2 9 2 13 0" fill="none" stroke="#39762c" stroke-width="1.8"/><path d="M44 42 39 56m14-14 6 14" fill="none" stroke="#57aa35" stroke-width="6"/><path d="m36 55 8 1m11 0 8-1" stroke="#4b942d" stroke-width="3"/><ellipse cx="39" cy="19" rx="8" ry="2.5" fill="#fff" opacity=".2"/></g></svg>',
+  armadillo:'<svg class="avatar-illustration custom-avatar-emoji emoji-armadillo" viewBox="0 0 96 72" aria-hidden="true"><g stroke-linecap="round" stroke-linejoin="round"><path d="M25 25c9-11 32-12 45-3 10 7 11 24 2 32-10 9-37 8-47-2-7-7-7-19 0-27Z" fill="#c98238" stroke="#985528" stroke-width="2"/><path d="M35 19c-4 12-3 27 2 39m9-41c-3 13-1 30 3 43m9-42c3 14 4 29 1 40m10-34c4 10 4 21 0 29" fill="none" stroke="#8e4e2d" stroke-width="4"/><path d="M27 27c8 1 18 1 27-2M22 38c13 2 35 2 52-1M25 49c13 2 31 2 47-1" fill="none" stroke="#e5a55c" stroke-width="2" opacity=".75"/><g fill="#e5a55c" opacity=".75"><circle cx="30" cy="29" r="1.4"/><circle cx="31" cy="35" r="1.4"/><circle cx="31" cy="43" r="1.4"/><circle cx="39" cy="25" r="1.4"/><circle cx="40" cy="32" r="1.4"/><circle cx="41" cy="45" r="1.4"/></g><path d="M19 31c-7 2-13 9-14 16 8 5 19 2 25-5 5-6 2-13-3-15Z" fill="#b66c30"/><path d="m20 29-1-12 8 9m-10-7 4-5 3 9" fill="#c77a39" stroke="#965426" stroke-width="1.5"/><ellipse cx="18" cy="34" rx="2.8" ry="3.4" fill="#282019"/><circle cx="17.2" cy="33" r=".8" fill="#fff"/><path d="M6 45c-5 2-6 6-1 7 4 1 8-2 10-5" fill="#70401f"/><path d="M70 45c9 2 15 7 20 11-8 2-17 1-24-3" fill="#b96e31" stroke="#925124" stroke-width="2"/><path d="M32 53 30 62m17-5-1 6m17-9 3 8" stroke="#8a4e28" stroke-width="5"/><path d="M27 62h8m8 1h8m12-1h8" stroke="#704020" stroke-width="3"/></g></svg>',
+  "red-panda":'<svg class="avatar-illustration custom-avatar-emoji emoji-red-panda" viewBox="0 0 96 72" aria-hidden="true"><g stroke-linecap="round" stroke-linejoin="round"><path d="M66 35c12-2 21 4 25 12-2 9-13 14-25 9" fill="#d96717" stroke="#9e441b" stroke-width="2"/><path d="M73 35c1 6 0 13-3 19m10-16c2 5 2 10 0 15m8-9c1 3 1 5 0 7" fill="none" stroke="#8f3d20" stroke-width="5"/><path d="M31 27c9-8 28-9 38-1 8 7 8 21 0 28-9 8-31 7-40-1-7-7-6-19 2-26Z" fill="#c95e1f"/><path d="M35 47 33 60m20-12-1 12m14-13 2 12" stroke="#4f3028" stroke-width="7"/><path d="M29 60h10m10 0h9m7-1h9" stroke="#39231f" stroke-width="3"/><path d="M16 25c6-9 20-10 28-2 7 7 5 19-3 25-8 6-23 3-28-5-4-6-2-13 3-18Z" fill="#d86820"/><path d="m16 26-1-12 10 7m10 0 10-8-1 14" fill="#b74d20" stroke="#8f3c21" stroke-width="2"/><path d="m18 18 5 4-6 3m20-3 5-4-1 7" fill="#f1d2a4"/><path d="M16 29c4-6 9-8 14-8l2 9-7 10c-5-1-8-5-9-11Zm26 0c-3-5-7-7-11-8l2 9 5 10c3-2 5-6 4-11Z" fill="#f3e2bd"/><path d="M21 35c5-5 10-5 14 0-2 8-12 9-14 0Z" fill="#f7ead1"/><ellipse cx="23" cy="29" rx="2.7" ry="3.3" fill="#31231f"/><ellipse cx="36" cy="29" rx="2.7" ry="3.3" fill="#31231f"/><circle cx="22.2" cy="28" r=".8" fill="#fff"/><circle cx="35.2" cy="28" r=".8" fill="#fff"/><ellipse cx="29" cy="36" rx="3.2" ry="2.5" fill="#2d211e"/><path d="M26 40c2 2 5 2 7 0" fill="none" stroke="#71372b" stroke-width="1.5"/><ellipse cx="29" cy="21" rx="8" ry="2.5" fill="#fff" opacity=".14"/></g></svg>'
+});
+const AVATAR_REFERENCE_ICONS={
+  panther:"assets/avatar-icons/panther-reference.png",
+  chameleon:"assets/avatar-icons/chameleon-reference.png",
+  armadillo:"assets/avatar-icons/armadillo-reference.png",
+  "red-panda":"assets/avatar-icons/red-panda-reference.png"
+};
 function avatarVisualMarkup(avatar,extraClass=""){
   const surfaceClass=String(extraClass||"");
   const choiceSurface=/\bavatar-(?:choice|startup)-svg\b/.test(surfaceClass);
@@ -1580,6 +1596,10 @@ function avatarVisualMarkup(avatar,extraClass=""){
   // En el selector inicial usamos el emoji nativo. Cuando Unicode no ofrece
   // ese animal, usamos un icono propio con la misma escala y aspecto amable.
   if(choiceSurface){
+    const referenceIcon=AVATAR_REFERENCE_ICONS[avatar?.id];
+    if(referenceIcon){
+      return `<img class="avatar-illustration reference-avatar-icon ${escapeHtml(surfaceClass)}" src="${referenceIcon}" alt="" draggable="false">`;
+    }
     if(customEmoji){
       const safeClass=surfaceClass.replace(/[^a-z0-9_-]/gi,"");
       return customEmoji.replace('class="avatar-illustration custom-avatar-emoji',`class="avatar-illustration custom-avatar-emoji ${safeClass}`);
@@ -1706,6 +1726,7 @@ function applyAvatar(id,{persist=true}={}){
     robot.dataset.avatar=avatar.id;
     robot.dataset.speciesMotion=speciesProfile(avatar.id).motion||"bounce";
   }
+  $("#world")?.classList.toggle("panda-reference-world",avatar.id==="panda");
   setAvatarVisual($("#animalAvatarEmoji"),avatar,"avatar-main-svg");
   if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatar);
   setAvatarVisual($("#startupMascot"),avatar,"avatar-startup-svg");
@@ -1713,6 +1734,32 @@ function applyAvatar(id,{persist=true}={}){
   updateAvatarAria();
   updateAvatarMoodIcon();
   return avatar;
+}
+
+function bindPandaReferenceViews(){
+  const scene=document.querySelector(".world-scene");
+  if(!scene||!robot)return;
+  const viewClasses=["panda-view-left","panda-view-right","panda-view-rear"];
+  let rearUntil=0;
+  const reset=()=>viewClasses.forEach(cls=>robot.classList.remove(cls));
+  scene.addEventListener("pointermove",event=>{
+    if(event.pointerType&&event.pointerType!=="mouse")return;
+    if(state.avatar!=="panda"||Date.now()<rearUntil||!robot.classList.contains("mood-calm"))return;
+    const box=scene.getBoundingClientRect();
+    const ratio=(event.clientX-box.left)/Math.max(1,box.width);
+    reset();
+    if(ratio<.29)robot.classList.add("panda-view-left");
+    else if(ratio>.71)robot.classList.add("panda-view-right");
+  });
+  scene.addEventListener("pointerleave",()=>{if(Date.now()>=rearUntil)reset()});
+  robot.addEventListener("dblclick",event=>{
+    if(state.avatar!=="panda")return;
+    event.preventDefault();
+    rearUntil=Date.now()+1400;
+    reset();
+    robot.classList.add("panda-view-rear");
+    setTimeout(()=>{if(Date.now()>=rearUntil)reset()},1450);
+  });
 }
 function renderAvatarChoices(){
   const container=$("#avatarChoices");
@@ -3810,6 +3857,7 @@ function recognize(det){
     p.lastGreetingAt=now;
     save(KEYS.people,state.people);
     say(greetingFor(p));
+    temporaryRobotClass("greeting",1800);
     if(["loves","likes"].includes(bondCategory(p)))animateAffection();
     checkBirthday(p);
   }
@@ -5021,7 +5069,13 @@ window.ROBOTITO_BOOKS={
 window.ROBOTITO_AVATARS={
   list:ROBOTITO_AVATARS.map(item=>({...item})),
   byId:id=>({...avatarById(id)}),
-  visualMarkup:id=>avatarVisualMarkup(avatarById(id),"test-avatar-svg")
+  visualMarkup:id=>avatarVisualMarkup(avatarById(id),"avatar-choice-svg")
+};
+
+window.ROBOTITO_PANDA_REFERENCE={
+  states:["neutral","happy","sad","surprised","angry","sleeping","curious","greeting"],
+  views:["front","side-left","rear","side-right"],
+  exactReferenceAssets:true
 };
 
 window.ROBOTITO_QUESTION_ROUTING={
@@ -5047,6 +5101,7 @@ async function init(){
   migrateOldData();
   purgeNamedPeople();
   bindUI();
+  bindPandaReferenceViews();
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("language");
   ensureClassLineIds();
