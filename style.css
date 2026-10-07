@@ -2873,3 +2873,53 @@ body.layout-resizing *{cursor:col-resize!important}
   .avatar-choice-emoji .avatar-emoji-glyph.avatar-choice-svg{font-size:44px}
   .language-panda .custom-avatar-emoji.avatar-startup-svg{width:68px;height:68px}
 }
+
+/* v31 — acabado común inspirado en las referencias tiernas y geométricas */
+.avatar-character .avatar-facets{opacity:.105;mix-blend-mode:soft-light}
+.avatar-character .avatar-head-facets{opacity:.14}
+.avatar-character .avatar-body-facets{opacity:.10}
+.avatar-character .gentle-brow{opacity:.34;stroke-width:2.5}
+.robotito.avatar-custom:is(.mood-sad,.mood-angry,.mood-scared,.mood-curious,.mood-confused,.mood-annoyed) .gentle-brow{opacity:.76}
+.avatar-character .avatar-eye-white{stroke:rgba(69,50,72,.08);stroke-width:1}
+.avatar-character .avatar-eye-shine{animation:referenceEyeGlow 4.8s ease-in-out infinite}
+.avatar-character .avatar-cheek{filter:blur(.25px)}
+.robotito.avatar-custom .avatar-character{filter:saturate(1.055) contrast(1.018)}
+
+.robotito:is(.avatar-brown-bear,.avatar-polar-bear,.avatar-koala) .avatar-head-group{animation:gentleBearLook 6.2s ease-in-out infinite}
+.robotito:is(.avatar-cat,.avatar-red-panda,.avatar-lion,.avatar-tiger,.avatar-panther,.avatar-fox,.avatar-wolf,.avatar-skunk,.avatar-raccoon) .avatar-tail{animation:curiousFelineTail 2.9s ease-in-out infinite}
+.robotito:is(.avatar-cat,.avatar-lion,.avatar-tiger,.avatar-panther,.avatar-fox,.avatar-wolf) .avatar-ear-left{animation:alertEarLeft 5.2s ease-in-out infinite}
+.robotito:is(.avatar-cat,.avatar-lion,.avatar-tiger,.avatar-panther,.avatar-fox,.avatar-wolf) .avatar-ear-right{animation:alertEarRight 5.2s ease-in-out infinite}
+.robotito:is(.avatar-monkey,.avatar-gorilla,.avatar-sloth) .avatar-arm-left{animation:primateArm 5.5s ease-in-out infinite}
+.robotito:is(.avatar-monkey,.avatar-gorilla,.avatar-sloth) .avatar-head-group{animation:primateCuriosity 5.5s ease-in-out infinite}
+.robotito:is(.avatar-squirrel,.avatar-mouse,.avatar-hamster,.avatar-beaver,.avatar-hedgehog) .avatar-head-group{animation:tinySniff 3.6s ease-in-out infinite}
+.robotito:is(.avatar-squirrel,.avatar-mouse,.avatar-hamster,.avatar-beaver,.avatar-hedgehog) .avatar-whiskers{animation:quickWhisker 3.6s ease-in-out infinite}
+.robotito:is(.avatar-horse,.avatar-unicorn,.avatar-zebra,.avatar-deer,.avatar-giraffe,.avatar-goat,.avatar-cow,.avatar-kangaroo) .avatar-ear{animation:hoofedEarListen 5.8s ease-in-out infinite}
+.robotito:is(.avatar-iguana,.avatar-chameleon,.avatar-turtle,.avatar-dinosaur,.avatar-crocodile) .avatar-head-group{animation:reptileObserve 6.4s ease-in-out infinite}
+.robotito:is(.avatar-penguin,.avatar-owl,.avatar-peacock,.avatar-swan,.avatar-flamingo) .avatar-body-group{animation:birdBalance 4.9s ease-in-out infinite}
+.robotito:is(.avatar-dolphin,.avatar-otter) .avatar-whole{animation:aquaticFloat 3.2s ease-in-out infinite}
+.robotito.avatar-armadillo .avatar-head-group{animation:armadilloPeek 4.6s ease-in-out infinite}
+.robotito.avatar-elephant .avatar-ear{animation:elephantEarFan 4.4s ease-in-out infinite}
+.robotito.avatar-frog .avatar-whole{animation:frogReady 3.4s ease-in-out infinite}
+.robotito.avatar-robot .avatar-head-group{animation:robotScan 4s steps(2,end) infinite}
+
+@keyframes referenceEyeGlow{0%,88%,100%{opacity:1}92%{opacity:.72}96%{opacity:1}}
+@keyframes gentleBearLook{0%,78%,100%{transform:rotate(0)}85%{transform:rotate(-2deg) translateY(1px)}92%{transform:rotate(1deg)}}
+@keyframes curiousFelineTail{0%,100%{transform:rotate(-5deg)}45%{transform:rotate(9deg)}70%{transform:rotate(3deg)}}
+@keyframes alertEarLeft{0%,78%,100%{transform:rotate(0)}84%{transform:rotate(-8deg)}90%{transform:rotate(3deg)}}
+@keyframes alertEarRight{0%,82%,100%{transform:rotate(0)}88%{transform:rotate(7deg)}94%{transform:rotate(-2deg)}}
+@keyframes primateArm{0%,80%,100%{transform:rotate(0)}88%{transform:rotate(-8deg) translateY(-2px)}}
+@keyframes primateCuriosity{0%,76%,100%{transform:rotate(0)}84%{transform:rotate(2.5deg)}92%{transform:rotate(-1deg)}}
+@keyframes tinySniff{0%,68%,100%{transform:translate(0)}74%{transform:translateY(1px) scale(1.01)}80%{transform:translateY(-1px)}86%{transform:translateY(1px)}}
+@keyframes quickWhisker{0%,70%,100%{transform:rotate(0)}76%{transform:rotate(-2deg)}82%{transform:rotate(2deg)}88%{transform:rotate(-1deg)}}
+@keyframes hoofedEarListen{0%,80%,100%{transform:rotate(0)}86%{transform:rotate(-7deg)}92%{transform:rotate(4deg)}}
+@keyframes reptileObserve{0%,72%,100%{transform:translateX(0) rotate(0)}80%{transform:translateX(2px) rotate(1deg)}90%{transform:translateX(-1px) rotate(-.5deg)}}
+@keyframes birdBalance{0%,100%{transform:rotate(0) translateY(0)}50%{transform:rotate(.7deg) translateY(-1px)}}
+@keyframes aquaticFloat{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-3px) rotate(.8deg)}}
+@keyframes armadilloPeek{0%,72%,100%{transform:translateY(0)}80%{transform:translateY(3px) scale(.985)}90%{transform:translateY(-1px)}}
+@keyframes elephantEarFan{0%,78%,100%{transform:scaleX(1)}86%{transform:scaleX(1.06)}92%{transform:scaleX(.98)}}
+@keyframes frogReady{0%,72%,100%{transform:translateY(0) scaleY(1)}82%{transform:translateY(2px) scaleY(.975)}90%{transform:translateY(-2px) scaleY(1.015)}}
+@keyframes robotScan{0%,75%,100%{transform:translateX(0)}82%{transform:translateX(-2px)}90%{transform:translateX(2px)}}
+
+@media(prefers-reduced-motion:reduce){
+  .robotito.avatar-custom .avatar-character *{animation:none!important}
+}

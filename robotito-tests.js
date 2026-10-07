@@ -88,7 +88,7 @@
       results.push(same(avatars.byId("chameleon").es,"Camaleón","incluye camaleón"));
       results.push(same(avatars.byId("unicorn").emoji,"🦄","incluye unicornio"));
       results.push(same(avatars.byId("dolphin").emoji,"🐬","incluye delfín"));
-      results.push(truthy(avatars.visualMarkup("panther").includes("🐈‍⬛"),"pantera usa el emoji nativo amable"));
+      results.push(truthy(avatars.visualMarkup("panther").includes("<svg"),"pantera usa icono ilustrado propio"));
       results.push(truthy(avatars.visualMarkup("armadillo").includes("<svg"),"armadillo usa icono ilustrado"));
       results.push(same(avatars.byId("missing").id,"panda","usa panda como avatar seguro"));
     }else results.push(truthy(false,"avatar catalog loaded"));
