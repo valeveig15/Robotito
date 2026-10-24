@@ -7,6 +7,7 @@ const temporal=require("../nlu-temporal.js");
 const i18n=require("../i18n.js");
 const voice=require("../voice-system.js");
 const audio=require("../audio-perception.js");
+const weather=require("../weather-forecast.js");
 const recall=require("../memory-retrieval.js");
 let checks=0;
 function equal(a,b,why){assert.deepEqual(a,b,why);checks++;}
@@ -34,6 +35,30 @@ const negatives=[
  ["La clase terminó",false]
 ];
 for(const [input,expected] of negatives)equal(planner.plan(input).mayReadClass,expected,"class negative: "+input);
+// Contrastive cases: one noun does not select its associated data source.
+for(const [question,intent,source] of [
+ ["¿Qué es un libro?","definition","general"],
+ ["¿Qué significa clima?","definition","general"],
+ ["X qué era?","definition","general"],
+ ["Nunca entendí qué es una permutación.","definition","general"],
+ ["¿Qué es una profesora?","definition","general"],
+ ["¿Qué dijo la profesora sobre permutaciones?","class-question","classes"],
+ ["Según la clase, ¿qué es permutación?","class-question","classes"],
+ ["¿Cómo va a estar el clima mañana?","weather","weather"],
+ ["Explicame paso a paso el ejercicio 4 de Física","exercise","materials"]
+]){
+ const result=planner.plan(question);
+ equal(result.intent,intent,"contrastive intent: "+question);
+ equal(result.source,source,"contrastive source: "+question);
+}
+equal(planner.plan("No me expliques el libro").intent,"book","negative phrasing should not force an explanation");
+const temporalFocus=planner.plan("¿Cómo va a estar el clima mañana?");
+const temporalFollow=planner.plan("¿Y de noche?",{
+ context:planner.advance(planner.createContext(),temporalFocus)
+});
+equal(temporalFollow.source,"weather","weather follow-up domain");
+equal(temporalFollow.entities.date?.startDate,temporalFocus.entities.date?.startDate,"follow-up retains tomorrow");
+equal(temporalFollow.entities.daypart,"night","follow-up night modifier");
 const languageCases=[
  ["Hablame en inglés","en"],["Pasemos a francés","fr"],
  ["English please","en"],["Desde ahora portugués","pt"],
@@ -68,6 +93,28 @@ for(const style of Object.keys(voice.styles)){
  truth(p.rate>=.5&&p.rate<=2,"safe rate");
 }
 equal(voice.selectVoice([{lang:"es-UY",voiceURI:"a"},{lang:"fr-FR",voiceURI:"b"}],"fr")?.voiceURI,"b","voice language");
+const fakeWeather={
+  current:{time:"2026-10-24T12:00",temperature_2m:19,apparent_temperature:18,weather_code:1},
+  daily:{time:["2026-10-24","2026-10-25","2026-10-26"],
+    temperature_2m_max:[22,17,13],temperature_2m_min:[12,8,6],
+    precipitation_probability_max:[10,65,30],weather_code:[1,63,3]},
+  hourly:{time:["2026-10-25T20:00","2026-10-25T21:00","2026-10-25T22:00"],
+    temperature_2m:[11,10,9],precipitation_probability:[45,60,50],weather_code:[61,63,63]}
+};
+const todayWeather=weather.choose(fakeWeather,{date:"2026-10-24"});
+const tomorrowWeather=weather.choose(fakeWeather,{date:"2026-10-25"});
+const tomorrowNight=weather.choose(fakeWeather,{date:"2026-10-25",daypart:"night"});
+equal(todayWeather.temp,19,"current observations use current data");
+equal(tomorrowWeather.high,17,"future uses the matching daily index");
+equal(tomorrowWeather.weatherCode,63,"future weather code is not today's");
+equal(tomorrowWeather.isCurrent,false,"tomorrow is not current");
+equal(tomorrowNight.temp,10,"tomorrow night uses hourly samples");
+equal(tomorrowNight.rain,60,"tomorrow night uses hourly precipitation");
+equal(weather.choose(fakeWeather,{date:"2026-10-28"}),null,"unavailable date must not invent a forecast");
+for(const language of ["es","en","pt","fr","it","de"]){
+ const sentence=weather.describe(tomorrowNight,{language});
+ truth(sentence.includes("17°C")&&!/NaN|undefined/.test(sentence),"dated multilingual forecast "+language);
+}
 const detector=audio.create({clock:()=>0});
 for(let i=0;i<220;i++){
  const r=detector.process({rms:.12,flat:.92,low:52,mid:60,high:42,harmonic:.04,zcr:.31},{now:i*48+1});
