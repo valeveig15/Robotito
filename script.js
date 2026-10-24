@@ -3772,8 +3772,13 @@ function handleSocialSpeech(text){
   const enName=known?", "+known:"";
 
   if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){
-    const lang=responseLanguage();
-    sayInLanguage(lang==="en"?"Bless you!":lang==="pt"?"Saúde!":"¡Salud!",lang);
+    // Consecutive ASR fragments from the same sneeze get one reaction.
+    const now=Date.now();
+    if(now-(handleSocialSpeech.lastBlessAt||0)>=4500){
+      handleSocialSpeech.lastBlessAt=now;
+      const lang=responseLanguage();
+      sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",lang)||"¡Salud!",lang);
+    }
     return true;
   }
   if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
