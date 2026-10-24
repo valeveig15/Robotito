@@ -4928,6 +4928,17 @@ function ambientMood(){
 }
 
 function bindUI(){
+  $("#robotitoTextForm")?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const entry=$("#robotitoTextInput");
+    const question=entry?.value.trim();
+    if(!question)return;
+    entry.value="";
+    $("#transcript").textContent=question;
+    autoRemember(question);
+    try{await handleSpeech(question);}
+    catch(error){console.warn("typed question",error);say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"No pude procesar eso.");}
+  });
   document.querySelectorAll("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#avatarChoices")?.addEventListener("click",event=>{
     const choice=event.target.closest("[data-avatar-id]");
@@ -5101,6 +5112,8 @@ function purgeNamedPeople(){
   save("robotito.people.v1",oldPeople);
   save("robotito.memories.v1",oldMem);
 }
+
+window.ROBOTITO_CHAT={send:handleSpeech,context:()=>robotitoConversationContext};
 
 window.ROBOTITO_SPEECH_QA={
   cleanTranscript:cleanRecognitionTranscript,
