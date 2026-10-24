@@ -43,9 +43,13 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
  const teacherQuery=/\b(?:dijo|explico|ense[ñn]o|hablo|coment[oó]|cont[oó]|did|say|said|teach|explained|told|mention|habl[oó])\b.*\b(?:profesor|profesora|profe|teacher|professeur|lehrer)\b|\b(?:profesor|profesora|profe|teacher|professeur|lehrer)\b.*\b(?:dijo|explico|ense[ñn]o|hablo|coment[oó]|cont[oó]|teach|explained|said|about|sobre|mention)\b/i.test(q);
  const excludesClass=/\b(?:no uses? (?:la|mis|los)? ?(?:clase|apuntes)|sin (?:usar|consultar) (?:la|mis)? ?(?:clase|apuntes)|don't use class|without class notes)\b/i.test(q);
  const academicClass=patterns.class.test(q)&&!excludesClass&&(explicitSource||(queryForm&&teacherQuery));
+ const memoryRequest=!patterns.book.test(q)&&!academicClass&&!definitionRequest&&
+  /\b(?:recordame|recordas|recuerdas|acordas|acuerdas|acordate|recuerdo|recuerdos|memoria|busca|buscame|mostrame|que dije|que hablamos|what did i say|what did we talk|what do you remember|remember what|recall what|o que falei)\b/i.test(q)&&
+  /\b(?:recordar|recordame|recuerd|acord|dije|dijiste|hablamos|hablaste|conversacion|conversaciones|ayer|anteayer|semana pasada|ultima vez|memoria|remember|recall|conversation|yesterday|last week|said|talked|falei|ontem)\b/i.test(q);
  const explicit={class:academicClass,exercise:exerciseRequest,weather:patterns.weather.test(q),task:patterns.task.test(q),book:patterns.book.test(q)};
  if(explicit.exercise){intent="exercise";source="materials";score=.9;}
  else if(explicit.class){intent="class-question";source="classes";score=.9;}
+ else if(memoryRequest){intent="memory-search";source="memories";score=.86;}
  else if(definitionRequest){intent="definition";source="general";score=.91;}
  else if(explicit.weather){intent="weather";source="weather";score=.91;}
  else if(explicit.task){intent="task";source="tasks";score=.85;}
@@ -92,7 +96,7 @@ async function planAsync(raw,options={}){
    +"Confidence is between 0 and 1.\nUser: "+JSON.stringify(String(raw).slice(0,700));
   const result=String(await model.prompt(prompt)||"").trim().replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\x60{3}$/,"").trim();
   const proposal=JSON.parse(result);
-  if(!MODEL_INTENTS.has(proposal.intent)||!["none","general","classes","materials","books","tasks","weather","calendar","clock","conversation"].includes(proposal.source))return base;
+  if(!MODEL_INTENTS.has(proposal.intent)||!["none","general","classes","materials","books","memories","tasks","weather","calendar","clock","conversation"].includes(proposal.source))return base;
   const confidence=Math.max(0,Math.min(1,Number(proposal.confidence)||0));
   if(confidence<.78)return base;
   const sourceMention=/\b(?:clase|profesor|profesora|docente|maestro|maestra|tutor|tutora|instructor|apuntes|transcripcion|teacher|tutor|class|lecture|notes|professeur|cours|professor|aula|lezione|lehrer|unterricht)\b/i.test(String(raw));
