@@ -44,14 +44,14 @@ function t(key,lang="es"){return LABELS[key]?.[lang]||LABELS[key]?.es||key;}
 function parseCommand(raw){
  const q=fold(raw).trim(),words=q.split(/\s+/);
  if(words.length>24||words.length===0)return null;
- const desire=/\b(habl|respond|contesta|cambia|cambi|pasem|desde ahora|a partir de ahora|quiero practicar|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parl|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|praticar|practise|practice)\b/;
+ const desire=/\b(habl(?:a|ame|ar|amos|e)?|respond(?:e|eme|er|a)?|contest(?:a|ame|ar)|cambi(?:a|ame|ar|emos)|pas(?:emos|amos)|desde ahora|a partir de ahora|quiero practicar|quiero aprender|volv(?:e|er|amos)|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parler|parlez|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|praticar|practicar|practise|practice)\b/;
  if(!desire.test(q))return null;
  let lang=null;for(const [code,names] of Object.entries(NAMES)){
   if(names.some(name=>new RegExp("(?:^|\\s)"+fold(name)+"(?:\\s|[.!?]|$)").test(q))){lang=code;break;}
  }
  if(!lang)return null;
  // An incidental language mention in a class/topic question is not a command.
- if(/\b(clase de|curso de|examen de|historia del|translation of|traducir del)\b/.test(q))return null;
+ if(/\b(clase de|curso de|examen de|historia del|translation of|traducir del)\b/.test(q)||/^(que dijo|que significa|what did|what is|por que)/.test(q))return null;
  const scope=/\b(solo esta vez|una sola respuesta|esta respuesta|just once|only this time|apenas desta vez|juste cette fois)\b/.test(q)?"once":
  /(?:por esta sesion|durante esta sesion|this session|esta sessao|cette session)/.test(q)?"session":"persistent";
  return {language:lang,scope,confidence:.94};
