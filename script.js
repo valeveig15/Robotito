@@ -541,6 +541,9 @@ async function localizeGeneratedSpeech(text,target=responseLanguage()){
 function commitSpeechMessage(text,ms,lang,token){
   if(token!==state.speechBubbleToken)return;
   state.lastSaid=text;
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
+    source:"assistant",timestamp:Date.now(),language:lang||state.languageMode||"es",
+    data:{role:"assistant",text}}).catch(e=>console.warn("reply memory",e));
   const b=$("#speechBubble");
   if(!b)return;
   b.textContent=text;
@@ -1441,8 +1444,12 @@ function autoRemember(text){
   const person=state.currentVoicePerson||state.currentPerson||"persona no reconocida";
   const last=state.memories[state.memories.length-1];
   if(last && last.text.toLowerCase()===clean.toLowerCase() && Date.now()-last.at<15000)return;
-  state.memories.push({person,text:clean,at:Date.now(),source:"auto"});
+  const savedAt=Date.now();
+  state.memories.push({person,text:clean,at:savedAt,source:"auto"});
   save(KEYS.memories,state.memories);
+  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
+    source:"speech",timestamp:savedAt,language:state.languageMode||"es",data:{person,text:clean,source:"auto"}})
+    .catch(e=>console.warn("typed memory",e));
   renderMemories();
 }
 
@@ -3497,6 +3504,9 @@ async function answerWhatLearnedToday(){
 
 let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
 async function handleSpeech(rawText){
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
+    source:"dialogue",timestamp:Date.now(),language:state.languageMode||"es",
+    data:{role:"user",text:String(rawText||"").slice(0,1200)}}).catch(e=>console.warn("dialogue memory",e));
   const interpretation=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
   if(interpretation){
     robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
@@ -3533,6 +3543,10 @@ async function handleSpeech(rawText){
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
   if(handleLanguageCommand(interpreted))return;
+  const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
+    owner:state.currentPerson||"local",language:state.languageMode||"es"
+  });
+  if(recalled?.handled){say(recalled.text,readingDisplayTime(recalled.text));return;}
 
   // Exact exercise requests from uploaded academic material have top priority.
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
@@ -4594,8 +4608,12 @@ function renderMemories(){
 function rememberManual(){
   const text=$("#memoryInput").value.trim();
   if(!text)return;
-  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at:Date.now(),source:"manual"});
+  const at=Date.now();
+  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at,source:"manual"});
   save(KEYS.memories,state.memories);
+  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
+    source:"manual",timestamp:at,language:state.languageMode||"es",data:{text,person:state.currentPerson||"local"}})
+    .catch(e=>console.warn("typed manual memory",e));
   $("#memoryInput").value="";
   renderMemories();
   say("Listo. Eso también lo guardo.");
