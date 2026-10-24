@@ -7,6 +7,7 @@ const temporal=require("../nlu-temporal.js");
 const i18n=require("../i18n.js");
 const voice=require("../voice-system.js");
 const audio=require("../audio-perception.js");
+const recall=require("../memory-retrieval.js");
 let checks=0;
 function equal(a,b,why){assert.deepEqual(a,b,why);checks++;}
 function truth(a,why){assert.ok(a,why);checks++;}
@@ -94,4 +95,16 @@ for(let i=0;i<3600;i++){
  context=planner.advance(context,p);
  truth(context.turns.length<=20,"bounded context");
 }
-console.log("Robotito universal generated checks:",checks,"seed:",seed);
+(async()=>{
+  const savedStore=global.ROBOTITO_STORE;
+  const now=Date.now();
+  global.ROBOTITO_STORE={queryRecords:async()=>[
+    {id:"current",timestamp:now,topic:"",subject:"",data:{text:"Recordame lo que me dijiste"}},
+    {id:"real-memory",timestamp:now-20000,topic:"",subject:"",data:{text:"El examen es el lunes."}}
+  ]};
+  const found=await recall.search("Recordame lo que me dijiste",{owner:"local"});
+  equal(found.rows.length,1,"Do not retrieve the question itself");
+  equal(found.text,"El examen es el lunes.","Previous memory survives");
+  global.ROBOTITO_STORE=savedStore;
+  console.log("Robotito universal generated checks:",checks,"seed:",seed);
+})().catch(e=>{console.error(e);process.exitCode=1;});
