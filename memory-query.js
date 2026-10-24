@@ -36,7 +36,9 @@ async function retrieve(raw,{owner="local",language="es",now=new Date(),limit=4,
  const rows=[];
  for(const o of owners){
   const results=await store.queryRecords({type,owner:o,after:since,before:until,limit:500});
-  rows.push(...results);
+  // Anonymous records must never be attributed to a different recognized person.
+  rows.push(...results.filter(item=>o!=="local"||owner==="local"||
+    normalize(item.data?.person||"")===normalize(owner)));
  }
  let found=rows.filter(x=>x?.data&&(x.data.text||x.data.transcript));
  if(desired){
