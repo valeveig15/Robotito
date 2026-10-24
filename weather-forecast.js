@@ -3,7 +3,7 @@
 "use strict";
 const LOCALE={es:"es",en:"en",pt:"pt",fr:"fr",it:"it",de:"de"};
 function num(v){const n=Number(v);return v!==null&&v!==undefined&&v!==""&&Number.isFinite(n)?n:null;}
-function safeRound(n){return n===null?null:Math.round(n);}
+function safeRound(n){return n===null||n===undefined||!Number.isFinite(n)?null:Math.round(n);}
 function choose(data,{date,daypart=null,now=new Date()}={}){
  const daily=data?.daily||{},hourly=data?.hourly||{},current=data?.current||{};
  const todayLocal=data?.current?.time?.slice(0,10)||new Date(now).toISOString().slice(0,10);
