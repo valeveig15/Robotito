@@ -76,14 +76,14 @@
     await transactionDone(tx);
     db.close();
   }
-  async function saveRecording(record){
+  async function saveLegacyRecording(record){
     const db=await openDb();
     const tx=db.transaction(RECORDINGS,"readwrite");
     tx.objectStore(RECORDINGS).put(record);
     await transactionDone(tx);
     db.close();
   }
-  async function listRecordings(){
+  async function listLegacyRecordings(){
     const db=await openDb();
     const tx=db.transaction(RECORDINGS,"readonly");
     const rows=await requestResult(tx.objectStore(RECORDINGS).getAll());
@@ -91,14 +91,14 @@
     db.close();
     return rows.sort((a,b)=>b.startedAt-a.startedAt);
   }
-  async function removeRecording(id){
+  async function removeLegacyRecording(id){
     const db=await openDb();
     const tx=db.transaction(RECORDINGS,"readwrite");
     tx.objectStore(RECORDINGS).delete(id);
     await transactionDone(tx);
     db.close();
   }
-  async function updateMetadata(id,patch={}){
+  async function updateLegacyMetadata(id,patch={}){
     if(!id)return null;
     const db=await openDb();
     const tx=db.transaction(RECORDINGS,"readwrite");
@@ -110,6 +110,66 @@
     await transactionDone(tx);
     db.close();
     return next;
+  }
+  // Unified new storage, with read/migration compatibility for older recordings.
+  const memoryId=id=>"class-audio:"+String(id);
+  async function saveRecording(record){
+    const store=window.ROBOTITO_STORE;
+    if(!store?.putRecord||!store?.putBlob)return saveLegacyRecording(record);
+    const id=memoryId(record.id),blob=record.blob;
+    if(!(blob instanceof Blob))throw new Error("Missing audio blob");
+    await store.putBlob(id,blob,{owner:"local",type:"class-audio",recordId:id});
+    const {blob:ignored,...metadata}=record;
+    await store.putRecord({id,type:"audios",owner:"local",source:"class-recorder",
+      timestamp:record.startedAt||Date.now(),subject:record.subject||"",topic:record.topic||"",
+      blobId:id,data:metadata});
+    const checked=await store.getBlob(id);
+    if(!checked||checked.size!==blob.size)throw new Error("Class audio integrity check failed");
+    return record;
+  }
+  async function listRecordings(){
+    const legacy=await listLegacyRecordings().catch(()=>[]);
+    const store=window.ROBOTITO_STORE;
+    if(!store?.queryRecords)return legacy;
+    let modern=[];
+    try{
+      const rows=await store.queryRecords({type:"audios",owner:"local",limit:5000});
+      modern=await Promise.all(rows.filter(x=>x.source==="class-recorder"||x.source==="class-audio-migration").map(async x=>{
+        const blob=await store.getBlob(x.blobId);
+        return {...x.data,blob,subject:x.subject||x.data?.subject,topic:x.topic||x.data?.topic};
+      }));
+    }catch(e){console.warn("Class audio read",e);}
+    const ids=new Set(modern.map(x=>x.id));
+    return modern.concat(legacy.filter(x=>!ids.has(x.id))).sort((a,b)=>b.startedAt-a.startedAt);
+  }
+  async function removeRecording(id){
+    await window.ROBOTITO_STORE?.deleteRecord?.(memoryId(id));
+    await removeLegacyRecording(id);
+  }
+  async function updateMetadata(id,patch={}){
+    const store=window.ROBOTITO_STORE;
+    const saved=await store?.getRecord?.(memoryId(id));
+    if(saved){
+      const data={...saved.data,...patch,id};
+      await store.putRecord({...saved,subject:data.subject||"",topic:data.topic||"",data});
+      return {...data,blob:await store.getBlob(saved.blobId)};
+    }
+    return updateLegacyMetadata(id,patch);
+  }
+  async function migrateAudio(){
+    const store=window.ROBOTITO_STORE;
+    if(!store?.putRecord)return;
+    const old=await listLegacyRecordings().catch(()=>[]);
+    for(const record of old){
+      try{
+        if(!(await store.getRecord(memoryId(record.id)))){
+          await saveRecording(record);
+        }
+        const verified=await store.getRecord(memoryId(record.id));
+        const blob=await store.getBlob(memoryId(record.id));
+        if(verified&&blob?.size===record.blob?.size)await removeLegacyRecording(record.id);
+      }catch(error){console.warn("Audio legacy migration preserved",record.id,error);}
+    }
   }
   function pickMimeType(){
     if(!window.MediaRecorder)return "";
@@ -338,6 +398,7 @@
   window.ROBOTITO_CLASS_AUDIO={start,stop,render,isRecording,listRecordings,removeRecording,updateMetadata};
 
   document.addEventListener("DOMContentLoaded",()=>{
+    void migrateAudio().finally(()=>render());
     render();
     window.addEventListener("pagehide",()=>{
       if(active?.recorder?.state==="recording"){
