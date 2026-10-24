@@ -25,9 +25,9 @@ function resolve(raw,{now=new Date(),language="es",future=false}={}){
  if(/\b(semana pasada|last week|semana passada|semaine derniere|settimana scorsa|letzte woche)\b/.test(q)){
   const monday=next(today,-((today.getDay()+6)%7)-7);return span(monday,next(monday,7),"last-week","week");
  }
- const m=q.match(/\b(?:hace|ago|ha|il y a|vor)\s*(\d+)\s*(?:dias?|days?|jours?|giorni?|tage?|semanas?|weeks?|semaines?|settimane?|wochen?)\b/);
+ const m=q.match(/\b(?:hace|ago|ha|il y a|vor)\s*(\d+|un|una|one|um|uma|une|ein|eine)\s*(?:dias?|days?|jours?|giorni?|tage?|semanas?|weeks?|semaines?|settimane?|wochen?)\b/);
  if(m){
-  const weeks=/seman|week|semain|settiman|woch/.test(m[0]),d=next(today,-Math.min(3650,Number(m[1])*(weeks?7:1)));
+  const weeks=/seman|week|semain|settiman|woch/.test(m[0]),d=next(today,-Math.min(3650,(/^(?:un|una|one|um|uma|une|ein|eine)$/.test(m[1])?1:Number(m[1]))*(weeks?7:1)));
   return span(d,next(d,1),"relative");
  }
  const weekdays=DAYS[language]||DAYS.es;
