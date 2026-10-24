@@ -12,7 +12,7 @@ const patterns={
  summary:/\b(?:resum(?:[ií]|en|ime)|sintetiz|summar|r[eé]sum|riassum|zusammenfass)\b/i,
  example:/\b(?:ejemplo|example|exemplo|exemple|esempio|beispiel)\b/i,
  weather:/\b(?:clima|tiempo meteorol[oó]gico|weather|previs[aã]o do tempo|m[eé]t[eé]o|wetter)\b/i,
- task:/\b(?:tarea|deberes|pendiente|task|homework|tarefa|devoirs|compiti|hausaufgabe)\b/i,
+ task:/\b(?:tareas?|deberes|pendientes?|tasks?|homework|tarefas?|devoirs|compiti|hausaufgabe)\b/i,
  book:/\b(?:libro|lectura|book|livro|livre|romanzo|buch)\b/i,
  date:/\b(?:fecha|calendario|date|data|datum)\b/i,
  time:/\b(?:hora|horario|time|schedule|heure|orario|uhrzeit)\b/i,
