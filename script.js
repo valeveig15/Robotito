@@ -2093,59 +2093,59 @@ async function getWeatherNow(){
   const {lat,lon}=await geolocationOnce();
   const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon)
     +"&current=temperature_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover,wind_speed_10m"
-    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&forecast_days=1&timezone=auto";
+    +"&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code,sunrise,sunset&hourly=temperature_2m,precipitation_probability,weather_code&forecast_days=4&timezone=auto";
   const res=await fetch(url);
   if(!res.ok)throw new Error("weather");
   const data=await res.json();
   state.weatherCache={at:Date.now(),data};
   return data;
 }
-async function handleWeatherAndDayQuestions(rawText){
-  const text=normalizeText(rawText),lang=responseLanguage(rawText);
+async function handleWeatherAndDayQuestions(rawText,planned=null){
+  const text=normalizeText(rawText),lang=responseLanguage();
   const locationAsk=/(donde estoy|en que ciudad estoy|donde me encuentro|cual es mi ubicacion|what city am i in|where am i|what is my location)/.test(text);
-  const weatherAsk=/(clima|tiempo|temperatura|llueve|llover|frio|calor|viento|weather|temperature|raining|rain|wind)/.test(text)
-    && /(hoy|ahora|afuera|aca|aqui|actual|today|now|outside|here|como|how|que|what)/.test(text);
   const nightAsk=/(es de noche|ya es de noche|esta de noche|es de dia|ya es de dia|todavia es de dia|is it night|is it nighttime|is it day|is it daytime|e noite|é noite|e dia|é dia)/.test(text);
+  // Definition of a word is NOT a request for live weather, even if it says "clima".
+  if(planned?.intent==="definition"&&planned?.source!=="weather")return false;
+  const weatherAsk=planned?.source==="weather"||
+    (/(clima|tiempo|temperatura|llueve|llover|frio|calor|viento|weather|temperature|raining|rain|wind)/.test(text)
+     &&/(hoy|manana|mañana|ahora|afuera|aca|aqui|actual|today|tomorrow|now|outside|here|como|how|que|what)/.test(text));
   if(!weatherAsk&&!nightAsk&&!locationAsk)return false;
-
-  if(nightAsk){
+  if(nightAsk&&!weatherAsk){
     const night=isNightByClock(new Date());
     if(lang==="en")say(night?"Yes. Robotito is in night mode.":"No. Robotito is in day mode.");
     else if(lang==="pt")sayInLanguage(night?"Sim. O Robotito está no modo noite.":"Não. O Robotito está no modo dia.","pt");
     else say(night?"Sí. Robotito está en modo noche.":"No. Robotito está en modo día.");
     return true;
   }
-
   try{
     if(locationAsk){
       const label=await getLocationLabel(lang);
-      say(label?(lang==="en"?`Your current approximate location is ${label}.`:`Tu ubicación aproximada actual es ${label}.`):(lang==="en"?"I have your coordinates for weather, but I couldn't turn them into a city name.":"Tengo tu ubicación para el clima, pero no pude convertirla en un nombre de ciudad."));
+      say(label?(lang==="en"?"Your current approximate location is "+label+".":"Tu ubicación aproximada actual es "+label+"."):
+        (lang==="en"?"I have coordinates for weather, but not a city name.":"Tengo coordenadas para el clima, pero no pude obtener la ciudad."));
       return true;
     }
-    const w=await getWeatherNow();
-    const cur=w.current||{},daily=w.daily||{};
-    const desc=weatherCodeText(Number(cur.weather_code),lang);
-    const temp=Math.round(Number(cur.temperature_2m));
-    const feels=Math.round(Number(cur.apparent_temperature));
-    const hi=Math.round(Number(daily.temperature_2m_max?.[0]));
-    const lo=Math.round(Number(daily.temperature_2m_min?.[0]));
-    const rain=Number(daily.precipitation_probability_max?.[0]??0);
-    const place=await getLocationLabel(lang).catch(()=>"");
-    if(lang==="en"){
-      say(`${place?"In "+place+", ":"At your current location "}it's about ${temp} degrees, feels like ${feels}, and it's ${desc}. Today's high is around ${hi}, the low around ${lo}, with up to ${rain}% chance of precipitation.`,7000);
-    }else{
-      say(`${place?"En "+place+" ":"En tu ubicación actual "}hay unos ${temp} grados, sensación de ${feels}, y está ${desc}. Hoy la máxima ronda ${hi}, la mínima ${lo}, y la probabilidad máxima de precipitación es de ${rain}%.`,7000);
+    const data=await getWeatherNow();
+    const date=planned?.entities?.date?.startDate||null;
+    const daypart=planned?.entities?.daypart||null;
+    const forecast=window.ROBOTITO_WEATHER_FORECAST?.choose?.(data,{date,daypart});
+    if(!forecast){
+      say(lang==="en"?"I don't have a forecast for that date.":lang==="pt"?"Não tenho previsão para essa data.":
+        lang==="fr"?"Je n'ai pas de prévisions pour cette date.":lang==="it"?"Non ho previsioni per quella data.":
+        lang==="de"?"Für dieses Datum habe ich keine Vorhersage.":"No tengo pronóstico para esa fecha.");
+      return true;
     }
+    const place=await getLocationLabel(lang).catch(()=>"");
+    const result=window.ROBOTITO_WEATHER_FORECAST.describe(forecast,{language:lang,place});
+    if(!result)throw new Error("Missing weather data");
+    say(result,readingDisplayTime(result,5500),lang);
     return true;
   }catch(e){
-    say(lang==="en"
-      ?"I need location permission to tell you the weather where you are."
-      :lang==="pt"?"Preciso da permissão de localização para dizer como está o tempo onde você está."
-      :"Necesito permiso de ubicación del navegador para decirte el clima donde estás.");
+    console.warn("weather query failed",e);
+    say(window.ROBOTITO_I18N?.t?.("weatherUnavailable",lang)||
+      "No pude consultar el pronóstico ahora.",4500,lang);
     return true;
   }
 }
-
 function ctxRoundRect(ctx,x,y,w,h,r){
   const rr=Math.min(r,w/2,h/2);
   ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();
@@ -3585,7 +3585,7 @@ async function handleSpeech(rawText){
   if(/\b(choca los cinco|chocame los cinco|dame cinco|high five)\b/.test(text)){highFiveRobot();return;}
   if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
   if(answerArithmetic(interpreted,detectedLang))return;
-  if(await handleWeatherAndDayQuestions(interpreted))return;
+  if(await handleWeatherAndDayQuestions(interpreted,interpretation))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
   if(detectedLang==="pt" && answerPortuguesePersonalQuestion(interpreted)) return;
   if(detectedLang==="es" && answerEasyQuestion(interpreted)) return;
