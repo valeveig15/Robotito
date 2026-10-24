@@ -24,7 +24,12 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
  const time=clock?.resolve?.(raw,{now,language});
  const options={type:found.type,owner,limit:Math.max(1,Math.min(20,limit))};
  if(time?.start!==null&&time?.start!==undefined){options.after=time.start;options.before=time.end;}
- const rows=await store.queryRecords(options);
+ const rows=(await store.queryRecords(options)).filter(row=>{
+  // The active question is often recorded by autoRemember before retrieval.
+  // Exclude it so Robotito cannot "remember" the question as its own answer.
+  const utterance=fold(row.data?.text||"").trim();
+  return !utterance||utterance!==fold(raw).trim();
+ });
  let selected=rows;
  const words=found.search.split(/\s+/).filter(x=>x.length>=6&&!/record|recomend|clase|libro|recuerd|tarea|semana|pasada|before|about|after/.test(x));
  if(words.length){
