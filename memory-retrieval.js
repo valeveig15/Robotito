@@ -14,7 +14,7 @@ const choices=[
 function fold(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 function intent(raw){
  const q=fold(raw);
- const retrieve=/\b(?:record(?:ame|as|a)|acord(?:as|ate)|me recomendaste|recomendaste|recomendou|remember|remind|show me|mostrame|muestrame|busca|buscar|recall|what did|que dije|que te dije|ultima vez|last time|la semana pasada|hace una semana)\b/.test(q);
+ const retrieve=/\b(?:record(?:ame|as|a)|acord(?:as|ate)|me recomendaste|recomendaste|recomendou|remember|remind|show me|mostrame|muestrame|busca|buscar|recall|what did|que dije|que te dije|ultima vez|last time)\b/.test(q);
  if(!retrieve||/\b(?:que significa|significado|definime|definition of)\b/.test(q))return null;
  const type=choices.find(choice=>choice.terms.test(q))?.type||"memories";
  return {type,search:q};
