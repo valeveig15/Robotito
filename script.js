@@ -5039,13 +5039,15 @@ function bindUI(){
   $("#refreshPeopleBtn").addEventListener("click",renderPeople);
   $("#rememberBtn").addEventListener("click",rememberManual);
 
-  $("#clearMemoryBtn").addEventListener("click",()=>{
-    if(confirm("¿Querés borrar todos los recuerdos que Robotito guardó?")){
+  $("#clearMemoryBtn").addEventListener("click",async()=>{
+    if(!confirm("¿Querés borrar todos los recuerdos que Robotito guardó?"))return;
+    try{
+      await window.ROBOTITO_STORE?.clearRecordsByType?.("memories");
+      await window.ROBOTITO_STORE?.set?.(KEYS.memories,[]);
       state.memories=[];
-      save(KEYS.memories,[]);
       renderMemories();
       toast("Recuerdos borrados.");
-    }
+    }catch(e){console.warn("clear memories",e);toast("No pude borrar toda la memoria del dispositivo.");}
   });
 
   $("#goodreadsHelpBtn")?.addEventListener("click",()=>$("#goodreadsHelp")?.classList.toggle("hidden"));
