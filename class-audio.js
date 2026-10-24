@@ -395,7 +395,7 @@
   }
   function isRecording(){return !!active&&active.recorder?.state==="recording";}
 
-  window.ROBOTITO_CLASS_AUDIO={start,stop,render,isRecording,listRecordings,removeRecording,updateMetadata};
+  window.ROBOTITO_CLASS_AUDIO={start,stop,render,isRecording,listRecordings,removeRecording,updateMetadata,migrateAudio};
 
   document.addEventListener("DOMContentLoaded",()=>{
     void migrateAudio().finally(()=>render());
