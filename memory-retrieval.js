@@ -3,6 +3,7 @@
 (function(root){
 "use strict";
 const choices=[
+ {type:"conversations",terms:/\b(?:que dije|que dijiste|que hablamos|que conversamos|lo que dijimos|what did i say|what did we talk|said yesterday|conversacion|conversation|falamos|falei)\b/i},
  {type:"recommendations",terms:/\b(?:libro|libros|book|books|livro|livros|livre|buch)\b/i},
  {type:"tasks",terms:/\b(?:tarea|tareas|task|tasks|tarefa|deberes|devoirs|compiti|aufgaben)\b/i},
  {type:"classes",terms:/\b(?:clase|class|lecture|aula|cours|lezione|unterricht)\b/i},
@@ -24,6 +25,7 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
  const time=clock?.resolve?.(raw,{now,language});
  const options={type:found.type,owner,limit:Math.max(1,Math.min(20,limit))};
  if(time?.start!==null&&time?.start!==undefined){options.after=time.start;options.before=time.end;}
+ options.limit=100;
  const rows=(await store.queryRecords(options)).filter(row=>{
   // The active question is often recorded by autoRemember before retrieval.
   // Exclude it so Robotito cannot "remember" the question as its own answer.
@@ -37,8 +39,10 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
    const text=fold(JSON.stringify(row.data||{})+" "+row.topic+" "+row.subject);
    return {row,score:words.reduce((sum,word)=>sum+(text.includes(word)?1:0),0)};
   }).sort((a,b)=>b.score-a.score||b.row.timestamp-a.row.timestamp);
-  if(rated[0]?.score)selected=rated.filter(x=>x.score>0).map(x=>x.row);
+  // An explicit topic that matches nothing is not evidence about another topic.
+  selected=rated[0]?.score?rated.filter(x=>x.score>0).map(x=>x.row):[];
  }
+ selected=selected.slice(0,Math.max(1,Math.min(20,limit)));
  const first=selected[0];
  const data=first?.data||{};
  const summary=data.title||data.text||data.description||data.name||data.task||
