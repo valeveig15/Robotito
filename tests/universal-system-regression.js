@@ -34,6 +34,30 @@ const negatives=[
  ["La clase terminó",false]
 ];
 for(const [input,expected] of negatives)equal(planner.plan(input).mayReadClass,expected,"class negative: "+input);
+// Contrastive cases: one noun does not select its associated data source.
+for(const [question,intent,source] of [
+ ["¿Qué es un libro?","definition","general"],
+ ["¿Qué significa clima?","definition","general"],
+ ["X qué era?","definition","general"],
+ ["Nunca entendí qué es una permutación.","definition","general"],
+ ["¿Qué es una profesora?","definition","general"],
+ ["¿Qué dijo la profesora sobre permutaciones?","class-question","classes"],
+ ["Según la clase, ¿qué es permutación?","class-question","classes"],
+ ["¿Cómo va a estar el clima mañana?","weather","weather"],
+ ["Explicame paso a paso el ejercicio 4 de Física","exercise","materials"]
+]){
+ const result=planner.plan(question);
+ equal(result.intent,intent,"contrastive intent: "+question);
+ equal(result.source,source,"contrastive source: "+question);
+}
+equal(planner.plan("No me expliques el libro").intent,"book","negative phrasing should not force an explanation");
+const temporalFocus=planner.plan("¿Cómo va a estar el clima mañana?");
+const temporalFollow=planner.plan("¿Y de noche?",{
+ context:planner.advance(planner.createContext(),temporalFocus)
+});
+equal(temporalFollow.source,"weather","weather follow-up domain");
+equal(temporalFollow.entities.date?.startDate,temporalFocus.entities.date?.startDate,"follow-up retains tomorrow");
+equal(temporalFollow.entities.daypart,"night","follow-up night modifier");
 const languageCases=[
  ["Hablame en inglés","en"],["Pasemos a francés","fr"],
  ["English please","en"],["Desde ahora portugués","pt"],
