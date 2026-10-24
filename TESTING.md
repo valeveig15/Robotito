@@ -29,7 +29,7 @@ Six language selections are available; the completeness of dynamic content trans
 
 ## Durable storage
 
-`robotito-store.js` upgrades the original `robotito-data-v2` IndexedDB database to schema version 3. It stores keyed legacy state alongside indexed typed records and blobs.
+`robotito-store.js` upgrades the original `robotito-data-v2` IndexedDB database to schema version 4. It stores keyed legacy state alongside indexed typed records and blobs.
 
 - Record types: people, conversations, preferences, memories, classes, subjects, topics, audios, transcripts, pdfs, notes, exercises, books, recommendations, tasks, rules and birthdays.
 - Each record has an ID, type, owner, timestamp, source, subject, topic, tags, relations, language and schema version.
