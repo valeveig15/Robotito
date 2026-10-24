@@ -42,7 +42,7 @@ function fold(x){return String(x||"").toLocaleLowerCase().normalize("NFD").repla
 function supported(code){return Object.prototype.hasOwnProperty.call(LOCALES,code);}
 function t(key,lang="es"){return LABELS[key]?.[lang]||LABELS[key]?.es||key;}
 function parseCommand(raw){
- const q=fold(raw).trim(),words=q.split(/\s+/);
+ const q=fold(raw).trim().replace(/^[¿?¡!\s]+/,""),words=q.split(/\s+/);
  if(words.length>24||words.length===0)return null;
  const desire=/\b(habl(?:a|ame|ar|amos|e)?|respond(?:e|eme|er|a)?|contest(?:a|ame|ar)|cambi(?:a|ame|ar|emos)|pas(?:emos|amos)|desde ahora|a partir de ahora|quiero practicar|quiero aprender|volv(?:e|er|amos)|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parler|parlez|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|praticar|practicar|practise|practice)\b/;
  if(!desire.test(q))return null;
