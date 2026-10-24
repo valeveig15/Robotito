@@ -116,8 +116,26 @@ async function deleteRecord(id){
   const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
   const store=tx.objectStore("records");const row=await request(store.get(String(id)));
   if(row?.blobId)tx.objectStore("blobs").delete(row.blobId);
-  store.delete(String(id));await finished;return Boolean(row);
+  store.delete(String(id));
+  // Keep relation metadata coherent when its target disappears.
+  const linked=await request(store.getAll());
+  for(const record of linked){
+    if(record.id!==String(id)&&record.relatedIds?.includes(String(id))){
+      store.put({...record,relatedIds:record.relatedIds.filter(link=>link!==String(id))});
+    }
+  }
+  await finished;return Boolean(row);
  });
+}
+async function clearRecordsByType(type,{owner}={}){
+ if(!TYPES.has(type))throw new TypeError("Invalid record type");
+ let total=0;
+ while(true){
+  const records=await queryRecords({type,owner,limit:5000});
+  if(!records.length)break;
+  for(const record of records){await deleteRecord(record.id);total++;}
+ }
+ return total;
 }
 function localValue(key,fallback){try{const v=localStorage.getItem(key);return v===null?fallback:JSON.parse(v);}catch{return fallback;}}
 async function migrateKey(key,fallback){
@@ -196,5 +214,5 @@ async function stats(){
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
  heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,putBlob,getBlob,
- migrateTypedLegacy,audit,stats,recordTypes:[...TYPES],dbVersion:VERSION};
+ migrateTypedLegacy,clearRecordsByType,audit,stats,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
