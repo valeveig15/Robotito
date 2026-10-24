@@ -466,7 +466,10 @@ function scheduleSpeechBubbleHide(token,deadline){
 const SPEECH_LANGUAGE_HINTS={
   es:["el","la","los","las","un","una","que","como","cual","donde","cuando","quien","porque","para","por","con","sin","del","al","pero","estoy","esta","estas","este","eso","aqui","ahora","muy","mas","tengo","tenes","tiene","quiero","puedo","puede","vamos","gracias","hola","bien","hambre","sueno","triste","feliz","asustado","enojado","caricia","mimos","comida","jugar","abrazo","panda","robotito"],
   en:["the","a","an","what","which","where","when","who","why","how","because","for","with","without","but","i","i'm","my","you","your","we","it","is","are","am","this","that","here","now","very","have","has","want","can","could","will","would","please","thanks","hello","good","yes","not","really","like","love","gentle","pats","ready","help","hungry","sleepy","sad","happy","scared","angry","hug","play","food","robotito"],
-  pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"]
+  pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"],
+  fr:["je","tu","nous","vous","avec","pour","dans","est","suis","sont","bonjour","merci","comment","pourquoi","quoi","quel","quelle","aujourd","demain","hier","livre","cours","exercice","s'il","plait"],
+  it:["io","tu","noi","voi","con","per","nel","sono","come","perche","grazie","ciao","buongiorno","domani","ieri","libro","lezione","esercizio","spiega","aiuto"],
+  de:["ich","du","wir","sie","mit","fur","und","aber","ist","sind","wie","was","warum","danke","hallo","guten","morgen","gestern","heute","buch","aufgabe","unterricht","bitte"]
 };
 function speechHintScore(normalized,hints){
   const padded=" "+normalized+" ";
@@ -479,10 +482,15 @@ function detectGeneratedSpeechLanguage(text){
   const scores={
     es:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.es),
     en:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.en),
-    pt:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.pt)
+    pt:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.pt),
+    fr:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.fr),
+    it:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.it),
+    de:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.de)
   };
   if(/[¿¡ñ]/i.test(raw))scores.es+=3;
-  if(/[ãõç]/i.test(raw))scores.pt+=3;
+  if(/[ãõ]/i.test(raw))scores.pt+=3;
+  if(/[œêèàû]/i.test(raw))scores.fr+=3;
+  if(/[äöüß]/i.test(raw))scores.de+=3;
   if(/\b(?:the|this|that|with|without|please|thanks|hello|i'm|you're|don't|can't)\b/i.test(raw))scores.en+=2;
   if(/\b(?:para|porque|estoy|tengo|quiero|puedo|gracias|hola|mimos|abrazo)\b/i.test(normalized))scores.es+=2;
   if(/\b(?:voce|obrigado|ola|estou|tenho|quero|carinho|abraco)\b/i.test(normalized))scores.pt+=2;
@@ -507,6 +515,9 @@ function speechNeedsLocalization(text,target=responseLanguage(),forcedLang=null)
 function localizedSpeechFallback(target){
   if(target==="en")return "I understood you, but I couldn't prepare that answer in English. Please try again.";
   if(target==="pt")return "Eu entendi você, mas não consegui preparar essa resposta em português. Tente novamente.";
+  if(target==="fr")return "Je t'ai compris, mais je n'ai pas pu préparer la réponse en français.";
+  if(target==="it")return "Ho capito, ma non sono riuscito a preparare la risposta in italiano.";
+  if(target==="de")return "Ich habe dich verstanden, aber ich konnte die Antwort nicht auf Deutsch vorbereiten.";
   return "Te entendí, pero no pude preparar esa respuesta en español. Probá de nuevo.";
 }
 async function localizeGeneratedSpeech(text,target=responseLanguage()){
@@ -987,7 +998,7 @@ async function startSenses(){
       $("#systemStatus").textContent="Cámara y micrófono activos.";
     }
 
-    $("#startBtn").textContent=state.languageMode==="en"?"Senses active":"Sentidos activos";
+    $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("active",state.languageMode)||"Sentidos activos";
     $("#startBtn").disabled=true;
 
     // Vision loads after audio has already begun.
@@ -1814,7 +1825,7 @@ function finishStartupAvatar(id){
   }
   const mode=avatarLanguage();
   $("#startBtn").disabled=false;
-  $("#startBtn").textContent=mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos";
+  $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("start",mode)||"Despertar sentidos";
   $("#statusText").textContent=mode==="en"
     ?"Robotito is ready to wake up."
     :mode==="pt"?"Robotito está pronto para despertar.":speciesIntroduction(id);
@@ -4926,9 +4937,7 @@ function bindUI(){
     const mode=e.target.value;
     setLanguageMode(mode);
     document.documentElement.lang=mode;
-    $("#startBtn").textContent=state.started
-      ?(mode==="en"?"Senses active":mode==="pt"?"Sentidos ativos":"Sentidos activos")
-      :(mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos");
+    $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
     applyDayNightMode(new Date());
   });
   $("#voiceEnabled")?.addEventListener("change",e=>{
@@ -4988,7 +4997,7 @@ function bindUI(){
   });
   $("#testVoiceBtn")?.addEventListener("click",()=>{
     const lang=responseLanguage();
-    const text=lang==="en"?"My name is Robotito. I'm ready to help you.":lang==="pt"?"Meu nome é Robotito. Estou pronto para ajudar você.":"Mi nombre es Robotito. Estoy listo para ayudarte.";
+    const text=window.ROBOTITO_I18N?.t?.("greeting",lang)||"¡Hola! Soy Robotito.";
     speakResponse(text,lang);
   });
   $("#enrollBtn").addEventListener("click",enrollPerson);
@@ -5189,7 +5198,17 @@ async function init(){
     gate.style.display="";
     gate.classList.remove("hidden");
   }
-  if($("#languageMode"))$("#languageMode").value="es";
+  const savedLanguage=localStorage.getItem("robotito.languageMode.v1");
+  if(window.ROBOTITO_I18N?.supported?.(savedLanguage)){
+    setLanguageMode(savedLanguage);
+    const gateForReturn=$("#languageGate");
+    if(gateForReturn){
+      gateForReturn.hidden=true;gateForReturn.classList.add("hidden");
+      gateForReturn.style.display="none";gateForReturn.setAttribute("aria-hidden","true");
+    }
+    $("#startBtn").disabled=false;
+    $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
+  }else if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
