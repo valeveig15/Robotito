@@ -32,7 +32,12 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
  const lang=language||detectLanguage(text,previous?.language||"es");
  let intent="conversation",source="none",score=.52;
  if(!text)return {intent:"empty",source:"none",confidence:1,actions:[],language:lang,entities:{},depth:"normal",needsClarification:false};
- const explicit={class:patterns.class.test(q),exercise:patterns.exercise.test(q),weather:patterns.weather.test(q),task:patterns.task.test(q),book:patterns.book.test(q)};
+ const queryForm=/[?¿]/.test(text)||/\b(?:que|como|cual|quien|cuando|donde|explica|explicame|contame|decime|dime|resumime|resolve|resolver|resuelve|resolvé|mostrame|recordame|what|how|tell|show|explain|recall|define|resume|quero saber|me explica)\b/.test(q);
+ const exerciseRequest=patterns.exercise.test(q)&&(
+  /\b(?:ejercici[oa]|exercise|exercicio|exercice|esercizio|aufgabe)\b/i.test(q)
+  ||(/\b(?:resolv|solv|explic|haceme|ayud)\w*\b/.test(q)&&/\bproblema\b/.test(q)));
+ const academicClass=patterns.class.test(q)&&(queryForm||/\b(?:vimos en clase|segun la clase|la clase anterior|mis apuntes|la transcripcion)\b/.test(q));
+ const explicit={class:academicClass,exercise:exerciseRequest,weather:patterns.weather.test(q),task:patterns.task.test(q),book:patterns.book.test(q)};
  if(explicit.exercise){intent="exercise";source="materials";score=.9;}
  else if(explicit.class){intent="class-question";source="classes";score=.9;}
  else if(explicit.weather){intent="weather";source="weather";score=.91;}
@@ -49,11 +54,11 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
  else if(/\b(?:y de noche|and at night|e a noite|et le soir|und nachts|y manana|and tomorrow)\b/.test(q)&&previous){intent=previous.intent;source=previous.source;score=.83;}
  let depth=step.test(q)?"step-by-step":short.test(q)?"brief":long.test(q)?"detailed":intent==="definition"?"brief":"normal";
  const num=q.match(/\b(?:ejercicio|exercise|exercicio|exercice|esercizio|aufgabe)\s*(?:n(?:[uú]mero|ro)?\.?\s*)?(\d+)\b/);
- const entities={exerciseNumber:num?Number(num[1]):null,date:temporal(q,now)};
+ const entities={exerciseNumber:num?Number(num[1]):null,date:root.ROBOTITO_TEMPORAL?.resolve?.(q,{now,language:lang})||temporal(q,now)};
  // A class transcript containing a topic word is not sufficient to grant class access.
  const mayReadClass=source==="classes"||source==="materials";
  const clauseParts=text.split(/\s+(?:y despu[eé]s|despu[eé]s|and then|e depois|puis|poi)\s+/i);
- const actions=clauseParts.map((part,index)=>({index,text:part,intent:index===0?intent:"follow-up-action"}));
+ const actions=clauseParts.map((part,index)=>({index,text:part,intent:index===0?intent:/(pregunta|question|pergunta|frage)/i.test(part)?"quiz":"follow-up-action"}));
  const needsClarification=Boolean((intent==="conversation"&&/^\s*(?:eso|ese|aquello|el otro|y eso)\s*[?.!]*$/i.test(q)&&!previous));
  return {intent,source,confidence:score,language:lang,depth,entities,actions,mayReadClass,needsClarification,topic:text,contextual:Boolean(previous&&!Object.values(explicit).some(Boolean))};
 }
