@@ -3,7 +3,7 @@
 // only a migration input and a small preference mirror.
 (function(root){
 "use strict";
-const DB_NAME="robotito-data-v2", VERSION=3;
+const DB_NAME="robotito-data-v2", VERSION=4;
 const HEAVY=new Set(["robotito.classLines.v1","robotito.classSummaries.v1","robotito.academicMaterials.v1","robotito.memories.v2","robotito.people.v2","robotito.tasks.v1","robotito.goodreads.v1"]);
 const TYPES=new Set(["people","conversations","preferences","memories","classes","subjects","topics","audios","transcripts","pdfs","notes","exercises","books","recommendations","tasks","rules","birthdays"]);
 const LEGACY_TYPE={"robotito.classLines.v1":"transcripts","robotito.classSummaries.v1":"classes","robotito.academicMaterials.v1":"notes","robotito.memories.v2":"memories","robotito.people.v2":"people","robotito.tasks.v1":"tasks","robotito.goodreads.v1":"books"};
@@ -19,13 +19,15 @@ function openDb(){
   req.onupgradeneeded=()=>{
    const db=req.result;
    if(!db.objectStoreNames.contains("state"))db.createObjectStore("state",{keyPath:"key"});
+   let records;
    if(!db.objectStoreNames.contains("records")){
-    const s=db.createObjectStore("records",{keyPath:"id"});
-    s.createIndex("byType","type");
-    s.createIndex("byOwner","owner");
-    s.createIndex("byDate","timestamp");
-    s.createIndex("byTypeOwner",["type","owner"]);
-   }
+    records=db.createObjectStore("records",{keyPath:"id"});
+    records.createIndex("byType","type");
+    records.createIndex("byOwner","owner");
+    records.createIndex("byDate","timestamp");
+    records.createIndex("byTypeOwner",["type","owner"]);
+   }else records=req.transaction.objectStore("records");
+   if(!records.indexNames.contains("byRelation"))records.createIndex("byRelation","relatedIds",{multiEntry:true});
    if(!db.objectStoreNames.contains("blobs"))db.createObjectStore("blobs",{keyPath:"id"});
    if(!db.objectStoreNames.contains("migrations"))db.createObjectStore("migrations",{keyPath:"id"});
   };
@@ -118,12 +120,16 @@ async function deleteRecord(id){
   if(row?.blobId)tx.objectStore("blobs").delete(row.blobId);
   store.delete(String(id));
   // Keep relation metadata coherent when its target disappears.
-  const linked=await request(store.getAll());
-  for(const record of linked){
-    if(record.id!==String(id)&&record.relatedIds?.includes(String(id))){
-      store.put({...record,relatedIds:record.relatedIds.filter(link=>link!==String(id))});
-    }
-  }
+  await new Promise((resolve,reject)=>{
+    const cursor=store.index("byRelation").openCursor(IDBKeyRange.only(String(id)));
+    cursor.onerror=()=>reject(cursor.error);
+    cursor.onsuccess=()=>{
+      const row=cursor.result;
+      if(!row){resolve();return;}
+      row.update({...row.value,relatedIds:(row.value.relatedIds||[]).filter(link=>link!==String(id))});
+      row.continue();
+    };
+  });
   await finished;return Boolean(row);
  });
 }
