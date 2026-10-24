@@ -17,6 +17,10 @@
   <script defer src="objects.js"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js"></script>
+  <script defer src="nlu-temporal.js"></script>
+  <script defer src="i18n.js"></script>
+  <script defer src="voice-system.js"></script>
+  <script defer src="audio-perception.js"></script>
   <script defer src="semantic-planner.js"></script>
   <script defer src="intent-engine.js?v=20261007-intent1"></script>
   <script defer src="robotito-store.js"></script>
@@ -49,6 +53,9 @@
         <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
         <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
         <button type="button" class="primary" data-start-language="pt">🇧🇷 Português</button>
+        <button type="button" class="primary" data-start-language="fr">🇫🇷 Français</button>
+        <button type="button" class="primary" data-start-language="it">🇮🇹 Italiano</button>
+        <button type="button" class="primary" data-start-language="de">🇩🇪 Deutsch</button>
       </div>
     </section>
 
@@ -378,29 +385,51 @@
           <p id="dateInfo"></p>
         </div>
         <div class="card small">
-          <h3>Voz de Robotito</h3>
-          <label class="check voice-toggle"><input id="voiceEnabled" type="checkbox" /> Hablar en voz alta</label>
+          <h3 data-i18n="voice">Voz de Robotito</h3>
+          <label class="check voice-toggle"><input id="voiceEnabled" type="checkbox" /> <span data-i18n="speak">Hablar en voz alta</span></label>
           <label>Idioma / Language / Idioma
             <select id="languageMode">
               <option value="es">Español</option>
               <option value="en">English</option>
               <option value="pt">Português</option>
+              <option value="fr">Français</option>
+              <option value="it">Italiano</option>
+              <option value="de">Deutsch</option>
             </select>
           </label>
-          <label>Voz
+          <label><span data-i18n="selectVoice">Voz</span>
             <select id="voiceSelect"></select>
           </label>
           <div class="voice-controls">
             <label>Gravedad <input id="voicePitch" type="range" min="0.5" max="1.1" step="0.05" value="0.65" /></label>
             <label>Velocidad <input id="voiceRate" type="range" min="0.65" max="1.1" step="0.05" value="0.82" /></label>
           </div>
-          <button id="testVoiceBtn" type="button" class="ghost full">Probar voz</button>
-          <p class="muted">El idioma queda fijo para escuchar y responder. Podés cambiarlo acá cuando quieras. / The selected language stays fixed for listening and answering; you can change it here whenever you want.</p>
+          <label><span data-i18n="voiceStyle">Estilo de voz</span>
+            <select id="voiceStyle">
+              <option value="natural">Natural</option><option value="deep">Grave</option>
+              <option value="high">Aguda</option><option value="cute">Tierna</option>
+              <option value="energetic">Energética</option><option value="funny">Graciosa</option>
+              <option value="robotic">Robótica</option><option value="strange">Extraña</option>
+              <option value="calm">Calmada</option><option value="narrator">Narradora</option>
+            </select>
+          </label>
+          <button id="testVoiceBtn" type="button" class="ghost full" data-i18n="testVoice">Probar voz</button>
+          <details class="voice-sample-options">
+            <summary>Muestra voluntaria de voz (sin clonación)</summary>
+            <p class="muted" data-i18n="synthesised">Voz sintetizada; no es una grabación de una persona real.</p>
+            <label><input id="voiceSampleThirdParty" type="checkbox" /> La voz pertenece a otra persona</label>
+            <label>Nombre de esa persona <input id="voiceSampleName" type="text" autocomplete="off" /></label>
+            <label><input id="voiceSampleConsent" type="checkbox" /> Tengo consentimiento explícito para registrar esta muestra de audio.</label>
+            <button id="recordVoiceSample" type="button" class="ghost">Grabar muestra (3 segundos)</button>
+            <button id="deleteVoiceSample" type="button" class="ghost">Eliminar muestra</button>
+            <p id="voiceSampleStatus" role="status" class="muted"></p>
+          </details>
+          <p class="muted">Podés cambiar el idioma por voz, texto o selector. La síntesis y el reconocimiento dependen de los idiomas disponibles en el navegador.</p>
         </div>
 
         <div class="card small">
           <h3>Probá preguntarle</h3>
-          <p class="muted">Podés hablarle en español, inglés o portugués. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
+          <p class="muted">Podés hablarle en español, inglés, portugués, francés, italiano o alemán. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
         </div>
       </section>
 
