@@ -44,6 +44,26 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       if(audit.invalid.length||audit.missingBlobs.length)throw new Error("Storage audit failure");
       for(let i=0;i<210;i++)await store.deleteRecord("browser-test-"+i);
       if(await store.getBlob("browser-test-blob"))throw new Error("Cascade deletion failed");
+      const recordId="legacy-audio-test";
+      const oldDb=await new Promise((resolve,reject)=>{
+        const q=indexedDB.open("robotito-class-audio-v1",1);
+        q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);
+      });
+      const fakeAudio=new Blob([new Uint8Array([11,22,33,44,55])],{type:"audio/webm"});
+      await new Promise((resolve,reject)=>{
+        const tx=oldDb.transaction("recordings","readwrite");
+        tx.objectStore("recordings").put({id:recordId,startedAt:Date.now()-1000,
+          endedAt:Date.now(),subject:"Matemática",topic:"combinatoria",blob:fakeAudio});
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+      });
+      oldDb.close();
+      await window.ROBOTITO_CLASS_AUDIO.migrateAudio();
+      const migrated=await store.getRecord("class-audio:"+recordId);
+      if(!migrated||migrated.type!=="audios")throw new Error("Legacy audio migration failed");
+      const bytesAfter=new Uint8Array(await (await store.getBlob(migrated.blobId)).arrayBuffer());
+      if(bytesAfter.join(",")!=="11,22,33,44,55")throw new Error("Legacy audio was modified");
+      await window.ROBOTITO_CLASS_AUDIO.removeRecording(recordId);
+      if(await store.getRecord("class-audio:"+recordId))throw new Error("Audio delete failed");
       return {records:210,languages:languages.length};
     });
     console.log("Robotito browser IndexedDB integration:",JSON.stringify(integration));
