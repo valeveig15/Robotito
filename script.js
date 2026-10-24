@@ -105,6 +105,8 @@ const state = {
   voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
   voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
   voiceRate: Number(localStorage.getItem("robotito.voiceRate.v1")||0.82),
+  voiceStyle: localStorage.getItem("robotito.voiceStyle.v1")||"natural",
+  nextResponseLanguage: null,
   languageMode: "",
   lastDetectedLanguage: "es",
   autoListenLanguage: "es",
@@ -232,13 +234,13 @@ function cleanSpeechText(text){
     .trim();
 }
 function responseLanguage(){
-  return state.languageMode==="en"?"en":state.languageMode==="pt"?"pt":"es";
+  return state.nextResponseLanguage||state.languageMode||"es";
 }
 function languageLocale(lang){
-  return lang==="en"?"en-US":lang==="pt"?"pt-BR":"es-UY";
+  return window.ROBOTITO_I18N?.locale?.(lang)||"es-UY";
 }
 function languageLabel(lang){
-  return lang==="en"?"English":lang==="pt"?"Português":"Español";
+  return ({es:"Español",en:"English",pt:"Português",fr:"Français",it:"Italiano",de:"Deutsch"})[lang]||"Español";
 }
 function chooseDefaultVoice(voices,targetLang="es"){
   const pref=targetLang==="en"?/^en([-_]|$)/i:targetLang==="pt"?/^pt([-_]|$)/i:/^es([-_]|$)/i;
@@ -262,7 +264,7 @@ function populateVoiceSelect(){
   const select=$("#voiceSelect");
   if(!select||!("speechSynthesis" in window))return;
   const all=speechSynthesis.getVoices();
-  const supported=all.filter(v=>/^(es|en|pt)([-_]|$)/i.test(v.lang||""));
+  const supported=all.filter(v=>/^(es|en|pt|fr|it|de)([-_]|$)/i.test(v.lang||""));
   const voices=supported.length?supported:all;
   const previous=state.voiceURI;
   select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
@@ -409,12 +411,15 @@ function speakResponse(text,forcedLang=null){
   const voices=speechSynthesis.getVoices();
   const selected=voices.find(v=>v.voiceURI===state.voiceURI);
   const selectedMatches=voiceMatchesLanguage(selected,lang);
-  const chosen=selectedMatches?selected:chooseDefaultVoice(voices,lang);
-  if(chosen)utter.voice=chosen;
-  utter.lang=chosen?.lang||languageLocale(lang);
-  utter.pitch=clamp(state.voicePitch,.5,1.1);
-  utter.rate=clamp(state.voiceRate,.65,1.1);
-  utter.volume=.92;
+  const chosen=selectedMatches?selected:window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,state.voiceURI)||chooseDefaultVoice(voices,lang);
+  window.ROBOTITO_VOICE_SYSTEM?.configureUtterance?.(utter,{style:state.voiceStyle,language:lang,voices,voiceURI:chosen?.voiceURI,basePitch:state.voicePitch/.65,baseRate:state.voiceRate/.82});
+  if(!window.ROBOTITO_VOICE_SYSTEM){
+    if(chosen)utter.voice=chosen;
+    utter.lang=chosen?.lang||languageLocale(lang);
+    utter.pitch=clamp(state.voicePitch,.5,1.8);
+    utter.rate=clamp(state.voiceRate,.5,1.5);
+    utter.volume=.92;
+  }
   const done=()=>{
     state.speaking=false;
     if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
@@ -702,7 +707,7 @@ function batteryAlertMessage(threshold,lang=responseLanguage()){
 }
 function announceBatteryAlert(threshold){
   if(!threshold)return;
-  if(!["es","en","pt"].includes(state.languageMode)){
+  if(!window.ROBOTITO_I18N?.supported?.(state.languageMode)){
     state.pendingBatteryAlert=threshold;
     return;
   }
@@ -1822,41 +1827,40 @@ function finishStartupAvatar(id){
 }
 
 function setLanguageMode(mode){
-  if(!["es","en","pt"].includes(mode))return;
+  if(!window.ROBOTITO_I18N?.supported?.(mode))return;
   state.languageMode=mode;
   document.documentElement.lang=mode;
   state.lastDetectedLanguage=mode;
   state.autoListenLanguage=mode;
-  localStorage.setItem("robotito.languageMode.v1",mode);
+  if(!setLanguageMode.sessionOnly)localStorage.setItem("robotito.languageMode.v1",mode);
   if($("#languageMode"))$("#languageMode").value=mode;
+  window.ROBOTITO_I18N?.apply?.(mode);
   populateVoiceSelect();
   if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
 }
 function chooseStartupLanguage(mode){
-  if(!["es","en","pt"].includes(mode))return;
+  if(!window.ROBOTITO_I18N?.supported?.(mode))return;
   setLanguageMode(mode);
   document.documentElement.lang=mode;
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("avatar");
 }
 function handleLanguageCommand(text){
-  if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english|fale.*ingles|fale.*ingl[eê]s/.test(text)){
-    setLanguageMode("en");
-    sayInLanguage("Sure. I'll speak English from now on.","en");
-    return true;
+  const parsed=window.ROBOTITO_I18N?.parseCommand?.(text);
+  if(!parsed)return false;
+  const previous=state.languageMode;
+  if(parsed.scope==="once"){
+    const confirmation=window.ROBOTITO_I18N.t("languageSet",parsed.language);
+    sayInLanguage(confirmation,parsed.language);
+    state.nextResponseLanguage=parsed.language;
+  }else{
+    setLanguageMode.sessionOnly=parsed.scope==="session";
+    setLanguageMode(parsed.language);
+    setLanguageMode.sessionOnly=false;
+    sayInLanguage(window.ROBOTITO_I18N.t("languageSet",parsed.language),parsed.language);
   }
-  if(/(hablame|habla|responde|contesta).*(espanol|español|castellano)|speak spanish|answer in spanish|fale.*espanhol/.test(text)){
-    setLanguageMode("es");
-    sayInLanguage("Perfecto. Voy a hablar en español.","es");
-    return true;
-  }
-  if(/(hablame|habla|responde|contesta).*(portugues|portugu[eê]s)|speak portuguese|answer in portuguese|fale.*portugu[eê]s/.test(text)){
-    setLanguageMode("pt");
-    sayInLanguage("Perfeito. Vou falar em português a partir de agora.","pt");
-    return true;
-  }
-  return false;
+  return true;
 }
 
 const QUICK_TRANSLATIONS=[
@@ -1878,10 +1882,8 @@ const QUICK_TRANSLATIONS=[
 const translationCache=new Map();
 function targetLanguageFromName(name){
   const n=normalizeText(name);
-  if(["ingles","english","inglês","inglese"].includes(n))return "en";
-  if(["portugues","portuguese","português"].includes(n))return "pt";
-  if(["espanol","español","castellano","spanish","espanhol"].includes(n))return "es";
-  return null;
+  const names={es:["espanol","castellano","spanish"],en:["ingles","english"],pt:["portugues","portuguese"],fr:["frances","french","francais"],it:["italiano","italian"],de:["aleman","deutsch","german"]};
+  return Object.keys(names).find(code=>names[code].includes(n))||null;
 }
 function localTranslate(phrase,source,target){
   const n=normalizeText(phrase);
@@ -4925,6 +4927,40 @@ function bindUI(){
     state.voiceRate=Number(e.target.value);
     localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));
   });
+  $("#voiceStyle")?.addEventListener("change",e=>{
+    state.voiceStyle=e.target.value;
+    localStorage.setItem("robotito.voiceStyle.v1",state.voiceStyle);
+  });
+  $("#deleteVoiceSample")?.addEventListener("click",async()=>{
+    const msg=$("#voiceSampleStatus");
+    try{await window.ROBOTITO_VOICE_SYSTEM?.deleteProfile?.();if(msg)msg.textContent="Muestra eliminada.";}
+    catch(e){if(msg)msg.textContent=e.message;}
+  });
+  $("#recordVoiceSample")?.addEventListener("click",async()=>{
+    const msg=$("#voiceSampleStatus");
+    const third=$("#voiceSampleThirdParty")?.checked;
+    const consent=$("#voiceSampleConsent")?.checked;
+    const name=$("#voiceSampleName")?.value.trim();
+    if(third&&(!consent||!name)){if(msg)msg.textContent="Para grabar a otra persona, indicá su nombre y confirmá su consentimiento explícito.";return;}
+    if(!consent){if(msg)msg.textContent="Confirmá el consentimiento antes de grabar.";return;}
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const recorder=new MediaRecorder(stream),parts=[];
+      recorder.ondataavailable=e=>{if(e.data?.size)parts.push(e.data);};
+      recorder.onstop=async()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        try{
+          await window.ROBOTITO_VOICE_SYSTEM.saveProfileFromRecording(new Blob(parts,{type:recorder.mimeType||"audio/webm"}),
+            {subject:third?"other":"self",explicitConsent:consent,consentLabel:third?name:"self"});
+          if(msg)msg.textContent="Muestra guardada de forma local. La voz es sintética: no se clona ni imita a la persona.";
+        }catch(e){if(msg)msg.textContent=e.message;}
+      };
+      recorder.start();
+      if(msg)msg.textContent="Grabando 3 segundos…";
+      setTimeout(()=>{if(recorder.state==="recording")recorder.stop();},3000);
+    }catch(e){stream?.getTracks?.().forEach(t=>t.stop());if(msg)msg.textContent="No pude grabar la muestra: "+e.message;}
+  });
   $("#testVoiceBtn")?.addEventListener("click",()=>{
     const lang=responseLanguage();
     const text=lang==="en"?"My name is Robotito. I'm ready to help you.":lang==="pt"?"Meu nome é Robotito. Estou pronto para ajudar você.":"Mi nombre es Robotito. Estoy listo para ayudarte.";
@@ -5099,7 +5135,8 @@ document.addEventListener("visibilitychange",()=>{
 async function init(){
   await window.ROBOTITO_STORE?.bootstrap?.(state);
   migrateOldData();
-  purgeNamedPeople();
+  // Do not silently delete people or memories based on their names.
+  await window.ROBOTITO_STORE?.migrateTypedLegacy?.().catch(e=>console.warn("Typed migration",e));
   bindUI();
   bindPandaReferenceViews();
   applyAvatar(state.avatar,{persist:false});
@@ -5131,6 +5168,7 @@ async function init(){
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
+  if($("#voiceStyle"))$("#voiceStyle").value=state.voiceStyle;
   populateVoiceSelect();
   if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=populateVoiceSelect;
   clockTick();
