@@ -4,9 +4,9 @@
 (function(root){
 "use strict";
 const DB_NAME="robotito-data-v2", VERSION=3;
-const HEAVY=new Set(["robotito.classLines.v1","robotito.classSummaries.v1","robotito.academicMaterials.v1","robotito.memories.v2"]);
+const HEAVY=new Set(["robotito.classLines.v1","robotito.classSummaries.v1","robotito.academicMaterials.v1","robotito.memories.v2","robotito.people.v2","robotito.tasks.v1","robotito.goodreads.v1"]);
 const TYPES=new Set(["people","conversations","preferences","memories","classes","subjects","topics","audios","transcripts","pdfs","notes","exercises","books","recommendations","tasks","rules","birthdays"]);
-const LEGACY_TYPE={"robotito.classLines.v1":"transcripts","robotito.classSummaries.v1":"classes","robotito.academicMaterials.v1":"notes","robotito.memories.v2":"memories"};
+const LEGACY_TYPE={"robotito.classLines.v1":"transcripts","robotito.classSummaries.v1":"classes","robotito.academicMaterials.v1":"notes","robotito.memories.v2":"memories","robotito.people.v2":"people","robotito.tasks.v1":"tasks","robotito.goodreads.v1":"books"};
 const queues=new Map();
 let dbPromise=null;
 function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB request failed"));});}
@@ -138,7 +138,8 @@ async function bootstrap(state){
    ["robotito.classLines.v1","classLines"],
    ["robotito.classSummaries.v1","classSummaries"],
    ["robotito.academicMaterials.v1","academicMaterials"],
-   ["robotito.memories.v2","memories"]
+   ["robotito.memories.v2","memories"],
+   ["robotito.people.v2","people"],["robotito.tasks.v1","tasks"],["robotito.goodreads.v1","library"]
   ];
   for(const [key,property] of pairs){
    const value=await migrateKey(key,Array.isArray(state[property])?state[property]:[]);
@@ -165,6 +166,13 @@ async function migrateTypedLegacy({owner="local"}={}){
    await putRecord({id:"legacy:"+owner+":"+key+":"+i,type:LEGACY_TYPE[key],owner,timestamp,
     subject:item?.subject||item?.materia||"",topic:item?.topic||item?.tema||"",
     source:"legacy:"+key,language:item?.language||"und",data:item});
+  }
+  if(key==="robotito.people.v2"){
+   for(let i=0;i<rows.length;i++){
+    const p=rows[i];
+    if(p?.birthday)await putRecord({id:"birth:"+owner+":"+i,type:"birthdays",owner,
+      source:"people",data:{person:p.name,date:p.birthday}});
+   }
   }
   const tx=db.transaction("migrations","readwrite"),finished=complete(tx);
   tx.objectStore("migrations").put({id:marker,count:rows.length,at:Date.now()});await finished;
