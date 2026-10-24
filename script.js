@@ -1142,77 +1142,73 @@ function setupAudio(stream){
     state.audioContext=ctx;
     const src=ctx.createMediaStreamSource(stream);
     const analyser=ctx.createAnalyser();
-    analyser.fftSize=1024;
-    analyser.smoothingTimeConstant=.78;
+    analyser.fftSize=2048;
+    analyser.smoothingTimeConstant=.62;
     src.connect(analyser);
     state.analyser=analyser;
-
     const freq=new Uint8Array(analyser.frequencyBinCount);
     const time=new Uint8Array(analyser.fftSize);
-    let sustainedMusic=0, sustainedNoise=0;
-
-    const tick=()=>{
+    const perception=window.ROBOTITO_AUDIO_PERCEPTION?.create?.({
+      onEvent:event=>{
+        if(state.classMode||state.sleeping||state.speaking)return;
+        if(event.kind==="clap"&&event.confidence>=.85){
+          robot.classList.add("clapping");
+          setTimeout(()=>robot.classList.remove("clapping"),1100);
+        }
+        if(event.kind==="sneeze"&&event.confidence>=.93){
+          sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",responseLanguage())||"¡Salud!",responseLanguage());
+        }
+      }
+    });
+    let lastTick=0,prevSpectrum=null;
+    const tick=(at=0)=>{
+      if(!state.started||state.audioContext!==ctx){
+        try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
+        return;
+      }
+      requestAnimationFrame(tick);
+      if(at-lastTick<45)return;
+      lastTick=at;
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
-
-      let sumSq=0;
-      for(const v of time){const n=(v-128)/128;sumSq+=n*n;}
-      const rms=Math.sqrt(sumSq/time.length);
+      let power=0;
+      for(const v of time){const sample=(v-128)/128;power+=sample*sample;}
+      const rms=Math.sqrt(power/time.length);
       state.audioLevel=rms;
-
-      const low=[...freq.slice(2,26)];
-      const mid=[...freq.slice(26,120)];
-      const high=[...freq.slice(120,260)];
-      const avg=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
-      const lowE=avg(low), midE=avg(mid), highE=avg(high);
-      const totalE=lowE+midE+highE+1;
-      const centroid=(lowE*1+midE*2+highE*3)/totalE;
-      const flat=spectralFlatness([...freq.slice(4,220)]);
-      state.recentAudioFeatures.push({rms,centroid,flat,t:Date.now()});
-      state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
-      const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
-
+      const mean=(start,end)=>{
+        let s=0,n=0;for(let i=start;i<end;i++){s+=freq[i]||0;n++;}
+        return s/Math.max(n,1);
+      };
+      const low=mean(2,48),mid=mean(48,250),high=mean(250,650);
+      const flat=spectralFlatness([...freq.slice(4,600)]);
+      const zcr=zeroCrossingRate(time);
+      let peaks=0,energy=0;
+      for(let i=5;i<600;i++){
+        energy+=freq[i];
+        if(freq[i]>freq[i-1]*1.18&&freq[i]>freq[i+1]*1.18&&freq[i]>36)peaks++;
+      }
+      const harmonic=clamp(peaks/40,0,1)*(1-clamp(flat,0,1));
+      const centroid=clamp((low+mid*2+high*3)/(3*(low+mid+high+1)),0,1);
       if(rms<Math.max(.035,state.ambientRms*1.8)){
         state.ambientRms=state.ambientRms*.96+rms*.04;
       }
       state.voiceThreshold=clamp(Math.max(.028,state.ambientRms*2.35),.028,.07);
-
-      if(!state.speaking && rms>state.voiceThreshold && Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
+      if(!state.speaking&&rms>state.voiceThreshold&&Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
         state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
         state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<45000);
       }
-
-      const likelyMusic = rms>.06 && activeBands>=2 && flat>.09 && flat<.66 && midE>19;
-      const likelyNoise = rms>.05 && (flat>=.72 || activeBands<=1);
-
-      if(likelyMusic){
-        sustainedMusic=Math.min(100,sustainedMusic+1.3);
-        sustainedNoise=Math.max(0,sustainedNoise-1);
-      }else{
-        sustainedMusic=Math.max(0,sustainedMusic-1.5);
-      }
-      if(likelyNoise) sustainedNoise=Math.min(100,sustainedNoise+1.1);
-      else sustainedNoise=Math.max(0,sustainedNoise-1);
-
-      if(rms<.025){
-        state.audioKind="silencio";
-        sustainedMusic=Math.max(0,sustainedMusic-2);
-      }else if(sustainedMusic>34){
-        state.audioKind="música";
-      }else if(sustainedNoise>15){
-        state.audioKind="ruido";
-      }else{
-        state.audioKind="sonido";
-      }
-
-      state.musicConfidence=sustainedMusic;
-      $("#heardLabel").textContent=state.audioKind;
-      if(rms>.04) state.lastHeardAt=Date.now();
-
-      robot.classList.toggle("dancing",state.audioKind==="música" && sustainedMusic>42 && !state.sleeping);
-      requestAnimationFrame(tick);
+      const status=perception?.process({rms,flat,zcr,low,mid,high,centroid,harmonic},
+        {now:Date.now(),suppress:state.speaking||state.classMode||state.sleeping||document.hidden})
+        ||{kind:"unknown",musicConfidence:0};
+      const kinds={silence:"silencio",music:"música",noise:"ruido",unknown:"sonido"};
+      state.audioKind=kinds[status.kind]||"sonido";
+      state.musicConfidence=Math.round((status.musicConfidence||0)*100);
+      const heard=$("#heardLabel");if(heard)heard.textContent=state.audioKind;
+      if(rms>.04)state.lastHeardAt=Date.now();
+      robot.classList.toggle("dancing",status.kind==="music"&&status.musicConfidence>.75&&!state.sleeping&&!state.classMode&&!state.speaking);
+      prevSpectrum=freq.slice();
     };
-    tick();
+    requestAnimationFrame(tick);
   }catch(e){console.warn("audio",e);}
 }
 
