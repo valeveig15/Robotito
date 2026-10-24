@@ -3278,7 +3278,8 @@ async function askClass(){
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
   if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
-    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{};
+    const planned=window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
+    const understood=planned?{...planned,useClassMemory:planned.mayReadClass}:(window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{});
     const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
     if(understood.useClassMemory){
@@ -3481,7 +3482,28 @@ async function answerWhatLearnedToday(){
   say(answer.slice(0,320),5600);
 }
 
+let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
 async function handleSpeech(rawText){
+  const interpretation=window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
+  if(interpretation){
+    robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
+    state.lastDetectedLanguage=interpretation.language;
+    if(interpretation.needsClarification){
+      say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+      return;
+    }
+    if(interpretation.actions.length>1){
+      const first=interpretation.actions[0],rest=interpretation.actions.slice(1);
+      await handleSpeech(first.text);
+      for(const action of rest){
+        if(action.intent==="quiz"){
+          const concept=first.text.replace(/^.*?sobre\s+/i,"").replace(/[?.!]+$/,"").trim();
+          say("Para comprobar si entendiste: ¿cómo explicarías con tus palabras "+(concept||"la idea principal")+"?");
+        }else await handleSpeech(action.text);
+      }
+      return;
+    }
+  }
   const interpreted=state.languageMode==="es"?normalizeSpanishSpeechIntent(rawText):rawText;
   const text=normalizeText(interpreted);
   const who=state.currentVoicePerson||state.currentPerson;
@@ -3490,12 +3512,14 @@ async function handleSpeech(rawText){
     say("Mi dulce creadora, la más bella a toda hora; si digo otra cosa… me borra sin demora.");
     return;
   }
-  const detectedLang=responseLanguage(rawText);
-  const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
+  const detectedLang=responseLanguage();
+  const legacyUnderstanding=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
+  const understood=interpretation?{...legacyUnderstanding,...interpretation,useClassMemory:interpretation.mayReadClass}:legacyUnderstanding;
 
   // Silence is a voice command, so it takes priority over questions and other actions.
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
+  if(handleLanguageCommand(interpreted))return;
 
   // Exact exercise requests from uploaded academic material have top priority.
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
@@ -3529,7 +3553,6 @@ async function handleSpeech(rawText){
   if(drawRequestedThing(interpreted,detectedLang))return;
   if(showRequestedObject(interpreted,detectedLang))return;
   if(await handleSayInLanguageCommand(interpreted))return;
-  if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
   if(/\b(abrazame|abrazá|abraza|dame un abrazo|quiero un abrazo|hug me)\b/.test(text)){hugRobot();return;}
   if(/\b(choca los cinco|chocame los cinco|dame cinco|high five)\b/.test(text)){highFiveRobot();return;}
@@ -3577,9 +3600,12 @@ async function handleSpeech(rawText){
     }
   }
 
-  if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
-    const last=load(KEYS.lastBook,null);
-    say(last?`Ayer te había recomendado “${last.title}”`:"No encuentro una recomendación anterior.");
+  if(/\b(?:libro|book|livro|livre|buch)\b/.test(text)&&/\b(?:recomend|recommend|suger)/.test(text)&&/\b(?:ayer|semana pasada|last week|yesterday)/.test(text)){
+    const interval=window.ROBOTITO_TEMPORAL?.resolve?.(text,{language:state.languageMode||"es"});
+    const rows=await window.ROBOTITO_STORE?.queryRecords?.({type:"recommendations",owner:state.currentPerson||"local",
+      after:interval?.start,before:interval?.end,limit:5})||[];
+    const remembered=rows[0]?.data?.title;
+    say(remembered?"Te recomendé «"+remembered+"».":"No encontré una recomendación guardada para esa fecha.");
     return;
   }
 
@@ -4801,6 +4827,9 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
   const first=results[0]?.book;
   if(!first)return;
   save(KEYS.lastBook,{title:first.title,at:Date.now(),prompt});
+  window.ROBOTITO_STORE?.putRecord?.({type:"recommendations",owner:state.currentPerson||"local",
+    source:"books",timestamp:Date.now(),topic:prompt,language:state.languageMode||"es",
+    data:{title:first.title,authors:first.authors||[],prompt}}).catch(e=>console.warn("recommendation memory",e));
   const intro=localFallback
     ? '<p class="recommendation-note">No pude consultar el catálogo en línea, así que usé una selección disponible en Robotito.</p>'
     : "";
