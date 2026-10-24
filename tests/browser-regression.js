@@ -25,6 +25,19 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     }
     if(pageErrors.length)throw new Error("Page errors: "+pageErrors.join(" | "));
 
+    const languageIntegration=await page.evaluate(async()=>{
+      document.querySelector("#voiceEnabled").checked=false;
+      document.querySelector("#voiceEnabled").dispatchEvent(new Event("change"));
+      const entry=document.querySelector("#robotitoTextInput");
+      if(!entry||!window.ROBOTITO_CHAT?.send)throw new Error("Missing typed dialogue");
+      await window.ROBOTITO_CHAT.send("Pasemos a francés");
+      if(document.documentElement.lang!=="fr"||document.querySelector("#languageMode").value!=="fr")
+        throw new Error("French dialogue switching failed");
+      await window.ROBOTITO_CHAT.send("Volvé al español");
+      if(document.documentElement.lang!=="es")throw new Error("Spanish restoration failed");
+      return true;
+    });
+    if(!languageIntegration)throw new Error("Language integration unavailable");
     const integration=await page.evaluate(async()=>{
       const store=window.ROBOTITO_STORE;
       if(!store||!window.ROBOTITO_I18N||!window.ROBOTITO_AUDIO_PERCEPTION)throw new Error("Missing universal runtime modules");
