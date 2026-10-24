@@ -551,6 +551,8 @@ function commitSpeechMessage(text,ms,lang,token){
 }
 function say(text, ms=3000, spokenLang=null){
   const target=spokenLang||responseLanguage();
+  // A one-response language override must not leak into later replies.
+  if(state.nextResponseLanguage&&!spokenLang)state.nextResponseLanguage=null;
   const b=$("#speechBubble");
   if(!b)return;
   const token=++state.speechBubbleToken;
