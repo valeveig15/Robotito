@@ -39,8 +39,10 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
    const text=fold(JSON.stringify(row.data||{})+" "+row.topic+" "+row.subject);
    return {row,score:words.reduce((sum,word)=>sum+(text.includes(word)?1:0),0)};
   }).sort((a,b)=>b.score-a.score||b.row.timestamp-a.row.timestamp);
-  // An explicit topic that matches nothing is not evidence about another topic.
-  selected=rated[0]?.score?rated.filter(x=>x.score>0).map(x=>x.row):[];
+  // A topic constraint requires matching evidence; broad recall has no such constraint.
+  const topicConstrained=/\b(?:sobre|about|acerca de|regarding|relacionado con)\b/.test(found.search);
+  if(rated[0]?.score)selected=rated.filter(x=>x.score>0).map(x=>x.row);
+  else if(topicConstrained)selected=[];
  }
  selected=selected.slice(0,Math.max(1,Math.min(20,limit)));
  const first=selected[0];
