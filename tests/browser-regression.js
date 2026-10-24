@@ -25,6 +25,28 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     }
     if(pageErrors.length)throw new Error("Page errors: "+pageErrors.join(" | "));
 
+    const integration=await page.evaluate(async()=>{
+      const store=window.ROBOTITO_STORE;
+      if(!store||!window.ROBOTITO_I18N||!window.ROBOTITO_AUDIO_PERCEPTION)throw new Error("Missing universal runtime modules");
+      const languages=[...document.querySelectorAll("#languageMode option")].map(x=>x.value);
+      if(["es","en","pt","fr","it","de"].some(x=>!languages.includes(x)))throw new Error("Missing language controls");
+      const bytes=new Uint8Array([3,5,7,11,13,17,19,23]);
+      await store.putBlob("browser-test-blob",new Blob([bytes]),{owner:"test",recordId:"browser-test-0"});
+      for(let i=0;i<210;i++){
+        await store.putRecord({id:"browser-test-"+i,type:"memories",owner:"test",topic:"science",
+          timestamp:Date.now()+i,blobId:i===0?"browser-test-blob":null,data:{index:i}});
+      }
+      const rows=await store.queryRecords({type:"memories",owner:"test",limit:500});
+      if(rows.length!==210)throw new Error("IndexedDB search mismatch: "+rows.length);
+      const restored=new Uint8Array(await (await store.getBlob("browser-test-blob")).arrayBuffer());
+      if(bytes.some((x,i)=>x!==restored[i]))throw new Error("Binary round-trip mismatch");
+      const audit=await store.audit();
+      if(audit.invalid.length||audit.missingBlobs.length)throw new Error("Storage audit failure");
+      for(let i=0;i<210;i++)await store.deleteRecord("browser-test-"+i);
+      if(await store.getBlob("browser-test-blob"))throw new Error("Cascade deletion failed");
+      return {records:210,languages:languages.length};
+    });
+    console.log("Robotito browser IndexedDB integration:",JSON.stringify(integration));
     const viewports=[[390,844],[360,740],[844,390],[768,1024]];
     for(const [width,height] of viewports){
       await page.setViewportSize({width,height});
