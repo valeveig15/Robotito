@@ -59,3 +59,11 @@ Every discovered defect gets a fixed regression case; follow with generated lexi
 - The current multilingual dictionary covers key application controls. Many legacy dynamic messages are still authored in Spanish and need full catalog extraction/localization.
 - High-fidelity custom voice synthesis and third-party voice imitation are intentionally **not** provided by saving a recording.
 - The full historical interaction code still includes compatibility paths; migration away from all legacy handlers should be incremental and gated on integration tests.
+
+## Temporal weather queries and contextual recall
+
+The live weather handler requests **four forecast days** from Open-Meteo, with hourly values for nighttime and daily values for future dates. It selects the requested date, preserving the referenced day across short follow-ups such as `¿Y de noche?`. An unavailable date produces an explicit no-forecast answer rather than reusing current observations. Forecasts require permission to access approximate location and network access.
+
+Conversation turns are stored as typed local IndexedDB records. A **single** shared `memory-retrieval.js` retrieves prior evidence by owner, time range and topic; it rejects the currently asked question as its own memory and refuses unrelated records for explicitly named topics. The active recognized person's records must not leak to another person. This is local-device storage, not a cloud-synchronized memory.
+
+The regression suite includes deterministic time-sensitive examples: weather today versus tomorrow, tomorrow evening hours, unavailable forecast dates, six-language descriptions, a classroom-source definition contrast, and person-isolated memory retrieval.

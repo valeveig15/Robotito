@@ -2,14 +2,15 @@
   "name": "robotito-regression",
   "private": true,
   "scripts": {
-    "test": "npm run test:core && npm run test:planner && npm run test:generative",
+    "test": "npm run test:core && npm run test:planner && npm run test:memory && npm run test:generative",
     "test:core": "node tests/core-regression.js",
     "test:browser": "node tests/browser-regression.js",
-    "test:all": "npm run test:core && npm run test:browser",
+    "test:all": "npm run test:ci",
     "test:planner": "node tests/semantic-planner-regression.js",
     "test:universal": "node tests/universal-system-regression.js",
     "test:generative": "ROBOTITO_TEST_SEED=17 npm run test:universal && ROBOTITO_TEST_SEED=42 npm run test:universal && ROBOTITO_TEST_SEED=99 npm run test:universal",
-    "test:ci": "npm test && npm run test:browser"
+    "test:ci": "npm test && npm run test:browser",
+    "test:memory": "node tests/memory-query-regression.js"
   },
   "devDependencies": {
     "playwright": "1.56.1"
