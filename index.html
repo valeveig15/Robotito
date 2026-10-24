@@ -317,28 +317,28 @@
       <div class="world-controls">
         <div class="hud" aria-label="Estado de Robotito">
           <div class="hud-pill mode-pill"><span>Modo</span><strong id="dayNightLabel">día</strong></div>
-          <div class="hud-pill"><span>Humor</span><strong id="moodLabel">tranquilo</strong></div>
-          <div class="hud-pill"><span>Hambre</span><strong id="hungerLabel">0%</strong></div>
-          <div class="hud-pill"><span>Veo</span><strong id="seenLabel">a nadie</strong></div>
-          <div class="hud-pill"><span>Escucho</span><strong id="heardLabel">silencio</strong></div>
-          <div id="speakerPill" class="hud-pill hidden"><span>Habla</span><strong id="speakerLabel">—</strong></div>
+          <div class="hud-pill"><span data-i18n="mood">Humor</span><strong id="moodLabel">tranquilo</strong></div>
+          <div class="hud-pill"><span data-i18n="hunger">Hambre</span><strong id="hungerLabel">0%</strong></div>
+          <div class="hud-pill"><span data-i18n="vision">Veo</span><strong id="seenLabel">a nadie</strong></div>
+          <div class="hud-pill"><span data-i18n="hearing">Escucho</span><strong id="heardLabel">silencio</strong></div>
+          <div id="speakerPill" class="hud-pill hidden"><span data-i18n="speaker">Habla</span><strong id="speakerLabel">—</strong></div>
         </div>
 
         <div class="quick-actions" aria-label="Acciones con Robotito">
-          <button type="button" data-action="pet">🤍 Acariciar</button>
-          <button type="button" data-action="feed">🍓 Alimentar</button>
-          <button type="button" data-action="hug">🫂 Abrazar</button>
-          <button type="button" data-action="highfive">✋ Chocar los cinco</button>
-          <button type="button" data-action="play">🧸 Jugar</button>
-          <button type="button" data-action="surprise">👻 Asustar</button>
-          <button type="button" data-action="poke">👉 Molestar</button>
+          <button type="button" data-action="pet" data-i18n="pet">🤍 Acariciar</button>
+          <button type="button" data-action="feed" data-i18n="feed">🍓 Alimentar</button>
+          <button type="button" data-action="hug" data-i18n="hug">🫂 Abrazar</button>
+          <button type="button" data-action="highfive" data-i18n="highfive">✋ Chocar los cinco</button>
+          <button type="button" data-action="play" data-i18n="play">🧸 Jugar</button>
+          <button type="button" data-action="surprise" data-i18n="scare">👻 Asustar</button>
+          <button type="button" data-action="poke" data-i18n="poke">👉 Molestar</button>
         </div>
         <form id="robotitoTextForm" class="robotito-text-form">
-          <label for="robotitoTextInput">Escribile a Robotito</label>
+          <label for="robotitoTextInput" data-i18n="typedChat">Escribile a Robotito</label>
           <div class="robotito-text-form-row">
             <input id="robotitoTextInput" type="text" autocomplete="off"
               placeholder="Escribí una pregunta, un pedido o un cambio de idioma…" maxlength="1200" />
-            <button id="robotitoTextSend" type="submit">Enviar</button>
+            <button id="robotitoTextSend" type="submit" data-i18n="send">Enviar</button>
           </div>
         </form>
       </div>
@@ -352,17 +352,17 @@
 
     <aside class="panel">
       <nav class="tabs" aria-label="Panel de Robotito">
-        <button type="button" class="tab active" data-tab="status">Estado</button>
-        <button type="button" class="tab" data-tab="class">Clase</button>
-        <button type="button" class="tab" data-tab="tasks">Tareas</button>
-        <button type="button" class="tab" data-tab="people">Personas</button>
-        <button type="button" class="tab" data-tab="books">Libros</button>
-        <button type="button" class="tab" data-tab="memory">Memoria</button>
+        <button type="button" class="tab active" data-tab="status" data-i18n="status">Estado</button>
+        <button type="button" class="tab" data-tab="class" data-i18n="class">Clase</button>
+        <button type="button" class="tab" data-tab="tasks" data-i18n="tasks">Tareas</button>
+        <button type="button" class="tab" data-tab="people" data-i18n="people">Personas</button>
+        <button type="button" class="tab" data-tab="books" data-i18n="books">Libros</button>
+        <button type="button" class="tab" data-tab="memory" data-i18n="memory">Memoria</button>
       </nav>
 
       <section class="tabpage active" id="tab-status">
         <div class="card intro-card">
-          <h2>¿Qué está pasando?</h2>
+          <h2 data-i18n="whatsHappening">¿Qué está pasando?</h2>
           <p id="statusText">Robotito está esperando que despiertes sus sentidos.</p>
         </div>
 
