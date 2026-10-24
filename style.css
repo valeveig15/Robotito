@@ -3024,3 +3024,13 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
   .robotito.avatar-custom .avatar-character *{animation:none!important}
 }
+
+/* Temporal audio: clap reaction, intentionally distinct from dancing. */
+.robotito.clapping:not(.dancing) .arm-left{animation:robotitoClapLeft .24s ease-in-out 4 alternate}
+.robotito.clapping:not(.dancing) .arm-right{animation:robotitoClapRight .24s ease-in-out 4 alternate}
+@keyframes robotitoClapLeft{from{transform:rotate(18deg)}to{transform:rotate(-39deg) translateX(8px)}}
+@keyframes robotitoClapRight{from{transform:rotate(-18deg)}to{transform:rotate(39deg) translateX(-8px)}}
+.voice-sample-options{margin-top:12px}
+.voice-sample-options label{display:block;margin-top:8px}
+.voice-sample-options button{margin:6px 6px 0 0}
+@media(prefers-reduced-motion:reduce){.robotito.clapping .arm-left,.robotito.clapping .arm-right{animation:none!important}}
