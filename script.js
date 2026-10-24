@@ -3543,6 +3543,24 @@ async function handleSpeech(rawText){
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
   if(handleLanguageCommand(interpreted))return;
+  // Conversation records remain local and attributable to the active profile.
+  const activeOwner=state.currentVoicePerson||state.currentPerson||"local";
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:activeOwner,
+    timestamp:Date.now(),source:"conversation",language:state.languageMode||"es",
+    topic:interpretation?.topic||"",data:{text:String(rawText).slice(0,2000),
+      intent:interpretation?.intent||"unknown",source:interpretation?.source||"none"}})
+    .catch(e=>console.warn("conversation storage",e));
+  if(interpretation?.intent==="memory-search"){
+    try{
+      const recalled=await window.ROBOTITO_MEMORY_QUERY?.retrieve?.(rawText,{owner:activeOwner,
+        language:state.languageMode||"es",limit:3});
+      say(recalled?.answer||"No pude recuperar esos recuerdos.",readingDisplayTime(recalled?.answer||"",4200));
+    }catch(e){
+      console.warn("memory recall",e);
+      say(window.ROBOTITO_I18N?.t?.("noEvidence",responseLanguage())||"No encontré esos recuerdos.");
+    }
+    return;
+  }
   const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
     owner:state.currentPerson||"local",language:state.languageMode||"es"
   });
