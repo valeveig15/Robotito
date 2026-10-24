@@ -3289,7 +3289,7 @@ async function askClass(){
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
   if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
-    const planned=window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
+    const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
     const understood=planned?{...planned,useClassMemory:planned.mayReadClass}:(window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{});
     const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
@@ -3495,7 +3495,7 @@ async function answerWhatLearnedToday(){
 
 let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
 async function handleSpeech(rawText){
-  const interpretation=window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
+  const interpretation=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
   if(interpretation){
     robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
     state.lastDetectedLanguage=interpretation.language;
