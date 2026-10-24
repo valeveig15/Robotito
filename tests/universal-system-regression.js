@@ -56,6 +56,7 @@ const anchor=new Date("2026-10-24T12:00:00");
 equal(temporal.resolve("ayer",{now:anchor}).startDate,"2026-10-23","yesterday");
 equal(temporal.resolve("mañana",{now:anchor}).startDate,"2026-10-25","tomorrow");
 equal(temporal.resolve("la semana pasada",{now:anchor}).startDate,"2026-10-12","previous Monday");
+equal(temporal.resolve("hace una semana",{now:anchor}).startDate,"2026-10-17","a week ago");
 equal(temporal.resolve("la clase anterior",{now:anchor}).kind,"previous-class","previous class");
 for(const [lang,phrase] of [["es","el martes"],["en","Tuesday"],["fr","mardi"],["de","Dienstag"],["it","martedì"],["pt","terça"]]){
  truth(temporal.resolve(phrase,{now:anchor,language:lang}),"weekday "+lang);
