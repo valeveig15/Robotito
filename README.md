@@ -16,7 +16,7 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - Si no ve ni escucha a nadie, primero se aburre, luego cabecea y finalmente se duerme.
 - A las 3 horas sin comer aparece hambre; a las 4 horas se enoja por hambre.
 - Si detecta mano cerca de la boca y movimiento compatible con estar comiendo, intenta comer contigo.
-- La detección de música usa duración, distribución espectral y planitud para distinguir mejor música de ruido.
+- La detección acústica combina duración, bandas espectrales, armonicidad y periodicidad; las reacciones dudosas se inhiben.
 
 ### Personas, memoria y cumpleaños
 - Registro facial con múltiples muestras y perfil de voz.
@@ -24,9 +24,9 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - Relación individual por cariño, confianza, miedo y fastidio.
 - Saludos variados según persona y vínculo, evitando repetir siempre la misma frase.
 - Memoria automática de lo que escucha.
-- La memoria, transcripciones y materiales grandes se guardan en IndexedDB, con fallback compatible a localStorage.
+- La memoria extensa, transcripciones, libros y materiales grandes se almacenan en IndexedDB con migraciones versionadas. localStorage se limita a preferencias pequeñas y datos históricos antes de migrar.
 - Cumpleaños con torta y confeti durante 5 segundos y regreso automático a la vista normal.
-- Los datos de la persona “aaa” se purgan automáticamente de versiones antiguas y actuales.
+- Robotito no elimina personas o recuerdos automáticamente por su nombre.
 
 ### Preguntas y conversación
 - Preguntas personales: nombre de Robotito, nombre de la persona reconocida, humor, hambre, sueño, fecha, hora, recuerdos, etc.
@@ -91,21 +91,29 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - Intenta reconocer columnas de tarea, materia, fecha y estado.
 - Si llevás más de 20 minutos con Robotito y hay pendientes, te recuerda que tenés cosas para hacer.
 
+## Idiomas y voces
+
+Robotito permite seleccionar español, inglés, portugués, francés, italiano y alemán desde el menú o por instrucciones en texto/voz. Dispone de diez perfiles de tono y ritmo, condicionados por las voces que tenga el dispositivo. La traducción de algunos mensajes dinámicos heredados todavía está en proceso; la cobertura concreta está documentada en `TESTING.md`.
+
 ## Arquitectura
 
-La lógica nueva sigue un flujo único:
-
-**entender la intención → decidir profundidad → buscar evidencia o ejecutar acción → responder**
+El planificador estructurado sigue: **normalizar → idioma → contexto → intención → entidades y fechas → autorización de fuente → profundidad → acción/respuesta → validación**. Cuando el navegador dispone de un modelo de lenguaje local compatible, puede usarlo para refinar formulaciones no previstas; en los demás casos usa un planificador determinista.
 
 Los módulos principales incluyen:
 
-- `script.js`: estado general, voz, cámara, memoria y UI.
+- `script.js`: integración del estado, voz, cámara, memoria y UI.
+- `semantic-planner.js`: análisis central y planificación con contexto.
+- `nlu-temporal.js`: interpretación compartida del tiempo en seis idiomas.
+- `i18n.js`: diccionario de interfaz y comandos de idioma.
+- `voice-system.js`: diez perfiles de voz sintética, consentimiento y eliminación de muestras.
+- `audio-perception.js`: evidencia acústica temporal y umbrales de reacción.
 - `class-organizer.js`: organización de clases y materiales.
 - `class-verification.js`: captura, hablante y verificación.
 - `class-exercises.js`: recuperación y explicación de ejercicios.
 - `spoken-math.js`: matemática hablada.
 - `robotito-vnext.js`: router central, circunferencias, objetos y microcomportamientos.
-- `robotito-store.js`: almacenamiento durable con IndexedDB.
+- `robotito-store.js`: IndexedDB versionada con registros tipados, audio binario, migraciones, búsquedas y auditoría.
+- `TESTING.md`: contratos comprobados, batería generativa y limitaciones verificables.
 - `presidents.js`: presidentes actuales e históricos mediante Wikidata.
 - `web-knowledge.js`: conocimiento factual de respaldo.
 - `video-material.js`: transcripciones, captura autorizada de pestañas y observaciones visuales de videos.
@@ -133,14 +141,14 @@ Desde una terminal:
 ```bash
 npm ci
 npx playwright install chromium
-npm run test:all
+npm run test:ci
 ```
 
 ## Privacidad
 
 Los datos personales de Robotito se almacenan localmente en el navegador. Las caras registradas, perfiles de voz, cumpleaños, relaciones, recuerdos, clases y materiales no se publican en GitHub.
 
-El micrófono puede guardar transcripciones automáticamente. En Modo Clase, si la grabación está habilitada por el navegador, el audio de la clase también queda almacenado localmente en ese dispositivo.
+El micrófono puede guardar transcripciones automáticamente. En Modo Clase, si la grabación está habilitada por el navegador, el audio queda almacenado localmente en ese dispositivo. Las muestras voluntarias de voz no clonan identidades, requieren consentimiento y pueden borrarse. Algunos servicios opcionales de traducción y búsqueda sí consultan recursos externos; evitá introducir información privada en consultas que requieran traducción en línea.
 
 ## Tecnologías
 

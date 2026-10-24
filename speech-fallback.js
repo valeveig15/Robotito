@@ -54,7 +54,7 @@
     return modelPromise;
   }
 
-  function normalizeLang(lang){return lang==="en"?"en":lang==="pt"?"pt":"es";}
+  function normalizeLang(lang){return ["es","en","pt","fr","it","de"].includes(lang)?lang:"es";}
   function statusText(es,en,pt){return language==="en"?en:language==="pt"?pt:es;}
 
   function prime(lang="es",statusCb){
@@ -127,7 +127,7 @@
       status(statusText("Entendiendo…","Understanding…","Entendendo…"),"processing");
       const opts={
         task:"transcribe",
-        language:language==="en"?"english":language==="pt"?"portuguese":"spanish",
+        language:({es:"spanish",en:"english",pt:"portuguese",fr:"french",it:"italian",de:"german"})[language]||"spanish",
         chunk_length_s:20,
         stride_length_s:3,
         num_beams:4,

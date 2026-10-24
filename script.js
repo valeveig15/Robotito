@@ -105,6 +105,8 @@ const state = {
   voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
   voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
   voiceRate: Number(localStorage.getItem("robotito.voiceRate.v1")||0.82),
+  voiceStyle: localStorage.getItem("robotito.voiceStyle.v1")||"natural",
+  nextResponseLanguage: null,
   languageMode: "",
   lastDetectedLanguage: "es",
   autoListenLanguage: "es",
@@ -232,13 +234,13 @@ function cleanSpeechText(text){
     .trim();
 }
 function responseLanguage(){
-  return state.languageMode==="en"?"en":state.languageMode==="pt"?"pt":"es";
+  return state.nextResponseLanguage||state.languageMode||"es";
 }
 function languageLocale(lang){
-  return lang==="en"?"en-US":lang==="pt"?"pt-BR":"es-UY";
+  return window.ROBOTITO_I18N?.locale?.(lang)||"es-UY";
 }
 function languageLabel(lang){
-  return lang==="en"?"English":lang==="pt"?"Português":"Español";
+  return ({es:"Español",en:"English",pt:"Português",fr:"Français",it:"Italiano",de:"Deutsch"})[lang]||"Español";
 }
 function chooseDefaultVoice(voices,targetLang="es"){
   const pref=targetLang==="en"?/^en([-_]|$)/i:targetLang==="pt"?/^pt([-_]|$)/i:/^es([-_]|$)/i;
@@ -262,7 +264,7 @@ function populateVoiceSelect(){
   const select=$("#voiceSelect");
   if(!select||!("speechSynthesis" in window))return;
   const all=speechSynthesis.getVoices();
-  const supported=all.filter(v=>/^(es|en|pt)([-_]|$)/i.test(v.lang||""));
+  const supported=all.filter(v=>/^(es|en|pt|fr|it|de)([-_]|$)/i.test(v.lang||""));
   const voices=supported.length?supported:all;
   const previous=state.voiceURI;
   select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
@@ -409,12 +411,15 @@ function speakResponse(text,forcedLang=null){
   const voices=speechSynthesis.getVoices();
   const selected=voices.find(v=>v.voiceURI===state.voiceURI);
   const selectedMatches=voiceMatchesLanguage(selected,lang);
-  const chosen=selectedMatches?selected:chooseDefaultVoice(voices,lang);
-  if(chosen)utter.voice=chosen;
-  utter.lang=chosen?.lang||languageLocale(lang);
-  utter.pitch=clamp(state.voicePitch,.5,1.1);
-  utter.rate=clamp(state.voiceRate,.65,1.1);
-  utter.volume=.92;
+  const chosen=selectedMatches?selected:window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,state.voiceURI)||chooseDefaultVoice(voices,lang);
+  window.ROBOTITO_VOICE_SYSTEM?.configureUtterance?.(utter,{style:state.voiceStyle,language:lang,voices,voiceURI:chosen?.voiceURI,basePitch:state.voicePitch/.65,baseRate:state.voiceRate/.82});
+  if(!window.ROBOTITO_VOICE_SYSTEM){
+    if(chosen)utter.voice=chosen;
+    utter.lang=chosen?.lang||languageLocale(lang);
+    utter.pitch=clamp(state.voicePitch,.5,1.8);
+    utter.rate=clamp(state.voiceRate,.5,1.5);
+    utter.volume=.92;
+  }
   const done=()=>{
     state.speaking=false;
     if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
@@ -461,7 +466,10 @@ function scheduleSpeechBubbleHide(token,deadline){
 const SPEECH_LANGUAGE_HINTS={
   es:["el","la","los","las","un","una","que","como","cual","donde","cuando","quien","porque","para","por","con","sin","del","al","pero","estoy","esta","estas","este","eso","aqui","ahora","muy","mas","tengo","tenes","tiene","quiero","puedo","puede","vamos","gracias","hola","bien","hambre","sueno","triste","feliz","asustado","enojado","caricia","mimos","comida","jugar","abrazo","panda","robotito"],
   en:["the","a","an","what","which","where","when","who","why","how","because","for","with","without","but","i","i'm","my","you","your","we","it","is","are","am","this","that","here","now","very","have","has","want","can","could","will","would","please","thanks","hello","good","yes","not","really","like","love","gentle","pats","ready","help","hungry","sleepy","sad","happy","scared","angry","hug","play","food","robotito"],
-  pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"]
+  pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"],
+  fr:["je","tu","nous","vous","avec","pour","dans","est","suis","sont","bonjour","merci","comment","pourquoi","quoi","quel","quelle","aujourd","demain","hier","livre","cours","exercice","s'il","plait"],
+  it:["io","tu","noi","voi","con","per","nel","sono","come","perche","grazie","ciao","buongiorno","domani","ieri","libro","lezione","esercizio","spiega","aiuto"],
+  de:["ich","du","wir","sie","mit","fur","und","aber","ist","sind","wie","was","warum","danke","hallo","guten","morgen","gestern","heute","buch","aufgabe","unterricht","bitte"]
 };
 function speechHintScore(normalized,hints){
   const padded=" "+normalized+" ";
@@ -474,10 +482,15 @@ function detectGeneratedSpeechLanguage(text){
   const scores={
     es:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.es),
     en:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.en),
-    pt:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.pt)
+    pt:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.pt),
+    fr:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.fr),
+    it:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.it),
+    de:speechHintScore(normalized,SPEECH_LANGUAGE_HINTS.de)
   };
   if(/[¿¡ñ]/i.test(raw))scores.es+=3;
-  if(/[ãõç]/i.test(raw))scores.pt+=3;
+  if(/[ãõ]/i.test(raw))scores.pt+=3;
+  if(/[œêèàû]/i.test(raw))scores.fr+=3;
+  if(/[äöüß]/i.test(raw))scores.de+=3;
   if(/\b(?:the|this|that|with|without|please|thanks|hello|i'm|you're|don't|can't)\b/i.test(raw))scores.en+=2;
   if(/\b(?:para|porque|estoy|tengo|quiero|puedo|gracias|hola|mimos|abrazo)\b/i.test(normalized))scores.es+=2;
   if(/\b(?:voce|obrigado|ola|estou|tenho|quero|carinho|abraco)\b/i.test(normalized))scores.pt+=2;
@@ -502,6 +515,9 @@ function speechNeedsLocalization(text,target=responseLanguage(),forcedLang=null)
 function localizedSpeechFallback(target){
   if(target==="en")return "I understood you, but I couldn't prepare that answer in English. Please try again.";
   if(target==="pt")return "Eu entendi você, mas não consegui preparar essa resposta em português. Tente novamente.";
+  if(target==="fr")return "Je t'ai compris, mais je n'ai pas pu préparer la réponse en français.";
+  if(target==="it")return "Ho capito, ma non sono riuscito a preparare la risposta in italiano.";
+  if(target==="de")return "Ich habe dich verstanden, aber ich konnte die Antwort nicht auf Deutsch vorbereiten.";
   return "Te entendí, pero no pude preparar esa respuesta en español. Probá de nuevo.";
 }
 async function localizeGeneratedSpeech(text,target=responseLanguage()){
@@ -525,6 +541,9 @@ async function localizeGeneratedSpeech(text,target=responseLanguage()){
 function commitSpeechMessage(text,ms,lang,token){
   if(token!==state.speechBubbleToken)return;
   state.lastSaid=text;
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
+    source:"assistant",timestamp:Date.now(),language:lang||state.languageMode||"es",
+    data:{role:"assistant",text}}).catch(e=>console.warn("reply memory",e));
   const b=$("#speechBubble");
   if(!b)return;
   b.textContent=text;
@@ -535,6 +554,8 @@ function commitSpeechMessage(text,ms,lang,token){
 }
 function say(text, ms=3000, spokenLang=null){
   const target=spokenLang||responseLanguage();
+  // A one-response language override must not leak into later replies.
+  if(state.nextResponseLanguage&&!spokenLang)state.nextResponseLanguage=null;
   const b=$("#speechBubble");
   if(!b)return;
   const token=++state.speechBubbleToken;
@@ -702,7 +723,7 @@ function batteryAlertMessage(threshold,lang=responseLanguage()){
 }
 function announceBatteryAlert(threshold){
   if(!threshold)return;
-  if(!["es","en","pt"].includes(state.languageMode)){
+  if(!window.ROBOTITO_I18N?.supported?.(state.languageMode)){
     state.pendingBatteryAlert=threshold;
     return;
   }
@@ -982,7 +1003,7 @@ async function startSenses(){
       $("#systemStatus").textContent="Cámara y micrófono activos.";
     }
 
-    $("#startBtn").textContent=state.languageMode==="en"?"Senses active":"Sentidos activos";
+    $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("active",state.languageMode)||"Sentidos activos";
     $("#startBtn").disabled=true;
 
     // Vision loads after audio has already begun.
@@ -1137,77 +1158,73 @@ function setupAudio(stream){
     state.audioContext=ctx;
     const src=ctx.createMediaStreamSource(stream);
     const analyser=ctx.createAnalyser();
-    analyser.fftSize=1024;
-    analyser.smoothingTimeConstant=.78;
+    analyser.fftSize=2048;
+    analyser.smoothingTimeConstant=.62;
     src.connect(analyser);
     state.analyser=analyser;
-
     const freq=new Uint8Array(analyser.frequencyBinCount);
     const time=new Uint8Array(analyser.fftSize);
-    let sustainedMusic=0, sustainedNoise=0;
-
-    const tick=()=>{
+    const perception=window.ROBOTITO_AUDIO_PERCEPTION?.create?.({
+      onEvent:event=>{
+        if(state.classMode||state.sleeping||state.speaking)return;
+        if(event.kind==="clap"&&event.confidence>=.85){
+          robot.classList.add("clapping");
+          setTimeout(()=>robot.classList.remove("clapping"),1100);
+        }
+        if(event.kind==="sneeze"&&event.confidence>=.93){
+          sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",responseLanguage())||"¡Salud!",responseLanguage());
+        }
+      }
+    });
+    let lastTick=0,prevSpectrum=null;
+    const tick=(at=0)=>{
+      if(!state.started||state.audioContext!==ctx){
+        try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
+        return;
+      }
+      requestAnimationFrame(tick);
+      if(at-lastTick<45)return;
+      lastTick=at;
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
-
-      let sumSq=0;
-      for(const v of time){const n=(v-128)/128;sumSq+=n*n;}
-      const rms=Math.sqrt(sumSq/time.length);
+      let power=0;
+      for(const v of time){const sample=(v-128)/128;power+=sample*sample;}
+      const rms=Math.sqrt(power/time.length);
       state.audioLevel=rms;
-
-      const low=[...freq.slice(2,26)];
-      const mid=[...freq.slice(26,120)];
-      const high=[...freq.slice(120,260)];
-      const avg=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
-      const lowE=avg(low), midE=avg(mid), highE=avg(high);
-      const totalE=lowE+midE+highE+1;
-      const centroid=(lowE*1+midE*2+highE*3)/totalE;
-      const flat=spectralFlatness([...freq.slice(4,220)]);
-      state.recentAudioFeatures.push({rms,centroid,flat,t:Date.now()});
-      state.recentAudioFeatures=state.recentAudioFeatures.filter(x=>Date.now()-x.t<3500);
-      const activeBands=[lowE,midE,highE].filter(v=>v>18).length;
-
+      const mean=(start,end)=>{
+        let s=0,n=0;for(let i=start;i<end;i++){s+=freq[i]||0;n++;}
+        return s/Math.max(n,1);
+      };
+      const low=mean(2,48),mid=mean(48,250),high=mean(250,650);
+      const flat=spectralFlatness([...freq.slice(4,600)]);
+      const zcr=zeroCrossingRate(time);
+      let peaks=0,energy=0;
+      for(let i=5;i<600;i++){
+        energy+=freq[i];
+        if(freq[i]>freq[i-1]*1.18&&freq[i]>freq[i+1]*1.18&&freq[i]>36)peaks++;
+      }
+      const harmonic=clamp(peaks/40,0,1)*(1-clamp(flat,0,1));
+      const centroid=clamp((low+mid*2+high*3)/(3*(low+mid+high+1)),0,1);
       if(rms<Math.max(.035,state.ambientRms*1.8)){
         state.ambientRms=state.ambientRms*.96+rms*.04;
       }
       state.voiceThreshold=clamp(Math.max(.028,state.ambientRms*2.35),.028,.07);
-
-      if(!state.speaking && rms>state.voiceThreshold && Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
+      if(!state.speaking&&rms>state.voiceThreshold&&Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
         state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
         state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<45000);
       }
-
-      const likelyMusic = rms>.06 && activeBands>=2 && flat>.09 && flat<.66 && midE>19;
-      const likelyNoise = rms>.05 && (flat>=.72 || activeBands<=1);
-
-      if(likelyMusic){
-        sustainedMusic=Math.min(100,sustainedMusic+1.3);
-        sustainedNoise=Math.max(0,sustainedNoise-1);
-      }else{
-        sustainedMusic=Math.max(0,sustainedMusic-1.5);
-      }
-      if(likelyNoise) sustainedNoise=Math.min(100,sustainedNoise+1.1);
-      else sustainedNoise=Math.max(0,sustainedNoise-1);
-
-      if(rms<.025){
-        state.audioKind="silencio";
-        sustainedMusic=Math.max(0,sustainedMusic-2);
-      }else if(sustainedMusic>34){
-        state.audioKind="música";
-      }else if(sustainedNoise>15){
-        state.audioKind="ruido";
-      }else{
-        state.audioKind="sonido";
-      }
-
-      state.musicConfidence=sustainedMusic;
-      $("#heardLabel").textContent=state.audioKind;
-      if(rms>.04) state.lastHeardAt=Date.now();
-
-      robot.classList.toggle("dancing",state.audioKind==="música" && sustainedMusic>42 && !state.sleeping);
-      requestAnimationFrame(tick);
+      const status=perception?.process({rms,flat,zcr,low,mid,high,centroid,harmonic},
+        {now:Date.now(),suppress:state.speaking||state.classMode||state.sleeping||document.hidden})
+        ||{kind:"unknown",musicConfidence:0};
+      const kinds={silence:"silencio",music:"música",noise:"ruido",unknown:"sonido"};
+      state.audioKind=kinds[status.kind]||"sonido";
+      state.musicConfidence=Math.round((status.musicConfidence||0)*100);
+      const heard=$("#heardLabel");if(heard)heard.textContent=state.audioKind;
+      if(rms>.04)state.lastHeardAt=Date.now();
+      robot.classList.toggle("dancing",status.kind==="music"&&status.musicConfidence>.75&&!state.sleeping&&!state.classMode&&!state.speaking);
+      prevSpectrum=freq.slice();
     };
-    tick();
+    requestAnimationFrame(tick);
   }catch(e){console.warn("audio",e);}
 }
 
@@ -1427,8 +1444,12 @@ function autoRemember(text){
   const person=state.currentVoicePerson||state.currentPerson||"persona no reconocida";
   const last=state.memories[state.memories.length-1];
   if(last && last.text.toLowerCase()===clean.toLowerCase() && Date.now()-last.at<15000)return;
-  state.memories.push({person,text:clean,at:Date.now(),source:"auto"});
+  const savedAt=Date.now();
+  state.memories.push({person,text:clean,at:savedAt,source:"auto"});
   save(KEYS.memories,state.memories);
+  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
+    source:"speech",timestamp:savedAt,language:state.languageMode||"es",data:{person,text:clean,source:"auto"}})
+    .catch(e=>console.warn("typed memory",e));
   renderMemories();
 }
 
@@ -1813,7 +1834,7 @@ function finishStartupAvatar(id){
   }
   const mode=avatarLanguage();
   $("#startBtn").disabled=false;
-  $("#startBtn").textContent=mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos";
+  $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("start",mode)||"Despertar sentidos";
   $("#statusText").textContent=mode==="en"
     ?"Robotito is ready to wake up."
     :mode==="pt"?"Robotito está pronto para despertar.":speciesIntroduction(id);
@@ -1822,41 +1843,40 @@ function finishStartupAvatar(id){
 }
 
 function setLanguageMode(mode){
-  if(!["es","en","pt"].includes(mode))return;
+  if(!window.ROBOTITO_I18N?.supported?.(mode))return;
   state.languageMode=mode;
   document.documentElement.lang=mode;
   state.lastDetectedLanguage=mode;
   state.autoListenLanguage=mode;
-  localStorage.setItem("robotito.languageMode.v1",mode);
+  if(!setLanguageMode.sessionOnly)localStorage.setItem("robotito.languageMode.v1",mode);
   if($("#languageMode"))$("#languageMode").value=mode;
+  window.ROBOTITO_I18N?.apply?.(mode);
   populateVoiceSelect();
   if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
 }
 function chooseStartupLanguage(mode){
-  if(!["es","en","pt"].includes(mode))return;
+  if(!window.ROBOTITO_I18N?.supported?.(mode))return;
   setLanguageMode(mode);
   document.documentElement.lang=mode;
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("avatar");
 }
 function handleLanguageCommand(text){
-  if(/(hablame|habla|responde|contesta).*(ingles|english)|speak english|answer in english|fale.*ingles|fale.*ingl[eê]s/.test(text)){
-    setLanguageMode("en");
-    sayInLanguage("Sure. I'll speak English from now on.","en");
-    return true;
+  const parsed=window.ROBOTITO_I18N?.parseCommand?.(text);
+  if(!parsed)return false;
+  const previous=state.languageMode;
+  if(parsed.scope==="once"){
+    const confirmation=window.ROBOTITO_I18N.t("languageSet",parsed.language);
+    sayInLanguage(confirmation,parsed.language);
+    state.nextResponseLanguage=parsed.language;
+  }else{
+    setLanguageMode.sessionOnly=parsed.scope==="session";
+    setLanguageMode(parsed.language);
+    setLanguageMode.sessionOnly=false;
+    sayInLanguage(window.ROBOTITO_I18N.t("languageSet",parsed.language),parsed.language);
   }
-  if(/(hablame|habla|responde|contesta).*(espanol|español|castellano)|speak spanish|answer in spanish|fale.*espanhol/.test(text)){
-    setLanguageMode("es");
-    sayInLanguage("Perfecto. Voy a hablar en español.","es");
-    return true;
-  }
-  if(/(hablame|habla|responde|contesta).*(portugues|portugu[eê]s)|speak portuguese|answer in portuguese|fale.*portugu[eê]s/.test(text)){
-    setLanguageMode("pt");
-    sayInLanguage("Perfeito. Vou falar em português a partir de agora.","pt");
-    return true;
-  }
-  return false;
+  return true;
 }
 
 const QUICK_TRANSLATIONS=[
@@ -1878,10 +1898,8 @@ const QUICK_TRANSLATIONS=[
 const translationCache=new Map();
 function targetLanguageFromName(name){
   const n=normalizeText(name);
-  if(["ingles","english","inglês","inglese"].includes(n))return "en";
-  if(["portugues","portuguese","português"].includes(n))return "pt";
-  if(["espanol","español","castellano","spanish","espanhol"].includes(n))return "es";
-  return null;
+  const names={es:["espanol","castellano","spanish"],en:["ingles","english"],pt:["portugues","portuguese"],fr:["frances","french","francais"],it:["italiano","italian"],de:["aleman","deutsch","german"]};
+  return Object.keys(names).find(code=>names[code].includes(n))||null;
 }
 function localTranslate(phrase,source,target){
   const n=normalizeText(phrase);
@@ -3280,7 +3298,8 @@ async function askClass(){
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
   if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
-    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{};
+    const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
+    const understood=planned?{...planned,useClassMemory:planned.mayReadClass}:(window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{});
     const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
     if(understood.useClassMemory){
@@ -3483,7 +3502,31 @@ async function answerWhatLearnedToday(){
   say(answer.slice(0,320),5600);
 }
 
+let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
 async function handleSpeech(rawText){
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
+    source:"dialogue",timestamp:Date.now(),language:state.languageMode||"es",
+    data:{role:"user",text:String(rawText||"").slice(0,1200)}}).catch(e=>console.warn("dialogue memory",e));
+  const interpretation=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
+  if(interpretation){
+    robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
+    state.lastDetectedLanguage=interpretation.language;
+    if(interpretation.needsClarification){
+      say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+      return;
+    }
+    if(interpretation.actions.length>1){
+      const first=interpretation.actions[0],rest=interpretation.actions.slice(1);
+      await handleSpeech(first.text);
+      for(const action of rest){
+        if(action.intent==="quiz"){
+          const concept=first.text.replace(/^.*?sobre\s+/i,"").replace(/[?.!]+$/,"").trim();
+          say("Para comprobar si entendiste: ¿cómo explicarías con tus palabras "+(concept||"la idea principal")+"?");
+        }else await handleSpeech(action.text);
+      }
+      return;
+    }
+  }
   const interpreted=state.languageMode==="es"?normalizeSpanishSpeechIntent(rawText):rawText;
   const text=normalizeText(interpreted);
   const who=state.currentVoicePerson||state.currentPerson;
@@ -3492,12 +3535,18 @@ async function handleSpeech(rawText){
     say("Mi dulce creadora, la más bella a toda hora; si digo otra cosa… me borra sin demora.");
     return;
   }
-  const detectedLang=responseLanguage(rawText);
-  const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
+  const detectedLang=responseLanguage();
+  const legacyUnderstanding=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
+  const understood=interpretation?{...legacyUnderstanding,...interpretation,useClassMemory:interpretation.mayReadClass}:legacyUnderstanding;
 
   // Silence is a voice command, so it takes priority over questions and other actions.
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
+  if(handleLanguageCommand(interpreted))return;
+  const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
+    owner:state.currentPerson||"local",language:state.languageMode||"es"
+  });
+  if(recalled?.handled){say(recalled.text,readingDisplayTime(recalled.text));return;}
 
   // Exact exercise requests from uploaded academic material have top priority.
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
@@ -3531,7 +3580,6 @@ async function handleSpeech(rawText){
   if(drawRequestedThing(interpreted,detectedLang))return;
   if(showRequestedObject(interpreted,detectedLang))return;
   if(await handleSayInLanguageCommand(interpreted))return;
-  if(handleLanguageCommand(text)) return;
   if(handleSocialSpeech(text)) return;
   if(/\b(abrazame|abrazá|abraza|dame un abrazo|quiero un abrazo|hug me)\b/.test(text)){hugRobot();return;}
   if(/\b(choca los cinco|chocame los cinco|dame cinco|high five)\b/.test(text)){highFiveRobot();return;}
@@ -3579,9 +3627,12 @@ async function handleSpeech(rawText){
     }
   }
 
-  if((text.includes("libro")||text.includes("recomend")) && text.includes("ayer")){
-    const last=load(KEYS.lastBook,null);
-    say(last?`Ayer te había recomendado “${last.title}”`:"No encuentro una recomendación anterior.");
+  if(/\b(?:libro|book|livro|livre|buch)\b/.test(text)&&/\b(?:recomend|recommend|suger)/.test(text)&&/\b(?:ayer|semana pasada|last week|yesterday)/.test(text)){
+    const interval=window.ROBOTITO_TEMPORAL?.resolve?.(text,{language:state.languageMode||"es"});
+    const rows=await window.ROBOTITO_STORE?.queryRecords?.({type:"recommendations",owner:state.currentPerson||"local",
+      after:interval?.start,before:interval?.end,limit:5})||[];
+    const remembered=rows[0]?.data?.title;
+    say(remembered?"Te recomendé «"+remembered+"».":"No encontré una recomendación guardada para esa fecha.");
     return;
   }
 
@@ -3721,8 +3772,13 @@ function handleSocialSpeech(text){
   const enName=known?", "+known:"";
 
   if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){
-    const lang=responseLanguage();
-    sayInLanguage(lang==="en"?"Bless you!":lang==="pt"?"Saúde!":"¡Salud!",lang);
+    // Consecutive ASR fragments from the same sneeze get one reaction.
+    const now=Date.now();
+    if(now-(handleSocialSpeech.lastBlessAt||0)>=4500){
+      handleSocialSpeech.lastBlessAt=now;
+      const lang=responseLanguage();
+      sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",lang)||"¡Salud!",lang);
+    }
     return true;
   }
   if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
@@ -4557,8 +4613,12 @@ function renderMemories(){
 function rememberManual(){
   const text=$("#memoryInput").value.trim();
   if(!text)return;
-  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at:Date.now(),source:"manual"});
+  const at=Date.now();
+  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at,source:"manual"});
   save(KEYS.memories,state.memories);
+  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
+    source:"manual",timestamp:at,language:state.languageMode||"es",data:{text,person:state.currentPerson||"local"}})
+    .catch(e=>console.warn("typed manual memory",e));
   $("#memoryInput").value="";
   renderMemories();
   say("Listo. Eso también lo guardo.");
@@ -4803,6 +4863,9 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
   const first=results[0]?.book;
   if(!first)return;
   save(KEYS.lastBook,{title:first.title,at:Date.now(),prompt});
+  window.ROBOTITO_STORE?.putRecord?.({type:"recommendations",owner:state.currentPerson||"local",
+    source:"books",timestamp:Date.now(),topic:prompt,language:state.languageMode||"es",
+    data:{title:first.title,authors:first.authors||[],prompt}}).catch(e=>console.warn("recommendation memory",e));
   const intro=localFallback
     ? '<p class="recommendation-note">No pude consultar el catálogo en línea, así que usé una selección disponible en Robotito.</p>'
     : "";
@@ -4888,6 +4951,17 @@ function ambientMood(){
 }
 
 function bindUI(){
+  $("#robotitoTextForm")?.addEventListener("submit",async event=>{
+    event.preventDefault();
+    const entry=$("#robotitoTextInput");
+    const question=entry?.value.trim();
+    if(!question)return;
+    entry.value="";
+    $("#transcript").textContent=question;
+    autoRemember(question);
+    try{await handleSpeech(question);}
+    catch(error){console.warn("typed question",error);say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"No pude procesar eso.");}
+  });
   document.querySelectorAll("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
   $("#avatarChoices")?.addEventListener("click",event=>{
     const choice=event.target.closest("[data-avatar-id]");
@@ -4899,9 +4973,7 @@ function bindUI(){
     const mode=e.target.value;
     setLanguageMode(mode);
     document.documentElement.lang=mode;
-    $("#startBtn").textContent=state.started
-      ?(mode==="en"?"Senses active":mode==="pt"?"Sentidos ativos":"Sentidos activos")
-      :(mode==="en"?"Wake up senses":mode==="pt"?"Despertar sentidos":"Despertar sentidos");
+    $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
     applyDayNightMode(new Date());
   });
   $("#voiceEnabled")?.addEventListener("change",e=>{
@@ -4925,9 +4997,43 @@ function bindUI(){
     state.voiceRate=Number(e.target.value);
     localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));
   });
+  $("#voiceStyle")?.addEventListener("change",e=>{
+    state.voiceStyle=e.target.value;
+    localStorage.setItem("robotito.voiceStyle.v1",state.voiceStyle);
+  });
+  $("#deleteVoiceSample")?.addEventListener("click",async()=>{
+    const msg=$("#voiceSampleStatus");
+    try{await window.ROBOTITO_VOICE_SYSTEM?.deleteProfile?.();if(msg)msg.textContent="Muestra eliminada.";}
+    catch(e){if(msg)msg.textContent=e.message;}
+  });
+  $("#recordVoiceSample")?.addEventListener("click",async()=>{
+    const msg=$("#voiceSampleStatus");
+    const third=$("#voiceSampleThirdParty")?.checked;
+    const consent=$("#voiceSampleConsent")?.checked;
+    const name=$("#voiceSampleName")?.value.trim();
+    if(third&&(!consent||!name)){if(msg)msg.textContent="Para grabar a otra persona, indicá su nombre y confirmá su consentimiento explícito.";return;}
+    if(!consent){if(msg)msg.textContent="Confirmá el consentimiento antes de grabar.";return;}
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      const recorder=new MediaRecorder(stream),parts=[];
+      recorder.ondataavailable=e=>{if(e.data?.size)parts.push(e.data);};
+      recorder.onstop=async()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        try{
+          await window.ROBOTITO_VOICE_SYSTEM.saveProfileFromRecording(new Blob(parts,{type:recorder.mimeType||"audio/webm"}),
+            {subject:third?"other":"self",explicitConsent:consent,consentLabel:third?name:"self"});
+          if(msg)msg.textContent="Muestra guardada de forma local. La voz es sintética: no se clona ni imita a la persona.";
+        }catch(e){if(msg)msg.textContent=e.message;}
+      };
+      recorder.start();
+      if(msg)msg.textContent="Grabando 3 segundos…";
+      setTimeout(()=>{if(recorder.state==="recording")recorder.stop();},3000);
+    }catch(e){stream?.getTracks?.().forEach(t=>t.stop());if(msg)msg.textContent="No pude grabar la muestra: "+e.message;}
+  });
   $("#testVoiceBtn")?.addEventListener("click",()=>{
     const lang=responseLanguage();
-    const text=lang==="en"?"My name is Robotito. I'm ready to help you.":lang==="pt"?"Meu nome é Robotito. Estou pronto para ajudar você.":"Mi nombre es Robotito. Estoy listo para ayudarte.";
+    const text=window.ROBOTITO_I18N?.t?.("greeting",lang)||"¡Hola! Soy Robotito.";
     speakResponse(text,lang);
   });
   $("#enrollBtn").addEventListener("click",enrollPerson);
@@ -4938,13 +5044,15 @@ function bindUI(){
   $("#refreshPeopleBtn").addEventListener("click",renderPeople);
   $("#rememberBtn").addEventListener("click",rememberManual);
 
-  $("#clearMemoryBtn").addEventListener("click",()=>{
-    if(confirm("¿Querés borrar todos los recuerdos que Robotito guardó?")){
+  $("#clearMemoryBtn").addEventListener("click",async()=>{
+    if(!confirm("¿Querés borrar todos los recuerdos que Robotito guardó?"))return;
+    try{
+      await window.ROBOTITO_STORE?.clearRecordsByType?.("memories");
+      await window.ROBOTITO_STORE?.set?.(KEYS.memories,[]);
       state.memories=[];
-      save(KEYS.memories,[]);
       renderMemories();
       toast("Recuerdos borrados.");
-    }
+    }catch(e){console.warn("clear memories",e);toast("No pude borrar toda la memoria del dispositivo.");}
   });
 
   $("#goodreadsHelpBtn")?.addEventListener("click",()=>$("#goodreadsHelp")?.classList.toggle("hidden"));
@@ -5030,6 +5138,8 @@ function purgeNamedPeople(){
   save("robotito.memories.v1",oldMem);
 }
 
+window.ROBOTITO_CHAT={send:handleSpeech,context:()=>robotitoConversationContext};
+
 window.ROBOTITO_SPEECH_QA={
   cleanTranscript:cleanRecognitionTranscript,
   mergeChunks:mergeRecognitionChunks,
@@ -5099,7 +5209,8 @@ document.addEventListener("visibilitychange",()=>{
 async function init(){
   await window.ROBOTITO_STORE?.bootstrap?.(state);
   migrateOldData();
-  purgeNamedPeople();
+  // Do not silently delete people or memories based on their names.
+  await window.ROBOTITO_STORE?.migrateTypedLegacy?.().catch(e=>console.warn("Typed migration",e));
   bindUI();
   bindPandaReferenceViews();
   applyAvatar(state.avatar,{persist:false});
@@ -5127,10 +5238,21 @@ async function init(){
     gate.style.display="";
     gate.classList.remove("hidden");
   }
-  if($("#languageMode"))$("#languageMode").value="es";
+  const savedLanguage=localStorage.getItem("robotito.languageMode.v1");
+  if(window.ROBOTITO_I18N?.supported?.(savedLanguage)){
+    setLanguageMode(savedLanguage);
+    const gateForReturn=$("#languageGate");
+    if(gateForReturn){
+      gateForReturn.hidden=true;gateForReturn.classList.add("hidden");
+      gateForReturn.style.display="none";gateForReturn.setAttribute("aria-hidden","true");
+    }
+    $("#startBtn").disabled=false;
+    $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
+  }else if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
+  if($("#voiceStyle"))$("#voiceStyle").value=state.voiceStyle;
   populateVoiceSelect();
   if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=populateVoiceSelect;
   clockTick();

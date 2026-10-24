@@ -25,6 +25,69 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     }
     if(pageErrors.length)throw new Error("Page errors: "+pageErrors.join(" | "));
 
+    const languageIntegration=await page.evaluate(async()=>{
+      document.querySelector("#voiceEnabled").checked=false;
+      document.querySelector("#voiceEnabled").dispatchEvent(new Event("change"));
+      const entry=document.querySelector("#robotitoTextInput");
+      if(!entry||!window.ROBOTITO_CHAT?.send)throw new Error("Missing typed dialogue");
+      await window.ROBOTITO_CHAT.send("Pasemos a francés");
+      if(document.documentElement.lang!=="fr"||document.querySelector("#languageMode").value!=="fr")
+        throw new Error("French dialogue switching failed");
+      await window.ROBOTITO_CHAT.send("Volvé al español");
+      if(document.documentElement.lang!=="es")throw new Error("Spanish restoration failed");
+      return true;
+    });
+    if(!languageIntegration)throw new Error("Language integration unavailable");
+    const integration=await page.evaluate(async()=>{
+      const store=window.ROBOTITO_STORE;
+      if(!store||!window.ROBOTITO_I18N||!window.ROBOTITO_AUDIO_PERCEPTION)throw new Error("Missing universal runtime modules");
+      const languages=[...document.querySelectorAll("#languageMode option")].map(x=>x.value);
+      if(["es","en","pt","fr","it","de"].some(x=>!languages.includes(x)))throw new Error("Missing language controls");
+      const bytes=new Uint8Array([3,5,7,11,13,17,19,23]);
+      await store.putBlob("browser-test-blob",new Blob([bytes]),{owner:"test",recordId:"browser-test-0"});
+      for(let i=0;i<210;i++){
+        await store.putRecord({id:"browser-test-"+i,type:"memories",owner:"test",topic:"science",
+          timestamp:Date.now()+i,blobId:i===0?"browser-test-blob":null,data:{index:i}});
+      }
+      const rows=await store.queryRecords({type:"memories",owner:"test",limit:500});
+      if(rows.length!==210)throw new Error("IndexedDB search mismatch: "+rows.length);
+      const restored=new Uint8Array(await (await store.getBlob("browser-test-blob")).arrayBuffer());
+      if(bytes.some((x,i)=>x!==restored[i]))throw new Error("Binary round-trip mismatch");
+      const audit=await store.audit();
+      if(audit.invalid.length||audit.missingBlobs.length)throw new Error("Storage audit failure");
+      await Promise.all(Array.from({length:40},(_,i)=>store.set("browser-test-race",i)));
+      if(await store.get("browser-test-race")!==39)throw new Error("Serialized writes lost latest state");
+      await store.remove("browser-test-race");
+      await store.putRecord({id:"relation-parent",type:"memories",owner:"test"});
+      await store.putRecord({id:"relation-child",type:"notes",owner:"test",relatedIds:["relation-parent"]});
+      await store.deleteRecord("relation-parent");
+      if((await store.getRecord("relation-child")).relatedIds.length)throw new Error("Stale relation after deletion");
+      await store.deleteRecord("relation-child");
+      for(let i=0;i<210;i++)await store.deleteRecord("browser-test-"+i);
+      if(await store.getBlob("browser-test-blob"))throw new Error("Cascade deletion failed");
+      const recordId="legacy-audio-test";
+      const oldDb=await new Promise((resolve,reject)=>{
+        const q=indexedDB.open("robotito-class-audio-v1",1);
+        q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);
+      });
+      const fakeAudio=new Blob([new Uint8Array([11,22,33,44,55])],{type:"audio/webm"});
+      await new Promise((resolve,reject)=>{
+        const tx=oldDb.transaction("recordings","readwrite");
+        tx.objectStore("recordings").put({id:recordId,startedAt:Date.now()-1000,
+          endedAt:Date.now(),subject:"Matemática",topic:"combinatoria",blob:fakeAudio});
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+      });
+      oldDb.close();
+      await window.ROBOTITO_CLASS_AUDIO.migrateAudio();
+      const migrated=await store.getRecord("class-audio:"+recordId);
+      if(!migrated||migrated.type!=="audios")throw new Error("Legacy audio migration failed");
+      const bytesAfter=new Uint8Array(await (await store.getBlob(migrated.blobId)).arrayBuffer());
+      if(bytesAfter.join(",")!=="11,22,33,44,55")throw new Error("Legacy audio was modified");
+      await window.ROBOTITO_CLASS_AUDIO.removeRecording(recordId);
+      if(await store.getRecord("class-audio:"+recordId))throw new Error("Audio delete failed");
+      return {records:210,languages:languages.length};
+    });
+    console.log("Robotito browser IndexedDB integration:",JSON.stringify(integration));
     const viewports=[[390,844],[360,740],[844,390],[768,1024]];
     for(const [width,height] of viewports){
       await page.setViewportSize({width,height});

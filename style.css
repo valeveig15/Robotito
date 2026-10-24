@@ -3024,3 +3024,20 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
   .robotito.avatar-custom .avatar-character *{animation:none!important}
 }
+
+/* Temporal audio: clap reaction, intentionally distinct from dancing. */
+.robotito.clapping:not(.dancing) .arm-left{animation:robotitoClapLeft .24s ease-in-out 4 alternate}
+.robotito.clapping:not(.dancing) .arm-right{animation:robotitoClapRight .24s ease-in-out 4 alternate}
+@keyframes robotitoClapLeft{from{transform:rotate(18deg)}to{transform:rotate(-39deg) translateX(8px)}}
+@keyframes robotitoClapRight{from{transform:rotate(-18deg)}to{transform:rotate(39deg) translateX(-8px)}}
+.voice-sample-options{margin-top:12px}
+.voice-sample-options label{display:block;margin-top:8px}
+.voice-sample-options button{margin:6px 6px 0 0}
+@media(prefers-reduced-motion:reduce){.robotito.clapping .arm-left,.robotito.clapping .arm-right{animation:none!important}}
+
+.robotito-text-form{margin-top:12px;padding:8px;border-radius:14px;background:rgba(255,255,255,.50)}
+.robotito-text-form>label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.robotito-text-form-row{display:flex;align-items:stretch;gap:8px}
+.robotito-text-form-row input{flex:1;min-width:0;min-height:42px;padding:8px 12px;border:1px solid #b5a7b8;border-radius:10px;font:inherit}
+.robotito-text-form-row button{flex-shrink:0;min-height:42px;border-radius:10px;padding:8px 14px}
+@media(max-width:440px){.robotito-text-form-row{flex-direction:column}.robotito-text-form-row button{width:100%}}

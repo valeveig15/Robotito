@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261007-lowpoly-panda1" />
+  <link rel="stylesheet" href="style.css?v=20261024-universal1" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -17,12 +17,18 @@
   <script defer src="objects.js"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js"></script>
+  <script defer src="nlu-temporal.js?v=20261024-universal1"></script>
+  <script defer src="i18n.js?v=20261024-universal1"></script>
+  <script defer src="voice-system.js?v=20261024-universal1"></script>
+  <script defer src="audio-perception.js?v=20261024-universal1"></script>
+  <script defer src="memory-retrieval.js?v=20261024-universal2"></script>
+  <script defer src="semantic-planner.js?v=20261024-universal1"></script>
   <script defer src="intent-engine.js?v=20261007-intent1"></script>
-  <script defer src="robotito-store.js"></script>
+  <script defer src="robotito-store.js?v=20261024-universal1"></script>
   <script defer src="presidents.js"></script>
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
-  <script defer src="speech-fallback.js?v=20261006-mobile-speech1"></script>
-  <script defer src="class-audio.js"></script>
+  <script defer src="speech-fallback.js?v=20261024-universal1"></script>
+  <script defer src="class-audio.js?v=20261024-universal1"></script>
   <script defer src="class-organizer.js"></script>
   <script defer src="class-exercises.js"></script>
   <script defer src="class-verification.js"></script>
@@ -30,7 +36,7 @@
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
   <script defer src="species-personality.js?v=20261006-robot1"></script>
-  <script defer src="script.js?v=20261007-lowpoly-panda1"></script>
+  <script defer src="script.js?v=20261024-universal1"></script>
   <script defer src="robotito-vnext.js?v=20261007-intent1"></script>
   <script defer src="video-material.js"></script>
   <script defer src="robotito-tests.js?v=20261007-lowpoly-panda1"></script>
@@ -48,6 +54,9 @@
         <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
         <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
         <button type="button" class="primary" data-start-language="pt">🇧🇷 Português</button>
+        <button type="button" class="primary" data-start-language="fr">🇫🇷 Français</button>
+        <button type="button" class="primary" data-start-language="it">🇮🇹 Italiano</button>
+        <button type="button" class="primary" data-start-language="de">🇩🇪 Deutsch</button>
       </div>
     </section>
 
@@ -309,22 +318,30 @@
       <div class="world-controls">
         <div class="hud" aria-label="Estado de Robotito">
           <div class="hud-pill mode-pill"><span>Modo</span><strong id="dayNightLabel">día</strong></div>
-          <div class="hud-pill"><span>Humor</span><strong id="moodLabel">tranquilo</strong></div>
-          <div class="hud-pill"><span>Hambre</span><strong id="hungerLabel">0%</strong></div>
-          <div class="hud-pill"><span>Veo</span><strong id="seenLabel">a nadie</strong></div>
-          <div class="hud-pill"><span>Escucho</span><strong id="heardLabel">silencio</strong></div>
-          <div id="speakerPill" class="hud-pill hidden"><span>Habla</span><strong id="speakerLabel">—</strong></div>
+          <div class="hud-pill"><span data-i18n="mood">Humor</span><strong id="moodLabel">tranquilo</strong></div>
+          <div class="hud-pill"><span data-i18n="hunger">Hambre</span><strong id="hungerLabel">0%</strong></div>
+          <div class="hud-pill"><span data-i18n="vision">Veo</span><strong id="seenLabel">a nadie</strong></div>
+          <div class="hud-pill"><span data-i18n="hearing">Escucho</span><strong id="heardLabel">silencio</strong></div>
+          <div id="speakerPill" class="hud-pill hidden"><span data-i18n="speaker">Habla</span><strong id="speakerLabel">—</strong></div>
         </div>
 
         <div class="quick-actions" aria-label="Acciones con Robotito">
-          <button type="button" data-action="pet">🤍 Acariciar</button>
-          <button type="button" data-action="feed">🍓 Alimentar</button>
-          <button type="button" data-action="hug">🫂 Abrazar</button>
-          <button type="button" data-action="highfive">✋ Chocar los cinco</button>
-          <button type="button" data-action="play">🧸 Jugar</button>
-          <button type="button" data-action="surprise">👻 Asustar</button>
-          <button type="button" data-action="poke">👉 Molestar</button>
+          <button type="button" data-action="pet" data-i18n="pet">🤍 Acariciar</button>
+          <button type="button" data-action="feed" data-i18n="feed">🍓 Alimentar</button>
+          <button type="button" data-action="hug" data-i18n="hug">🫂 Abrazar</button>
+          <button type="button" data-action="highfive" data-i18n="highfive">✋ Chocar los cinco</button>
+          <button type="button" data-action="play" data-i18n="play">🧸 Jugar</button>
+          <button type="button" data-action="surprise" data-i18n="scare">👻 Asustar</button>
+          <button type="button" data-action="poke" data-i18n="poke">👉 Molestar</button>
         </div>
+        <form id="robotitoTextForm" class="robotito-text-form">
+          <label for="robotitoTextInput" data-i18n="typedChat">Escribile a Robotito</label>
+          <div class="robotito-text-form-row">
+            <input id="robotitoTextInput" type="text" autocomplete="off"
+              placeholder="Escribí una pregunta, un pedido o un cambio de idioma…" maxlength="1200" />
+            <button id="robotitoTextSend" type="submit" data-i18n="send">Enviar</button>
+          </div>
+        </form>
       </div>
     </section>
 
@@ -336,17 +353,17 @@
 
     <aside class="panel">
       <nav class="tabs" aria-label="Panel de Robotito">
-        <button type="button" class="tab active" data-tab="status">Estado</button>
-        <button type="button" class="tab" data-tab="class">Clase</button>
-        <button type="button" class="tab" data-tab="tasks">Tareas</button>
-        <button type="button" class="tab" data-tab="people">Personas</button>
-        <button type="button" class="tab" data-tab="books">Libros</button>
-        <button type="button" class="tab" data-tab="memory">Memoria</button>
+        <button type="button" class="tab active" data-tab="status" data-i18n="status">Estado</button>
+        <button type="button" class="tab" data-tab="class" data-i18n="class">Clase</button>
+        <button type="button" class="tab" data-tab="tasks" data-i18n="tasks">Tareas</button>
+        <button type="button" class="tab" data-tab="people" data-i18n="people">Personas</button>
+        <button type="button" class="tab" data-tab="books" data-i18n="books">Libros</button>
+        <button type="button" class="tab" data-tab="memory" data-i18n="memory">Memoria</button>
       </nav>
 
       <section class="tabpage active" id="tab-status">
         <div class="card intro-card">
-          <h2>¿Qué está pasando?</h2>
+          <h2 data-i18n="whatsHappening">¿Qué está pasando?</h2>
           <p id="statusText">Robotito está esperando que despiertes sus sentidos.</p>
         </div>
 
@@ -377,29 +394,51 @@
           <p id="dateInfo"></p>
         </div>
         <div class="card small">
-          <h3>Voz de Robotito</h3>
-          <label class="check voice-toggle"><input id="voiceEnabled" type="checkbox" /> Hablar en voz alta</label>
+          <h3 data-i18n="voice">Voz de Robotito</h3>
+          <label class="check voice-toggle"><input id="voiceEnabled" type="checkbox" /> <span data-i18n="speak">Hablar en voz alta</span></label>
           <label>Idioma / Language / Idioma
             <select id="languageMode">
               <option value="es">Español</option>
               <option value="en">English</option>
               <option value="pt">Português</option>
+              <option value="fr">Français</option>
+              <option value="it">Italiano</option>
+              <option value="de">Deutsch</option>
             </select>
           </label>
-          <label>Voz
+          <label><span data-i18n="selectVoice">Voz</span>
             <select id="voiceSelect"></select>
           </label>
           <div class="voice-controls">
             <label>Gravedad <input id="voicePitch" type="range" min="0.5" max="1.1" step="0.05" value="0.65" /></label>
             <label>Velocidad <input id="voiceRate" type="range" min="0.65" max="1.1" step="0.05" value="0.82" /></label>
           </div>
-          <button id="testVoiceBtn" type="button" class="ghost full">Probar voz</button>
-          <p class="muted">El idioma queda fijo para escuchar y responder. Podés cambiarlo acá cuando quieras. / The selected language stays fixed for listening and answering; you can change it here whenever you want.</p>
+          <label><span data-i18n="voiceStyle">Estilo de voz</span>
+            <select id="voiceStyle">
+              <option value="natural">Natural</option><option value="deep">Grave</option>
+              <option value="high">Aguda</option><option value="cute">Tierna</option>
+              <option value="energetic">Energética</option><option value="funny">Graciosa</option>
+              <option value="robotic">Robótica</option><option value="strange">Extraña</option>
+              <option value="calm">Calmada</option><option value="narrator">Narradora</option>
+            </select>
+          </label>
+          <button id="testVoiceBtn" type="button" class="ghost full" data-i18n="testVoice">Probar voz</button>
+          <details class="voice-sample-options">
+            <summary>Muestra voluntaria de voz (sin clonación)</summary>
+            <p class="muted" data-i18n="synthesised">Voz sintetizada; no es una grabación de una persona real.</p>
+            <label><input id="voiceSampleThirdParty" type="checkbox" /> La voz pertenece a otra persona</label>
+            <label>Nombre de esa persona <input id="voiceSampleName" type="text" autocomplete="off" /></label>
+            <label><input id="voiceSampleConsent" type="checkbox" /> Tengo consentimiento explícito para registrar esta muestra de audio.</label>
+            <button id="recordVoiceSample" type="button" class="ghost">Grabar muestra (3 segundos)</button>
+            <button id="deleteVoiceSample" type="button" class="ghost">Eliminar muestra</button>
+            <p id="voiceSampleStatus" role="status" class="muted"></p>
+          </details>
+          <p class="muted">Podés cambiar el idioma por voz, texto o selector. La síntesis y el reconocimiento dependen de los idiomas disponibles en el navegador.</p>
         </div>
 
         <div class="card small">
           <h3>Probá preguntarle</h3>
-          <p class="muted">Podés hablarle en español, inglés o portugués. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
+          <p class="muted">Podés hablarle en español, inglés, portugués, francés, italiano o alemán. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
         </div>
       </section>
 

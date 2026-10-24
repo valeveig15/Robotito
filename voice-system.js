@@ -1,0 +1,58 @@
+// Web Speech voice profiles. Pitch/rate presets are NOT voice cloning.
+(function(root){
+"use strict";
+const STYLES={
+ natural:{pitch:1,rate:1,volume:1},
+ deep:{pitch:.65,rate:.87,volume:1},
+ high:{pitch:1.42,rate:1.04,volume:1},
+ cute:{pitch:1.32,rate:.94,volume:.9},
+ energetic:{pitch:1.2,rate:1.22,volume:1},
+ funny:{pitch:1.45,rate:1.15,volume:1},
+ robotic:{pitch:.73,rate:.79,volume:.95},
+ strange:{pitch:.55,rate:1.15,volume:.85},
+ calm:{pitch:.88,rate:.83,volume:.8},
+ narrator:{pitch:.92,rate:.88,volume:1}
+};
+const LABELS={natural:"Natural",deep:"Grave",high:"Aguda",cute:"Tierna",energetic:"Energética",funny:"Graciosa",robotic:"Robótica",strange:"Extraña",calm:"Calmada",narrator:"Narradora"};
+const SAMPLE_ID="voice-profile-local", BLOB_ID="voice-sample-local";
+function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
+function settings(style,basePitch=1,baseRate=1){
+ const s=STYLES[style]||STYLES.natural;
+ return {pitch:clamp(s.pitch*basePitch,.5,2),rate:clamp(s.rate*baseRate,.5,2),volume:s.volume};
+}
+function selectVoice(voices,language,preferredURI){
+ const list=Array.from(voices||[]),locale=language||"es",pool=list.filter(v=>(v.lang||"").toLowerCase().startsWith(locale.toLowerCase()));
+ const candidates=pool.length?pool:list;
+ return candidates.find(v=>v.voiceURI===preferredURI)||candidates.find(v=>/natural|neural/i.test(v.name||""))||candidates[0]||null;
+}
+function configureUtterance(utter,{style="natural",language="es",voices=[],voiceURI,basePitch=1,baseRate=1}={}){
+ const p=settings(style,basePitch,baseRate);
+ const voice=selectVoice(voices,language,voiceURI);
+ utter.lang=voice?.lang||({es:"es-UY",en:"en-US",pt:"pt-BR",fr:"fr-FR",it:"it-IT",de:"de-DE"}[language]||"es-UY");
+ if(voice)utter.voice=voice;
+ utter.pitch=p.pitch;utter.rate=p.rate;utter.volume=p.volume;
+ return utter;
+}
+async function saveProfileFromRecording(blob,{owner="local",subject="self",explicitConsent=false,consentLabel=""}={}){
+ if(!(blob instanceof Blob)||blob.size<50)throw new TypeError("Recorded audio is required");
+ if(subject!=="self"&&!explicitConsent)throw new Error("Explicit consent required for another person's recording");
+ if(subject!=="self"&&!String(consentLabel).trim())throw new Error("Document the consenting person's name");
+ const db=root.ROBOTITO_STORE;
+ if(!db?.putBlob||!db?.putRecord)throw new Error("IndexedDB is unavailable");
+ await db.putBlob(BLOB_ID,blob,{owner,recordId:SAMPLE_ID,type:"audio"});
+ return db.putRecord({id:SAMPLE_ID,type:"preferences",owner,source:"voice-opt-in",blobId:BLOB_ID,
+  data:{subject,consentRecorded:subject==="self"||Boolean(explicitConsent),consentLabel:subject==="self"?"self":String(consentLabel),
+   createdAt:new Date().toISOString(),synthesized:true,cloned:false}});
+}
+async function deleteProfile(){
+ const db=root.ROBOTITO_STORE;
+ if(!db?.deleteRecord)throw new Error("Storage not available");
+ return db.deleteRecord(SAMPLE_ID);
+}
+function syntheticNotice(language="es"){
+ return root.ROBOTITO_I18N?.t("synthesised",language)||"Voz sintetizada, no clonación.";
+}
+root.ROBOTITO_VOICE_SYSTEM={styles:STYLES,labels:LABELS,settings,selectVoice,configureUtterance,
+ saveProfileFromRecording,deleteProfile,syntheticNotice};
+if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_VOICE_SYSTEM;
+})(typeof window!=="undefined"?window:globalThis);
