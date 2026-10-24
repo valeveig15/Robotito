@@ -33,7 +33,7 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
   return !utterance||utterance!==fold(raw).trim();
  });
  let selected=rows;
- const words=found.search.split(/\s+/).filter(x=>x.length>=6&&!/record|recomend|clase|libro|recuerd|tarea|semana|pasada|before|about|after/.test(x));
+ const words=found.search.replace(/[^\p{L}\p{N}\s]/gu," ").split(/\s+/).filter(x=>x.length>=6&&!/record|recomend|clase|libro|recuerd|tarea|semana|pasada|before|about|after/.test(x));
  if(words.length){
   const rated=rows.map(row=>{
    const text=fold(JSON.stringify(row.data||{})+" "+row.topic+" "+row.subject);
