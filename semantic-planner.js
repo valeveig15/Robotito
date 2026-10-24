@@ -84,8 +84,10 @@ async function planAsync(raw,options={}){
   if(!MODEL_INTENTS.has(proposal.intent)||!["none","general","classes","materials","books","tasks","weather","calendar","clock","conversation"].includes(proposal.source))return base;
   const confidence=Math.max(0,Math.min(1,Number(proposal.confidence)||0));
   if(confidence<.78)return base;
-  const permitted=proposal.source!=="classes"||proposal.intent==="class-question";
-  const materialAllowed=proposal.source!=="materials"||["exercise","material-question"].includes(proposal.intent);
+  const sourceMention=/\b(?:clase|profesor|profesora|docente|maestro|maestra|tutor|tutora|instructor|apuntes|transcripcion|teacher|tutor|class|lecture|notes|professeur|cours|professor|aula|lezione|lehrer|unterricht)\b/i.test(String(raw));
+  const materialMention=/\b(?:ejercicio|exercise|exercicio|exercice|esercizio|aufgabe|material|apunte|worksheet|document|pdf|archivo)\b/i.test(String(raw));
+  const permitted=proposal.source!=="classes"||(proposal.intent==="class-question"&&sourceMention);
+  const materialAllowed=proposal.source!=="materials"||(["exercise","material-question"].includes(proposal.intent)&&materialMention);
   if(!permitted||!materialAllowed)return base;
   return {...base,intent:proposal.intent,source:proposal.source,confidence,
    depth:["brief","normal","detailed","step-by-step","structured"].includes(proposal.depth)?proposal.depth:base.depth,
