@@ -14,6 +14,8 @@ const records=[
 globalThis.ROBOTITO_STORE={queryRecords:async({type,owner,after,before})=>records.filter(r=>
  r.type===type&&r.owner===owner&&(after===undefined||r.timestamp>=after)&&(before===undefined||r.timestamp<=before))};
 (async()=>{
+ assert.equal(memory.intent("¿Qué dijo la profesora la semana pasada?"),null);
+ assert.equal(memory.intent("¿Cómo fue el clima la semana pasada?"),null);
  const found=await memory.search("¿Qué dije ayer sobre impulso?",{owner:"vale",language:"es",now});
  assert.equal(found.type,"conversations");
  assert.equal(found.rows.length,1);
@@ -26,5 +28,5 @@ globalThis.ROBOTITO_STORE={queryRecords:async({type,owner,after,before})=>record
  const general=await memory.search("Recordame mis recuerdos de ayer",{owner:"vale",language:"es",now});
  assert.equal(general.type,"memories");
  assert.ok(general.text.includes("pizza"));
- console.log("Structured memory privacy regression: 8/8 passed");
+ console.log("Structured memory privacy regression: 10 assertions passed");
 })().catch(error=>{console.error(error);process.exitCode=1;});
