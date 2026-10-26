@@ -136,6 +136,7 @@ function semanticFeatures(text){
    ||/^(?:explic|defin|compar|resum|pregunt|mostra|recomend|correg|busca|show|explain|tell|define|could|would|please|can you)\p{L}*/iu.test(fold(text))
    ||(/^(?:segun|according|in my|na minha|dans mon)\b/.test(fold(text))&&Object.keys(roles).some(r=>["DEFINE","EXPLAIN","SUMMARIZE","QUESTION","ORDER"].includes(r)));
  const implicit=/\b(?:no entiendo|nunca entendi|me cuesta entender|me gustaria saber|necesito saber|quisiera entender|i don't understand|i never understood|help me understand)\b/.test(fold(text));
+ const pastNarration=/^\s*(?:(?:[\p{L}]+(?:é|ó))|dije|dijo|dijeron|contamos|hablamos)(?=\s|[.,!?]|$)/iu.test(text);
  const vocative=/^\s*(?:(?:che|oye|hey|hola)\s*,?\s*)?(?:robotito|osito|robot)\s*[,!:\s]/i.test(text);
  const mentionQuestion=/(?:\b(?:profesor|profesora|profe|teacher|docente)\b.{0,35}\b(?:dijo|pregunto|preguntaron|preguntaba|said|asked)\b|\b(?:pregunto|preguntaron|preguntaba|asked|dijo que|pregunta que)\b)/.test(fold(text))
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
@@ -143,7 +144,7 @@ function semanticFeatures(text){
  const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
  let speechAct="statement";
  if(question&&!mentionQuestion)speechAct="question";
- else if(leadingRequest||implicit||negative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text)))speechAct="request";
+ else if(!pastNarration&&(leadingRequest||implicit||negative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
