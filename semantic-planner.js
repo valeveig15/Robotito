@@ -94,7 +94,7 @@ const SEMANTIC_ROLES={
   BOOK:["libro","libros","lectura","novela","book","books","novel","livro","livre","buch"],
   TASK:["tarea","tareas","pendiente","deberes","task","tasks","homework","tarefa","devoirs"],
   CORRECT:["corregir","corregime","revisar","revisame","correct","correction","corrigir"],
-  ORDER:["mostrar","mostrame","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
+  ORDER:["mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
   SEEK:["quiero","necesito","podrias","podras","podes","puedes","quisiera","necesitaria","me gustaria","would","could","can","please","preciso","gostaria"],
   NEGATE:["no","nunca","jamas","not","never","nao","non","nicht"],
   REPORT:["dijo","dijeron","conto","comento","comentaron","explico","explicaron","afirmo","asked","said","told","reported","menciono"],
@@ -140,10 +140,10 @@ function semanticFeatures(text){
  const mentionQuestion=/(?:\b(?:profesor|profesora|profe|teacher|docente)\b.{0,35}\b(?:dijo|pregunto|preguntaron|preguntaba|said|asked)\b|\b(?:pregunto|preguntaron|preguntaba|asked|dijo que|pregunta que)\b)/.test(fold(text))
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
  const negative=/\b(?:no (?:me |nos |lo )?(?:expliques|explique|expliquen|muestres|mostrar|hagas|hagamos|busques|consultes|uses|uses|quiero)|nunca (?:me )?(?:explique|muestres)|don't (?:explain|show|search|use)|do not (?:explain|show|search|use)|sin (?:consultar|usar))\b/.test(fold(text));
- const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
+ const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
  let speechAct="statement";
  if(question&&!mentionQuestion)speechAct="question";
- else if(leadingRequest||implicit||negative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|en realidad)/.test(fold(text)))speechAct="request";
+ else if(leadingRequest||implicit||negative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text)))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
@@ -169,7 +169,7 @@ function isReferenceOnly(q){
 }
 function correctionParts(text){
  const folded=fold(text);
- const marker=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|o mejor|en realidad|rather|i meant|sorry,? i mean)\b/g;
+ const marker=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|o mejor|en realidad|rather|i meant|sorry,? i mean)\b/g;
  let match,last=null;
  while((match=marker.exec(folded)))last={start:match.index,end:marker.lastIndex};
  if(!last)return null;
@@ -212,6 +212,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
   if(!["task","book","weather"].includes(intent)){intent="conversation";source="none";}
   confidence=.78;
  }
+ if(features.negative&&fallback.intent==="book"){intent="book";source="books";}
  if(features.negative){
   // Negation applies to executing actions, not to the topic of the utterance.
   confidence=Math.min(confidence,.83);
@@ -230,7 +231,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
  if(entities.exerciseNumber==null&&previous?.intent==="exercise"&&isReferenceOnly(q))entities.exerciseNumber=previous.entities?.exerciseNumber??null;
  if(!entities.date&&previous?.entities?.date&&isReferenceOnly(q))entities.date=previous.entities.date;
  const inheritedSubject=/\b(?:ese|esa|esto|eso|otro|otra|lo anterior|it|that|one|lo de ayer)\b/.test(q);
- const topic=topicEntity(text,intent,inheritedSubject?previous:null);
+ const topic=topicEntity(text,intent,(inheritedSubject||correction&&previous)?previous:null);
  entities={...entities,topic:topic||null};
  if(inheritedSubject&&previous?.entities?.subject&&!entities.subject)entities.subject=previous.entities.subject;
  const depth=fallback.depth==="normal"&&intent==="definition"?"brief":
