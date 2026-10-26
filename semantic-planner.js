@@ -18,7 +18,7 @@ const patterns={
  time:/\b(?:hora|horario|time|schedule|heure|orario|uhrzeit)\b/i,
  correction:/\b(?:correg(?:[ií]|ime)|revis(?:[aá]|ame)|correct|corrig|korrigier)\b/i,
 };
-const step=/\b(?:paso a paso|todos los pasos|step by step|passo a passo|[eé]tape par [eé]tape|schritt f[uü]r schritt)\b/i;
+const step=/\b(?:paso a paso|todos los pasos|step by step|passo(?: a| dopo)? passo|[eé]tape par [eé]tape|schritt f[uü]r schritt)\b/i;
 const short=/\b(?:breve|r[aá]pid(?:o|amente)|en una frase|solo la definici[oó]n|brief|quickly|one sentence|resumidamente|kurz)\b/i;
 const long=/\b(?:en profundidad|en detalle|detallad|deeply|in depth|ausf[uü]hrlich|approfondit)\b/i;
 const relative=/\b(?:hoy|ayer|anteayer|ma[nñ]ana|anoche|semana pasada|[uú]ltima vez|today|yesterday|tomorrow|last week|ontem|amanh[aã]|hier|demain|gestern|morgen)\b/i;
