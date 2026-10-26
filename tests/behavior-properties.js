@@ -62,7 +62,7 @@ function sentence({language,mode,concept,number,depth,punctuation}){
  const cases=kit.coveringArray(factors,{seed,criticalTriples,maxCases:1500,candidates:32});
  const coverage=kit.coverageReport(cases,factors,{criticalTriples});
  ok(coverage.complete,"all pairwise and critical triples covered");
- ok(coverage.targets>1000,"nontrivial covered interaction space");
+ eq(coverage.targets,785,"all 465 pairs and 320 critical triples enumerated");
  const anchor=new Date("2026-10-24T12:00:00");
  for(const row of cases){
    const input=sentence(row);
