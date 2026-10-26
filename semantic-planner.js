@@ -266,12 +266,14 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
    const op=inferFrame(parts[i],{context:subContext,language:lang,now},i>0);
    actions.push({index:i,text:parts[i],intent:op.intent,source:op.source,depth:op.depth,
     speechAct:op.speechAct,entities:op.entities,shouldExecute:op.shouldExecute,
+    negative:op.negative,mayReadClass:op.mayReadClass,
     needsClarification:op.needsClarification});
    subContext=advance(subContext,op);
   }
   frame={...frame,actions,shouldExecute:actions.some(x=>x.shouldExecute),needsClarification:actions.some(x=>x.needsClarification)};
  }else frame.actions=[{index:0,text,intent:frame.intent,source:frame.source,depth:frame.depth,
    speechAct:frame.speechAct,entities:frame.entities,shouldExecute:frame.shouldExecute,
+   negative:frame.negative,mayReadClass:frame.mayReadClass,
    needsClarification:frame.needsClarification}];
  return frame;
 }
