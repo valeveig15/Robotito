@@ -94,7 +94,7 @@ const SEMANTIC_ROLES={
   BOOK:["libro","libros","lectura","novela","book","books","novel","livro","livre","buch"],
   TASK:["tarea","tareas","pendiente","deberes","task","tasks","homework","tarefa","devoirs"],
   CORRECT:["corregir","corregime","revisar","revisame","correct","correction","corrigir"],
-  ORDER:["mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
+  ORDER:["resolver","resuelve","resolvé","solve","soluciona","mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
   SEEK:["quiero","necesito","podrias","podras","podes","puedes","quisiera","necesitaria","me gustaria","would","could","can","please","preciso","gostaria"],
   NEGATE:["no","nunca","jamas","not","never","nao","non","nicht"],
   REPORT:["dijo","dijeron","conto","comento","comentaron","explico","explicaron","afirmo","asked","said","told","reported","menciono"],
@@ -133,7 +133,7 @@ function semanticFeatures(text){
  const first=tokens.slice(0,5),last=tokens.slice(-6);
  const question=/(?:[¿?])/.test(text)||/^(?:what|how|why|when|where|who|which|que|cual|como|quien|cuando|donde|cuanto|por que|qual|o que|was|wie)\b/.test(fold(text));
  const leadingRequest=first.some((token,index)=>tokenRoles(token).includes("ORDER")||tokenRoles(token).includes("SEEK"))
-   ||/^(?:explic|defin|compar|resum|pregunt|mostra|recomend|correg|busca|show|explain|tell|define|could|would|please|can you)\p{L}*/iu.test(fold(text))
+   ||/^(?:explic|defin|compar|resum|pregunt|mostra|recomend|correg|busca|resolv|solve|solucion|show|explain|tell|define|could|would|please|can you)\p{L}*/iu.test(fold(text))
    ||(/^(?:segun|according|in my|na minha|dans mon)\b/.test(fold(text))&&Object.keys(roles).some(r=>["DEFINE","EXPLAIN","SUMMARIZE","QUESTION","ORDER"].includes(r)));
  const implicit=/\b(?:no entiendo|nunca entendi|me cuesta entender|me gustaria saber|necesito saber|quisiera entender|i don't understand|i never understood|help me understand)\b/.test(fold(text));
  const pastNarration=/^\s*(?:(?:[\p{L}]+(?:é|ó))|dije|dijo|dijeron|contamos|hablamos)(?=\s|[.,!?]|$)/iu.test(text);
