@@ -58,6 +58,34 @@ const clapFrames=[];for(let i=0;i<6;i++){clapFrames.push(...transient(true),samp
 const applause=feed(detector,clapFrames,{start:26000});
 ok(onlyEvents(applause).some(x=>x.kind==="clap"),"repeated distinct broadband attacks yield a cautious clap candidate");
 ok(onlyEvents(applause).every(x=>x.confidence>=0&&x.confidence<=1),"event probabilities bounded");
+// A single acoustic passage must never trigger contradictory clap and human
+// reactions. With a calibrated competing model, human-event evidence takes
+// precedence over heuristic broadband transients.
+const competing={scores:{cough:.995,clap:.01,sneeze:.01,laugh:.01,cry:.01}};
+const competingModel={version:"test-competing-v1",calibrated:true,
+ predict:()=>competing.scores};
+let fused=audio.create({classifier:competingModel,clock:()=>0});
+let fusedResults=feed(fused,clapFrames,{start:32000});
+ok(!onlyEvents(fusedResults).some(x=>x.kind==="clap"||x.kind==="music"),
+ "Calibrated human-event evidence suppresses acoustic applause/music");
+ok(fusedResults.some(x=>x.candidates.modelCandidate?.kind==="cough"),
+ "Competing event is explicitly identified in candidate evidence");
+competing.scores={sneeze:.99,cough:.95,clap:.02,laugh:.02,cry:.02};
+fused=audio.create({classifier:competingModel,clock:()=>0});
+fusedResults=feed(fused,clapFrames,{start:35000});
+ok(!onlyEvents(fusedResults).some(x=>x.kind==="clap"||x.kind==="sneeze"),
+ "Conflicting cough/sneeze scores abstain rather than trigger applause");
+ok(fusedResults.some(x=>x.candidates.modelCandidate?.kind==="uncertain"),
+ "Close probabilities are surfaced as uncertain");
+competing.scores={cough:.995,clap:.01,sneeze:.01,laugh:.01,cry:.01};
+fused=audio.create({classifier:competingModel,clock:()=>0});
+const confirmedCough=feed(fused,Array.from({length:15},()=>sample({
+ rms:.18,flat:.25,harmonic:.72,low:35,mid:70,high:20})),{start:38000});
+eq(onlyEvents(confirmedCough).filter(x=>x.kind==="cough").length,1,
+ "A continuous independently validated cough emits once");
+ok(!onlyEvents(confirmedCough).some(x=>x.kind==="clap"||x.kind==="music"),
+ "One confirmed cough never emits unrelated classes");
+
 detector.reset();
 const aborted=feed(detector,clapFrames.slice(0,20),{start:35000});
 const suppressed=detector.process(sample({rms:.5}),{now:36000,suppress:true});
