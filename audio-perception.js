@@ -78,14 +78,22 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    lastModelObservation=key;
   }
   const rawScores=scores.scores&&typeof scores.scores==="object"?scores.scores:scores;
-  const values=Object.fromEntries(MODEL_EVENTS.map(kind=>[kind,clamp(Number(rawScores[kind]))]));
-  const ranked=MODEL_EVENTS.map(kind=>({kind,score:values[kind]})).sort((a,b)=>b.score-a.score);
+  // Model outputs may also include non-reactive alternatives. They MUST
+  // compete with human event labels: a high sneeze score next to a high
+  // background/voice score does not justify an unsolicited "¡Salud!".
+  const NON_EVENT_CLASSES=["other","unknown","voice","speech","music","noise","impact","silence"];
+  const ranked=[...MODEL_EVENTS,...NON_EVENT_CLASSES].map(kind=>({
+    kind,score:clamp(Number(rawScores[kind]))
+  })).sort((a,b)=>b.score-a.score);
+  const values=Object.fromEntries(ranked.map(row=>[row.kind,row.score]));
   const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
   const bestGate=MODEL_GATE[best.kind];
   if(bestGate&&best.score>=bestGate.threshold&&best.score-runnerUp>=bestGate.margin)
    modelCandidate={kind:best.kind,score:best.score};
   else if(best.score>=.80&&runnerUp>=.65)
    modelCandidate={kind:"uncertain",score:best.score,runnerUp};
+  else if(!bestGate&&best.score>=.7)
+   modelCandidate={kind:"non-event",score:best.score,label:best.kind};
   for(const kind of MODEL_EVENTS){
    const gate=MODEL_GATE[kind],valid=best.kind===kind&&best.score>=gate.threshold
     &&best.score-runnerUp>=gate.margin;
@@ -143,7 +151,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   else if(flat>.68||harmonic<.2){kind="noise";confidence=.65;}
   const validated=classifierEvents(f,now,loud);
   const events=[...validated];
-  const competingHuman=Boolean(modelCandidate&&modelCandidate.kind!=="clap");
+  const competingHuman=Boolean(modelCandidate&&MODEL_EVENTS.includes(modelCandidate.kind)&&modelCandidate.kind!=="clap"||modelCandidate?.kind==="uncertain");
   if(kind==="music"&&!competingHuman){const event=emit("music",confidence,now);if(event)events.push(event);}
   // Broadband onsets are possible claps or impacts. A solitary loud sound
   // never becomes applause. Prefer "impact/unknown" over an invented clap.
