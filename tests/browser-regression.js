@@ -1,6 +1,7 @@
 "use strict";
 const {spawn}=require("node:child_process");
 const {chromium}=require("playwright");
+const {pairwise}=require("./generative-matrix-kit.js");
 
 const port=Number(process.env.ROBOTITO_TEST_PORT||8765);
 const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],{cwd:require("node:path").resolve(__dirname,".."),stdio:"ignore"});
@@ -144,6 +145,33 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {records:210,languages:languages.length};
     });
     console.log("Robotito browser IndexedDB integration:",JSON.stringify(integration));
+    // Browser-backed, pairwise state contracts: combine device layout class,
+    // language, class-mode silence, mute, voice and synthesis availability.
+    const stateMatrix=pairwise({
+      screen:["mobile-portrait","mobile-landscape","tablet","desktop"],
+      language:["es","en","pt","fr","it","de"],
+      classMode:[false,true],muted:[false,true],
+      voiceEnabled:[false,true],synthesisAvailable:[false,true]
+    },{seed:Number(process.env.ROBOTITO_TEST_SEED||17)});
+    const stateResults=await page.evaluate(cases=>{
+      const runtime=window.ROBOTITO_RUNTIME_POLICY;
+      const i18n=window.ROBOTITO_I18N;
+      if(!runtime?.canSpeak||!i18n)throw new Error("Runtime policy unavailable");
+      let checked=0;
+      for(const params of cases){
+        const expected=!params.classMode&&!params.muted&&params.voiceEnabled&&params.synthesisAvailable;
+        if(runtime.canSpeak(params)!==expected)
+          throw new Error("Class/mute/speech state mismatch "+JSON.stringify(params));
+        if(!i18n.locale(params.language).startsWith(params.language))
+          throw new Error("Language state mismatch "+JSON.stringify(params));
+        checked++;
+      }
+      return checked;
+    },stateMatrix.cases);
+    if(stateResults!==stateMatrix.cases.length||stateMatrix.coveredPairs!==stateMatrix.totalPairs)
+      throw new Error("Pairwise browser state coverage incomplete");
+    console.log("Robotito browser pairwise state matrix:",stateResults,
+      "cases; pairs:",stateMatrix.coveredPairs+"/"+stateMatrix.totalPairs);
     const viewports=[[390,844],[360,740],[844,390],[768,1024]];
     for(const [width,height] of viewports){
       await page.setViewportSize({width,height});
