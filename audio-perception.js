@@ -100,7 +100,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   const dynamic=variance(active,"rms")/Math.max(1e-5,avg(active,"rms")**2);
   const voiceLike=harmonic>.34&&flat<.62&&rhythm<.38;
   const musicScore=clamp(.24*level+.32*rhythm+.34*harmonic+.10*(1-flat)
-    -.22*(voiceLike?1:0)-.20*(dynamic<.008?1:0));
+    -.22*(voiceLike?1:0)-.20*(dynamic<.008&&rhythm<.65?1:0));
   const musicReady=recent.length>=55&&recent.at(-1).t-recent[0].t>=2400;
   musicEvidence=musicReady?.84*musicEvidence+.16*musicScore:0;
   const voiceRecent=recent.slice(-13).filter(x=>x.rms>noiseFloor*2.5+.006
