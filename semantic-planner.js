@@ -82,7 +82,7 @@ function legacyPlan(raw,{context=createContext(),language,now=new Date()}={}){
 // sentences. The optional local language model extends beyond this offline fallback.
 const SEMANTIC_ROLES={
   DEFINE:["definir","definicion","definime","significar","significa","significado","concepto","define","definition","mean","means","meaning","defina","definisci","definiere"],
-  EXPLAIN:["explicar","explicame","explica","explicacion","entender","entiendo","entendi","explicarme","comprender","funciona","funcionar","explain","understand","understood","work","explique","spiega","erklare"],
+  EXPLAIN:["explicar","explicame","explica","explicacion","entender","entiendo","entendi","explicarme","comprender","funciona","funcionar","explain","understand","understood","work","explique","spiega","spiegare","spiegami","erklare"],
   COMPARE:["comparar","compara","comparacion","diferencia","diferenciar","distinto","versus","compare","comparison","difference","differ"],
   SUMMARIZE:["resumir","resumen","resumime","sintetizar","sintesis","summary","summarize","recap","resume"],
   EXAMPLE:["ejemplo","ejemplificar","example","examples","exemplo","exemple","beispiel"],
@@ -141,14 +141,16 @@ function semanticFeatures(text){
  const mentionQuestion=/(?:\b(?:profesor|profesora|profe|teacher|docente)\b.{0,35}\b(?:dijo|pregunto|preguntaron|preguntaba|said|asked)\b|\b(?:pregunto|preguntaron|preguntaba|asked|dijo que|pregunta que)\b)/.test(fold(text))
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
  const negative=/\b(?:no (?:me |nos |lo )?(?:expliques|explique|expliquen|muestres|mostrar|hagas|hagamos|busques|consultes|uses|uses|quiero)|nunca (?:me )?(?:explique|muestres)|don't (?:explain|show|search|use)|do not (?:explain|show|search|use)|sin (?:consultar|usar))\b/.test(fold(text));
+ const imperativeNegation=leadingRequest&&(/\b(?:nicht|pas)\b/.test(fold(text))||/^non\s+/.test(fold(text)));
+ const effectiveNegative=negative||imperativeNegation;
  const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
  let speechAct="statement";
  if(question&&!mentionQuestion)speechAct="question";
- else if((!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||negative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
+ else if((!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
-  mentionQuestion,negative,corrective,speechAct,directed};
+  mentionQuestion,negative:effectiveNegative,corrective,speechAct,directed};
 }
 function topicEntity(text,intent,previous){
  const normalized=normalize(text);
