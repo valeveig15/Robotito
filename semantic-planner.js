@@ -82,7 +82,7 @@ function legacyPlan(raw,{context=createContext(),language,now=new Date()}={}){
 // sentences. The optional local language model extends beyond this offline fallback.
 const SEMANTIC_ROLES={
   DEFINE:["definir","definicion","definime","significar","significa","significado","concepto","define","definition","mean","means","meaning","defina"],
-  EXPLAIN:["explicar","explicame","explica","explicacion","entender","entiendo","entendi","comprender","funciona","funcionar","explain","understand","understood","work","explique","erklare"],
+  EXPLAIN:["explicar","explicame","explica","explicacion","entender","entiendo","entendi","explicarme","comprender","funciona","funcionar","explain","understand","understood","work","explique","erklare"],
   COMPARE:["comparar","compara","comparacion","diferencia","diferenciar","distinto","versus","compare","comparison","difference","differ"],
   SUMMARIZE:["resumir","resumen","resumime","sintetizar","sintesis","summary","summarize","recap","resume"],
   EXAMPLE:["ejemplo","ejemplificar","example","examples","exemplo","exemple","beispiel"],
@@ -94,7 +94,7 @@ const SEMANTIC_ROLES={
   BOOK:["libro","libros","lectura","novela","book","books","novel","livro","livre","buch"],
   TASK:["tarea","tareas","pendiente","deberes","task","tasks","homework","tarefa","devoirs"],
   CORRECT:["corregir","corregime","revisar","revisame","correct","correction","corrigir"],
-  ORDER:["mostrar","mostrame","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
+  ORDER:["mostrar","mostrame","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
   SEEK:["quiero","necesito","podrias","podras","podes","puedes","quisiera","necesitaria","me gustaria","would","could","can","please","preciso","gostaria"],
   NEGATE:["no","nunca","jamas","not","never","nao","non","nicht"],
   REPORT:["dijo","dijeron","conto","comento","comentaron","explico","explicaron","afirmo","asked","said","told","reported","menciono"],
@@ -118,7 +118,7 @@ function tokenRoles(token){
  if(roles)return roles;
  // Morphological family matching, not matching a phrase entered in a test.
  if(token.length>=5){
-  const stem=token.replace(/(?:aciones|iciones|mente|ando|iendo|ados|adas|ando|ieron|aria|erias|amos|emos|aste|iste|arlo|erlo|irlo|ando|iendo|ar|er|ir|ado|ada|idos|idas|es|s)$/,"");
+  const stem=token.replace(/(?:aciones|iciones|mente|ando|iendo|ados|adas|ando|ieron|aria|erias|amos|emos|aste|iste|arlo|erlo|irlo|ando|iendo|arme|erme|irme|amelo|emelo|imelo|ar|er|ir|ado|ada|idos|idas|es|s)$/,"");
   if(stem.length>=4){
    const out=[];
    for(const [word,roles] of SEMANTIC_INDEX)if(word.length>=4&&word.startsWith(stem)&&Math.abs(word.length-token.length)<9)out.push(...roles);
@@ -133,16 +133,17 @@ function semanticFeatures(text){
  const first=tokens.slice(0,5),last=tokens.slice(-6);
  const question=/(?:[¿?])/.test(text)||/^(?:what|how|why|when|where|who|which|que|cual|como|quien|cuando|donde|cuanto|por que|qual|o que|was|wie)\b/.test(fold(text));
  const leadingRequest=first.some((token,index)=>tokenRoles(token).includes("ORDER")||tokenRoles(token).includes("SEEK"))
-   ||/^(?:explic|defin|compar|resum|pregunt|mostra|recomend|correg|show|explain|tell|define|could|would|please|can you)\p{L}*/iu.test(fold(text));
+   ||/^(?:explic|defin|compar|resum|pregunt|mostra|recomend|correg|busca|show|explain|tell|define|could|would|please|can you)\p{L}*/iu.test(fold(text))
+   ||(/^(?:segun|according|in my|na minha|dans mon)\b/.test(fold(text))&&Object.keys(roles).some(r=>["DEFINE","EXPLAIN","SUMMARIZE","QUESTION","ORDER"].includes(r)));
  const implicit=/\b(?:no entiendo|nunca entendi|me cuesta entender|me gustaria saber|necesito saber|quisiera entender|i don't understand|i never understood|help me understand)\b/.test(fold(text));
  const vocative=/^\s*(?:(?:che|oye|hey|hola)\s*,?\s*)?(?:robotito|osito|robot)\s*[,!:\s]/i.test(text);
- const mentionQuestion=/\b(?:pregunto|preguntaron|preguntó|preguntaba|asked|pregunta que|dijo que)\b/.test(fold(text))
+ const mentionQuestion=/(?:\b(?:profesor|profesora|profe|teacher|docente)\b.{0,35}\b(?:dijo|pregunto|preguntaron|preguntaba|said|asked)\b|\b(?:pregunto|preguntaron|preguntaba|asked|dijo que|pregunta que)\b)/.test(fold(text))
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
  const negative=/\b(?:no (?:me |nos |lo )?(?:expliques|explique|expliquen|muestres|mostrar|hagas|hagamos|busques|consultes|uses|uses|quiero)|nunca (?:me )?(?:explique|muestres)|don't (?:explain|show|search|use)|do not (?:explain|show|search|use)|sin (?:consultar|usar))\b/.test(fold(text));
  const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
  let speechAct="statement";
  if(question&&!mentionQuestion)speechAct="question";
- else if(leadingRequest||implicit)speechAct="request";
+ else if(leadingRequest||implicit||negative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|en realidad)/.test(fold(text)))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
@@ -163,6 +164,7 @@ function topicEntity(text,intent,previous){
  return topic||null;
 }
 function isReferenceOnly(q){
+ q=fold(q).replace(/^[¿?!\s]+|[?!\s]+$/g,"");
  return /^(?:(?:y|and|e)\s+)?(?:eso|ese|esa|este|esta|aquello|el otro|la otra|lo de ayer|de noche|por la noche|de tarde|mañana|manana|tomorrow|at night|that one|the other|what about that)[?.! ]*$/i.test(q.trim());
 }
 function correctionParts(text){
@@ -186,7 +188,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
  let {intent,source,confidence}=fallback;
  const reported=features.mentionQuestion&&features.speechAct==="statement";
  const has=role=>Boolean(roles[role]);
- const explicitClass=(/[\s\S]/.test(q)&&(
+ const explicitClass=(/[\s\S]/.test(q)&&(fallback.mayReadClass&&features.speechAct!=="statement"||
    /\b(?:segun (?:la|mi) clase|en (?:mi|la) clase|mis apuntes|la transcripcion|according to (?:my|the) class|class notes|in my class|de la profesora)\b/.test(q)
    ||((has("CLASS")&&has("REPORT"))&&features.speechAct!=="statement")));
  const explicitExercise=has("EXERCISE")&&(features.speechAct!=="statement"||/[¿?]/.test(text));
@@ -196,7 +198,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
   if(has("QUESTION")&&!/\b(?:que es|what is)\b/.test(q)){intent="quiz";source="conversation";confidence=.83;}
   else if(explicitExercise){intent="exercise";source="materials";confidence=.87;}
   else if(explicitClass){intent="class-question";source="classes";confidence=.9;}
-  else if(has("DEFINE")||/^(?:que|what|o que)\s+(?:es|era|is|e)\b/.test(q)||/\bque era\s*[?.!]*$/.test(q)){intent="definition";source="general";confidence=.88;}
+  else if(has("DEFINE")||fallback.intent==="definition"||/^(?:que|what|o que)\s+(?:es|era|is|e)\b/.test(q)||/\bque era\s*[?.!]*$/.test(q)){intent="definition";source="general";confidence=.88;}
   else if(has("COMPARE")){intent="comparison";source="general";confidence=.85;}
   else if(has("SUMMARIZE")){intent="summary";source="general";confidence=.84;}
   else if(has("EXAMPLE")){intent="example";source="general";confidence=.79;}
