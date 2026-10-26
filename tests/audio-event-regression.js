@@ -197,14 +197,19 @@ const sneezeEvent={kind:"sneeze",confidence:.98,metadata:{model:"mock-calibrated
 eq(policy.decide(sneezeEvent)?.action,"bless","Verified sneeze receives one localized blessing");
 now+=500;
 eq(policy.decide(sneezeEvent),null,"Sneeze cooldown suppresses duplicate");
+eq(policy.decide({kind:"cough",confidence:.99,metadata:{model:"mock-calibrated"}}),null,
+ "One sneeze/cough episode must not produce two different reactions");
 now+=5200;
 eq(policy.decide(sneezeEvent)?.action,"bless","New sneeze after cooldown may react");
 eq(policy.decide({kind:"clap",confidence:.9})?.action,"clap","Confirmed applause gets animation");
 eq(policy.decide({kind:"clap",confidence:.95}),null,"Repeated claps do not spam animation");
+now+=1750;
 eq(policy.decide({kind:"laugh",confidence:.93,metadata:{model:"calibrated"}})?.action,
   "smile","Calibrated laughter yields a temporary smile");
+now+=1750;
 eq(policy.decide({kind:"cry",confidence:.94,metadata:{model:"calibrated"}})?.action,
   "comfort","Calibrated crying yields a restrained comfort response");
+now+=1750;
 eq(policy.decide({kind:"cough",confidence:.96,metadata:{model:"calibrated"}})?.action,
   "notice","Calibrated cough prompts attention without unsolicited speech");
 eq(policy.decide({kind:"music",confidence:1}),null,
