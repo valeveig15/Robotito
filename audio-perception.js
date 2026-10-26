@@ -8,8 +8,9 @@ const clamp=n=>Math.max(0,Math.min(1,Number.isFinite(n)?n:0));
 const avg=(rows,key)=>rows.length?rows.reduce((s,x)=>s+(Number(x[key])||0),0)/rows.length:0;
 const variance=(rows,key)=>rows.length>1?rows.reduce((s,x)=>s+(x[key]-avg(rows,key))**2,0)/rows.length:0;
 const ACOUSTIC_EVENTS=Object.freeze(["voice","music","clap","impact","laugh","cry","cough","sneeze","silence","noise","unknown"]);
-const MODEL_EVENTS=Object.freeze(["laugh","cry","cough","sneeze"]);
+const MODEL_EVENTS=Object.freeze(["clap","laugh","cry","cough","sneeze"]);
 const MODEL_GATE={
+ clap:{threshold:.96,margin:.20,frames:2,minDuration:90,maxDuration:1600,cooldown:1900},
  laugh:{threshold:.89,margin:.14,frames:7,minDuration:330,maxDuration:7000,cooldown:6500},
  cry:{threshold:.91,margin:.15,frames:12,minDuration:560,maxDuration:15000,cooldown:12000},
  cough:{threshold:.94,margin:.18,frames:3,minDuration:95,maxDuration:1900,cooldown:5000},
@@ -136,14 +137,14 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   if(onset&&now-onset.at>330)onset=null;
   transients=transients.filter(x=>now-x.at<2000);
   const sharp=transients.filter(x=>x.sharp);
-  if(sharp.length>=4&&kind!=="music"){
+  if(sharp.length>=5&&kind!=="music"){
    const hits=sharp.slice(-5),gaps=hits.slice(1).map((x,i)=>x.at-hits[i].at);
    const regular=gaps.every(n=>n>=90&&n<=650);
    const span=hits.at(-1).at-hits[0].at;
    const sharpness=avg(hits,"highRatio"),flatness=avg(hits,"flat");
    const clapConfidence=clamp(.60+(sharp.length>=5?.10:0)+
     .1*Math.min(1,(sharpness-1.48)/.5)+.12*Math.min(1,(flatness-.48)/.25));
-   if(regular&&span>=350&&clapConfidence>=.77){
+   if(regular&&span>=350&&clapConfidence>=.85){
     const event=emit("clap",clapConfidence,now,{bursts:hits.length,origin:"acoustic-heuristic"});
     if(event){events.push(event);kind="clap";confidence=event.confidence;}
     transients=[];
