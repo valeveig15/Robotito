@@ -18,7 +18,7 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - Si detecta mano cerca de la boca y movimiento compatible con estar comiendo, intenta comer contigo.
 - La detección acústica combina duración, bandas espectrales, armonicidad y periodicidad: diferencia silencio, ruido, actividad de voz, música e impactos, e identifica patrones de aplausos repetidos con prudencia.
 - Robotito acompaña los aplausos suficientemente corroborados; la música sostenida puede activar el baile. El sistema agrupa eventos y evita reacciones repetitivas durante sueño, Modo Clase o cuando Robotito habla.
-- **Limitación importante:** para clasificar acústicamente risas, llanto, tos, estornudos y aplausos individuales con confiabilidad se necesita un modelo adicional entrenado y calibrado, **no incluido**. Ya está preparada la integración para ese modelo, con confidencias y reacciones naturales; sin él Robotito se abstiene de atribuir esos sonidos con certeza.
+- **Reconocimiento avanzado experimental (optativo):** desde la interfaz se puede activar la descarga bajo demanda del modelo preentrenado YAMNet (MediaPipe), que procesa muestras del micrófono en el navegador. Reconoce categorías como risa, llanto, tos, estornudo y aplauso, con umbrales más estrictos, evidencia de distintas ventanas y pausas entre reacciones. Está **desactivado por defecto** y puede no funcionar sin conexión o en algunos dispositivos. Es experimental: falta calibrarlo con audios reales diversos antes de afirmar detección fiable; cuando hay dudas, Robotito se abstiene.
 
 ### Personas, memoria y cumpleaños
 - Registro facial con múltiples muestras y perfil de voz.
