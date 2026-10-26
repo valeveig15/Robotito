@@ -95,6 +95,28 @@ detector.reset();
 const confusion=feed(detector,Array.from({length:16},()=>sample({rms:.22})),{start:90000});
 ok(!onlyEvents(confusion).some(x=>x.kind==="sneeze"||x.kind==="cough"),
  "Similar cough and sneeze likelihood abstains");
+modelPhase.scores={sneeze:.995,cough:.01,laugh:.01,cry:.01,clap:.01};
+detector.reset();
+const sustained=feed(detector,Array.from({length:185},()=>sample({rms:.16,flat:.35})),
+  {start:95000});
+eq(onlyEvents(sustained).filter(x=>x.kind==="sneeze").length,1,
+  "Continuous sneeze-label prediction cannot speak twice, even beyond cooldown");
+feed(detector,Array.from({length:5},()=>sample({rms:.16,flat:.35})),
+  {start:104300}).forEach(()=>{});
+modelPhase.scores={sneeze:.01};
+feed(detector,Array.from({length:5},()=>sample({rms:.16,flat:.35})),{start:104600});
+modelPhase.scores={sneeze:.995,cough:.01};
+const secondEpisode=feed(detector,Array.from({length:5},()=>sample({rms:.16,flat:.35})),
+ {start:105000});
+eq(onlyEvents(secondEpisode).filter(x=>x.kind==="sneeze").length,1,
+ "A separate, model-confirmed sneeze after a gap may be recognized");
+detector=audio.create();
+for(const bad of [null,undefined,{}, {rms:NaN,flat:Infinity,harmonic:-2},
+  {rms:Infinity,flat:-Infinity,high:NaN,zcr:Infinity}]){
+ const status=detector.process(bad,{now:110000+checks*50});
+ ok(Number.isFinite(status.confidence)&&Number.isFinite(status.noiseFloor),
+  "Malformed and disconnected input cannot create NaN state");
+}
 const fake={calibrated:false,version:"test",predict:()=>({sneeze:1})};
 detector=audio.create({classifier:fake});
 ok(!onlyEvents(feed(detector,Array.from({length:18},()=>sample({rms:.2})),{start:100000}))
