@@ -3,7 +3,7 @@
 (function(root){
 "use strict";
 const REACTIONS=Object.freeze({
- clap:{action:"clap",minimum:.77,cooldown:1900},
+ clap:{action:"clap",minimum:.85,cooldown:1900},
  laugh:{action:"smile",minimum:.89,cooldown:8000,requiresModel:true},
  cry:{action:"comfort",minimum:.91,cooldown:18000,requiresModel:true},
  cough:{action:"notice",minimum:.94,cooldown:9500,requiresModel:true},
