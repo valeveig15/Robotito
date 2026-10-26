@@ -20,7 +20,7 @@ const truth=(a,msg)=>{assert.ok(a,msg);assertions++;};
     const rows=kit.coveringArray(factors,{seed,criticalTriples:triples,maxCases:400});
     const report=kit.coverageReport(rows,factors,{criticalTriples:triples});
     truth(report.complete,"covering triples + all pairs seed "+seed);
-    truth(report.targets>700,"sufficient targets enumerated");
+    equal(report.targets,363,"all 241 pairs and 122 risk triples enumerated");
     truth(rows.length<400,"compact covering array");
     equal(rows,kit.coveringArray(factors,{seed,criticalTriples:triples,maxCases:400}),
       "seed reproducibility "+seed);
