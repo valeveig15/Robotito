@@ -141,10 +141,10 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    const regular=gaps.every(n=>n>=90&&n<=650);
    const span=hits.at(-1).at-hits[0].at;
    const sharpness=avg(hits,"highRatio"),flatness=avg(hits,"flat");
-   const confidence=clamp(.60+(sharp.length>=5?.10:0)+
+   const clapConfidence=clamp(.60+(sharp.length>=5?.10:0)+
     .1*Math.min(1,(sharpness-1.48)/.5)+.12*Math.min(1,(flatness-.48)/.25));
-   if(regular&&span>=350&&confidence>=.77){
-    const event=emit("clap",confidence,now,{bursts:hits.length,origin:"acoustic-heuristic"});
+   if(regular&&span>=350&&clapConfidence>=.77){
+    const event=emit("clap",clapConfidence,now,{bursts:hits.length,origin:"acoustic-heuristic"});
     if(event){events.push(event);kind="clap";confidence=event.confidence;}
     transients=[];
    }
