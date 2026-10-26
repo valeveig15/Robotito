@@ -89,7 +89,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    }
    modelMisses[kind]=0;
    if(modelLatched[kind])continue;
-   if(!evidence||at-evidence.lastAt>140){evidence={since:at,count:0,score:0,lastAt:at};}
+   if(!evidence||at-evidence.lastAt>(experimental?1800:140)){evidence={since:at,count:0,score:0,lastAt:at};}
    evidence.count++;evidence.lastAt=at;evidence.score+=values[kind];
    modelEvidence[kind]=evidence;
    const duration=at-evidence.since+45;
