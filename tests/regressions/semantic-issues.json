@@ -273,5 +273,14 @@
       "mayReadClass": false
     },
     "reason": "Portuguese não+explanation must not execute"
+  },
+  {
+    "id": "NLU-030",
+    "input": "Spiega passo passo l'esercizio 42 di matematica",
+    "expected": {
+      "intent": "exercise",
+      "depth": "step-by-step"
+    },
+    "reason": "Italian educational request must preserve stepwise depth"
   }
 ]
