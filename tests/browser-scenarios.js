@@ -129,6 +129,27 @@ const criticalTriples=[
     checked++;
   }
 
+  // Dragging the actual desktop splitter must never extend grid tracks past
+  // the padded content area (a historical overflow regression).
+  await page.setViewportSize(viewports.desktop);
+  const divider=page.locator("#layoutResizer");
+  assert.equal(await divider.isVisible(),true,"Desktop resizing handle exists");
+  const box=await divider.boundingBox();
+  assert.ok(box&&box.width>=14,"Resizable splitter has a usable drag target");
+  await page.mouse.move(box.x+box.width/2,box.y+Math.min(80,box.height/2));
+  await page.mouse.down();
+  await page.mouse.move(box.x+box.width/2+75,box.y+Math.min(80,box.height/2),{steps:5});
+  await page.mouse.up();
+  const resized=await page.evaluate(()=>({
+    width:document.documentElement.clientWidth,
+    contentWidth:document.documentElement.scrollWidth,
+    ratio:localStorage.getItem("robotito.layoutSplit.v1")
+  }));
+  assert.ok(resized.contentWidth<=resized.width+1,
+    "Dragging desktop splitter must not create horizontal overflow");
+  assert.ok(Number(resized.ratio)>0&&Number(resized.ratio)<1,
+    "Desktop ratio should survive navigation");
+
   // Simulated tab suspension, recovery and a durable record across reload.
   await page.evaluate(()=>{
     const hidden=Object.getOwnPropertyDescriptor(document,"hidden");
@@ -159,6 +180,13 @@ const criticalTriples=[
   assert.equal(durability.marker,"survive-reload","IndexedDB record survives browser reload");
   assert.equal(durability.avatar,final.avatar,"Avatar survives browser reload");
   assert.equal(durability.language,final.language,"Language survives browser reload");
+  const interruptedMicrophone=await page.evaluate(async()=>{
+    const start=await window.ROBOTITO_CLASS_AUDIO.start("Prueba sin micrófono","sin pista");
+    return {start,active:window.ROBOTITO_CLASS_AUDIO.isRecording()};
+  });
+  assert.deepEqual(interruptedMicrophone,
+    {start:{ok:false,reason:"no-audio-track"},active:false},
+    "Unavailable microphone must not create a phantom class recording");
   if(errors.length)throw Error("Browser exceptions: "+errors.join("\n"));
   console.log("Robotito browser scenario matrix:",checked,"real UI states /",
     report.covered,"pair/triple targets; reload and suspension passed; seed:",seed);
