@@ -3503,27 +3503,46 @@ async function answerWhatLearnedToday(){
 }
 
 let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
-async function handleSpeech(rawText){
-  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
-    source:"dialogue",timestamp:Date.now(),language:state.languageMode||"es",
-    data:{role:"user",text:String(rawText||"").slice(0,1200)}}).catch(e=>console.warn("dialogue memory",e));
-  const interpretation=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
+const robotitoContextsByOwner=new Map();
+let robotitoContextOwner="local";
+function selectRobotitoContext(owner){
+  if(owner===robotitoContextOwner)return robotitoConversationContext;
+  robotitoContextsByOwner.set(robotitoContextOwner,robotitoConversationContext);
+  robotitoContextOwner=owner;
+  robotitoConversationContext=robotitoContextsByOwner.get(owner)
+    ||window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
+  if(robotitoContextsByOwner.size>24)robotitoContextsByOwner.delete(robotitoContextsByOwner.keys().next().value);
+  return robotitoConversationContext;
+}
+async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
+  const owner=state.currentVoicePerson||state.currentPerson||"local";
+  selectRobotitoContext(owner);
+  const interpretation=plan||await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{
+    context:robotitoConversationContext,language:state.languageMode||"es",channel
+  });
   if(interpretation){
+    if(!atomic&&interpretation.actions?.length>1){
+      if(interpretation.needsClarification){
+        say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+        return;
+      }
+      for(const action of interpretation.actions){
+        if(action.intent==="quiz"&&action.shouldExecute){
+          const topic=robotitoConversationContext.focus?.entities?.topic||action.entities?.topic||"el tema";
+          say("Para comprobar si entendiste: ¿cómo explicarías con tus palabras "+topic+"?");
+          continue;
+        }
+        const childPlan={...interpretation,...action,actions:[action],
+          mayReadClass:action.mayReadClass===true,negative:action.negative===true,
+          topic:action.entities?.topic||interpretation.topic};
+        await handleSpeech(action.text,{plan:childPlan,atomic:true,channel});
+      }
+      return;
+    }
     robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
     state.lastDetectedLanguage=interpretation.language;
     if(interpretation.needsClarification){
       say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
-      return;
-    }
-    if(interpretation.actions.length>1){
-      const first=interpretation.actions[0],rest=interpretation.actions.slice(1);
-      await handleSpeech(first.text);
-      for(const action of rest){
-        if(action.intent==="quiz"){
-          const concept=first.text.replace(/^.*?sobre\s+/i,"").replace(/[?.!]+$/,"").trim();
-          say("Para comprobar si entendiste: ¿cómo explicarías con tus palabras "+(concept||"la idea principal")+"?");
-        }else await handleSpeech(action.text);
-      }
       return;
     }
   }
