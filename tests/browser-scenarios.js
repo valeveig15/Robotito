@@ -85,8 +85,13 @@ const criticalTriples=[
         localized:label?.textContent===window.ROBOTITO_I18N.t("typedChat",row.language),
         width:document.documentElement.clientWidth,
         scrollWidth:document.documentElement.scrollWidth,
-        separated:!!scene&&!!controls&&controls.top>=scene.bottom-1,
-        controlsVisible:!!controls&&controls.width>0&&controls.height>0,
+        // Desktop uses display:contents for the controls wrapper, so its own
+        // bounding rectangle is intentionally empty. Separation is required
+        // only for the structural mobile layout.
+        separated:document.documentElement.clientWidth>900
+          ?!!scene&&!!controls:!!scene&&!!controls&&controls.top>=scene.bottom-1,
+        controlsVisible:!!controls&&(document.documentElement.clientWidth>900
+          ||controls.width>0&&controls.height>0),
         buttonsVisible:buttons.length>=7&&buttons.every(x=>x.width>20&&x.height>=38),
         canSpeak,suppressedResult:result.kind==="unknown"&&result.events.length===0,
         volumeBounds:result.confidence>=0&&result.confidence<=1
