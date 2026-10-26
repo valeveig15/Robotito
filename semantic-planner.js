@@ -81,13 +81,13 @@ function legacyPlan(raw,{context=createContext(),language,now=new Date()}={}){
 // Semantic-frame composition: lexical concepts describe roles, NOT complete user
 // sentences. The optional local language model extends beyond this offline fallback.
 const SEMANTIC_ROLES={
-  DEFINE:["definir","definicion","definime","significar","significa","significado","concepto","define","definition","mean","means","meaning","defina"],
-  EXPLAIN:["explicar","explicame","explica","explicacion","entender","entiendo","entendi","explicarme","comprender","funciona","funcionar","explain","understand","understood","work","explique","erklare"],
+  DEFINE:["definir","definicion","definime","significar","significa","significado","concepto","define","definition","mean","means","meaning","defina","definisci","definiere"],
+  EXPLAIN:["explicar","explicame","explica","explicacion","entender","entiendo","entendi","explicarme","comprender","funciona","funcionar","explain","understand","understood","work","explique","spiega","erklare"],
   COMPARE:["comparar","compara","comparacion","diferencia","diferenciar","distinto","versus","compare","comparison","difference","differ"],
   SUMMARIZE:["resumir","resumen","resumime","sintetizar","sintesis","summary","summarize","recap","resume"],
   EXAMPLE:["ejemplo","ejemplificar","example","examples","exemplo","exemple","beispiel"],
   EXERCISE:["ejercicio","ejercicios","problema","actividad","exercise","problem","exercicio","exercice","aufgabe"],
-  CLASS:["clase","profesora","profesor","profe","docente","transcripcion","apuntes","teacher","class","lecture","professora","cours","lehrer","unterricht"],
+  CLASS:["clase","profesora","profesor","profe","docente","transcripcion","apuntes","teacher","class","lecture","professora","professeur","professore","cours","lehrer","unterricht"],
   REMEMBER:["recordar","recordame","recordas","acordar","acordas","memoria","recuerdo","remember","recall","remind"],
   QUESTION:["pregunta","preguntame","preguntarme","interrogame","quiz","question","ask","pergunta","frage"],
   WEATHER:["clima","meteorologia","pronostico","weather","forecast","tempo","meteo","wetter"],
@@ -97,7 +97,7 @@ const SEMANTIC_ROLES={
   ORDER:["resolver","resuelve","resolvé","solve","soluciona","calcular","calcula","calculá","calculate","dame","dar","callate","sugerir","sugerime","sugira","recommend","mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
   SEEK:["quiero","necesito","podrias","podras","podes","puedes","quisiera","necesitaria","me gustaria","would","could","can","please","preciso","gostaria"],
   NEGATE:["no","nunca","jamas","not","never","nao","non","nicht"],
-  REPORT:["dijo","dijeron","conto","comento","comentaron","explico","explicaron","afirmo","asked","said","told","reported","menciono"],
+  REPORT:["dijo","dijeron","conto","comento","comentaron","explico","explicaron","afirmo","asked","said","told","reported","menciono","disse","dit","detto","sagte"],
   TIME:["ayer","hoy","manana","anteayer","tomorrow","yesterday","today","ontem","demain"],
   SOCIAL:["hola","gracias","hello","hi","thanks","obrigado","bonjour","ciao"]
 };
