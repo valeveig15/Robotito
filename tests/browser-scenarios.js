@@ -101,7 +101,10 @@ const criticalTriples=[
     if(row.audioState!=="normal")assert.equal(result.suppressedResult,true,
       "Suppressed recording/reaction "+JSON.stringify(row));
     assert.equal(result.volumeBounds,true,"Audio confidence bounded");
-    assert.equal(result.separated,true,"Scene and controls separated "+JSON.stringify(row));
+    // Desktop intentionally overlays its HUD on the full-scene background.
+    // On narrow layouts the scene and controls must form separate stacked regions.
+    if(viewports[row.viewport].width<=900)
+      assert.equal(result.separated,true,"Mobile scene and controls separated "+JSON.stringify(row));
     assert.equal(result.controlsVisible,true,"Controls visible "+JSON.stringify(row));
     assert.equal(result.buttonsVisible,true,"Touch controls sized "+JSON.stringify(row));
     assert.ok(result.scrollWidth<=result.width+1,
