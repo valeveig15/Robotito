@@ -5,6 +5,7 @@
 - `npm test`: core regression, planner checks and three seeded generative matrices.
 - `npm run test:browser`: Chromium integration, IndexedDB binary migration, source contracts and four responsive viewports.
 - `npm run test:ci`: both suites.
+- `npm run test:semantic`: structured semantic-frame and legacy-adapter regression.
 - `ROBOTITO_TEST_SEED=123 npm run test:universal`: reproduce a specific generative run.
 
 GitHub Actions runs the checks for pushes and pull requests. **A passing automated suite is evidence only for the cases and environments actually tested**; it does not prove perfect natural-language understanding, sound classification or device support.
@@ -67,3 +68,11 @@ The live weather handler requests **four forecast days** from Open-Meteo, with h
 Conversation turns are stored as typed local IndexedDB records. A **single** shared `memory-retrieval.js` retrieves prior evidence by owner, time range and topic; it rejects the currently asked question as its own memory and refuses unrelated records for explicitly named topics. The active recognized person's records must not leak to another person. This is local-device storage, not a cloud-synchronized memory.
 
 The regression suite includes deterministic time-sensitive examples: weather today versus tomorrow, tomorrow evening hours, unavailable forecast dates, six-language descriptions, a classroom-source definition contrast, and person-isolated memory retrieval.
+
+## Incremental semantic-planner integration (2026-10-26)
+
+The same semantic frame now reaches `intent-engine.js`, `robotito-vnext.js` and the typed/voice `script.js` dialogue. It distinguishes direct questions, instructions, passive commentary and social turns; annotates negation and corrections; uses a bounded, per-person context; and splits clearly sequenced requests into individually actionable steps. The router must not call protected sources or camera actions merely because a source word appeared in a passive comment or a negated instruction. The historical specialized handlers remain as compatibility fallbacks for calculations, books, objects and response styling.
+
+Recognition alternatives are scored using semantic plausibility and context in addition to ASR confidence; this does **not** replace acoustic speech recognition. The tests in `tests/semantic-composition-regression.js` cover comments, quotations, clarifications, negation, context, mixed orders, source gating, optional local-model suggestions and thousands of simulated turns. The Chromium regression additionally checks the actual typed dialogue and the n-best ASR selection path.
+
+**Limits:** offline understanding still uses compositional lexical/morphological cues and may be uncertain with highly novel constructions; an optional local language-model API improves coverage only where supported. It is not equivalent to open-ended, universally reliable semantic interpretation. Conversational context is in-memory and separated by recognized local person; per-person isolation and speaker recognition depend on the existing identity subsystem. Feature support differs between web browsers. This increment makes no destructive storage migration.
