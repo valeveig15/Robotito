@@ -85,6 +85,11 @@ const criticalTriples=[
         localized:label?.textContent===window.ROBOTITO_I18N.t("typedChat",row.language),
         width:document.documentElement.clientWidth,
         scrollWidth:document.documentElement.scrollWidth,
+        overflowSources:[...document.querySelectorAll("body *")].filter(el=>{
+          const rect=el.getBoundingClientRect();
+          return rect.width>0 && (rect.right>document.documentElement.clientWidth+1||rect.left< -1);
+        }).slice(0,12).map(el=>({tag:el.tagName,cls:String(el.className||"").slice(0,70),
+          left:Math.round(el.getBoundingClientRect().left),right:Math.round(el.getBoundingClientRect().right)})),
         // Desktop uses display:contents for the controls wrapper, so its own
         // bounding rectangle is intentionally empty. Separation is required
         // only for the structural mobile layout.
