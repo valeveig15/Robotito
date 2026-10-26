@@ -9,14 +9,15 @@
     "test:planner": "node tests/semantic-planner-regression.js",
     "test:universal": "node tests/universal-system-regression.js",
     "test:generative": "ROBOTITO_TEST_SEED=17 npm run test:universal && ROBOTITO_TEST_SEED=42 npm run test:universal && ROBOTITO_TEST_SEED=99 npm run test:universal",
-    "test:ci": "npm test && npm run test:browser && npm run test:browser:scenarios",
+    "test:ci": "npm test && npm run test:browser && npm run test:browser:matrix",
     "test:memory": "node tests/memory-query-regression.js",
     "test:semantic": "node tests/semantic-composition-regression.js",
     "test:kit": "node tests/generative-kit-regression.js",
     "test:regressions": "node tests/permanent-regressions.js",
     "test:properties": "node tests/behavior-properties.js",
     "test:properties:matrix": "ROBOTITO_TEST_SEED=17 npm run test:properties && ROBOTITO_TEST_SEED=42 npm run test:properties && ROBOTITO_TEST_SEED=99 npm run test:properties",
-    "test:browser:scenarios": "node tests/browser-scenarios.js"
+    "test:browser:scenarios": "node tests/browser-scenarios.js",
+    "test:browser:matrix": "ROBOTITO_TEST_SEED=17 npm run test:browser:scenarios && ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios && ROBOTITO_TEST_SEED=99 npm run test:browser:scenarios"
   },
   "devDependencies": {
     "playwright": "1.56.1"
