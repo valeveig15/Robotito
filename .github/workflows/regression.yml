@@ -29,4 +29,4 @@ jobs:
         # Avoid an apt transaction that can stall the whole regression run.
         run: npx playwright install chromium
       - name: Run core and browser regressions
-        run: npm test && npm run test:browser
+        run: npm run test:ci
