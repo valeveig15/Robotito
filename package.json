@@ -2,7 +2,7 @@
   "name": "robotito-regression",
   "private": true,
   "scripts": {
-    "test": "npm run test:core && npm run test:kit && npm run test:regressions && npm run test:planner && npm run test:semantic && npm run test:memory && npm run test:generative",
+    "test": "npm run test:core && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:semantic && npm run test:memory && npm run test:generative",
     "test:core": "node tests/core-regression.js",
     "test:browser": "node tests/browser-regression.js",
     "test:all": "npm run test:ci",
@@ -13,7 +13,9 @@
     "test:memory": "node tests/memory-query-regression.js",
     "test:semantic": "node tests/semantic-composition-regression.js",
     "test:kit": "node tests/generative-kit-regression.js",
-    "test:regressions": "node tests/permanent-regressions.js"
+    "test:regressions": "node tests/permanent-regressions.js",
+    "test:properties": "node tests/behavior-properties.js",
+    "test:properties:matrix": "ROBOTITO_TEST_SEED=17 npm run test:properties && ROBOTITO_TEST_SEED=42 npm run test:properties && ROBOTITO_TEST_SEED=99 npm run test:properties"
   },
   "devDependencies": {
     "playwright": "1.56.1"
