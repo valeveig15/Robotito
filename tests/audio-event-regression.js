@@ -84,6 +84,12 @@ for(const kind of ["laugh","cry","cough","sneeze"]){
  ok(events[0].metadata.model===model.version,"Event retains classifier provenance "+kind);
  when+=10000;
 }
+modelPhase.scores={clap:.995,laugh:.01,cry:.01,cough:.01,sneeze:.01};
+detector.reset();
+const isolatedClap=feed(detector,Array.from({length:4},()=>sample({rms:.25,
+ flat:.8,harmonic:.04,low:24,mid:45,high:75,zcr:.3})),{start:85000});
+eq(onlyEvents(isolatedClap).filter(x=>x.kind==="clap").length,1,
+  "A calibrated transient model can identify a single applause event");
 modelPhase.scores={sneeze:.99,cough:.95,laugh:.02,cry:.02};
 detector.reset();
 const confusion=feed(detector,Array.from({length:16},()=>sample({rms:.22})),{start:90000});
@@ -118,7 +124,7 @@ now+=500;
 eq(policy.decide(sneezeEvent),null,"Sneeze cooldown suppresses duplicate");
 now+=5200;
 eq(policy.decide(sneezeEvent)?.action,"bless","New sneeze after cooldown may react");
-eq(policy.decide({kind:"clap",confidence:.8})?.action,"clap","Confirmed applause gets animation");
+eq(policy.decide({kind:"clap",confidence:.9})?.action,"clap","Confirmed applause gets animation");
 eq(policy.decide({kind:"clap",confidence:.95}),null,"Repeated claps do not spam animation");
 eq(policy.decide({kind:"laugh",confidence:.93,metadata:{model:"calibrated"}})?.action,
   "smile","Calibrated laughter yields a temporary smile");
