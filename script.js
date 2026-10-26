@@ -102,6 +102,9 @@ const state = {
   voiceEnabled: localStorage.getItem("robotito.voiceEnabled.v1")===null
     ? !/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : localStorage.getItem("robotito.voiceEnabled.v1")!=="false",
+  advancedAudioEnabled:localStorage.getItem("robotito.advancedAudio.v1")==="true",
+  advancedAudioSession:null,
+  audioSource:null,
   voiceURI: localStorage.getItem("robotito.voiceURI.v1")||"",
   voicePitch: Number(localStorage.getItem("robotito.voicePitch.v1")||0.65),
   voiceRate: Number(localStorage.getItem("robotito.voiceRate.v1")||0.82),
@@ -1157,6 +1160,17 @@ function setupAudio(stream){
     const ctx=new (window.AudioContext||window.webkitAudioContext)();
     state.audioContext=ctx;
     const src=ctx.createMediaStreamSource(stream);
+    state.audioSource=src;
+    const advancedAudio=window.ROBOTITO_YAMNET?.create?.({
+      onStatus:status=>{
+        const output=$("#advancedAudioStatus");
+        if(!output)return;
+        const key="soundModel"+(status==="off"?"Off":status==="loading"?"Loading":
+          status==="ready"?"Ready":status==="unavailable"?"Unavailable":"Error");
+        output.textContent=window.ROBOTITO_I18N?.t?.(key,responseLanguage())||status;
+      }
+    })||null;
+    state.advancedAudioSession=advancedAudio;
     const analyser=ctx.createAnalyser();
     analyser.fftSize=2048;
     analyser.smoothingTimeConstant=.62;
@@ -1166,9 +1180,9 @@ function setupAudio(stream){
     const time=new Uint8Array(analyser.fftSize);
     const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.();
     const perception=window.ROBOTITO_AUDIO_PERCEPTION?.create?.({
-      // A sound-model is optional; without calibrated evidence we NEVER
-      // identify an uncertain cough, sneeze, laugh or crying episode.
-      classifier:window.ROBOTITO_AUDIO_EVENT_MODEL||null,
+      // Without a trained model, laughter, crying, cough and sneeze remain unknown.
+      // The opt-in pretrained model is treated as experimental with stricter gates.
+      classifier:window.ROBOTITO_AUDIO_EVENT_MODEL||advancedAudio?.adapter||null,
       onEvent:event=>{
         const now=Date.now();
         const reaction=reactionPolicy?.decide?.(event,{
@@ -1205,10 +1219,18 @@ function setupAudio(stream){
         }
       }
     });
+    if(state.advancedAudioEnabled&&advancedAudio&&!window.ROBOTITO_AUDIO_EVENT_MODEL){
+      advancedAudio.start(ctx,src,{
+        isSuppressed:()=>state.speaking||state.sleeping||state.classMode||document.hidden
+      }).catch(error=>console.warn("Advanced sound model",error));
+    }
     let lastTick=0,prevSpectrum=null;
     const tick=(at=0)=>{
       if(!state.started||state.audioContext!==ctx){
+        try{advancedAudio?.stop();}catch{}
         try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
+        if(state.audioSource===src)state.audioSource=null;
+        if(state.advancedAudioSession===advancedAudio)state.advancedAudioSession=null;
         return;
       }
       requestAnimationFrame(tick);
@@ -5068,6 +5090,25 @@ function bindUI(){
       restartRecognitionAfterSpeech();
     }
   });
+  $("#advancedAudioEnabled")?.addEventListener("change",e=>{
+    state.advancedAudioEnabled=e.target.checked;
+    localStorage.setItem("robotito.advancedAudio.v1",String(state.advancedAudioEnabled));
+    const session=state.advancedAudioSession;
+    if(!state.advancedAudioEnabled){
+      session?.stop?.();
+      return;
+    }
+    if(!state.started||!state.audioContext||!state.audioSource){
+      const status=$("#advancedAudioStatus");
+      if(status)status.textContent=window.ROBOTITO_I18N?.t?.("soundModelWaiting",responseLanguage())||"Esperando micrófono";
+      return;
+    }
+    if(session&&!window.ROBOTITO_AUDIO_EVENT_MODEL){
+      session.start(state.audioContext,state.audioSource,{
+        isSuppressed:()=>state.speaking||state.sleeping||state.classMode||document.hidden
+      }).catch(error=>console.warn("Advanced sound model",error));
+    }
+  });
   $("#voiceSelect")?.addEventListener("change",e=>{
     state.voiceURI=e.target.value;
     localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
@@ -5334,6 +5375,9 @@ async function init(){
     $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
   }else if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
+  if($("#advancedAudioEnabled"))$("#advancedAudioEnabled").checked=state.advancedAudioEnabled;
+  if(state.advancedAudioEnabled&&$("#advancedAudioStatus"))
+    $("#advancedAudioStatus").textContent=window.ROBOTITO_I18N?.t?.("soundModelWaiting",responseLanguage())||"Esperando micrófono";
   if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
   if($("#voiceStyle"))$("#voiceStyle").value=state.voiceStyle;

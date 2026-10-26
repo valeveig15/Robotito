@@ -156,4 +156,27 @@ eq(policy.decide({kind:"cough",confidence:.96,metadata:{model:"calibrated"}})?.a
   "notice","Calibrated cough prompts attention without unsolicited speech");
 eq(policy.decide({kind:"music",confidence:1}),null,
   "Music is controlled by continuous rhythm state rather than event spam");
+// Experimental pretrained classification: distinct inference windows count,
+// not 50-ms repeats of one stale score. Defaults to inactive until opted in.
+let sequence=0;
+const liveAdapter={version:"yamnet-test",experimental:true,ready:false,
+ predict:()=>({sequence,scores:{sneeze:.998,cough:.01,laugh:.01,cry:.01,clap:.01}})};
+let live=audio.create({classifier:liveAdapter});
+eq(live.getStatus().modelAvailable,false,"Offline pretrained model is not active");
+const frame=sample({rms:.14,flat:.37,harmonic:.17});
+feed(live,Array.from({length:12},()=>frame),{start:300000});
+liveAdapter.ready=true;
+eq(live.getStatus().modelAvailable,true,"Model activation is recognized without rebuilding detector");
+sequence=1;
+const firstWindow=feed(live,Array.from({length:10},()=>frame),{start:301000});
+eq(onlyEvents(firstWindow).filter(x=>x.kind==="sneeze").length,0,
+  "Repeated frames of one classification are not independent evidence");
+sequence=2;
+const secondWindow=feed(live,Array.from({length:10},()=>frame),{start:301600});
+eq(onlyEvents(secondWindow).filter(x=>x.kind==="sneeze").length,1,
+  "Two independent high-confidence opt-in model windows may yield an event");
+sequence=3;
+const thirdWindow=feed(live,Array.from({length:10},()=>frame),{start:302200});
+eq(onlyEvents(thirdWindow).filter(x=>x.kind==="sneeze").length,0,
+  "Latched event cannot refire on repeated positive windows");
 console.log("Robotito acoustic event regression:",checks,"assertions; seed:",seed);

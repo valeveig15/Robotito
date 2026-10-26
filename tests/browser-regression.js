@@ -119,6 +119,35 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {suppression:true,cooldown:true,translations:48};
     });
     console.log("Robotito browser acoustic event integration:",JSON.stringify(acousticIntegration));
+    const advancedAudioIntegration=await page.evaluate(()=>{
+      const checkbox=document.querySelector("#advancedAudioEnabled");
+      const status=document.querySelector("#advancedAudioStatus");
+      const yamnet=window.ROBOTITO_YAMNET;
+      if(!checkbox||!status||!yamnet?.create)
+        throw new Error("Opt-in audio model UI or module missing");
+      const prior=checkbox.checked;
+      checkbox.checked=true;checkbox.dispatchEvent(new Event("change",{bubbles:true}));
+      if(localStorage.getItem("robotito.advancedAudio.v1")!=="true")
+        throw new Error("Audio opt-in was not saved");
+      if(!status.textContent.trim())
+        throw new Error("Sound model pending state is not announced");
+      checkbox.checked=false;checkbox.dispatchEvent(new Event("change",{bubbles:true}));
+      if(localStorage.getItem("robotito.advancedAudio.v1")!=="false")
+        throw new Error("Disabling experimental sound recognition failed");
+      for(const lang of ["es","en","pt","fr","it","de"])
+        if(window.ROBOTITO_I18N.t("advancedAudio",lang)==="advancedAudio")
+          throw new Error("Opt-in missing translation: "+lang);
+      const scores=yamnet.categoryScores([{classifications:[{categories:[
+        {categoryName:"Laughter",score:.93},{categoryName:"Sneeze",score:.96},
+        {categoryName:"Door slam",score:1}
+      ]}]}]);
+      if(scores.laugh!==.93||scores.sneeze!==.96||scores.clap!==0)
+        throw new Error("YAMNet class mapping incorrect");
+      checkbox.checked=prior;
+      return {optIn:true,optOut:true,languages:6,mappedEvents:2};
+    });
+    console.log("Robotito opt-in sound model browser integration:",JSON.stringify(advancedAudioIntegration));
+
 
 
 
