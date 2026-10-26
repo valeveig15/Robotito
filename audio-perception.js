@@ -151,7 +151,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   else if(flat>.68||harmonic<.2){kind="noise";confidence=.65;}
   const validated=classifierEvents(f,now,loud);
   const events=[...validated];
-  const competingHuman=Boolean(modelCandidate&&modelCandidate.kind!=="clap");
+  const competingHuman=Boolean(modelCandidate&&MODEL_EVENTS.includes(modelCandidate.kind)&&modelCandidate.kind!=="clap"||modelCandidate?.kind==="uncertain");
   if(kind==="music"&&!competingHuman){const event=emit("music",confidence,now);if(event)events.push(event);}
   // Broadband onsets are possible claps or impacts. A solitary loud sound
   // never becomes applause. Prefer "impact/unknown" over an invented clap.
