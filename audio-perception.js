@@ -37,10 +37,11 @@ function featureFrame(feature,at){
 }
 function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  let frames=[],lastFrame=0,lastEvent=Object.create(null),transients=[],onset=null;
- let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null);
- const modelAvailable=classifier?.calibrated===true
+ let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastPredictionSequence=null;
+ const modelAvailable=()=>Boolean((classifier?.calibrated===true
+  ||classifier?.experimental===true&&classifier?.ready===true)
   &&typeof classifier?.version==="string"&&classifier.version.trim().length>0
-  &&typeof classifier.predict==="function";
+  &&typeof classifier.predict==="function");
  const COOLDOWN={clap:1900,music:4500,impact:600};
  for(const [name,gate] of Object.entries(MODEL_GATE))COOLDOWN[name]=gate.cooldown;
  function emit(kind,confidence,at,metadata={}){
@@ -53,23 +54,32 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function clearEvidence(){
   frames=[];transients=[];onset=null;musicEvidence=0;modelEvidence=Object.create(null);
-  modelLatched=Object.create(null);modelMisses=Object.create(null);
+  modelLatched=Object.create(null);modelMisses=Object.create(null);lastPredictionSequence=null;
   lastKind="unknown";lastFrame=0;
  }
  function classifierEvents(feature,at,active){
-  if(!modelAvailable||!active)return [];
+  if(!modelAvailable()||!active)return [];
   // This is a synchronous, local, separately calibrated classifier contract.
   // An asynchronous model is expected to cache its most recent prediction.
   let scores;
   try{scores=classifier.predict(feature,{noiseFloor,history:frames.slice(-28)})}
   catch(error){console.warn("Audio model inference",error);return [];}
   if(!scores||typeof scores!=="object"||typeof scores.then==="function")return [];
-  const values=Object.fromEntries(MODEL_EVENTS.map(kind=>[kind,clamp(Number(scores[kind]))]));
+  if(scores.sequence!==undefined){
+    if(scores.sequence===lastPredictionSequence)return [];
+    lastPredictionSequence=scores.sequence;
+  }
+  const probabilities=scores.scores||scores;
+  const values=Object.fromEntries(MODEL_EVENTS.map(kind=>[kind,clamp(Number(probabilities[kind]))]));
   const ranked=MODEL_EVENTS.map(kind=>({kind,score:values[kind]})).sort((a,b)=>b.score-a.score);
   const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
   for(const kind of MODEL_EVENTS){
-   const gate=MODEL_GATE[kind],valid=best.kind===kind&&best.score>=gate.threshold
-    &&best.score-runnerUp>=gate.margin;
+   const gate=MODEL_GATE[kind],experimental=classifier.experimental===true&&classifier.calibrated!==true;
+   const minimum=experimental?Math.min(.995,gate.threshold+.025):gate.threshold;
+   const margin=experimental?gate.margin+.08:gate.margin;
+   const requiredFrames=experimental?(kind==="cry"?3:2):gate.frames;
+   const valid=best.kind===kind&&best.score>=minimum
+    &&best.score-runnerUp>=margin;
    let evidence=modelEvidence[kind];
    if(!valid){
     modelEvidence[kind]=null;
@@ -83,9 +93,9 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    evidence.count++;evidence.lastAt=at;evidence.score+=values[kind];
    modelEvidence[kind]=evidence;
    const duration=at-evidence.since+45;
-   if(evidence.count>=gate.frames&&duration>=gate.minDuration&&duration<=gate.maxDuration){
+   if(evidence.count>=requiredFrames&&duration>=gate.minDuration&&duration<=gate.maxDuration){
     const confidence=evidence.score/evidence.count;
-    const event=emit(kind,confidence,at,{model:classifier.version,evidenceFrames:evidence.count});
+    const event=emit(kind,confidence,at,{model:classifier.version,evidenceFrames:evidence.count,experimental:classifier.experimental===true});
     if(event){events.push(event);modelLatched[kind]=true;}
     modelEvidence[kind]=null;
    }
@@ -163,10 +173,10 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   lastKind=kind;
   return {kind,confidence,musicConfidence:musicEvidence,noiseFloor,events,
    candidates:{voice:voiceScore,music:musicEvidence,impact:transients.length,
-    modelAvailable}};
+    modelAvailable:modelAvailable()}};
  }
  function reset(){clearEvidence();lastEvent=Object.create(null);lastKind="silence";}
- return {process,reset,getStatus:()=>({musicEvidence,noiseFloor,lastKind,modelAvailable})};
+ return {process,reset,getStatus:()=>({musicEvidence,noiseFloor,lastKind,modelAvailable:modelAvailable()})};
 }
 root.ROBOTITO_AUDIO_PERCEPTION={create,rhythmic,ACOUSTIC_EVENTS,MODEL_EVENTS,MODEL_GATE};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_AUDIO_PERCEPTION;
