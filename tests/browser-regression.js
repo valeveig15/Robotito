@@ -78,6 +78,21 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {comment:1,negated:1,compound:2};
     });
     console.log("Robotito unified dialogue browser integration:",JSON.stringify(dialogueIntegration));
+    const recognitionIntegration=await page.evaluate(()=>{
+      const qa=window.ROBOTITO_SPEECH_QA;
+      if(!qa?.chooseAlternative||!qa?.alternativeScore)throw new Error("ASR selection missing");
+      const utterances=[
+        {transcript:"eh eh eh",confidence:.75},
+        {transcript:"¿Qué es permutación?",confidence:.75}
+      ];
+      const best=qa.chooseAlternative(utterances);
+      if(best!==utterances[1])throw new Error("Semantic question was not selected over repeated filler");
+      const comment=qa.alternativeScore({transcript:"La profesora habló sobre permutaciones",confidence:.81});
+      if(!Number.isFinite(comment))throw new Error("Narration cannot be scored");
+      return {alternatives:utterances.length,selected:"semantic question",commentFinite:true};
+    });
+    console.log("Robotito semantic ASR integration:",JSON.stringify(recognitionIntegration));
+
 
     const integration=await page.evaluate(async()=>{
       const store=window.ROBOTITO_STORE;
