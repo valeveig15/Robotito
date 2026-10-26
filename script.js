@@ -3299,7 +3299,11 @@ async function askClass(){
   if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
     const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
-    const understood=planned?{...planned,useClassMemory:planned.mayReadClass}:(window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{});
+    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q,{plan:planned})||planned||{};
+    if(planned&&planned.shouldExecute===false){
+      if(out)out.innerHTML='<div class="study-chip">Eso parece un comentario, no una solicitud para consultar materiales.</div>';
+      return;
+    }
     const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
     if(understood.useClassMemory){
@@ -3555,22 +3559,36 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     return;
   }
   const detectedLang=responseLanguage();
-  const legacyUnderstanding=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
-  const understood=interpretation?{...legacyUnderstanding,...interpretation,useClassMemory:interpretation.mayReadClass}:legacyUnderstanding;
+  const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted,{plan:interpretation})
+    ||interpretation||{};
 
   // Silence is a voice command, so it takes priority over questions and other actions.
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
   if(handleLanguageCommand(interpreted))return;
   // Conversation records remain local and attributable to the active profile.
-  const activeOwner=state.currentVoicePerson||state.currentPerson||"local";
-  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:activeOwner,
-    timestamp:Date.now(),source:"conversation",language:state.languageMode||"es",
-    topic:interpretation?.topic||"",data:{text:String(rawText).slice(0,2000),
-      intent:interpretation?.intent||"unknown",source:interpretation?.source||"none"}})
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner,
+    timestamp:Date.now(),source:"dialogue",language:state.languageMode||"es",
+    topic:interpretation?.entities?.topic||"",data:{role:"user",text:String(rawText).slice(0,2000),
+      intent:understood.intent||"unknown",source:interpretation?.source||"none",channel}})
     .catch(e=>console.warn("conversation storage",e));
+  // An overheard statement must not start class, web, book, math or camera actions.
+  if(interpretation&&interpretation.shouldExecute===false){
+    if(interpretation.negative){
+      say("Entendido, no voy a hacer eso.");
+      return;
+    }
+    if(window.ROBOTITO_EMOTION_DIALOGUE?.handle?.(interpreted,{rawText,who}))return;
+    handleSocialSpeech(text);
+    return;
+  }
+  if(understood.intent==="quiz"){
+    const topic=interpretation?.entities?.topic||robotitoConversationContext.focus?.entities?.topic||"este tema";
+    say("¿Cómo explicarías con tus palabras "+topic+"?");
+    return;
+  }
   const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
-    owner:activeOwner,language:state.languageMode||"es"
+    owner,language:state.languageMode||"es"
   });
   if(recalled?.handled){say(recalled.text,readingDisplayTime(recalled.text));return;}
 
@@ -3601,7 +3619,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(window.ROBOTITO_EMOTION_DIALOGUE?.handle?.(interpreted,{rawText,who}))return;
 
   // One intent router handles live knowledge, object vision and visual math before decorative fallbacks.
-  if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang}))return;
+  if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang,plan:interpretation}))return;
 
   if(drawRequestedThing(interpreted,detectedLang))return;
   if(showRequestedObject(interpreted,detectedLang))return;
@@ -4985,7 +5003,7 @@ function bindUI(){
     entry.value="";
     $("#transcript").textContent=question;
     autoRemember(question);
-    try{await handleSpeech(question);}
+    try{await handleSpeech(question,{channel:"text"});}
     catch(error){console.warn("typed question",error);say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"No pude procesar eso.");}
   });
   document.querySelectorAll("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
