@@ -37,7 +37,7 @@ function featureFrame(feature,at){
 }
 function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  let frames=[],lastFrame=0,lastEvent=Object.create(null),transients=[],onset=null;
- let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null);
+ let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null;
  const modelAvailable=classifier?.calibrated===true
   &&typeof classifier?.version==="string"&&classifier.version.trim().length>0
   &&typeof classifier.predict==="function";
@@ -53,7 +53,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function clearEvidence(){
   frames=[];transients=[];onset=null;musicEvidence=0;modelEvidence=Object.create(null);
-  modelLatched=Object.create(null);modelMisses=Object.create(null);
+  modelLatched=Object.create(null);modelMisses=Object.create(null);lastModelObservation=null;
   lastKind="unknown";lastFrame=0;
  }
  function classifierEvents(feature,at,active){
@@ -64,7 +64,20 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   try{scores=classifier.predict(feature,{noiseFloor,history:frames.slice(-28)})}
   catch(error){console.warn("Audio model inference",error);return [];}
   if(!scores||typeof scores!=="object"||typeof scores.then==="function")return [];
-  const values=Object.fromEntries(MODEL_EVENTS.map(kind=>[kind,clamp(Number(scores[kind]))]));
+  // A cached asynchronous model may expose an observation timestamp/frame ID.
+  // Repeated or stale predictions are NOT independent evidence: without this
+  // gate one single sneeze prediction could produce a false "¡Salud!".
+  if(Object.hasOwn(scores,"observedAt")||Object.hasOwn(scores,"frameId")){
+   const observed=Number(scores.observedAt),id=scores.frameId;
+   if((Object.hasOwn(scores,"observedAt")&&(!Number.isFinite(observed)||observed>at+80||at-observed>240))
+     ||(Object.hasOwn(scores,"frameId")&&(typeof id!=="string"&&typeof id!=="number")))
+    return [];
+   const key=Object.hasOwn(scores,"frameId")?"id:"+String(id):"time:"+observed;
+   if(lastModelObservation===key)return [];
+   lastModelObservation=key;
+  }
+  const rawScores=scores.scores&&typeof scores.scores==="object"?scores.scores:scores;
+  const values=Object.fromEntries(MODEL_EVENTS.map(kind=>[kind,clamp(Number(rawScores[kind]))]));
   const ranked=MODEL_EVENTS.map(kind=>({kind,score:values[kind]})).sort((a,b)=>b.score-a.score);
   const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
   for(const kind of MODEL_EVENTS){
