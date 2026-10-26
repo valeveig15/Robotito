@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '23 5 * * *'
 
 permissions:
   contents: read
@@ -30,3 +32,9 @@ jobs:
         run: npx playwright install chromium
       - name: Run core and browser regressions
         run: npm run test:ci
+      - name: Deep reproducible stress matrix (scheduled or manual)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          ROBOTITO_PROP_SCALE=3 npm run test:properties:matrix
+          ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios
+          ROBOTITO_TEST_SEED=99 npm run test:browser:scenarios
