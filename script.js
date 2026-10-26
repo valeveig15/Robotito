@@ -1318,8 +1318,16 @@ function speechAlternativeScore(alternative){
   let score=(Number(alternative?.confidence)||0)*4;
   score+=Math.min(tokens.length,10)*.025;
   if(state.languageMode==="es"&&normalizeSpanishSpeechIntent(raw)!==normalized)score+=.16;
-  if(/\b(robotito|clase|profesor|profesora|fisica|matematica|quimica|biologia|ejercicio|materia|tema|hambre|hora|fecha|dedos|objeto|presidente|recordas|acordas|densidad|masa|volumen|permutacion|energia|impulso)\b/.test(normalized))score+=.24;
-  if(/\b(que|como|cual|quien|cuando|donde|por que|cuanto|explica|define|decime|dime)\b/.test(normalized))score+=.18;
+  const semantic=window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(raw,{
+    context:robotitoConversationContext,language:state.languageMode||"es"
+  });
+  if(semantic){
+    // Prefer interpretable hypotheses without turning ambient comments into orders.
+    if(["question","request"].includes(semantic.speechAct))score+=.16;
+    if(semantic.confidence>=.8&&!semantic.needsClarification)score+=.10;
+    if(semantic.references?.usesPrevious)score+=.10;
+    if(semantic.negative&&!semantic.shouldExecute)score+=.04;
+  }
   if(window.ROBOTITO_EMOTION_DIALOGUE?.classify?.(raw))score+=.28;
   if(tokens.length>=3&&new Set(tokens).size===1)score-=.8;
   if(/^(?:eh|em|mmm|ah)+$/.test(normalized))score-=.5;
@@ -3299,7 +3307,11 @@ async function askClass(){
   if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
     const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
-    const understood=planned?{...planned,useClassMemory:planned.mayReadClass}:(window.ROBOTITO_INTENT_ENGINE?.classify?.(q)||{});
+    const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q,{plan:planned})||planned||{};
+    if(planned&&planned.shouldExecute===false){
+      if(out)out.innerHTML='<div class="study-chip">Eso parece un comentario, no una solicitud para consultar materiales.</div>';
+      return;
+    }
     const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
     if(exerciseHandled)return;
     if(understood.useClassMemory){
@@ -3503,27 +3515,46 @@ async function answerWhatLearnedToday(){
 }
 
 let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
-async function handleSpeech(rawText){
-  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
-    source:"dialogue",timestamp:Date.now(),language:state.languageMode||"es",
-    data:{role:"user",text:String(rawText||"").slice(0,1200)}}).catch(e=>console.warn("dialogue memory",e));
-  const interpretation=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{context:robotitoConversationContext,language:state.languageMode||"es"});
+const robotitoContextsByOwner=new Map();
+let robotitoContextOwner="local";
+function selectRobotitoContext(owner){
+  if(owner===robotitoContextOwner)return robotitoConversationContext;
+  robotitoContextsByOwner.set(robotitoContextOwner,robotitoConversationContext);
+  robotitoContextOwner=owner;
+  robotitoConversationContext=robotitoContextsByOwner.get(owner)
+    ||window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
+  if(robotitoContextsByOwner.size>24)robotitoContextsByOwner.delete(robotitoContextsByOwner.keys().next().value);
+  return robotitoConversationContext;
+}
+async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
+  const owner=state.currentVoicePerson||state.currentPerson||"local";
+  selectRobotitoContext(owner);
+  const interpretation=plan||await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{
+    context:robotitoConversationContext,language:state.languageMode||"es",channel
+  });
   if(interpretation){
+    if(!atomic&&interpretation.actions?.length>1){
+      if(interpretation.needsClarification){
+        say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+        return;
+      }
+      for(const action of interpretation.actions){
+        if(action.intent==="quiz"&&action.shouldExecute){
+          const topic=robotitoConversationContext.focus?.entities?.topic||action.entities?.topic||"el tema";
+          say("Para comprobar si entendiste: ¿cómo explicarías con tus palabras "+topic+"?");
+          continue;
+        }
+        const childPlan={...interpretation,...action,actions:[action],
+          mayReadClass:action.mayReadClass===true,negative:action.negative===true,
+          topic:action.entities?.topic||interpretation.topic};
+        await handleSpeech(action.text,{plan:childPlan,atomic:true,channel});
+      }
+      return;
+    }
     robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
     state.lastDetectedLanguage=interpretation.language;
     if(interpretation.needsClarification){
       say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
-      return;
-    }
-    if(interpretation.actions.length>1){
-      const first=interpretation.actions[0],rest=interpretation.actions.slice(1);
-      await handleSpeech(first.text);
-      for(const action of rest){
-        if(action.intent==="quiz"){
-          const concept=first.text.replace(/^.*?sobre\s+/i,"").replace(/[?.!]+$/,"").trim();
-          say("Para comprobar si entendiste: ¿cómo explicarías con tus palabras "+(concept||"la idea principal")+"?");
-        }else await handleSpeech(action.text);
-      }
       return;
     }
   }
@@ -3536,22 +3567,36 @@ async function handleSpeech(rawText){
     return;
   }
   const detectedLang=responseLanguage();
-  const legacyUnderstanding=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted)||{};
-  const understood=interpretation?{...legacyUnderstanding,...interpretation,useClassMemory:interpretation.mayReadClass}:legacyUnderstanding;
+  const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted,{plan:interpretation})
+    ||interpretation||{};
 
   // Silence is a voice command, so it takes priority over questions and other actions.
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
   if(handleLanguageCommand(interpreted))return;
   // Conversation records remain local and attributable to the active profile.
-  const activeOwner=state.currentVoicePerson||state.currentPerson||"local";
-  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:activeOwner,
-    timestamp:Date.now(),source:"conversation",language:state.languageMode||"es",
-    topic:interpretation?.topic||"",data:{text:String(rawText).slice(0,2000),
-      intent:interpretation?.intent||"unknown",source:interpretation?.source||"none"}})
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner,
+    timestamp:Date.now(),source:"dialogue",language:state.languageMode||"es",
+    topic:interpretation?.entities?.topic||"",data:{role:"user",text:String(rawText).slice(0,2000),
+      intent:understood.intent||"unknown",source:interpretation?.source||"none",channel}})
     .catch(e=>console.warn("conversation storage",e));
+  // An overheard statement must not start class, web, book, math or camera actions.
+  if(interpretation&&interpretation.shouldExecute===false){
+    if(interpretation.negative){
+      say("Entendido, no voy a hacer eso.");
+      return;
+    }
+    if(window.ROBOTITO_EMOTION_DIALOGUE?.handle?.(interpreted,{rawText,who}))return;
+    handleSocialSpeech(text);
+    return;
+  }
+  if(understood.intent==="quiz"){
+    const topic=interpretation?.entities?.topic||robotitoConversationContext.focus?.entities?.topic||"este tema";
+    say("¿Cómo explicarías con tus palabras "+topic+"?");
+    return;
+  }
   const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
-    owner:activeOwner,language:state.languageMode||"es"
+    owner,language:state.languageMode||"es"
   });
   if(recalled?.handled){say(recalled.text,readingDisplayTime(recalled.text));return;}
 
@@ -3582,10 +3627,10 @@ async function handleSpeech(rawText){
   if(window.ROBOTITO_EMOTION_DIALOGUE?.handle?.(interpreted,{rawText,who}))return;
 
   // One intent router handles live knowledge, object vision and visual math before decorative fallbacks.
-  if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang}))return;
+  if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang,plan:interpretation}))return;
 
   if(drawRequestedThing(interpreted,detectedLang))return;
-  if(showRequestedObject(interpreted,detectedLang))return;
+  // Object display is handled by ROBOTITO_ROUTER and drawRequestedThing.
   if(await handleSayInLanguageCommand(interpreted))return;
   if(handleSocialSpeech(text)) return;
   if(/\b(abrazame|abrazá|abraza|dame un abrazo|quiero un abrazo|hug me)\b/.test(text)){hugRobot();return;}
@@ -4966,7 +5011,7 @@ function bindUI(){
     entry.value="";
     $("#transcript").textContent=question;
     autoRemember(question);
-    try{await handleSpeech(question);}
+    try{await handleSpeech(question,{channel:"text"});}
     catch(error){console.warn("typed question",error);say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"No pude procesar eso.");}
   });
   document.querySelectorAll("[data-start-language]").forEach(btn=>btn.addEventListener("click",()=>chooseStartupLanguage(btn.dataset.startLanguage)));
@@ -5150,7 +5195,8 @@ window.ROBOTITO_CHAT={send:handleSpeech,context:()=>robotitoConversationContext}
 window.ROBOTITO_SPEECH_QA={
   cleanTranscript:cleanRecognitionTranscript,
   mergeChunks:mergeRecognitionChunks,
-  alternativeScore:speechAlternativeScore
+  alternativeScore:speechAlternativeScore,
+  chooseAlternative:chooseSpeechAlternative
 };
 
 window.ROBOTITO_BATTERY={

@@ -281,21 +281,29 @@
     return normal.length>430?normal.slice(0,427).replace(/\s+\S*$/,"")+"…":normal;
   }
 
-  function classify(raw){
-    const central=window.ROBOTITO_INTENT_ENGINE?.classify?.(raw);
+  function classify(raw,plan=null){
+    const frame=plan||window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(raw)||null;
+    const central=window.ROBOTITO_INTENT_ENGINE?.classify?.(raw,{plan:frame})||null;
     const q=norm(raw);
-    const depth=responseDepth(raw);
-    if(window.ROBOTITO_PRESIDENTS?.parseQuestion?.(raw))return {intent:"president",depth};
-    if(/\b(que es esto|que objeto es|que estoy mostrando|reconoce este objeto|reconoce esto|what is this object|what am i showing)\b/.test(q))return {intent:"object",depth};
+    const depth=frame?.depth==="brief"?"definition":
+      frame?.depth==="step-by-step"||frame?.depth==="detailed"?"detailed":responseDepth(raw);
+    // Neither keywords in ambient comments nor negated instructions can
+    // authorize a camera, browser, or academic action.
+    if(frame&&frame.shouldExecute===false)return {...central,intent:central?.intent||"statement",depth,shouldExecute:false};
+    if(window.ROBOTITO_PRESIDENTS?.parseQuestion?.(raw))
+      return {...central,intent:"president",depth,shouldExecute:true};
+    if(/\b(que es esto|que objeto es|que estoy mostrando|reconoce este objeto|reconoce esto|what is this object|what am i showing)\b/.test(q))
+      return {...central,intent:"object",depth,shouldExecute:true};
     const circle=/\b(circunferencia|circle)\b/.test(q);
     const solve=/\b(resuelve|resolve|resolver|representa|representacion|grafica|grafico|dibuja|centro|radio|ecuacion|equation)\b/.test(q)||/[xy]\s*[²^]/i.test(raw);
-    if(circle&&solve)return {intent:"circle-math",depth};
-    if(central)return {...central,depth};
-    return {intent:"other",depth};
+    if(circle&&solve)return {...central,intent:"circle-math",depth,shouldExecute:true};
+    if(central)return {...central,depth,shouldExecute:frame?.shouldExecute!==false};
+    return {intent:"other",depth,shouldExecute:frame?.shouldExecute!==false};
   }
 
-  async function handle(raw,{lang="es"}={}){
-    const info=classify(raw);
+  async function handle(raw,{lang="es",plan=null}={}){
+    const info=classify(raw,plan);
+    if(info.shouldExecute===false)return false;
     if(info.intent==="president"){
       const result=await window.ROBOTITO_PRESIDENTS.answer(raw,lang);
       if(result?.handled){

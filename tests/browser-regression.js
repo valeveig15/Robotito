@@ -25,6 +25,27 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     }
     if(pageErrors.length)throw new Error("Page errors: "+pageErrors.join(" | "));
 
+    const routerIntegration=await page.evaluate(async()=>{
+      const planner=window.ROBOTITO_SEMANTIC_PLANNER,router=window.ROBOTITO_ROUTER;
+      if(!planner?.plan||!router?.classify||!router?.handle)throw new Error("Shared semantic routing unavailable");
+      const comments=["El profesor dijo que mañana hay examen.","La profesora contó que estudió permutaciones."];
+      for(const input of comments){
+        const plan=planner.plan(input);
+        if(plan.speechAct!=="statement"||plan.mayReadClass||plan.shouldExecute)
+          throw new Error("Incidental class commentary is not an action: "+input);
+        const result=await router.handle(input,{plan});
+        if(result!==false)throw new Error("Router executed a comment: "+input);
+      }
+      const negated="No me muestres lo que dijo la profesora";
+      const noPlan=planner.plan(negated);
+      if(noPlan.shouldExecute||await router.handle(negated,{plan:noPlan}))
+        throw new Error("Router executed a negated order");
+      const object="¿Qué objeto es esto?";
+      if(router.classify(object,planner.plan(object)).intent!=="object")
+        throw new Error("Camera intent lost in central routing");
+      return {comments:comments.length,negative:1,object:1};
+    });
+    console.log("Robotito structured router browser integration:",JSON.stringify(routerIntegration));
     const languageIntegration=await page.evaluate(async()=>{
       document.querySelector("#voiceEnabled").checked=false;
       document.querySelector("#voiceEnabled").dispatchEvent(new Event("change"));
@@ -38,6 +59,41 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return true;
     });
     if(!languageIntegration)throw new Error("Language integration unavailable");
+    const dialogueIntegration=await page.evaluate(async()=>{
+      const chat=window.ROBOTITO_CHAT;
+      if(!chat?.send||!chat.context)throw new Error("Unified dialogue unavailable");
+      const oldClass=document.querySelector("#classAnswer")?.innerHTML||"";
+      await chat.send("La profesora dijo que ayer repasamos permutaciones",{channel:"text"});
+      if((document.querySelector("#classAnswer")?.innerHTML||"")!==oldClass)
+        throw new Error("Class retrieval fired on ambient comment");
+      if(chat.context().focus?.speechAct!=="statement")
+        throw new Error("A statement was recorded as an instruction");
+      await chat.send("No me muestres lo que dijo la profesora",{channel:"text"});
+      if((document.querySelector("#classAnswer")?.innerHTML||"")!==oldClass)
+        throw new Error("Class retrieval fired on a negated instruction");
+      await chat.send("¿Qué es permutación? y después haceme una pregunta",{channel:"text"});
+      const bubble=document.querySelector("#speechBubble")?.textContent||"";
+      if(!/como explicarias|cómo explicarías/i.test(bubble))
+        throw new Error("Sequential quiz action did not execute: "+bubble);
+      return {comment:1,negated:1,compound:2};
+    });
+    console.log("Robotito unified dialogue browser integration:",JSON.stringify(dialogueIntegration));
+    const recognitionIntegration=await page.evaluate(()=>{
+      const qa=window.ROBOTITO_SPEECH_QA;
+      if(!qa?.chooseAlternative||!qa?.alternativeScore)throw new Error("ASR selection missing");
+      const utterances=[
+        {transcript:"eh eh eh",confidence:.75},
+        {transcript:"¿Qué es permutación?",confidence:.75}
+      ];
+      const best=qa.chooseAlternative(utterances);
+      if(best!==utterances[1])throw new Error("Semantic question was not selected over repeated filler");
+      const comment=qa.alternativeScore({transcript:"La profesora habló sobre permutaciones",confidence:.81});
+      if(!Number.isFinite(comment))throw new Error("Narration cannot be scored");
+      return {alternatives:utterances.length,selected:"semantic question",commentFinite:true};
+    });
+    console.log("Robotito semantic ASR integration:",JSON.stringify(recognitionIntegration));
+
+
     const integration=await page.evaluate(async()=>{
       const store=window.ROBOTITO_STORE;
       if(!store||!window.ROBOTITO_I18N||!window.ROBOTITO_AUDIO_PERCEPTION)throw new Error("Missing universal runtime modules");
