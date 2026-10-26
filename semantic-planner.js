@@ -141,7 +141,7 @@ function semanticFeatures(text){
  const mentionQuestion=/(?:\b(?:profesor|profesora|profe|teacher|docente)\b.{0,35}\b(?:dijo|pregunto|preguntaron|preguntaba|said|asked)\b|\b(?:pregunto|preguntaron|preguntaba|asked|dijo que|pregunta que)\b)/.test(fold(text))
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
  const negative=/\b(?:no (?:me |nos |lo )?(?:expliques|explique|expliquen|muestres|mostrar|hagas|hagamos|busques|consultes|uses|uses|quiero)|nunca (?:me )?(?:explique|muestres)|don't (?:explain|show|search|use)|do not (?:explain|show|search|use)|sin (?:consultar|usar))\b/.test(fold(text));
- const imperativeNegation=leadingRequest&&(/\b(?:nicht|pas)\b/.test(fold(text))||/^non\s+/.test(fold(text)));
+ const imperativeNegation=leadingRequest&&(/\b(?:nicht|pas)\b/.test(fold(text))||/^(?:non|nao)\s+/.test(fold(text)));
  const effectiveNegative=negative||imperativeNegation;
  const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
  let speechAct="statement";
