@@ -3622,7 +3622,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang,plan:interpretation}))return;
 
   if(drawRequestedThing(interpreted,detectedLang))return;
-  if(showRequestedObject(interpreted,detectedLang))return;
+  // Object display is handled by ROBOTITO_ROUTER and drawRequestedThing.
   if(await handleSayInLanguageCommand(interpreted))return;
   if(handleSocialSpeech(text)) return;
   if(/\b(abrazame|abrazá|abraza|dame un abrazo|quiero un abrazo|hug me)\b/.test(text)){hugRobot();return;}
