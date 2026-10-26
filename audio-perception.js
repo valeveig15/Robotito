@@ -37,7 +37,7 @@ function featureFrame(feature,at){
 }
 function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  let frames=[],lastFrame=0,lastEvent=Object.create(null),transients=[],onset=null;
- let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null;
+ let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null,modelCandidate=null;
  const modelAvailable=classifier?.calibrated===true
   &&typeof classifier?.version==="string"&&classifier.version.trim().length>0
   &&typeof classifier.predict==="function";
@@ -53,10 +53,11 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function clearEvidence(){
   frames=[];transients=[];onset=null;musicEvidence=0;modelEvidence=Object.create(null);
-  modelLatched=Object.create(null);modelMisses=Object.create(null);lastModelObservation=null;
+  modelLatched=Object.create(null);modelMisses=Object.create(null);lastModelObservation=null;modelCandidate=null;
   lastKind="unknown";lastFrame=0;
  }
  function classifierEvents(feature,at,active){
+  modelCandidate=null;
   if(!modelAvailable||!active)return [];
   // This is a synchronous, local, separately calibrated classifier contract.
   // An asynchronous model is expected to cache its most recent prediction.
@@ -80,6 +81,9 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   const values=Object.fromEntries(MODEL_EVENTS.map(kind=>[kind,clamp(Number(rawScores[kind]))]));
   const ranked=MODEL_EVENTS.map(kind=>({kind,score:values[kind]})).sort((a,b)=>b.score-a.score);
   const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
+  const bestGate=MODEL_GATE[best.kind];
+  if(bestGate&&best.score>=bestGate.threshold&&best.score-runnerUp>=bestGate.margin)
+   modelCandidate={kind:best.kind,score:best.score};
   for(const kind of MODEL_EVENTS){
    const gate=MODEL_GATE[kind],valid=best.kind===kind&&best.score>=gate.threshold
     &&best.score-runnerUp>=gate.margin;
@@ -135,8 +139,10 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   else if(musicReady&&musicEvidence>.72&&rhythm>.4&&harmonic>.38){kind="music";confidence=musicEvidence;}
   else if(voiceRecent.length>=8&&voiceScore>=.67){kind="voice";confidence=voiceScore;}
   else if(flat>.68||harmonic<.2){kind="noise";confidence=.65;}
-  const events=[];
-  if(kind==="music"){const event=emit("music",confidence,now);if(event)events.push(event);}
+  const validated=classifierEvents(f,now,loud);
+  const events=[...validated];
+  const competingHuman=Boolean(modelCandidate&&modelCandidate.kind!=="clap");
+  if(kind==="music"&&!competingHuman){const event=emit("music",confidence,now);if(event)events.push(event);}
   // Broadband onsets are possible claps or impacts. A solitary loud sound
   // never becomes applause. Prefer "impact/unknown" over an invented clap.
   const prev=frames.at(-2);
@@ -149,7 +155,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    const sharp=candidate.highRatio>1.48&&candidate.flat>.48&&candidate.harmonic<.35;
    transients.push({...candidate,sharp});
    transients=transients.filter(x=>now-x.at<2000).slice(-12);
-   if(!sharp){
+   if(!sharp&&!competingHuman){
     kind=kind==="music"?"music":"impact";confidence=clamp(.52+candidate.peak*.5);
     const event=emit("impact",confidence,now,{broadband:false});
     if(event)events.push(event);
@@ -158,7 +164,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   if(onset&&now-onset.at>330)onset=null;
   transients=transients.filter(x=>now-x.at<2000);
   const sharp=transients.filter(x=>x.sharp);
-  if(sharp.length>=5&&kind!=="music"){
+  if(sharp.length>=5&&kind!=="music"&&!competingHuman){
    const hits=sharp.slice(-5),gaps=hits.slice(1).map((x,i)=>x.at-hits[i].at);
    const regular=gaps.every(n=>n>=90&&n<=650);
    const span=hits.at(-1).at-hits[0].at;
@@ -171,12 +177,15 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
     transients=[];
    }
   }
-  const validated=classifierEvents(f,now,loud);
-  for(const event of validated){events.push(event);kind=event.kind;confidence=event.confidence;}
+  // A calibrated human-event candidate takes precedence over ambiguous transients.
+  // Do not let leftover clap bursts emit later when the model drops out.
+  if(competingHuman)transients=[];
+  for(const event of validated){kind=event.kind;confidence=event.confidence;}
+  if(competingHuman&&!validated.length){kind="unknown";confidence=.25;}
   lastKind=kind;
   return {kind,confidence,musicConfidence:musicEvidence,noiseFloor,events,
    candidates:{voice:voiceScore,music:musicEvidence,impact:transients.length,
-    modelAvailable}};
+    modelAvailable,modelCandidate:modelCandidate?{...modelCandidate}:null}};
  }
  function reset(){clearEvidence();lastEvent=Object.create(null);lastKind="silence";}
  return {process,reset,getStatus:()=>({musicEvidence,noiseFloor,lastKind,modelAvailable})};
