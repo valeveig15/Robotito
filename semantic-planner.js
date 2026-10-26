@@ -86,7 +86,7 @@ const SEMANTIC_ROLES={
   COMPARE:["comparar","compara","comparacion","diferencia","diferenciar","distinto","versus","compare","comparison","difference","differ"],
   SUMMARIZE:["resumir","resumen","resumime","sintetizar","sintesis","summary","summarize","recap","resume"],
   EXAMPLE:["ejemplo","ejemplificar","example","examples","exemplo","exemple","beispiel"],
-  EXERCISE:["ejercicio","ejercicios","problema","actividad","exercise","problem","exercicio","exercice","aufgabe"],
+  EXERCISE:["ejercicio","ejercicios","problema","actividad","exercise","problem","exercicio","exercice","esercizio","esercizi","aufgabe"],
   CLASS:["clase","profesora","profesor","profe","docente","transcripcion","apuntes","teacher","class","lecture","professora","professeur","professore","cours","lehrer","unterricht"],
   REMEMBER:["recordar","recordame","recordas","acordar","acordas","memoria","recuerdo","remember","recall","remind"],
   QUESTION:["pregunta","preguntame","preguntarme","interrogame","quiz","question","ask","pergunta","frage"],
