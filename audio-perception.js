@@ -84,6 +84,8 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   const bestGate=MODEL_GATE[best.kind];
   if(bestGate&&best.score>=bestGate.threshold&&best.score-runnerUp>=bestGate.margin)
    modelCandidate={kind:best.kind,score:best.score};
+  else if(best.score>=.80&&runnerUp>=.65)
+   modelCandidate={kind:"uncertain",score:best.score,runnerUp};
   for(const kind of MODEL_EVENTS){
    const gate=MODEL_GATE[kind],valid=best.kind===kind&&best.score>=gate.threshold
     &&best.score-runnerUp>=gate.margin;
