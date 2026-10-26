@@ -237,5 +237,32 @@
       "shouldExecute": true
     },
     "reason": "Corrected exercise number is a new request"
+  },
+  {
+    "id": "NLU-026",
+    "input": "Erkläre Permutationen nicht",
+    "expected": {
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "German trailing nicht must suppress execution"
+  },
+  {
+    "id": "NLU-027",
+    "input": "N'explique pas les permutations",
+    "expected": {
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "French ne...pas must suppress execution"
+  },
+  {
+    "id": "NLU-028",
+    "input": "Non spiegare le permutazioni",
+    "expected": {
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "Italian non+verb must suppress execution"
   }
 ]
