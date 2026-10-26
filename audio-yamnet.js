@@ -47,9 +47,10 @@ function create({
   try{onStatus(state,error);}catch(err){console.warn("Sound model status",err);}
  }
  function detach(){
-  if(processor){processor.onaudioprocess=null;try{processor.disconnect();}catch{}processor=null;}
+  const currentProcessor=processor;
+  if(currentProcessor){currentProcessor.onaudioprocess=null;try{currentProcessor.disconnect();}catch{}processor=null;}
   if(volume){try{volume.disconnect();}catch{}volume=null;}
-  if(connectedSource){try{connectedSource.disconnect(processor);}catch{}connectedSource=null;}
+  if(connectedSource){try{connectedSource.disconnect(currentProcessor);}catch{}connectedSource=null;}
   pieces=[];pieceSize=0;pending=false;active=false;adapter.ready=false;context=null;lastScores={};lastAt=0;
   sequence++;
  }
