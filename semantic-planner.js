@@ -231,7 +231,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
  if(entities.exerciseNumber==null&&previous?.intent==="exercise"&&isReferenceOnly(q))entities.exerciseNumber=previous.entities?.exerciseNumber??null;
  if(!entities.date&&previous?.entities?.date&&isReferenceOnly(q))entities.date=previous.entities.date;
  const inheritedSubject=/\b(?:ese|esa|esto|eso|otro|otra|lo anterior|it|that|one|lo de ayer)\b/.test(q);
- const topic=topicEntity(text,intent,(inheritedSubject||correction&&previous)?previous:null);
+ const topic=isReferenceOnly(q)&&previous?.entities?.topic?previous.entities.topic:topicEntity(correction?.after||text,intent,(inheritedSubject||correction&&previous)?previous:null);
  entities={...entities,topic:topic||null};
  if(inheritedSubject&&previous?.entities?.subject&&!entities.subject)entities.subject=previous.entities.subject;
  const depth=fallback.depth==="normal"&&intent==="definition"?"brief":
@@ -239,8 +239,9 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const ambiguousReference=isReferenceOnly(q)&&!previous;
  const negativeCommand=features.negative&&["request","question"].includes(features.speechAct);
  const shouldExecute=!negativeCommand&&features.speechAct!=="statement"&&features.speechAct!=="social";
+ const bareReference=q.replace(/^[¿?!\s]+|[?!\s]+$/g,"");
  const needsClarification=ambiguousReference||
-  (features.speechAct!=="statement"&&/^(?:y\s+)?(?:el otro|la otra|the other)[?.! ]*$/i.test(q)&&!(previous?.entities?.alternatives?.length>=2));
+  (features.speechAct!=="statement"&&/^(?:y\s+)?(?:el otro|la otra|the other)$/i.test(bareReference)&&!(previous?.entities?.alternatives?.length>=2));
  const shouldRespond=features.speechAct!=="statement"||features.vocative||features.implicit;
  const mayReadClass=shouldExecute&&(source==="classes"||source==="materials")
   &&(explicitClass||explicitExercise||(isReferenceOnly(q)&&previous?.source===source));
