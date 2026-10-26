@@ -264,5 +264,14 @@
       "mayReadClass": false
     },
     "reason": "Italian non+verb must suppress execution"
+  },
+  {
+    "id": "NLU-029",
+    "input": "Não explique permutação",
+    "expected": {
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "Portuguese não+explanation must not execute"
   }
 ]
