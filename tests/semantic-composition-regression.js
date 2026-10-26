@@ -1,6 +1,11 @@
 "use strict";
 const assert=require("node:assert/strict");
 const planner=require("../semantic-planner.js");
+const vm=require("node:vm"),fs=require("node:fs"),path=require("node:path");
+const engineSandbox={ROBOTITO_SEMANTIC_PLANNER:planner};
+engineSandbox.window=engineSandbox;
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,"..","intent-engine.js"),"utf8"),engineSandbox);
+const intentEngine=engineSandbox.ROBOTITO_INTENT_ENGINE;
 let checks=0;
 function verify(raw,expected,options={}){
  const actual=planner.plan(raw,options);
@@ -9,6 +14,20 @@ function verify(raw,expected,options={}){
   checks++;
  }
  return actual;
+}
+for(const [input,intent,readsClass] of [
+ ["¿Qué dijo la profesora sobre permutaciones?","class-question",true],
+ ["La profesora dijo que mañana tenemos examen.","statement",false],
+ ["El profesor dijo que el problema era difícil.","statement",false],
+ ["¿Qué es una profesora?","definition",false],
+ ["Resuelve el ejercicio 4","exercise",true],
+ ["No me muestres mis apuntes","statement",false],
+ ["¿Qué objeto es esto?","object",false],
+ ["¿Cuánto es 5 más 3?","calculation",false]
+]){
+ const actual=intentEngine.classify(input);
+ assert.equal(actual.intent,intent,input+" should use central policy");checks++;
+ assert.equal(actual.useClassMemory,readsClass,input+" has correct retrieval permission");checks++;
 }
 const statementCases=[
  "La profesora explicó permutaciones en clase.",
