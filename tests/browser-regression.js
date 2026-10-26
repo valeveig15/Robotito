@@ -92,6 +92,34 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {alternatives:utterances.length,selected:"semantic question",commentFinite:true};
     });
     console.log("Robotito semantic ASR integration:",JSON.stringify(recognitionIntegration));
+    const acousticIntegration=await page.evaluate(()=>{
+      const detector=window.ROBOTITO_AUDIO_PERCEPTION,reactions=window.ROBOTITO_AUDIO_REACTIONS;
+      if(!detector?.create||!reactions?.create)throw new Error("Acoustic detector or reaction policy not loaded");
+      let now=18000;
+      const policy=reactions.create({clock:()=>now});
+      if(policy.decide({kind:"sneeze",confidence:1})!==null)
+        throw new Error("Uncalibrated sneeze must not trigger speech");
+      if(policy.decide({kind:"clap",confidence:.88})?.action!=="clap")
+        throw new Error("Confirmed clap animation was lost");
+      if(policy.decide({kind:"clap",confidence:.99})!==null)
+        throw new Error("Clapping cooldown was lost");
+      now+=2000;
+      const impactDetector=detector.create({clock:()=>now});
+      const suppressed=impactDetector.process({rms:.9,flat:.8,zcr:.2},{now,suppress:true});
+      if(suppressed.events.length!==0||suppressed.musicConfidence!==0)
+        throw new Error("Class/sleep/self-voice suppression failed");
+      const labels=["voice","music","clap","impact","laugh","cry","cough","sneeze"];
+      for(const lang of ["es","en","pt","fr","it","de"]){
+        for(const kind of labels){
+          const key="sound"+kind[0].toUpperCase()+kind.slice(1);
+          const label=window.ROBOTITO_I18N.t(key,lang);
+          if(!label||label===key)throw new Error("Missing acoustic translation "+lang+"/"+kind);
+        }
+      }
+      return {suppression:true,cooldown:true,translations:48};
+    });
+    console.log("Robotito browser acoustic event integration:",JSON.stringify(acousticIntegration));
+
 
 
     const integration=await page.evaluate(async()=>{

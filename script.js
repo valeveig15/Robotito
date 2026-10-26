@@ -1164,15 +1164,44 @@ function setupAudio(stream){
     state.analyser=analyser;
     const freq=new Uint8Array(analyser.frequencyBinCount);
     const time=new Uint8Array(analyser.fftSize);
+    const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.();
     const perception=window.ROBOTITO_AUDIO_PERCEPTION?.create?.({
+      // A sound-model is optional; without calibrated evidence we NEVER
+      // identify an uncertain cough, sneeze, laugh or crying episode.
+      classifier:window.ROBOTITO_AUDIO_EVENT_MODEL||null,
       onEvent:event=>{
-        if(state.classMode||state.sleeping||state.speaking)return;
-        if(event.kind==="clap"&&event.confidence>=.85){
+        const now=Date.now();
+        const reaction=reactionPolicy?.decide?.(event,{
+          now,suppressed:state.classMode||state.sleeping||state.speaking||document.hidden
+        });
+        if(!reaction)return;
+        if(reaction.action==="clap"){
           robot.classList.add("clapping");
           setTimeout(()=>robot.classList.remove("clapping"),1100);
+          return;
         }
-        if(event.kind==="sneeze"&&event.confidence>=.93){
-          sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",responseLanguage())||"¡Salud!",responseLanguage());
+        const previousMood=state.mood;
+        const temporaryMood=(mood,reason,duration)=>{
+          setMood(mood,reason);
+          setTimeout(()=>{
+            if(!state.sleeping&&!state.classMode&&state.mood===mood)
+              setMood(previousMood||"calm");
+          },duration);
+        };
+        if(reaction.action==="smile"){
+          temporaryMood("happy","Robotito escuchó una risa.",1700);
+        }else if(reaction.action==="notice"){
+          temporaryMood("curious","Robotito escuchó una tos.",1300);
+        }else if(reaction.action==="comfort"){
+          temporaryMood("curious","Robotito escucha con atención.",2600);
+          const lang=responseLanguage();
+          sayInLanguage(window.ROBOTITO_I18N?.t?.("soundComfort",lang)||"¿Está todo bien?",lang);
+        }else if(reaction.action==="bless"){
+          // Share cooldown with the separate speech-recognition sneeze path.
+          if(now-(handleSocialSpeech.lastBlessAt||0)<5000)return;
+          handleSocialSpeech.lastBlessAt=now;
+          const lang=responseLanguage();
+          sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",lang)||"¡Salud!",lang);
         }
       }
     });
@@ -1216,8 +1245,10 @@ function setupAudio(stream){
       const status=perception?.process({rms,flat,zcr,low,mid,high,centroid,harmonic},
         {now:Date.now(),suppress:state.speaking||state.classMode||state.sleeping||document.hidden})
         ||{kind:"unknown",musicConfidence:0};
-      const kinds={silence:"silencio",music:"música",noise:"ruido",unknown:"sonido"};
-      state.audioKind=kinds[status.kind]||"sonido";
+      const i18n=window.ROBOTITO_I18N;
+      const kind=String(status.kind||"unknown");
+      const label="sound"+kind.slice(0,1).toUpperCase()+kind.slice(1);
+      state.audioKind=i18n?.t?.(label,responseLanguage())||kind;
       state.musicConfidence=Math.round((status.musicConfidence||0)*100);
       const heard=$("#heardLabel");if(heard)heard.textContent=state.audioKind;
       if(rms>.04)state.lastHeardAt=Date.now();

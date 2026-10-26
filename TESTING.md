@@ -6,6 +6,7 @@
 - `npm run test:browser`: Chromium integration, IndexedDB binary migration, source contracts and four responsive viewports.
 - `npm run test:ci`: both suites.
 - `npm run test:semantic`: structured semantic-frame and legacy-adapter regression.
+- `npm run test:audio`: temporal acoustic classification, uncertain-event abstention and avatar-reaction regression.
 - `ROBOTITO_TEST_SEED=123 npm run test:universal`: reproduce a specific generative run.
 
 GitHub Actions runs the checks for pushes and pull requests. **A passing automated suite is evidence only for the cases and environments actually tested**; it does not prove perfect natural-language understanding, sound classification or device support.
@@ -22,7 +23,7 @@ The engine is **hybrid**, not a universally trained semantic model. Some rare or
 
 ## Audio and voice
 
-`audio-perception.js` fuses duration, energy, spectrum, harmonicity and periodicity. React only to confidence-gated events. It suppresses reactions to the avatar's own voice, classroom recording and sleep. **Sneeze vs. cough requires an independently trained and calibrated audio event classifier**; the current conservative implementation does not emit sneeze events. This is preferable to claiming a reliable medical/acoustic distinction from amplitude alone.
+`audio-perception.js` fuses duration, energy, spectrum, harmonicity and periodicity to label silence, unknown sounds, voice-like activity, music, broadband clap candidates and individual impacts. An isolated loud impact is not an applause event; uncertain situations remain `unknown`/`noise`. The detector never infers cough, sneeze, laughter or crying from amplitude alone. It suppresses responses to Robotito’s own speech, classroom recording, sleep and hidden tabs. `audio-reactions.js` separately enforces event confidence, model provenance, cooldown and context before moving the avatar or speaking.
 
 `voice-system.js` implements ten rate/pitch/style presets over system speech synthesis, not ten guaranteed distinct voice actors. The available timbres depend on the operating system. User-provided samples are opt-in, kept in IndexedDB and may be deleted. **No voice cloning is performed.** Another person's recording requires explicit consent and a recorded name; the voice is always labelled synthetic.
 
@@ -76,3 +77,23 @@ The same semantic frame now reaches `intent-engine.js`, `robotito-vnext.js` and 
 Recognition alternatives are scored using semantic plausibility and context in addition to ASR confidence; this does **not** replace acoustic speech recognition. The tests in `tests/semantic-composition-regression.js` cover comments, quotations, clarifications, negation, context, mixed orders, source gating, optional local-model suggestions and thousands of simulated turns. The Chromium regression additionally checks the actual typed dialogue and the n-best ASR selection path.
 
 **Limits:** offline understanding still uses compositional lexical/morphological cues and may be uncertain with highly novel constructions; an optional local language-model API improves coverage only where supported. It is not equivalent to open-ended, universally reliable semantic interpretation. Conversational context is in-memory and separated by recognized local person; per-person isolation and speaker recognition depend on the existing identity subsystem. Feature support differs between web browsers. This increment makes no destructive storage migration.
+
+## Audio event classifier contract (October 2026)
+
+The browser includes **no pretrained classifier for laughter, crying, coughs or sneezes**. These categories and an isolated model-confirmed clap can be identified only if a separately validated, locally executing model is supplied before microphone initialization as `window.ROBOTITO_AUDIO_EVENT_MODEL`, exposing:
+
+```javascript
+{
+  calibrated: true,               // Only after genuine calibration/validation
+  version: "validated-model-id",
+  predict: (frame, {noiseFloor, history}) => ({
+    clap: 0, laugh: 0, cry: 0, cough: 0, sneeze: 0
+  })
+}
+```
+
+Predictions are synchronous and numerical in [0, 1]. A worker-based async classifier can cache its latest result and return it synchronously. Merely setting `calibrated: true` is **not evidence of real calibration**; developers must first evaluate real, diverse annotated recordings and confusion matrices, particularly sneeze versus cough and applause versus impacts. No server upload is required by this module. Without a validated implementation, those events stay unrecognized and Robotito **does not** say “¡Salud!” based solely on noisy features. The existing onomatopoeia handling via speech transcripts is a separate, less certain user-input path.
+
+A model-confirmed event must sustain its score and beat competing class probabilities by a margin. A latch groups continuously high predictions, plus per-kind cooldowns, so a long sneeze label cannot repeatedly trigger “¡Salud!”. Reactions are suppressed during Robotito's own synthesized speech, Modo Clase, sleep and hidden tabs. Acoustic applause requires at least five temporally grouped broadband transients; the feature-only detector cannot reliably distinguish every clap from every manufactured impact.
+
+Tests: `tests/audio-event-regression.js` runs deterministic synthetic voice/music/noise/impact/clap sequences; calibrated **fake model** predictions exercise the event gates, cooldown, latching and suppression. Browser tests verify modules loaded, no reactions without model proof and 48 localized sound labels. These are **synthetic and simulated tests**, not a measured real-world detection accuracy. Diverse recordings, real microphones and field calibration remain mandatory before claiming reliable detection of all requested classes.
