@@ -17,10 +17,15 @@
   function measurements(){
     if(!layout||!divider)return null;
     const rect=layout.getBoundingClientRect();
+    const css=getComputedStyle(layout);
+    const paddingLeft=parseFloat(css.paddingLeft)||0;
+    const paddingRight=parseFloat(css.paddingRight)||0;
     const dividerWidth=divider.offsetWidth||18;
-    const available=rect.width-dividerWidth;
+    // Grid track widths belong to the content box, not the padded border box.
+    // Otherwise the resizer makes the desktop page wider than its viewport.
+    const available=rect.width-paddingLeft-paddingRight-dividerWidth;
     if(available<MIN_PANE*2)return null;
-    return {rect,dividerWidth,available};
+    return {rect,dividerWidth,available,paddingLeft};
   }
   function clampLeft(left,available){
     return Math.max(MIN_PANE,Math.min(available-MIN_PANE,left));
@@ -46,7 +51,7 @@
   function moveTo(clientX,persist=false){
     const size=measurements();
     if(!size)return;
-    const left=clientX-size.rect.left-size.dividerWidth/2;
+    const left=clientX-size.rect.left-size.paddingLeft-size.dividerWidth/2;
     applyRatio(clampLeft(left,size.available)/size.available,persist);
   }
   function stopDragging(event){
