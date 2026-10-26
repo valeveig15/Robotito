@@ -85,11 +85,12 @@
     else if(!frame.shouldExecute&&frame.negative)intent="statement";
     else if(["object","calculation"].includes(old.intent)&&frame.shouldExecute)intent=old.intent;
     else if(old.intent==="command"&&frame.shouldExecute&&["conversation","factual-question"].includes(frame.intent))intent="command";
-    else if(old.intent==="book-recommendation"&&frame.shouldExecute&&frame.intent==="book")intent="book-recommendation";
+    else if(old.intent==="book-recommendation"&&frame.shouldExecute&&["book","conversation","factual-question"].includes(frame.intent))intent="book-recommendation";
+    else if(["comparison","explanation"].includes(old.intent)&&frame.shouldExecute&&frame.intent==="factual-question")intent=old.intent;
     if(intent==="conversation"&&old.intent==="conversation")intent="conversation";
     const source=intent==="statement"?"none":
       frame.source==="classes"||frame.source==="materials"?"class":frame.source;
-    const depth=frame.depth==="normal"?old.depth:frame.depth;
+    const depth=intent==="calculation"||intent==="object"?old.depth:frame.depth==="normal"?old.depth:frame.depth;
     return {...old,...frame,intent,source,depth,
       topic:frame.entities?.topic||old.topic,
       exerciseNumber:frame.entities?.exerciseNumber??old.exerciseNumber,
