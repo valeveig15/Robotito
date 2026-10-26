@@ -30,14 +30,14 @@ function rhythmic(rows){
  return clamp(best*2);
 }
 function featureFrame(feature,at){
- const numeric=(key,max=Infinity)=>Math.max(0,Math.min(max,Number(feature?.[key])||0));
+ const numeric=(key,max=Infinity)=>{const value=Number(feature?.[key]);return Number.isFinite(value)?Math.max(0,Math.min(max,value)):0;};
  return {rms:numeric("rms"),flat:numeric("flat",1),centroid:numeric("centroid",1),
   harmonic:numeric("harmonic",1),low:numeric("low"),mid:numeric("mid"),
   high:numeric("high"),zcr:numeric("zcr",1),t:at};
 }
 function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  let frames=[],lastFrame=0,lastEvent=Object.create(null),transients=[],onset=null;
- let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null);
+ let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null);
  const modelAvailable=classifier?.calibrated===true
   &&typeof classifier?.version==="string"&&classifier.version.trim().length>0
   &&typeof classifier.predict==="function";
@@ -53,6 +53,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function clearEvidence(){
   frames=[];transients=[];onset=null;musicEvidence=0;modelEvidence=Object.create(null);
+  modelLatched=Object.create(null);modelMisses=Object.create(null);
   lastKind="unknown";lastFrame=0;
  }
  function classifierEvents(feature,at,active){
@@ -70,7 +71,14 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    const gate=MODEL_GATE[kind],valid=best.kind===kind&&best.score>=gate.threshold
     &&best.score-runnerUp>=gate.margin;
    let evidence=modelEvidence[kind];
-   if(!valid){modelEvidence[kind]=null;continue;}
+   if(!valid){
+    modelEvidence[kind]=null;
+    modelMisses[kind]=(modelMisses[kind]||0)+1;
+    if(modelMisses[kind]>=3)modelLatched[kind]=false;
+    continue;
+   }
+   modelMisses[kind]=0;
+   if(modelLatched[kind])continue;
    if(!evidence||at-evidence.lastAt>140){evidence={since:at,count:0,score:0,lastAt:at};}
    evidence.count++;evidence.lastAt=at;evidence.score+=values[kind];
    modelEvidence[kind]=evidence;
@@ -78,7 +86,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    if(evidence.count>=gate.frames&&duration>=gate.minDuration&&duration<=gate.maxDuration){
     const confidence=evidence.score/evidence.count;
     const event=emit(kind,confidence,at,{model:classifier.version,evidenceFrames:evidence.count});
-    if(event)events.push(event);
+    if(event){events.push(event);modelLatched[kind]=true;}
     modelEvidence[kind]=null;
    }
   }
