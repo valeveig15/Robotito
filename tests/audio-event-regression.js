@@ -205,6 +205,29 @@ const backgroundRows=feed(nonEventDetector,Array.from({length:12},()=>sample({
 })),{start:181000});
 ok(!onlyEvents(backgroundRows).some(event=>["sneeze","cough","laugh","cry","clap"].includes(event.kind)),
  "Background winner never triggers a model-confirmed human event");
+// A calibrated non-event winner must veto weaker acoustic clap and music
+// heuristics. These were previously able to override background classifications.
+for(const alternative of ["impact","noise","voice","speech","other","music"]){
+ const model={calibrated:true,version:"background-veto-v1",
+  predict:()=>({scores:{[alternative]:.999,clap:.01,sneeze:.01,cough:.01}})};
+ const det=audio.create({classifier:model,clock:()=>0});
+ const rows=feed(det,clapFrames,{start:183000});
+ ok(!onlyEvents(rows).some(event=>event.kind==="clap"),
+  "Calibrated "+alternative+" must veto heuristic applause");
+}
+const noiseMusicModel={calibrated:true,version:"noise-over-music-v1",
+ predict:()=>({scores:{noise:.999,music:.01,clap:.01}})};
+const noiseMusic=feed(audio.create({classifier:noiseMusicModel}),
+ musicFrames,{start:185000});
+ok(!noiseMusic.some(row=>row.kind==="music")&&
+ !onlyEvents(noiseMusic).some(event=>event.kind==="music"),
+ "Calibrated background noise must veto heuristic music and dancing");
+const musicMusicModel={calibrated:true,version:"music-music-v1",
+ predict:()=>({scores:{music:.999,noise:.01,clap:.01}})};
+const confirmedMusic=feed(audio.create({classifier:musicMusicModel}),
+ musicFrames,{start:195000});
+ok(confirmedMusic.some(row=>row.kind==="music"),
+ "A calibrated music alternative must preserve actual rhythmic music");
 const unopposedModel={calibrated:true,version:"unopposed-model-v1",
  predict:()=>({scores:{sneeze:.997,noise:.04,voice:.02,cough:.01}})};
 const unopposedDetector=audio.create({classifier:unopposedModel,clock:()=>0});
