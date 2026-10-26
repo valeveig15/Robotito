@@ -1318,8 +1318,16 @@ function speechAlternativeScore(alternative){
   let score=(Number(alternative?.confidence)||0)*4;
   score+=Math.min(tokens.length,10)*.025;
   if(state.languageMode==="es"&&normalizeSpanishSpeechIntent(raw)!==normalized)score+=.16;
-  if(/\b(robotito|clase|profesor|profesora|fisica|matematica|quimica|biologia|ejercicio|materia|tema|hambre|hora|fecha|dedos|objeto|presidente|recordas|acordas|densidad|masa|volumen|permutacion|energia|impulso)\b/.test(normalized))score+=.24;
-  if(/\b(que|como|cual|quien|cuando|donde|por que|cuanto|explica|define|decime|dime)\b/.test(normalized))score+=.18;
+  const semantic=window.ROBOTITO_SEMANTIC_PLANNER?.plan?.(raw,{
+    context:robotitoConversationContext,language:state.languageMode||"es"
+  });
+  if(semantic){
+    // Prefer interpretable hypotheses without turning ambient comments into orders.
+    if(["question","request"].includes(semantic.speechAct))score+=.16;
+    if(semantic.confidence>=.8&&!semantic.needsClarification)score+=.10;
+    if(semantic.references?.usesPrevious)score+=.10;
+    if(semantic.negative&&!semantic.shouldExecute)score+=.04;
+  }
   if(window.ROBOTITO_EMOTION_DIALOGUE?.classify?.(raw))score+=.28;
   if(tokens.length>=3&&new Set(tokens).size===1)score-=.8;
   if(/^(?:eh|em|mmm|ah)+$/.test(normalized))score-=.5;
@@ -5187,7 +5195,8 @@ window.ROBOTITO_CHAT={send:handleSpeech,context:()=>robotitoConversationContext}
 window.ROBOTITO_SPEECH_QA={
   cleanTranscript:cleanRecognitionTranscript,
   mergeChunks:mergeRecognitionChunks,
-  alternativeScore:speechAlternativeScore
+  alternativeScore:speechAlternativeScore,
+  chooseAlternative:chooseSpeechAlternative
 };
 
 window.ROBOTITO_BATTERY={
