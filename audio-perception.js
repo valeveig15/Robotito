@@ -152,7 +152,12 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   const validated=classifierEvents(f,now,loud);
   const events=[...validated];
   const competingHuman=Boolean(modelCandidate&&MODEL_EVENTS.includes(modelCandidate.kind)&&modelCandidate.kind!=="clap"||modelCandidate?.kind==="uncertain");
-  if(kind==="music"&&!competingHuman){const event=emit("music",confidence,now);if(event)events.push(event);}
+  // A calibrated background decision outranks weaker acoustic guesses:
+  // repeated impacts are not applause and rhythmic noise is not music.
+  const alternative=modelCandidate?.kind==="non-event"?modelCandidate.label:null;
+  const rejectHeuristicClap=competingHuman||Boolean(alternative);
+  const rejectHeuristicMusic=competingHuman||Boolean(alternative&&alternative!=="music");
+  if(kind==="music"&&!rejectHeuristicMusic){const event=emit("music",confidence,now);if(event)events.push(event);}
   // Broadband onsets are possible claps or impacts. A solitary loud sound
   // never becomes applause. Prefer "impact/unknown" over an invented clap.
   const prev=frames.at(-2);
@@ -174,7 +179,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   if(onset&&now-onset.at>330)onset=null;
   transients=transients.filter(x=>now-x.at<2000);
   const sharp=transients.filter(x=>x.sharp);
-  if(sharp.length>=5&&kind!=="music"&&!competingHuman){
+  if(sharp.length>=5&&kind!=="music"&&!rejectHeuristicClap){
    const hits=sharp.slice(-5),gaps=hits.slice(1).map((x,i)=>x.at-hits[i].at);
    const regular=gaps.every(n=>n>=90&&n<=650);
    const span=hits.at(-1).at-hits[0].at;
@@ -189,9 +194,12 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   }
   // A calibrated human-event candidate takes precedence over ambiguous transients.
   // Do not let leftover clap bursts emit later when the model drops out.
-  if(competingHuman)transients=[];
+  if(rejectHeuristicClap)transients=[];
   for(const event of validated){kind=event.kind;confidence=event.confidence;}
   if(competingHuman&&!validated.length){kind="unknown";confidence=.25;}
+  else if(rejectHeuristicMusic&&kind==="music"){
+   kind=alternative==="noise"?"noise":"unknown";confidence=.25;
+  }
   lastKind=kind;
   return {kind,confidence,musicConfidence:musicEvidence,noiseFloor,events,
    candidates:{voice:voiceScore,music:musicEvidence,impact:transients.length,
