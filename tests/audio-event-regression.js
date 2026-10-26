@@ -2,6 +2,7 @@
 // Fixed synthetic signals are deliberately not passed off as real microphone validation.
 const assert=require("node:assert/strict");
 const audio=require("../audio-perception.js");
+const reactions=require("../audio-reactions.js");
 const {randomSource}=require("./generative-kit.js");
 const seed=process.env.ROBOTITO_TEST_SEED||17,random=randomSource(seed);
 let checks=0;
@@ -101,4 +102,30 @@ for(let scenario=0;scenario<65;scenario++){
  ok(!onlyEvents(result).some(x=>["sneeze","cough","laugh","cry","music"].includes(x.kind)),
  "Seeded noise never invents a human event "+scenario);
 }
+// Reaction policy is separate from detection: a plausible event does not
+// authorize unprompted speech without calibrated evidence and temporal cooldown.
+let now=200000;
+const policy=reactions.create({clock:()=>now});
+eq(policy.decide({kind:"clap",confidence:.68}),null,"Low-confidence claps do nothing");
+eq(policy.decide({kind:"impact",confidence:.98}),null,"Impact never triggers applause");
+eq(policy.decide({kind:"sneeze",confidence:1}),null,"Unproven sneeze never triggers speech");
+eq(policy.decide({kind:"laugh",confidence:1}),null,"Unproven laugh never changes mood");
+eq(policy.decide({kind:"cry",confidence:.995,metadata:{model:"calibrated"}},
+  {suppressed:true}),null,"Class-mode suppression prevents concern");
+const sneezeEvent={kind:"sneeze",confidence:.98,metadata:{model:"mock-calibrated"}};
+eq(policy.decide(sneezeEvent)?.action,"bless","Verified sneeze receives one localized blessing");
+now+=500;
+eq(policy.decide(sneezeEvent),null,"Sneeze cooldown suppresses duplicate");
+now+=5200;
+eq(policy.decide(sneezeEvent)?.action,"bless","New sneeze after cooldown may react");
+eq(policy.decide({kind:"clap",confidence:.8})?.action,"clap","Confirmed applause gets animation");
+eq(policy.decide({kind:"clap",confidence:.95}),null,"Repeated claps do not spam animation");
+eq(policy.decide({kind:"laugh",confidence:.93,metadata:{model:"calibrated"}})?.action,
+  "smile","Calibrated laughter yields a temporary smile");
+eq(policy.decide({kind:"cry",confidence:.94,metadata:{model:"calibrated"}})?.action,
+  "comfort","Calibrated crying yields a restrained comfort response");
+eq(policy.decide({kind:"cough",confidence:.96,metadata:{model:"calibrated"}})?.action,
+  "notice","Calibrated cough prompts attention without unsolicited speech");
+eq(policy.decide({kind:"music",confidence:1}),null,
+  "Music is controlled by continuous rhythm state rather than event spam");
 console.log("Robotito acoustic event regression:",checks,"assertions; seed:",seed);
