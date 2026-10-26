@@ -59,6 +59,26 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return true;
     });
     if(!languageIntegration)throw new Error("Language integration unavailable");
+    const dialogueIntegration=await page.evaluate(async()=>{
+      const chat=window.ROBOTITO_CHAT;
+      if(!chat?.send||!chat.context)throw new Error("Unified dialogue unavailable");
+      const oldClass=document.querySelector("#classAnswer")?.innerHTML||"";
+      await chat.send("La profesora dijo que ayer repasamos permutaciones",{channel:"text"});
+      if((document.querySelector("#classAnswer")?.innerHTML||"")!==oldClass)
+        throw new Error("Class retrieval fired on ambient comment");
+      if(chat.context().focus?.speechAct!=="statement")
+        throw new Error("A statement was recorded as an instruction");
+      await chat.send("No me muestres lo que dijo la profesora",{channel:"text"});
+      if((document.querySelector("#classAnswer")?.innerHTML||"")!==oldClass)
+        throw new Error("Class retrieval fired on a negated instruction");
+      await chat.send("¿Qué es permutación? y después haceme una pregunta",{channel:"text"});
+      const bubble=document.querySelector("#speechBubble")?.textContent||"";
+      if(!/como explicarias|cómo explicarías/i.test(bubble))
+        throw new Error("Sequential quiz action did not execute: "+bubble);
+      return {comment:1,negated:1,compound:2};
+    });
+    console.log("Robotito unified dialogue browser integration:",JSON.stringify(dialogueIntegration));
+
     const integration=await page.evaluate(async()=>{
       const store=window.ROBOTITO_STORE;
       if(!store||!window.ROBOTITO_I18N||!window.ROBOTITO_AUDIO_PERCEPTION)throw new Error("Missing universal runtime modules");
