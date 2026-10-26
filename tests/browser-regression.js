@@ -25,6 +25,27 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     }
     if(pageErrors.length)throw new Error("Page errors: "+pageErrors.join(" | "));
 
+    const routerIntegration=await page.evaluate(async()=>{
+      const planner=window.ROBOTITO_SEMANTIC_PLANNER,router=window.ROBOTITO_ROUTER;
+      if(!planner?.plan||!router?.classify||!router?.handle)throw new Error("Shared semantic routing unavailable");
+      const comments=["El profesor dijo que mañana hay examen.","La profesora contó que estudió permutaciones."];
+      for(const input of comments){
+        const plan=planner.plan(input);
+        if(plan.speechAct!=="statement"||plan.mayReadClass||plan.shouldExecute)
+          throw new Error("Incidental class commentary is not an action: "+input);
+        const result=await router.handle(input,{plan});
+        if(result!==false)throw new Error("Router executed a comment: "+input);
+      }
+      const negated="No me muestres lo que dijo la profesora";
+      const noPlan=planner.plan(negated);
+      if(noPlan.shouldExecute||await router.handle(negated,{plan:noPlan}))
+        throw new Error("Router executed a negated order");
+      const object="¿Qué objeto es esto?";
+      if(router.classify(object,planner.plan(object)).intent!=="object")
+        throw new Error("Camera intent lost in central routing");
+      return {comments:comments.length,negative:1,object:1};
+    });
+    console.log("Robotito structured router browser integration:",JSON.stringify(routerIntegration));
     const languageIntegration=await page.evaluate(async()=>{
       document.querySelector("#voiceEnabled").checked=false;
       document.querySelector("#voiceEnabled").dispatchEvent(new Event("change"));
