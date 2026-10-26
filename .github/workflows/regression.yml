@@ -25,6 +25,8 @@ jobs:
       - name: Install test dependencies
         run: npm ci --ignore-scripts
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # GitHub Ubuntu runners include Chromium's standard shared libraries.
+        # Avoid an apt transaction that can stall the whole regression run.
+        run: npx playwright install chromium
       - name: Run core and browser regressions
         run: npm test && npm run test:browser
