@@ -187,7 +187,37 @@ const criticalTriples=[
   assert.deepEqual(interruptedMicrophone,
     {start:{ok:false,reason:"no-audio-track"},active:false},
     "Unavailable microphone must not create a phantom class recording");
-  if(errors.length)throw Error("Browser exceptions: "+errors.join("\n"));
+    // Capability matrix complements the existing real-device/mood/permission scenarios.
+  const speechFactors={
+    language:["es","en","pt","fr","it","de"],
+    viewport:["small-phone","phone","landscape","tablet","desktop"],
+    mode:["normal","class","muted"],
+    voiceEnabled:[false,true],synthesisAvailable:[false,true]
+  };
+  const speechTriples=[["mode","voiceEnabled","synthesisAvailable"]];
+  const speechCases=coveringArray(speechFactors,{seed,criticalTriples:speechTriples,maxCases:250});
+  const speechReport=coverageReport(speechCases,speechFactors,{criticalTriples:speechTriples});
+  assert.equal(speechReport.complete,true,"Voice capability covering array is complete");
+  const speechResult=await page.evaluate(rows=>{
+    const policy=window.ROBOTITO_RUNTIME_POLICY;
+    if(typeof policy?.canSpeak!=="function")throw Error("Runtime voice policy not loaded");
+    let checked=0;
+    for(const row of rows){
+      const state={classMode:row.mode==="class",muted:row.mode==="muted",
+        voiceEnabled:row.voiceEnabled,synthesisAvailable:row.synthesisAvailable};
+      const expected=row.mode==="normal"&&row.voiceEnabled&&row.synthesisAvailable;
+      if(policy.canSpeak(state)!==expected)
+        throw Error("Unexpected speech activation: "+JSON.stringify(row));
+      if(!window.ROBOTITO_I18N.locale(row.language).startsWith(row.language))
+        throw Error("Language locale mismatch: "+JSON.stringify(row));
+      checked++;
+    }
+    return checked;
+  },speechCases);
+  assert.equal(speechResult,speechCases.length,"Every generated capability case was executed");
+  console.log("Robotito voice availability matrix:",speechResult,
+    "browser cases /",speechReport.covered,"pairs/triples; seed:",seed);
+if(errors.length)throw Error("Browser exceptions: "+errors.join("\n"));
   console.log("Robotito browser scenario matrix:",checked,"real UI states /",
     report.covered,"pair/triple targets; reload and suspension passed; seed:",seed);
  }finally{
