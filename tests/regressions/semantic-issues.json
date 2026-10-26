@@ -1,0 +1,241 @@
+[
+  {
+    "id": "NLU-001",
+    "input": "La profesora dijo que tenemos examen mañana.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "Reporting speech is not a class lookup"
+  },
+  {
+    "id": "NLU-002",
+    "input": "Recomendé un libro ayer.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "Past-tense book mention is not a recommendation command"
+  },
+  {
+    "id": "NLU-003",
+    "input": "La profesora dijo '¿qué es un choque elástico?'",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "Quoted interrogative must not execute"
+  },
+  {
+    "id": "NLU-004",
+    "input": "¿Qué es un libro?",
+    "expected": {
+      "intent": "definition",
+      "source": "general",
+      "mayReadClass": false
+    },
+    "reason": "A domain noun does not authorize a book lookup"
+  },
+  {
+    "id": "NLU-005",
+    "input": "¿Qué es una profesora?",
+    "expected": {
+      "intent": "definition",
+      "source": "general",
+      "mayReadClass": false
+    },
+    "reason": "A teacher noun does not authorize class lookup"
+  },
+  {
+    "id": "NLU-006",
+    "input": "¿Qué significa clima?",
+    "expected": {
+      "intent": "definition",
+      "source": "general",
+      "mayReadClass": false
+    },
+    "reason": "A weather noun is not a weather forecast request"
+  },
+  {
+    "id": "NLU-007",
+    "input": "¿Qué dijo la profesora sobre permutaciones?",
+    "expected": {
+      "intent": "class-question",
+      "source": "classes",
+      "mayReadClass": true
+    },
+    "reason": "Explicit teacher evidence request uses class source"
+  },
+  {
+    "id": "NLU-008",
+    "input": "No me muestres los apuntes",
+    "expected": {
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "Negation prohibits source access"
+  },
+  {
+    "id": "NLU-009",
+    "input": "¿Y el otro?",
+    "expected": {
+      "needsClarification": true
+    },
+    "reason": "Unresolved reference must be clarified"
+  },
+  {
+    "id": "NLU-010",
+    "input": "Explícame paso a paso el ejercicio 42 de Matemática",
+    "expected": {
+      "intent": "exercise",
+      "source": "materials",
+      "depth": "step-by-step",
+      "mayReadClass": true
+    },
+    "reason": "Number and depth preserved"
+  },
+  {
+    "id": "NLU-011",
+    "input": "What did the teacher say about impulse?",
+    "expected": {
+      "intent": "class-question",
+      "source": "classes",
+      "mayReadClass": true
+    },
+    "reason": "English teacher query"
+  },
+  {
+    "id": "NLU-012",
+    "input": "O que a professora disse sobre impulso?",
+    "expected": {
+      "intent": "class-question",
+      "source": "classes",
+      "mayReadClass": true
+    },
+    "reason": "Portuguese teacher query"
+  },
+  {
+    "id": "NLU-013",
+    "input": "Qu'a dit le professeur sur les permutations?",
+    "expected": {
+      "intent": "class-question",
+      "source": "classes",
+      "mayReadClass": true
+    },
+    "reason": "French teacher query"
+  },
+  {
+    "id": "NLU-014",
+    "input": "Cosa ha detto il professore sulle permutazioni?",
+    "expected": {
+      "intent": "class-question",
+      "source": "classes",
+      "mayReadClass": true
+    },
+    "reason": "Italian teacher query"
+  },
+  {
+    "id": "NLU-015",
+    "input": "Was sagte der Lehrer über Permutationen?",
+    "expected": {
+      "intent": "class-question",
+      "source": "classes",
+      "mayReadClass": true
+    },
+    "reason": "German teacher query"
+  },
+  {
+    "id": "NLU-016",
+    "input": "Spiega passo passo l'esercizio 42 di matematica",
+    "expected": {
+      "intent": "exercise",
+      "source": "materials",
+      "mayReadClass": true,
+      "shouldExecute": true
+    },
+    "reason": "Italian exercise imperative"
+  },
+  {
+    "id": "NLU-017",
+    "input": "Definisci libro",
+    "expected": {
+      "intent": "definition",
+      "source": "general"
+    },
+    "reason": "Italian definition must not route to Books"
+  },
+  {
+    "id": "NLU-018",
+    "input": "Definiere Buch",
+    "expected": {
+      "intent": "definition",
+      "source": "general"
+    },
+    "reason": "German definition must not route to Books"
+  },
+  {
+    "id": "NLU-019",
+    "input": "The teacher said we discussed impulse.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "English report statement"
+  },
+  {
+    "id": "NLU-020",
+    "input": "A professora disse que estudamos impulso.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "Portuguese report statement"
+  },
+  {
+    "id": "NLU-021",
+    "input": "Le professeur a dit que nous étudions les livres.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "French report statement"
+  },
+  {
+    "id": "NLU-022",
+    "input": "Il professore ha detto che studiamo i libri.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "Italian report statement"
+  },
+  {
+    "id": "NLU-023",
+    "input": "Der Lehrer sagte wir lernen Bücher.",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "German report statement"
+  },
+  {
+    "id": "NLU-024",
+    "input": "¿Qué es permutación? y después haceme una pregunta",
+    "expected": {
+      "source": "general",
+      "shouldExecute": true
+    },
+    "reason": "Compound request maintains first-source policy"
+  },
+  {
+    "id": "NLU-025",
+    "input": "Perdón, era el ejercicio 5",
+    "expected": {
+      "intent": "exercise",
+      "source": "materials",
+      "shouldExecute": true
+    },
+    "reason": "Corrected exercise number is a new request"
+  }
+]
