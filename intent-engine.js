@@ -37,7 +37,7 @@
     return q.replace(/^(?:un|una|el|la|los|las|a|an|the)\s+/,"").trim();
   }
 
-  function classify(raw){
+  function legacyClassify(raw){
     const q=normalize(raw);
     const result={intent:"statement",depth:"normal",source:"none",topic:"",exerciseNumber:null,confidence:.72};
     if(!q)return {...result,intent:"empty",confidence:1};
@@ -66,6 +66,35 @@
     result.useClassMemory=result.intent==="class-question"||result.intent==="exercise";
     result.isQuestion=["definition","explanation","comparison","calculation","class-question","exercise","factual-question","object","book-recommendation"].includes(result.intent);
     return result;
+  }
+
+  // This adapter keeps legacy consumers and tests stable while making the
+  // structured conversation frame authoritative whenever it is available.
+  // Specialized math/object commands remain with their existing handlers.
+  function classify(raw,options={}){
+    const old=legacyClassify(raw);
+    const planner=window.ROBOTITO_SEMANTIC_PLANNER;
+    const frame=options.plan||planner?.plan?.(raw,{
+      context:options.context,language:options.language
+    });
+    if(!frame)return old;
+    const conversational=frame.speechAct==="statement"||frame.speechAct==="social";
+    let intent=frame.intent;
+    if(frame.speechAct==="social")intent="conversation";
+    if(frame.speechAct==="statement")intent="statement";
+    else if(!frame.shouldExecute&&frame.negative)intent="statement";
+    else if(["object","calculation"].includes(old.intent)&&frame.shouldExecute)intent=old.intent;
+    else if(old.intent==="command"&&frame.shouldExecute&&["conversation","factual-question"].includes(frame.intent))intent="command";
+    else if(old.intent==="book-recommendation"&&frame.shouldExecute&&frame.intent==="book")intent="book-recommendation";
+    if(intent==="conversation"&&old.intent==="conversation")intent="conversation";
+    const source=intent==="statement"?"none":
+      frame.source==="classes"||frame.source==="materials"?"class":frame.source;
+    const depth=frame.depth==="normal"?old.depth:frame.depth;
+    return {...old,...frame,intent,source,depth,
+      topic:frame.entities?.topic||old.topic,
+      exerciseNumber:frame.entities?.exerciseNumber??old.exerciseNumber,
+      useClassMemory:frame.mayReadClass===true&&frame.shouldExecute===true&&!conversational,
+      isQuestion:frame.speechAct==="question"||frame.speechAct==="request"};
   }
 
   function legacyDepth(raw){
