@@ -283,7 +283,7 @@ const MODEL_INTENTS=new Set(["definition","explanation","comparison","example","
 let localModelPromise=null;
 async function planAsync(raw,options={}){
  const base=plan(raw,options);
- if(base.intent==="empty"||base.confidence>=.90||typeof root.LanguageModel?.create!=="function")return base;
+ if(base.intent==="empty"||base.speechAct==="statement"||!base.shouldExecute||base.needsClarification||base.confidence>=.90||typeof root.LanguageModel?.create!=="function")return base;
  try{
   if(!localModelPromise)localModelPromise=root.LanguageModel.create({temperature:0}).catch(e=>{localModelPromise=null;throw e;});
   const model=await localModelPromise;
@@ -298,11 +298,13 @@ async function planAsync(raw,options={}){
   if(confidence<.78)return base;
   const sourceMention=/\b(?:clase|profesor|profesora|docente|maestro|maestra|tutor|tutora|instructor|apuntes|transcripcion|teacher|tutor|class|lecture|notes|professeur|cours|professor|aula|lezione|lehrer|unterricht)\b/i.test(String(raw));
   const materialMention=/\b(?:ejercicio|exercise|exercicio|exercice|esercizio|aufgabe|material|apunte|worksheet|document|pdf|archivo)\b/i.test(String(raw));
-  const permitted=proposal.source!=="classes"||(proposal.intent==="class-question"&&sourceMention);
-  const materialAllowed=proposal.source!=="materials"||(["exercise","material-question"].includes(proposal.intent)&&materialMention);
+  const permitted=proposal.source!=="classes"||(proposal.intent==="class-question"&&sourceMention&&base.mayReadClass);
+  const materialAllowed=proposal.source!=="materials"||(["exercise","material-question"].includes(proposal.intent)&&materialMention&&base.mayReadClass);
   if(!permitted||!materialAllowed)return base;
-  return {...base,intent:proposal.intent,source:proposal.source,confidence,
-   depth:["brief","normal","detailed","step-by-step","structured"].includes(proposal.depth)?proposal.depth:base.depth,
+  const depth=["brief","normal","detailed","step-by-step","structured"].includes(proposal.depth)?proposal.depth:base.depth;
+  const first={...base.actions[0],intent:proposal.intent,source:proposal.source,depth};
+  return {...base,intent:proposal.intent,source:proposal.source,confidence,depth,
+   actions:[first,...base.actions.slice(1)],
    mayReadClass:["classes","materials"].includes(proposal.source),modelRefined:true};
  }catch(e){return base;}
 }
