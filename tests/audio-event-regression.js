@@ -183,6 +183,36 @@ for(let scenario=0;scenario<65;scenario++){
  ok(!onlyEvents(result).some(x=>["sneeze","cough","laugh","cry","music"].includes(x.kind)),
  "Seeded noise never invents a human event "+scenario);
 }
+// Regression: classifier's alternatives must include non-reactive categories.
+// A high sneeze score cannot override equally credible voice/noise evidence.
+for(const [other,probability] of [["voice",.98],["speech",.98],["noise",.98],
+ ["impact",.98],["music",.98],["other",.98],["unknown",.98]]){
+ const competingBackground={calibrated:true,version:"non-event-competition-v1",
+  predict:()=>({scores:{sneeze:.997,cough:.01,laugh:.01,cry:.01,clap:.01,
+   [other]:probability}})};
+ const detector=audio.create({classifier:competingBackground,clock:()=>0});
+ const results=feed(detector,Array.from({length:16},()=>sample({
+  rms:.2,flat:.3,harmonic:.7,low:42,mid:63,high:22
+ })),{start:180000});
+ ok(!onlyEvents(results).some(event=>event.kind==="sneeze"),
+  "Competing "+other+" must block invented sneeze");
+}
+const nonEventWinner={calibrated:true,version:"background-winner-v1",
+ predict:()=>({scores:{noise:.999,sneeze:.10,cough:.03,cry:.02,laugh:.01,clap:.01}})};
+const nonEventDetector=audio.create({classifier:nonEventWinner,clock:()=>0});
+const backgroundRows=feed(nonEventDetector,Array.from({length:12},()=>sample({
+ rms:.15,flat:.92,harmonic:.06
+})),{start:181000});
+ok(!onlyEvents(backgroundRows).some(event=>["sneeze","cough","laugh","cry","clap"].includes(event.kind)),
+ "Background winner never triggers a model-confirmed human event");
+const unopposedModel={calibrated:true,version:"unopposed-model-v1",
+ predict:()=>({scores:{sneeze:.997,noise:.04,voice:.02,cough:.01}})};
+const unopposedDetector=audio.create({classifier:unopposedModel,clock:()=>0});
+const safeHuman=feed(unopposedDetector,Array.from({length:12},()=>sample({
+ rms:.18,flat:.3,harmonic:.5
+})),{start:182000});
+eq(onlyEvents(safeHuman).filter(event=>event.kind==="sneeze").length,1,
+ "A clearly unopposed sneeze remains detectable with calibrated evidence");
 // Reaction policy is separate from detection: a plausible event does not
 // authorize unprompted speech without calibrated evidence and temporal cooldown.
 let now=200000;
