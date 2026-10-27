@@ -79,6 +79,12 @@ Recognition alternatives are scored using semantic plausibility and context in a
 
 **Limits:** offline understanding still uses compositional lexical/morphological cues and may be uncertain with highly novel constructions; an optional local language-model API improves coverage only where supported. It is not equivalent to open-ended, universally reliable semantic interpretation. Conversational context is in-memory and separated by recognized local person; per-person isolation and speaker recognition depend on the existing identity subsystem. Feature support differs between web browsers. This increment makes no destructive storage migration.
 
+## Optional real audio classifier (P03 incremental)
+
+The user can now opt in to an **on-device YAMNet AudioSet** model (Google MediaPipe Tasks Audio, pinned package and model URL). By default the checkbox is **off**: no model worker, WASM or model files are downloaded until the person opts in. It processes microphone audio locally, maintains an ephemeral rolling ~0.975-second window and classifies no more often than a half-second hop, in a worker. Runtime/model assets are obtained from third parties; MediaPipe may emit usage metrics, disclosed beside the opt-in. Turning it off terminates the worker and clears the sample buffers. A failed download does not disable existing microphone controls, and no microphone PCM or transcript is uploaded by Robotito.
+
+**This is a pre-trained classifier but NOT a validated or calibrated classifier for Robotito.** Its labels are displayed as *possible* sounds, only at a confidence threshold; automatic cough/sneeze/laughter/crying reactions remain **disabled** until a diverse real-sound dataset, per-class confusion matrices and a human-approved activation profile have established safe thresholds. This protects against a false unsolicited “¡Salud!”. `tests/audio-model-adapter-regression.js` verifies opt-in, bounded PCM, label mapping, freshness and opt-out using a fake worker; CI does **not** download the real model or test true accuracy. Browser support and network are required for this optional download.
+
 ## Audio event classifier contract (October 2026)
 
 The browser includes **no pretrained classifier for laughter, crying, coughs or sneezes**. These categories and an isolated model-confirmed clap can be identified only if a separately validated, locally executing model is supplied before microphone initialization as `window.ROBOTITO_AUDIO_EVENT_MODEL`, exposing:
