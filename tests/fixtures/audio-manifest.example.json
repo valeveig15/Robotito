@@ -1,0 +1,19 @@
+{
+  "name": "Reemplazar con el nombre de tu corpus real etiquetado",
+  "clips": [
+    {
+      "id": "ejemplo-estornudo-1",
+      "path": "clips/estornudo.wav",
+      "label": "sneeze",
+      "environment": "habitacion-silenciosa",
+      "rights": "owned"
+    },
+    {
+      "id": "ejemplo-golpe-1",
+      "path": "clips/golpe.wav",
+      "label": "impact",
+      "environment": "habitacion-con-ruido",
+      "rights": "open-license"
+    }
+  ]
+}

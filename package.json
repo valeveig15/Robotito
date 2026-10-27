@@ -18,7 +18,8 @@
     "test:properties:matrix": "ROBOTITO_TEST_SEED=17 npm run test:properties && ROBOTITO_TEST_SEED=42 npm run test:properties && ROBOTITO_TEST_SEED=99 npm run test:properties",
     "test:browser:scenarios": "node tests/browser-scenarios.js",
     "test:browser:matrix": "ROBOTITO_TEST_SEED=17 npm run test:browser:scenarios && ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios && ROBOTITO_TEST_SEED=99 npm run test:browser:scenarios",
-    "test:audio": "node tests/audio-event-regression.js && node tests/audio-model-adapter-regression.js && node tests/audio-capture-worklet-regression.js",
+    "test:audio": "node tests/audio-event-regression.js && node tests/audio-model-adapter-regression.js && node tests/audio-capture-worklet-regression.js && node tests/audio-calibration-regression.js",
+    "evaluate:audio": "node scripts/evaluate-audio-dataset.js",
     "test:audio:matrix": "ROBOTITO_TEST_SEED=17 npm run test:audio && ROBOTITO_TEST_SEED=42 npm run test:audio && ROBOTITO_TEST_SEED=99 npm run test:audio"
   },
   "devDependencies": {
