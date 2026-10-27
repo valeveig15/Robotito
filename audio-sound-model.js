@@ -34,7 +34,7 @@ function mapCategories(categories){
 function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type:"module"}),
  clock=()=>Date.now(),onUpdate=()=>{}}={}){
  let worker=null,state="off",statusMessage="",last=null,writeAt=0,filled=0,sinceLast=0;
- let sequence=0,busy=false,ring=new Float32Array(WINDOW_SAMPLES);
+ let sequence=0,minimumAcceptedId=0,busy=false,ring=new Float32Array(WINDOW_SAMPLES);
  const version="YAMNet AudioSet (uncalibrated for Robotito)";
  const publish=()=>{try{onUpdate(getStatus());}catch(e){console.warn("Sound model state",e);}};
  function getStatus(){
@@ -42,14 +42,23 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type
   return {state,message:statusMessage,version,calibrated:false,
     candidate:recent?{...recent.candidate}:null,scores:recent?{...recent.scores}:null};
  }
+ function clearAudio(){
+  if(!filled&&!last)return;
+  // Clear a session's PCM and reject a prediction whose samples predate
+  // class mode, sleep, Robotito's own voice or an interrupted microphone.
+  filled=0;sinceLast=0;writeAt=0;last=null;
+  minimumAcceptedId=sequence+1;
+  ring.fill(0);publish();
+ }
  function disable(){
   const previous=worker;worker=null;
   if(previous)try{previous.terminate();}catch{}
   state="off";statusMessage="";last=null;writeAt=0;filled=0;sinceLast=0;busy=false;
-  ring=new Float32Array(WINDOW_SAMPLES);publish();
+  ring=new Float32Array(WINDOW_SAMPLES);minimumAcceptedId=sequence+1;publish();
  }
  function enable(){
   if(state==="loading"||state==="ready")return true;
+  if(worker)disable(); // Retry must terminate the old failed worker.
   if(typeof workerFactory!=="function")return false;
   let created;
   try{created=workerFactory();}
@@ -58,21 +67,25 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type
    state="error";statusMessage="Worker unavailable";publish();return false;
   }
   worker=created;state="loading";statusMessage="";publish();
+  const fail=message=>{
+   if(worker!==created)return;
+   worker=null;try{created.terminate();}catch{}
+   state="error";statusMessage=String(message).slice(0,200);
+   busy=false;last=null;filled=0;sinceLast=0;ring.fill(0);publish();
+  };
   created.onmessage=event=>{
    if(worker!==created)return;
    const data=event?.data||{};
    if(data.type==="ready"){state="ready";statusMessage="";publish();}
    else if(data.type==="result"){
     busy=false;
-    if(!Number.isInteger(data.id)||data.id>sequence||data.id<= (last?.id||0))return;
+    if(!Number.isInteger(data.id)||data.id>sequence||
+       data.id<minimumAcceptedId||data.id<= (last?.id||0))return;
     const mapped=mapCategories(data.categories);
     last={id:data.id,observedAt:clock(),...mapped};publish();
-   }else if(data.type==="error"){
-    statusMessage=String(data.message||"Model unavailable").slice(0,200);
-    state="error";busy=false;publish();
-   }
+   }else if(data.type==="error")fail(data.message||"Model unavailable");
   };
-  created.onerror=()=>{if(worker===created){state="error";statusMessage="Model worker error";busy=false;publish();}};
+  created.onerror=()=>fail("Model worker error");
   try{created.postMessage({type:"init"});}
   catch(error){disable();state="error";statusMessage=String(error);publish();return false;}
   return true;
@@ -95,9 +108,13 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type
   for(let i=0;i<WINDOW_SAMPLES;i++)frame[i]=ring[(writeAt+i)%WINDOW_SAMPLES];
   busy=true;sinceLast=0;
   try{worker.postMessage({type:"classify",id:++sequence,sampleRate:TARGET_RATE,samples:frame},[frame.buffer]);}
-  catch(error){busy=false;state="error";statusMessage=String(error);publish();}
+  catch(error){
+   busy=false;state="error";statusMessage=String(error);
+   const failed=worker;worker=null;try{failed?.terminate();}catch{}
+   ring.fill(0);filled=0;last=null;publish();
+  }
  }
- return {enable,disable,pushPCM,getStatus,calibrated:false,version};
+ return {enable,disable,clearAudio,pushPCM,getStatus,calibrated:false,version};
 }
 root.ROBOTITO_SOUND_MODEL={create,mapCategories,WINDOW_SAMPLES,TARGET_RATE};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_SOUND_MODEL;
