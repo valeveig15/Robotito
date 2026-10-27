@@ -32,7 +32,7 @@ function mapCategories(categories){
  }
  return {scores:score,candidate:strongest};
 }
-function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type:"module"}),
+function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
  clock=()=>Date.now(),onUpdate=()=>{}}={}){
  let worker=null,state="off",statusMessage="",last=null,writeAt=0,filled=0,sinceLast=0;
  let sequence=0,minimumAcceptedId=0,pendingId=0,pendingAt=0,busy=false;
