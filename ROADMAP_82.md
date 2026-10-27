@@ -29,11 +29,29 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 **Alcance y límites explícitos:** la cifra de 999.999 preguntas y 50 variantes cada una es un objetivo arquitectónico de generalización, **no** un volumen de consultas arbitrarias probado ni una promesa de comprensión perfecta. La precisión del habla ASR/voz, los modelos locales disponibles, la validación en micrófonos/cámaras físicos y la ampliación continua del corpus pertenecen a los siguientes pedidos y a pruebas de campo. Los 900 casos son variaciones metamórficas; no se presentan engañosamente como 900 paráfrasis semánticas independientes. Cada nueva falla real debe añadirse a la regresión del núcleo sin reabrir el trabajo ya verificado de forma ficticia.
 
-**Secuencia:** se puede auditar el pedido 02 a partir de este cierre de P01. El pedido 02 y los demás aún no están certificados ni han sido modificados por este cierre. «Chocar los cinco» permanece obligatorio según la decisión posterior de la creadora.
+**Secuencia:** el pedido 01 queda aceptado en su alcance comprobable; el pedido 02 se cerró posteriormente con sus propios PR y CI. «Chocar los cinco» permanece obligatorio según la decisión posterior de la creadora.
+
+## Pedido 02 — COMPLETADO según aceptación comprobable
+
+**Base documental:** conservar y ampliar pruebas, Playwright, matrices generativas, GitHub Actions y regresiones; ejecutar pruebas después de **cada** incremento con semillas reproducibles. La aceptación pide positivos, negativos, fallos, persistencia, interrupciones, escenarios adversos y distintos tamaños de pantalla.
+
+**Infraestructura previa conservada (auditada, no reemplazada):** `npm run test:core`, `test:regressions`, `test:kit`, `test:properties:matrix`, `test:planner`, `test:semantic`, `test:memory`, `test:generative`, `test:browser`, `test:browser:matrix`; Playwright/Chromium; tres semillas 17/42/99; workflow `.github/workflows/regression.yml` en cada PR/push, más prueba profunda programada/manual.
+
+**Incrementos nuevos, ambos integrados en `main` tras CI verde:**
+- [PR #27](https://github.com/valeveig15/Robotito/pull/27): reparación del reductor de fallos generativos. Consumo perezoso máximo 64 candidatos y retención determinista del menor caso **que sigue fallando**. Nuevas regresiones ejercitan generadores infinitos, contraejemplos de diferentes tamaños y comandos para reproducir la semilla y el índice. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40598018853).
+- [PR #28](https://github.com/valeveig15/Robotito/pull/28): 15 defectos históricos nuevos (45 en total) con aserciones **por cada acción** de órdenes compuestas; escenarios reales de Chromium con permisos de micrófono denegados, dispositivos ausentes, desconexión simulada, suspender/reactivar pestaña, modos normal/clase/silencio, persistencia IndexedDB, pruebas de limpieza, overflow y tamaños móvil/horizontal/escritorio. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40598516132).
+
+**Resultados del HEAD de #28, ejecutados por GitHub:** 121/121 pruebas de núcleo; 1.769 aserciones del kit generativo; 45 regresiones históricas con 411 aserciones; tres semillas con 4.300 casos de propiedades cada una; 5.766 pruebas del planificador; 3.192 de composición; 22.472 comprobaciones universales por semilla; 555/555 pruebas de navegador con cuatro tamaños responsive; tres matrices de 108 estados de navegador y 441 combinaciones objetivo; prueba de disponibilidad de voz con 135 objetivos por semilla; matriz adversa de 61 pares/triples objetivo por semilla y 14, 16 y 13 estados realmente ejecutados (semillas 17, 42 y 99). Estos números corresponden a **baterías diferentes**: pueden repetir casos y no se suman para afirmar tests únicos.
+
+**Cobertura de aceptación:** positivos, negativos, distintas expresiones e idiomas, condiciones simultáneas, fallos reproducibles, almacenamiento, recarga, suspensión, prohibiciones con acciones positivas posteriores, ventanas y entradas reales en navegador. La batería permanece integrada en cada ejecución de `npm run test:ci`.
+
+**Límites sin ocultar:** son combinaciones definidas y simuladas, no todo el producto cartesiano. El runner no tiene micrófono físico: la API indica permiso `denied` y `getUserMedia` falla con `NotFoundError`; se verifica que no existe grabación fantasma, **pero no** se confirma comportamiento en un micrófono físico real con permiso denegado. La desconexión se emula con Playwright, no se provocan caídas de redes móviles reales. No se garantiza cero errores ni que las 999.999 preguntas arbitrarias hayan sido ejecutadas. Esas verificaciones físicas siguen siendo necesarias para cada funcionalidad dependiente de hardware.
+
+**Puerta al siguiente pedido:** requisitos de P02 cerrados en el alcance comprobable; el pedido 03 permanece **POR AUDITAR**, sin comenzar su implementación en este cierre. Todas las nuevas regresiones se mantienen al avanzar de punto.
 
 ## Los 82 puntos en orden
 - [x] **01.** Cerebro semántico y generalización de formulaciones — COMPLETADO según los criterios de aceptación comprobables; ver límites y evidencia anteriores
-- [ ] **02.** Pruebas automáticas generativas, combinatorias y de navegador — POR AUDITAR
+- [x] **02.** Pruebas automáticas generativas, combinatorias y de navegador — COMPLETADO según aceptación comprobable, con límites de simulación documentados
 - [ ] **03.** Clasificación de sonidos y reacciones naturales — POR AUDITAR
 - [ ] **04.** Escucha, voz y rostro: captación de calidad — POR AUDITAR
 - [ ] **05.** Internacionalización completa de interfaz y conversación — POR AUDITAR
