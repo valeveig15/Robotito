@@ -90,6 +90,27 @@ const classExcluded=planner.plan("Explicame la fotosíntesis sin usar mis apunte
 assert.equal(classExcluded.shouldExecute,true);checks++;
 assert.equal(classExcluded.source,"general");checks++;
 assert.equal(classExcluded.mayReadClass,false);checks++;
+// A quote from a third party is not permission to run an avatar action
+// or read class records, even when the quotation looks imperative.
+for(const raw of ["Mi hermana dijo 'buscá en mis apuntes'",
+ "Ayer escuché al profesor preguntar '¿Qué es permutación?'",
+ "Mi mamá dijo 'chocá los cinco'",
+ "My teacher said 'show my class notes'"]){
+ const frame=planner.plan(raw);
+ assert.equal(frame.speechAct,"statement",raw);checks++;
+ assert.equal(frame.shouldExecute,false,raw);checks++;
+ assert.equal(frame.mayReadClass,false,raw);checks++;
+ assert.equal(intentEngine.classify(raw,{plan:frame}).useClassMemory,false,raw);checks++;
+}
+// A quoted sequential instruction must not escape a report's scope.
+const reportWithCommands=planner.plan("La profesora dijo 'chocá los cinco y después mostrame el libro'");
+assert.equal(reportWithCommands.actions.length,1);checks++;
+assert.equal(reportWithCommands.shouldExecute,false);checks++;
+assert.equal(reportWithCommands.mayReadClass,false);checks++;
+const correctedSequence=planner.plan("No abras el libro, mejor explicame la teoría");
+assert.equal(correctedSequence.actions.length,2);checks++;
+assert.equal(correctedSequence.actions[0].shouldExecute,false);checks++;
+assert.equal(correctedSequence.actions[1].shouldExecute,true);checks++;
 const weather=planner.plan("¿Cómo va a estar el clima mañana?");
 let history=planner.advance(planner.createContext(),weather);
 const night=planner.plan("¿Y de noche?",{context:history});

@@ -98,11 +98,15 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       const chat=window.ROBOTITO_CHAT;
       if(!chat?.send||!chat.context)throw new Error("Unified dialogue unavailable");
       const oldClass=document.querySelector("#classAnswer")?.innerHTML||"";
+      const priorFocus=chat.context().focus;
       await chat.send("La profesora dijo que ayer repasamos permutaciones",{channel:"text"});
       if((document.querySelector("#classAnswer")?.innerHTML||"")!==oldClass)
         throw new Error("Class retrieval fired on ambient comment");
-      if(chat.context().focus?.speechAct!=="statement")
+      const afterComment=chat.context();
+      if(afterComment.turns.at(-1)?.speechAct!=="statement")
         throw new Error("A statement was recorded as an instruction");
+      if(priorFocus?.intent&&afterComment.focus?.intent!==priorFocus.intent)
+        throw new Error("An overheard remark replaced the active conversation focus");
       await chat.send("No me muestres lo que dijo la profesora",{channel:"text"});
       if((document.querySelector("#classAnswer")?.innerHTML||"")!==oldClass)
         throw new Error("Class retrieval fired on a negated instruction");

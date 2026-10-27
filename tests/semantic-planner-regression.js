@@ -68,4 +68,53 @@ for(const phrase of [
  check(phrase,{shouldExecute:true,negative:false});
 check("Explicame la fotosíntesis sin usar mis apuntes",
  {source:"general",mayReadClass:false});
+// Point 01: reported questions and quoted commands must not execute.
+for(const utterance of ["Mi hermana dijo 'buscá en mis apuntes'",
+ "Ayer escuché al profesor preguntar '¿Qué es permutación?'",
+ "Mi mamá dijo 'chocá los cinco'",
+ "My teacher said 'show my class notes'",
+ "El profesor comentó «resuelve el ejercicio 4»"]){
+ check(utterance,{speechAct:"statement",shouldExecute:false,mayReadClass:false});
+}
+for(const question of ["¿Qué dijo el profesor sobre 'chocá los cinco'?",
+ "O que a professora disse sobre impulso?","¿Qué es permutación?"])
+ check(question,{shouldExecute:true});
+for(const [base,follow,part] of [
+ ["¿Cómo va a estar el clima mañana?","¿Y en la tarde?","afternoon"],
+ ["¿Cómo va a estar el clima mañana?","¿Y por la mañana?","morning"],
+ ["¿Cómo va a estar el clima mañana?","¿Y en la noche?","night"],
+ ["How is the weather tomorrow?","And in the afternoon?","afternoon"]
+]){
+ const first=planner.plan(base),context=planner.advance(planner.createContext(),first);
+ check(follow,{intent:first.intent,source:first.source,needsClarification:false},{context});
+ assert.equal(planner.plan(follow,{context}).entities.daypart,part,follow);count++;
+}
+for(const q of ["¿Y en la tarde?","¿Y de noche?","¿Y el otro?"])
+ check(q,{shouldExecute:false,needsClarification:true,mayReadClass:false});
+const definition=planner.plan("¿Qué es permutación?");
+let context=planner.advance(planner.createContext(),definition);
+context=planner.advance(context,planner.plan("Mi hermana dijo 'chocá los cinco'"));
+check("¿Y el otro?",{intent:"definition",needsClarification:true},{context});
+// Sequencing applies only to the speaker's instruction, not quoted speech.
+for(const reported of [
+ "La profesora dijo 'chocá los cinco y después mostrame el libro'",
+ 'Mi hermana contó "buscá la clase y después choca los cinco"',
+ 'Dijo "no abras el libro y después mirá el video"'
+]){
+ check(reported,{shouldExecute:false,speechAct:"statement",mayReadClass:false});
+ assert.equal(planner.plan(reported).actions.length,1,reported);count++;
+}
+const metalinguistic=planner.plan('Explícame por qué se dice "esto y después aquello"');
+assert.equal(metalinguistic.actions.length,1);count++;
+const singleCorrection=planner.plan("No, mejor decime la definición");
+assert.equal(singleCorrection.actions.length,1);count++;
+assert.equal(singleCorrection.intent,"definition");count++;
+const correctionSequence=planner.plan("No abras el libro, mejor explicame la teoría");
+assert.equal(correctionSequence.actions.length,2);count++;
+assert.equal(correctionSequence.actions[0].shouldExecute,false);count++;
+assert.equal(correctionSequence.actions[1].shouldExecute,true);count++;
+const preservedHighFive=planner.plan("Chocá los cinco y después haceme una pregunta");
+assert.equal(preservedHighFive.actions.length,2);count++;
+assert.equal(preservedHighFive.actions[0].shouldExecute,true);count++;
+assert.equal(preservedHighFive.actions[1].intent,"quiz");count++;
 console.log("Structured-planner checks passed:",count);
