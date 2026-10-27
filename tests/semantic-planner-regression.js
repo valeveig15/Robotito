@@ -147,4 +147,31 @@ for(const subject of ["permutación","masa","fotosíntesis"])
     generated++;
    }
 assert.equal(generated,360);count++;
+// A follow-up reuses only a known conversational antecedent.
+const priorFrame=planner.plan("¿Qué es fotosíntesis?");
+const previousContext=planner.advance(planner.createContext(),priorFrame);
+for(const [utterance,kind,target] of [
+ ["¿Y en portugués?","language","pt"],["And in English?","language","en"],
+ ["Et en français?","language","fr"],["e em português?","language","pt"],
+ ["más breve","brief"],["explicalo más breve","brief"],
+ ["más en profundidad","detailed"],["desarrollalo","detailed"],
+ ["como para un examen","exam"],["¿y con un ejemplo?","example"]]){
+ const follow=planner.plan(utterance,{context:previousContext});
+ assert.equal(follow.intent,"follow-up",utterance);count++;
+ assert.equal(follow.followUp.kind,kind,utterance);count++;
+ assert.equal(follow.followUp.targetLanguage,target,utterance);count++;
+ assert.equal(follow.shouldExecute,true,utterance);count++;
+ assert.equal(follow.mayReadClass,false,utterance);count++;
+ assert.equal(planner.advance(previousContext,follow).focus.intent,priorFrame.intent,utterance);count++;
+ const isolated=planner.plan(utterance);
+ assert.equal(isolated.shouldExecute,false,utterance);count++;
+ assert.equal(isolated.needsClarification,true,utterance);count++;
+}
+for(const request of ["Explicame masa en italiano","¿Qué es masa?","No choques los cinco",
+ "La profesora dijo '¿Y en portugués?'"]){
+ const frame=planner.plan(request,{context:previousContext});
+ assert.notEqual(frame.intent,"follow-up",request);count++;
+}
+const exam=planner.plan("Explicame fotosíntesis para un examen");
+assert.equal(exam.depth,"exam");count++;
 console.log("Structured-planner checks passed:",count);
