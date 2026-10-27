@@ -201,7 +201,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
           scrollWidth:document.documentElement.scrollWidth,
           separated:!!scene&&!!controls&&controls.top>=scene.bottom-1,
           controlsVisible:!!controls&&controls.width>0&&controls.height>0,
-          buttonsVisible:buttons.length>=7&&buttons.every(box=>box.width>20&&box.height>=38)
+          buttonsVisible:buttons.length===5&&buttons.every(box=>box.width>20&&box.height>=38)
         };
       });
       if(layout.scrollWidth>layout.viewport+1||!layout.separated||!layout.controlsVisible||!layout.buttonsVisible){
