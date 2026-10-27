@@ -96,7 +96,7 @@ const SEMANTIC_ROLES={
   TASK:["tarea","tareas","pendiente","deberes","task","tasks","homework","tarefa","devoirs"],
   CORRECT:["corregir","corregime","revisar","revisame","correct","correction","corrigir"],
   GESTURE:["chocar","choca","chocame","choquemos","highfive"],
-  ORDER:["resolver","resuelve","resolvé","solve","soluciona","calcular","calcula","calculá","calculate","dame","dar","callate","sugerir","sugerime","sugira","recommend","mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
+  ORDER:["contame","cuentame","resolver","resuelve","resolvé","solve","soluciona","calcular","calcula","calculá","calculate","dame","dar","callate","sugerir","sugerime","sugira","recommend","mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
   SEEK:["quiero","necesito","podrias","podras","podes","puedes","quisiera","necesitaria","me gustaria","would","could","can","please","preciso","gostaria"],
   NEGATE:["no","nunca","jamas","not","never","nao","non","nicht"],
   REPORT:["dijo","dijeron","conto","comento","comentaron","explico","explicaron","afirmo","asked","said","told","reported","menciono","disse","dit","detto","sagte"],
@@ -194,10 +194,11 @@ function semanticFeatures(text){
  const effectiveNegative=reportedUtterance?false:negativeDirective(text);
  const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
  const personalSentiment=/^(?:no|nunca)\s+(?:te|les|los|las|me|nos)\s+(?:quiero|amo|adoro|amas|quieres)\b/.test(fold(text));
+ const nonDirectiveDisinterest=/^(?:no|nunca)\s+(?:quiero|deseo|puedo|tengo ganas de)\s+(?!que\b)/.test(fold(text));
  let speechAct="statement";
  if(reportedUtterance)speechAct="statement";
  else if(question&&!mentionQuestion)speechAct="question";
- else if(!personalSentiment&&(effectiveNegative||!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
+ else if(!personalSentiment&&!nonDirectiveDisinterest&&(effectiveNegative||!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
@@ -220,9 +221,12 @@ function topicEntity(text,intent,previous){
 // Elliptical requests alter the most recent response; they do not grant
 // authority to search new sources or another person's class materials.
 const FOLLOWUP_LANGUAGE_NAMES={
- es:["espanol","castellano","spanish"],en:["ingles","english"],
- pt:["portugues","portuguese"],fr:["frances","french","francais"],
- it:["italiano","italian"],de:["aleman","german","deutsch"]
+ es:["espanol","castellano","spanish","espagnol","espanhol","spagnolo","spanisch"],
+ en:["ingles","english","anglais","inglese","englisch"],
+ pt:["portugues","portuguese","portugais","portoghese","portugiesisch"],
+ fr:["frances","french","francais","francese","franzosisch"],
+ it:["italiano","italian","italien","italienisch"],
+ de:["aleman","german","deutsch","allemand","tedesco"]
 };
 function followUpModifier(input){
  const q=fold(stripAddress(input)).replace(/^[?¿!¡.,:;\s]+|[?¿!¡.,:;\s]+$/g,"").trim();
@@ -263,7 +267,7 @@ function splitActions(text){
  // A self-correction ("No, mejor decime...") is one revised request;
  // splitting its leading 'No' would corrupt intent and context.
  if(/^no\s*[,;]\s*(?:mejor|en cambio)\b/i.test(source))return [source];
- const separator=/^\s+(?:y\s+despues|y\s+luego|y\s+después|despues|después|luego|and\s+then|then|e\s+depois|puis|poi)\s+|^\s*[,;]\s*(?:mejor|en\s+cambio|instead)\s+/i;
+ const separator=/^\s+(?:y\s+despues|y\s+luego|y\s+después|despues|después|luego|and\s+then|then|e\s+depois|puis|poi)\s+|^\s*[,;]\s*(?:pero|sino|mejor|en\s+cambio|instead|but|rather)\s+|^\s+(?:pero|sino|but|rather)\s+/i;
  const parts=[];let current="",close=null;
  for(let i=0;i<source.length;i++){
   const ch=source[i],prev=source[i-1]||"",next=source[i+1]||"";
@@ -275,6 +279,14 @@ function splitActions(text){
    else if(!close&&closing[ch])close=closing[ch];
   }
   if(!close){
+   // Distinguish "don't do X, do Y" from a blanket prohibition.
+   if((ch===","||ch===";")&&current.trim()&&negativeDirective(current)
+     &&!/^no\s*$/i.test(current.trim())){
+    const rest=source.slice(i+1).trim();
+    if(rest&&semanticFeatures(rest).speechAct==="request"&&parts.length<7){
+      parts.push(current.trim());current="";continue;
+    }
+   }
    const match=source.slice(i).match(separator);
    if(match&&current.trim()&&parts.length<7){
     parts.push(current.trim());current="";i+=match[0].length-1;continue;
@@ -345,10 +357,11 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const depth=examRequested?"exam":fallback.depth==="normal"&&intent==="definition"?"brief":
   fallback.depth==="normal"&&intent==="explanation"?"detailed":fallback.depth;
  const ambiguousReference=isReferenceOnly(q)&&!previous;
+ const unresolvedCommand=/^(?:resolv\p{L}*lo|resuelv\p{L}*lo|explic\p{L}*lo|mostr\p{L}*lo|hac\p{L}*lo)$/u.test(q);
  const negativeCommand=features.negative&&["request","question"].includes(features.speechAct);
  const shouldExecute=!negativeCommand&&features.speechAct!=="statement"&&features.speechAct!=="social";
  const bareReference=q.replace(/^[¿?!\s]+|[?!\s]+$/g,"");
- const needsClarification=ambiguousReference||
+ const needsClarification=ambiguousReference||unresolvedCommand||
   (features.speechAct!=="statement"&&/^(?:y\s+)?(?:el otro|la otra|the other)$/i.test(bareReference)&&!(previous?.entities?.alternatives?.length>=2));
  const shouldRespond=features.speechAct!=="statement"||features.vocative||features.implicit;
  const mayReadClass=shouldExecute&&!needsClarification&&(source==="classes"||source==="materials")
@@ -379,8 +392,12 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
   let subContext=context;
   const actions=[];
   for(let i=0;i<parts.length;i++){
-   const op=inferFrame(parts[i],{context:subContext,language:lang,now},i>0);
-   actions.push({index:i,text:parts[i],intent:op.intent,source:op.source,depth:op.depth,
+   const preceding=actions[i-1],anaphoric=/^(?:resolv\p{L}*lo|resuelv\p{L}*lo)$/u.test(fold(parts[i]));
+   const exerciseNumber=preceding?.intent==="exercise"?preceding.entities?.exerciseNumber:null;
+   const actionText=anaphoric&&Number.isInteger(exerciseNumber)
+      ?"Resuelve el ejercicio "+exerciseNumber:parts[i];
+   const op=inferFrame(actionText,{context:subContext,language:lang,now},i>0);
+   actions.push({index:i,text:actionText,intent:op.intent,source:op.source,depth:op.depth,
     speechAct:op.speechAct,entities:op.entities,shouldExecute:op.shouldExecute,
     negative:op.negative,mayReadClass:op.mayReadClass,
     needsClarification:op.needsClarification});

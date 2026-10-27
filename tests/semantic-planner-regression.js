@@ -174,4 +174,61 @@ for(const request of ["Explicame masa en italiano","¿Qué es masa?","No choques
 }
 const exam=planner.plan("Explicame fotosíntesis para un examen");
 assert.equal(exam.depth,"exam");count++;
+
+const p01Cases={"es":["¿Qué es permutación?","¿Qué dijo la profesora sobre impulso?","No me expliques permutación"],"en":["What is permutation?","What did the teacher say about momentum?","Don't explain permutation"],"pt":["O que é permutação?","O que a professora disse sobre impulso?","Não explique permutação"],"fr":["C'est quoi permutation?","Qu'a dit le professeur sur impulsion?","N'explique pas permutation"],"it":["Che cos'è permutazione?","Cosa ha detto il professore su impulso?","Non spiegare permutazione"],"de":["Was ist Permutation?","Was sagte der Lehrer über Impuls?","Erkläre Permutation nicht"]};
+const p01Expected=[
+ {intent:"definition",source:"general",shouldExecute:true,mayReadClass:false},
+ {intent:"class-question",source:"classes",shouldExecute:true,mayReadClass:true},
+ {shouldExecute:false,mayReadClass:false}
+];
+let p01Runs=0;
+for(const [language,phrases] of Object.entries(p01Cases)){
+ for(let kind=0;kind<phrases.length;kind++){
+  const unique=new Set();
+  for(const prefix of ["","Robotito, ","por favor ","Robotito, por favor "])
+   for(const spaces of [" ","  "])
+    for(const caps of ["original","upper","lower"])
+     for(const tail of [""," ","  "]){
+      let sentence=prefix+phrases[kind];
+      if(caps==="upper")sentence=sentence.toUpperCase();
+      if(caps==="lower")sentence=sentence.toLowerCase();
+      if(spaces==="  ")sentence=sentence.replace(/ /g,"  ");
+      unique.add(" "+sentence+tail);
+     }
+  assert.ok(unique.size>=50,language+" / insufficient generated variants");count++;
+  for(const utterance of [...unique].slice(0,50)){
+   const actual=planner.plan(utterance,{language,channel:"typed"});
+   for(const [field,want] of Object.entries(p01Expected[kind])){
+    assert.deepEqual(actual[field],want,language+"/"+kind+" / "+utterance+" / "+field);count++;
+   }
+   const audio=planner.plan(utterance,{language,channel:"voice"});
+   assert.deepEqual([actual.intent,actual.source,actual.shouldExecute,actual.mayReadClass],
+     [audio.intent,audio.source,audio.shouldExecute,audio.mayReadClass],utterance+" typed/voice");count++;
+   p01Runs++;
+  }
+ }
+}
+assert.equal(p01Runs,900);count++;
+// Negation never authorizes the forbidden source; an independent instruction
+// after it remains executable, and unresolved references ask for clarification.
+for(const [utterance,lastIntent,lastSource] of [
+ ["No me muestres el libro pero decime el clima","weather","weather"],
+ ["No me digas los resultados, haceme una pregunta","quiz","conversation"],
+ ["No busques en mis apuntes, explicame una permutación","explanation","general"],
+ ["No quiero estudiar pero dame una definición","definition","general"],
+ ["No me expliques el ejercicio 4, resolvelo","exercise","materials"]
+]){
+ const frame=planner.plan(utterance);
+ assert.equal(frame.actions.length,2,utterance);count++;
+ assert.equal(frame.actions[0].shouldExecute,false,utterance);count++;
+ assert.equal(frame.actions[1].shouldExecute,true,utterance);count++;
+ assert.equal(frame.actions[1].intent,lastIntent,utterance);count++;
+ assert.equal(frame.actions[1].source,lastSource,utterance);count++;
+}
+const exerciseFrame=planner.plan("No me expliques el ejercicio 4, resolvelo");
+assert.equal(exerciseFrame.actions[1].entities.exerciseNumber,4);count++;
+check("No me expliques el ejercicio, resolvelo",{shouldExecute:false,needsClarification:true});
+check("resolvelo",{shouldExecute:false,needsClarification:true});
+check("La profesora dijo 'no me expliques y después mostrámelo'",{shouldExecute:false});
+console.log("P01 acceptance matrix: "+p01Runs+" six-language variants; negation and clarification checks passed");
 console.log("Structured-planner checks passed:",count);

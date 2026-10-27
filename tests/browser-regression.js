@@ -77,6 +77,13 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
         if(!robot.classList.contains("highfive"))
           throw new Error("Chocar los cinco not activated through typed/voice router: "+utterance);
       }
+      const beforeClass=document.querySelector("#classAnswer")?.innerHTML||"";
+      robot.classList.remove("highfive");
+      await chat.send("No busques en mis apuntes, chocá los cinco",{channel:"text"});
+      if(!robot.classList.contains("highfive"))
+        throw new Error("Negated first instruction suppressed an allowed high-five");
+      if((document.querySelector("#classAnswer")?.innerHTML||"")!==beforeClass)
+        throw new Error("Negated class command accessed class records");
       robot.classList.remove("highfive");
       await chat.send("La profesora dijo high five",{channel:"text"});
       if(robot.classList.contains("highfive"))
