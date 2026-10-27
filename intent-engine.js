@@ -114,7 +114,7 @@
       const one=(sentences[0]||text).trim();
       return one.length>240?one.slice(0,237).replace(/\s+\S*$/,"")+"…":one;
     }
-    const max=policy.depth==="step-by-step"?1800:policy.depth==="detailed"?1200:policy.depth==="structured"?1000:520;
+    const max=policy.depth==="step-by-step"?1800:policy.depth==="exam"?1600:policy.depth==="detailed"?1200:policy.depth==="structured"?1000:520;
     const limited=policy.depth==="normal"?sentences.slice(0,3).join(" ").trim():text;
     return limited.length>max?limited.slice(0,max-1).replace(/\s+\S*$/,"")+"…":limited;
   }
