@@ -71,12 +71,16 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       highfive.click();
       if(!robot.classList.contains("highfive"))
         throw new Error("Chocar los cinco button must animate the avatar");
-      for(const utterance of ["chocá los cinco","high five"]){
+      for(const utterance of ["chocá los cinco","chocame los cinco","high five","high-five"]){
         robot.classList.remove("highfive");
         await chat.send(utterance,{channel:"text"});
         if(!robot.classList.contains("highfive"))
           throw new Error("Chocar los cinco not activated through typed/voice router: "+utterance);
       }
+      robot.classList.remove("highfive");
+      await chat.send("La profesora dijo high five",{channel:"text"});
+      if(robot.classList.contains("highfive"))
+        throw new Error("Quoted gestures must not activate an action");
       for(const utterance of ["abrazame","hug me"]){
         robot.classList.remove("hugging");
         await chat.send(utterance,{channel:"text"});
@@ -87,7 +91,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
         const label=window.ROBOTITO_I18N.t("highfive",lang);
         if(!label||label==="highfive")throw new Error("Missing localized high-five control "+lang);
       }
-      return {available:actions,highfiveCommands:2,retiredHugCommands:2,translations:6};
+      return {available:actions,highfiveCommands:4,retiredHugCommands:2,translations:6};
     });
     console.log("Robotito restored high-five regression:",JSON.stringify(gestures));
     const dialogueIntegration=await page.evaluate(async()=>{
