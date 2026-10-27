@@ -32,6 +32,10 @@ jobs:
         run: npx playwright install chromium
       - name: Run core and browser regressions
         run: npm run test:ci
+      - name: Run real YAMNet Worker smoke
+        # Synthetic waveform only, no personal audio. Tests actual remote
+        # model/WASM loading and inference, not sound recognition accuracy.
+        run: npm run test:audio:real
       - name: Deep reproducible stress matrix (scheduled or manual)
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
