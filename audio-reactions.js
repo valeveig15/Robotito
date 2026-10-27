@@ -20,7 +20,7 @@ function create({clock=()=>Date.now()}={}){
   // music candidate is insufficient: require independent, spaced frames.
   if(suppressed||!status||status.kind!=="music"||
      !Number.isFinite(status.musicConfidence)||status.musicConfidence<.76||
-     !Number.isFinite(now)||now<musicLastAt||now-musicLastAt>450){
+     !Number.isFinite(now)||(musicFrames>0&&(now<musicLastAt||now-musicLastAt>450))){
    musicStartedAt=null;musicFrames=0;musicActive=false;
    musicLastAt=Number.isFinite(now)?now:0;
    return false;
