@@ -59,6 +59,22 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return true;
     });
     if(!languageIntegration)throw new Error("Language integration unavailable");
+    const retiredActions=await page.evaluate(async()=>{
+      const actions=[...document.querySelectorAll(".world-controls .quick-actions button")]
+        .map(button=>button.dataset.action);
+      if(JSON.stringify(actions)!==JSON.stringify(["pet","feed","play","surprise","poke"]))
+        throw new Error("Retired interactions remain in main controls: "+actions);
+      const robot=document.querySelector("#robotito"),chat=window.ROBOTITO_CHAT;
+      if(!robot||!chat?.send)throw new Error("Missing avatar or shared typed/voice command router");
+      for(const utterance of ["abrazame","chocá los cinco","hug me","high five"]){
+        robot.classList.remove("hugging","highfive");
+        await chat.send(utterance,{channel:"text"});
+        if(robot.classList.contains("hugging")||robot.classList.contains("highfive"))
+          throw new Error("Retired gesture triggered from conversational input: "+utterance);
+      }
+      return {available:actions,retiredCommands:4};
+    });
+    console.log("Robotito retired gesture regression:",JSON.stringify(retiredActions));
     const dialogueIntegration=await page.evaluate(async()=>{
       const chat=window.ROBOTITO_CHAT;
       if(!chat?.send||!chat.context)throw new Error("Unified dialogue unavailable");
@@ -185,7 +201,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
           scrollWidth:document.documentElement.scrollWidth,
           separated:!!scene&&!!controls&&controls.top>=scene.bottom-1,
           controlsVisible:!!controls&&controls.width>0&&controls.height>0,
-          buttonsVisible:buttons.length>=7&&buttons.every(box=>box.width>20&&box.height>=38)
+          buttonsVisible:buttons.length===5&&buttons.every(box=>box.width>20&&box.height>=38)
         };
       });
       if(layout.scrollWidth>layout.viewport+1||!layout.separated||!layout.controlsVisible||!layout.buttonsVisible){
