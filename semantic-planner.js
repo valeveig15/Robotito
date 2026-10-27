@@ -160,7 +160,7 @@ function negativeDirective(input){
 function isReportedUtterance(text){
  const quote=String(text).search(/['"«“]/);
  const framing=fold(quote>=0?text.slice(0,quote):text);
- if(/^[¿?\s]*(?:que|como|por que|cuando|what|how|why|when)\b/.test(framing))return false;
+ if(/^[¿?\s]*(?:que|como|por que|cuando|o que|qual|quem|what|how|why|when|quoi|comment|quand|che|cosa|quando|was|wie|warum|wann)\b/.test(framing))return false;
  const reports=/\b(?:dijeron|dijo|dije|decia|contaron|conto|relato|relataron|pregunto|preguntaron|preguntaba|pidio|pidieron|comento|comentaron|menciono|escuche|escuchamos|said|told|asked|mentioned|reported|heard|disse|racconto|sagte)\b/;
  if(!reports.test(framing))return false;
  return !/^(?:(?:che|oye|hey|robotito|por favor)\s*[,!:]?\s*)*(?:decime|dime|contame|explicame|explica|tell|explain|define|show|busca|mostrame|preguntame)\b/.test(framing);
