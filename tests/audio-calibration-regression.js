@@ -25,7 +25,9 @@ eq(x.metrics.sneeze.fp,1,"Correct FP");
 eq(x.metrics.sneeze.fn,1,"Correct FN");
 eq(x.metrics.sneeze.precision,.5,"Precision derived from ground truth");
 eq(x.metrics.sneeze.recall,.5,"Recall derived from ground truth");
-eq(x.metrics.sneeze.falsePositivesPerNegativeHour,1/(15/3600),"False-positive rate per negative-hour");
+eq(x.metrics.sneeze.falsePositivesPerNegativeHour,1/(20/3600),
+ "False-positive rate uses all non-sneeze exposure hours");
+eq(x.negativeExposureByTarget.sneeze,20/3600,"Non-target human cough counts as sneeze-negative exposure");
 eq(x.byEnvironment.street,2,"Environmental strata counted");
 eq(x.calibrated,false,"Synthetic tests NEVER authorize calibration");
 eq(x.automaticHumanReactionsApproved,false,"No automatic sneeze reaction");
