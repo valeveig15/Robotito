@@ -4,7 +4,7 @@
 let classifier=null;
 async function initialize(){
  importScripts("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@1.1.1/audio_bundle.js");
- const {AudioClassifier,FilesetResolver}=self.audio||{};
+ const {AudioClassifier,FilesetResolver}=self.Audio||self.audio||{};
  if(!AudioClassifier||!FilesetResolver){
   const keys=Object.getOwnPropertyNames(self).filter(k=>/audio|media|file|task|vision|module/i.test(k));
   throw new Error("MediaPipe runtime exports unavailable. Worker globals: "+keys.join(", "));
