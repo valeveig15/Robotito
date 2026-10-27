@@ -119,6 +119,12 @@ assert.equal(preservedHighFive.actions[0].shouldExecute,true);count++;
 assert.equal(preservedHighFive.actions[1].intent,"quiz");count++;
 // Generative 50+ variants per topic: courtesy, vocatives, punctuation,
 // paraphrase and conditional morphology must preserve definition intent.
+for(const question of ["Che cos'è enzimas?","Che cos'è massa?",
+ "Che cos'è la fotosintesi?","Che, Robotito, qué es permutación?"]){
+ const answer=planner.plan(question,{language:/\bcos/i.test(question)?"it":"es"});
+ assert.equal(answer.intent,"definition",question);count++;
+ assert.equal(answer.shouldExecute,true,question);count++;
+}
 const definitionForms=[
  "qué es","que es","decime qué es","explicame qué es",
  "me podés decir qué es","podés explicarme qué es","quisiera saber qué es",
