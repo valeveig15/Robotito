@@ -31,7 +31,7 @@ async function main(){
   await page.goto("http://127.0.0.1:"+port+"/tests/audio-eval.html",{waitUntil:"domcontentloaded"});
   await page.evaluate(async()=>{
    await new Promise((resolve,reject)=>{
-    const worker=new Worker("../audio-model-worker.js",{type:"module"});
+    const worker=new Worker("../audio-model-worker.js");
     window.__soundEvalWorker=worker;
     window.__soundEvalPending=new Map();
     window.__soundEvalId=0;

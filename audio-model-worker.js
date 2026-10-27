@@ -1,9 +1,14 @@
-// Runs on the user's device, only after explicit model opt-in.
-// The pinned MediaPipe runtime and YAMNet model are fetched over HTTPS.
+// Runs on-device only after opt-in. MediaPipe's WASM loader requires
+// importScripts, so use a CLASSIC Worker, not an ES module Worker.
+// Runtime/model assets are downloaded only when "init" is requested.
 let classifier=null;
 async function initialize(){
- const {AudioClassifier,FilesetResolver}=await import(
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@1.1.1/+esm");
+ importScripts("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@1.1.1/audio_bundle.js");
+ const {AudioClassifier,FilesetResolver}=self.Audio||self.audio||{};
+ if(!AudioClassifier||!FilesetResolver){
+  const keys=Object.getOwnPropertyNames(self).filter(k=>/audio|media|file|task|vision|module/i.test(k));
+  throw new Error("MediaPipe runtime exports unavailable. Worker globals: "+keys.join(", "));
+ }
  const files=await FilesetResolver.forAudioTasks(
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@1.1.1/wasm");
  classifier=await AudioClassifier.createFromOptions(files,{

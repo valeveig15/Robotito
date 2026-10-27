@@ -30,6 +30,10 @@ jobs:
         # GitHub Ubuntu runners include Chromium's standard shared libraries.
         # Avoid an apt transaction that can stall the whole regression run.
         run: npx playwright install chromium
+      - name: Run real YAMNet Worker smoke
+        # Run external integration first for quick, actionable diagnostics;
+        # every PR still must pass the full regression suite below.
+        run: npm run test:audio:real
       - name: Run core and browser regressions
         run: npm run test:ci
       - name: Deep reproducible stress matrix (scheduled or manual)
