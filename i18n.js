@@ -22,6 +22,7 @@ const LABELS={
  speaker:{es:"Habla",en:"Speaking",pt:"Falando",fr:"Parole",it:"Parla",de:"Sprecher"},
  pet:{es:"🤍 Acariciar",en:"🤍 Pet",pt:"🤍 Acariciar",fr:"🤍 Caresser",it:"🤍 Accarezza",de:"🤍 Streicheln"},
  feed:{es:"🍓 Alimentar",en:"🍓 Feed",pt:"🍓 Alimentar",fr:"🍓 Nourrir",it:"🍓 Nutri",de:"🍓 Füttern"},
+ highfive:{es:"✋ Chocar los cinco",en:"✋ High five",pt:"✋ Toca aqui",fr:"✋ Tape-m'en cinq",it:"✋ Batti cinque",de:"✋ High Five"},
  play:{es:"🧸 Jugar",en:"🧸 Play",pt:"🧸 Brincar",fr:"🧸 Jouer",it:"🧸 Gioca",de:"🧸 Spielen"},
  scare:{es:"👻 Asustar",en:"👻 Surprise",pt:"👻 Assustar",fr:"👻 Surprendre",it:"👻 Sorprendi",de:"👻 Erschrecken"},
  poke:{es:"👉 Molestar",en:"👉 Poke",pt:"👉 Cutucar",fr:"👉 Taquiner",it:"👉 Stuzzica",de:"👉 Anstupsen"},
