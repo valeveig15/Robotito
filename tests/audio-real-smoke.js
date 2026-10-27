@@ -12,7 +12,7 @@ const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.
   const page=await browser.newPage();
   await page.goto("http://127.0.0.1:"+port+"/tests/audio-eval.html",{waitUntil:"domcontentloaded"});
   const result=await page.evaluate(async()=>{
-   const worker=new Worker("../audio-model-worker.js",{type:"module"});
+   const worker=new Worker("../audio-model-worker.js");
    try{
     const answer=await new Promise((resolve,reject)=>{
      const timeout=setTimeout(()=>reject(Error("YAMNet initialization/inference timed out")),90000);
