@@ -135,6 +135,13 @@ function negativeDirective(input){
  const q=fold(input).replace(/^[!?¡¿\s]+/g,"")
    .replace(/^(?:(?:che|oye|hey|robotito|osito|robot)\s*[,!:]?\s*)+/,"")
    .replace(/^(?:(?:por favor|please|bitte)\s*[,!:]?\s*)+/,"");
+ // German negative imperative has a trailing 'nicht' rather than a leading
+ // negator. Require an imperative verb family so quoted occurrences are inert.
+ const verb=semanticTokens(q)[0]||"";
+ if(/\bnicht\s*[.!?]*$/.test(q)
+   &&["erkl","zeig","offn","oeffn","such","mach","schreib","nenn","sag","zeichn","lies","les"].some(stem=>verb.startsWith(stem))
+   && !/\b(?:wort|begriff|ausdruck|bedeutung|von)\s+nicht\b/.test(q))return true;
+ if(/^n['’][a-z]/.test(q)&&/\bpas\b/.test(q))return true;
  if(/^(?:can|could|would)\s+you\s+(?:please\s+)?not\b/.test(q))return true;
  if(/^please\s+(?:do\s+not|don't|not)\b/.test(q))return true;
  if(/^(?:don'?t|do\s+not|never|nao|non|nicht|ne)\b/.test(q))return true;
