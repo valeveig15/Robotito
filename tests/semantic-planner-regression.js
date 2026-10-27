@@ -68,4 +68,30 @@ for(const phrase of [
  check(phrase,{shouldExecute:true,negative:false});
 check("Explicame la fotosíntesis sin usar mis apuntes",
  {source:"general",mayReadClass:false});
+// Point 01: reported questions and quoted commands must not execute.
+for(const utterance of ["Mi hermana dijo 'buscá en mis apuntes'",
+ "Ayer escuché al profesor preguntar '¿Qué es permutación?'",
+ "Mi mamá dijo 'chocá los cinco'",
+ "My teacher said 'show my class notes'",
+ "El profesor comentó «resuelve el ejercicio 4»"]){
+ check(utterance,{speechAct:"statement",shouldExecute:false,mayReadClass:false});
+}
+for(const question of ["¿Qué dijo el profesor sobre 'chocá los cinco'?","¿Qué es permutación?"])
+ check(question,{shouldExecute:true});
+for(const [base,follow,part] of [
+ ["¿Cómo va a estar el clima mañana?","¿Y en la tarde?","afternoon"],
+ ["¿Cómo va a estar el clima mañana?","¿Y por la mañana?","morning"],
+ ["¿Cómo va a estar el clima mañana?","¿Y en la noche?","night"],
+ ["How is the weather tomorrow?","And in the afternoon?","afternoon"]
+]){
+ const first=planner.plan(base),context=planner.advance(planner.createContext(),first);
+ check(follow,{intent:first.intent,source:first.source,needsClarification:false},{context});
+ assert.equal(planner.plan(follow,{context}).entities.daypart,part,follow);count++;
+}
+for(const q of ["¿Y en la tarde?","¿Y de noche?","¿Y el otro?"])
+ check(q,{shouldExecute:false,needsClarification:true,mayReadClass:false});
+const definition=planner.plan("¿Qué es permutación?");
+let context=planner.advance(planner.createContext(),definition);
+context=planner.advance(context,planner.plan("Mi hermana dijo 'chocá los cinco'"));
+check("¿Y el otro?",{intent:"definition",needsClarification:true},{context});
 console.log("Structured-planner checks passed:",count);
