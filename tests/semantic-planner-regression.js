@@ -38,7 +38,32 @@ for(const gesture of ["chocá los cinco","choca los cinco","chocame los cinco",
  check(gesture,{shouldExecute:true,speechAct:"request"});
 }
 for(const narration of ["ayer chocamos los cinco","la profesora dijo high five",
-  "él me dijo high five","me gusta high five","no choques los cinco","no choca los cinco"]){
+  "él me dijo high five","me gusta high five","no choca los cinco"]){
  check(narration,{shouldExecute:false,speechAct:"statement"});
 }
+// Point 01: negation scope, multilingual prohibitions and quotation safety.
+const blocked=[
+ "No choques los cinco","No me toques","No respondas a esta pregunta",
+ "No me expliques la clase","No busques mis apuntes","No me muestres la foto",
+ "Por favor no abras el libro","Por favor no toques el perro",
+ "No quiero que me choques los cinco","Don't high five",
+ "Don't show my class notes","Can you please not open the book?",
+ "Ne montre pas mon cours","Não mostre a aula","Non mostrare il libro",
+ "Bitte nicht zeigen"
+];
+for(const phrase of blocked)
+ check(phrase,{shouldExecute:false,negative:true,mayReadClass:false});
+for(const phrase of [
+ "La profesora dijo que no haga el ejercicio","No te quiero",
+ "No me gusta el libro","No me amas","Me gusta high five"
+])
+ check(phrase,{shouldExecute:false,negative:false});
+for(const phrase of [
+ "¿Qué significa 'no hagas eso'?","Explicame qué significa no hagas eso",
+ "Explicame la fotosíntesis sin usar mis apuntes","No entiendo qué es la fotosíntesis",
+ "No, mejor decime qué es un impulso","Chocá los cinco","High five"
+])
+ check(phrase,{shouldExecute:true,negative:false});
+check("Explicame la fotosíntesis sin usar mis apuntes",
+ {source:"general",mayReadClass:false});
 console.log("Structured-planner checks passed:",count);
