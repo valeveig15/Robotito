@@ -32,4 +32,13 @@ const taskFollow=planner.plan("¿Y de noche?",{context:planner.advance(planner.c
 assert.equal(taskFollow.intent,"task");count++;
 assert.equal(planner.plan("Eso").needsClarification,true);count++;
 assert.equal(planner.plan("Me gusta permutación").mayReadClass,false);count++;
+// Interactive gestures remain executable, but narration or refusal is data.
+for(const gesture of ["chocá los cinco","choca los cinco","chocame los cinco",
+  "robotito chocame los cinco","por favor chocá los cinco","high five","high-five","dame cinco"]){
+ check(gesture,{shouldExecute:true,speechAct:"request"});
+}
+for(const narration of ["ayer chocamos los cinco","la profesora dijo high five",
+  "él me dijo high five","me gusta high five","no choques los cinco","no choca los cinco"]){
+ check(narration,{shouldExecute:false,speechAct:"statement"});
+}
 console.log("Structured-planner checks passed:",count);
