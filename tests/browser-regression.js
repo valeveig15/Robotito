@@ -188,10 +188,19 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       const policy=reactions.create({clock:()=>now});
       if(policy.decide({kind:"sneeze",confidence:1})!==null)
         throw new Error("Uncalibrated sneeze must not trigger speech");
-      if(policy.decide({kind:"clap",confidence:.88})?.action!=="clap")
-        throw new Error("Confirmed clap animation was lost");
       if(policy.decide({kind:"clap",confidence:.99})!==null)
+        throw new Error("Unverified clap caused a reaction");
+      const verified={kind:"clap",confidence:.88,metadata:{origin:"acoustic-heuristic",bursts:5}};
+      if(policy.decide(verified)?.action!=="clap")
+        throw new Error("Confirmed clap animation was lost");
+      if(policy.decide(verified)!==null)
         throw new Error("Clapping cooldown was lost");
+      let musicAt=20000;
+      const dance=reactions.create({clock:()=>musicAt});
+      for(let k=0;k<7;k++,musicAt+=70)dance.updateMusic({kind:"music",musicConfidence:.95});
+      if(!dance.updateMusic({kind:"music",musicConfidence:.95})||
+        dance.updateMusic({kind:"music",musicConfidence:.95},{suppressed:true}))
+        throw new Error("Stable music/suppression dance policy broken");
       now+=2000;
       const impactDetector=detector.create({clock:()=>now});
       const suppressed=impactDetector.process({rms:.9,flat:.8,zcr:.2},{now,suppress:true});
