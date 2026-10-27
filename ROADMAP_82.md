@@ -49,10 +49,23 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 **Puerta al siguiente pedido:** requisitos de P02 cerrados en el alcance comprobable; el pedido 03 permanece **POR AUDITAR**, sin comenzar su implementación en este cierre. Todas las nuevas regresiones se mantienen al avanzar de punto.
 
+## Pedido 03 — EN PROGRESO, no cerrado
+
+**Objetivo del documento:** voz, música, aplausos, risa, llanto, tos, estornudos, golpes y silencio, usando evidencia acústica temporal/espectral y un modelo cuando haga falta; bailar o aplaudir solamente con evidencia, abstenerse ante eventos inciertos y no reaccionar a voz propia, clase o audio suspendido.
+
+**Incrementos ya fusionados en `main` con CI completa verde:**
+- [PR #30](https://github.com/valeveig15/Robotito/pull/30): separación de decisión de baile y aplausos en `audio-reactions.js`; exige música sostenida (seis frames y duración mínima), y aplausos con al menos cinco ataques independientes o evidencia de un modelo. Reaccionar se detiene al entrar en Modo Clase, sueño, voz propia o pestaña oculta. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40600042455).
+- [PR #31](https://github.com/valeveig15/Robotito/pull/31): clasificador YAMNet de AudioSet real, **optativo** y procesado en navegador mediante MediaPipe y Web Worker; no se descarga sin marcar casilla, se revelan las posibles métricas del proveedor. Produce candidatos **tentativos** en seis idiomas sin afirmar certeza ni reaccionar ante eventos humanos no calibrados. El audio no se carga a un servidor de Robotito. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40600534228).
+- [PR #32](https://github.com/valeveig15/Robotito/pull/32): borrado de PCM y predicciones antiguas durante interrupciones, fallos y reintentos del modelo, para no mezclar clases, sesiones ni voz sintetizada con eventos del usuario. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40600832906).
+
+**Pendiente para completar P03:** calibración y matriz de confusión con grabaciones reales, diversidad de dispositivos/entornos y eventos de sonidos similares (tos vs. estornudo, golpes vs. palmas, aspiradora/TV vs. música); validación del pipeline real MediaPipe WASM/modelo bajo consentimiento y conexión normal; decisión sobre umbrales para habilitar reacciones naturales sin afirmar certeza del 100%; pruebas de audio real, no solo del Worker simulado. Hasta entonces las reacciones automáticas de risa/llanto/tos/estornudo no quedan habilitadas por YAMNet. Mantener el resto de las funcionalidades y no avanzar al punto 04 antes de verificar lo anterior.
+
+**Registro transversal de las limitaciones que podemos mejorar por código:** [PENDIENTES_CONTROLABLES.md](PENDIENTES_CONTROLABLES.md). Las aspiraciones abiertas de puntos ya aceptados, especialmente 999.999 preguntas × 50 variantes, **no deben desaparecer** por marcar su aceptación mínima como completada.
+
 ## Los 82 puntos en orden
 - [x] **01.** Cerebro semántico y generalización de formulaciones — COMPLETADO según los criterios de aceptación comprobables; ver límites y evidencia anteriores
 - [x] **02.** Pruebas automáticas generativas, combinatorias y de navegador — COMPLETADO según aceptación comprobable, con límites de simulación documentados
-- [ ] **03.** Clasificación de sonidos y reacciones naturales — POR AUDITAR
+- [ ] **03.** Clasificación de sonidos y reacciones naturales — EN PROGRESO (PR #30–32 integradas; calibración real pendiente)
 - [ ] **04.** Escucha, voz y rostro: captación de calidad — POR AUDITAR
 - [ ] **05.** Internacionalización completa de interfaz y conversación — POR AUDITAR
 - [ ] **06.** Voces nuevas, estilos y eliminación de «Gravedad» — POR AUDITAR
