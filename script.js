@@ -1168,7 +1168,30 @@ function setupAudio(stream){
     state.analyser=analyser;
     const freq=new Uint8Array(analyser.frequencyBinCount);
     const time=new Uint8Array(analyser.fftSize);
+    const rawTime=new Float32Array(analyser.fftSize);
     const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.();
+    // Off by default. Model files and code from third parties are fetched
+    // only following explicit checkbox opt-in, never on page load.
+    const soundModel=window.ROBOTITO_SOUND_MODEL?.create?.({
+      onUpdate:info=>{
+        const status=$("#audioModelStatus");if(!status)return;
+        const lang=responseLanguage(),t=window.ROBOTITO_I18N?.t?.bind(window.ROBOTITO_I18N);
+        const label=info.state==="loading"?"audioModelLoading":
+          info.state==="ready"?"audioModelReady":info.state==="error"?"audioModelError":"audioModelOff";
+        const candidate=info.candidate;
+        const probable=candidate&&candidate.score>=.60&&candidate.kind!=="unknown"
+          ?(" · "+(t?.("audioModelPossible",lang)||"Posible sonido")+": "+
+            (t?.("sound"+candidate.kind.slice(0,1).toUpperCase()+candidate.kind.slice(1),lang)||candidate.kind))
+          :"";
+        status.textContent=(t?.(label,lang)||label)+probable;
+      }
+    });
+    const soundModelToggle=$("#audioModelEnabled");
+    if(soundModelToggle){
+      soundModelToggle.addEventListener("change",()=>soundModelToggle.checked?
+        soundModel?.enable():soundModel?.disable());
+      if(soundModelToggle.checked)soundModel?.enable();
+    }
     const perception=window.ROBOTITO_AUDIO_PERCEPTION?.create?.({
       // A sound-model is optional; without calibrated evidence we NEVER
       // identify an uncertain cough, sneeze, laugh or crying episode.
@@ -1212,6 +1235,7 @@ function setupAudio(stream){
     let lastTick=0,prevSpectrum=null;
     const tick=(at=0)=>{
       if(!state.started||state.audioContext!==ctx){
+        soundModel?.disable();
         try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
         return;
       }
@@ -1220,6 +1244,11 @@ function setupAudio(stream){
       lastTick=at;
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
+      if(soundModelToggle?.checked&&soundModel?.getStatus().state==="ready"){
+        analyser.getFloatTimeDomainData(rawTime);
+        if(!state.speaking&&!state.classMode&&!state.sleeping&&!document.hidden)
+          soundModel.pushPCM(rawTime,ctx.sampleRate);
+      }
       let power=0;
       for(const v of time){const sample=(v-128)/128;power+=sample*sample;}
       const rms=Math.sqrt(power/time.length);
