@@ -16,7 +16,7 @@ These test modules supplement (not replace) the existing Node, browser and histo
 ROBOTITO_TEST_SEED=17 ROBOTITO_REPLAY_PROPERTY='property-name' ROBOTITO_REPLAY_CASE=42 npm run test:properties
 ```
 
-Failures report seed, index, original input and a reduced case when a shrinker exists. To add a permanent regression, first add a unique issue ID, failing input, expected result and why it was wrong to `tests/regressions/semantic-issues.json`; fix the behavior and keep the case in CI.
+Failures report seed, index, original input and a reduced case when a shrinker exists. Shrinkers are read lazily (at most 64 candidates), and the smallest failing candidate is retained instead of allowing a later larger case to replace it. To add a permanent regression, first add a unique issue ID, failing input, expected result and why it was wrong to `tests/regressions/semantic-issues.json`; fix the behavior and keep the case in CI.
 
 Coverage targets are the explicitly declared pairwise and critical triple relationships, **not** the entire Cartesian product. The property matrix certifies 785 targets per seed. Each browser matrix certifies 441 targets and exercises real Chromium handlers at simulated screen sizes, not physical devices. Hardware-dependent camera, microphone, voice and real-device accessibility need separate validation.
 
