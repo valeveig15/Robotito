@@ -1170,6 +1170,7 @@ function setupAudio(stream){
     const time=new Uint8Array(analyser.fftSize);
     const rawTime=new Float32Array(analyser.fftSize);
     let workletTap=null,workletSilentGain=null,workletActive=false;
+    let workletGeneration=0,workletModuleLoaded=false;
     const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.();
     // Off by default. Model files and code from third parties are fetched
     // only following explicit checkbox opt-in, never on page load.
@@ -1196,17 +1197,28 @@ function setupAudio(stream){
     };
     const clearModelOnHidden=()=>{if(document.hidden)soundModel?.clearAudio();};
     document.addEventListener("visibilitychange",clearModelOnHidden);
-    if(soundModelToggle){
-      soundModelToggle.addEventListener("change",()=>soundModelToggle.checked?
-        soundModel?.enable():soundModel?.disable());
-      if(soundModelToggle.checked)soundModel?.enable();
-    }
-    // A continuous AudioWorklet is more accurate than 2048-sample
-    // analyser snapshots, which may skip or duplicate actual audio.
-    // The analyser remains the fallback when AudioWorklet is unavailable.
-    if(ctx.audioWorklet?.addModule&&typeof window.AudioWorkletNode==="function"){
-      ctx.audioWorklet.addModule("audio-capture-worklet.js").then(()=>{
-        if(!state.started||state.audioContext!==ctx)return;
+    const stopContinuousCapture=()=>{
+      // Disable and disconnect everything the optional model requested.
+      // A pending module load from an earlier consent generation must be inert.
+      workletGeneration++;workletActive=false;
+      if(workletTap){
+        workletTap.port.onmessage=null;
+        try{workletTap.disconnect();}catch{}
+        workletTap=null;
+      }
+      if(workletSilentGain){try{workletSilentGain.disconnect();}catch{}workletSilentGain=null;}
+      soundModel?.clearAudio();
+    };
+    const startContinuousCapture=()=>{
+      if(!soundModelToggle?.checked||!ctx.audioWorklet?.addModule||
+          typeof window.AudioWorkletNode!=="function")return;
+      const generation=++workletGeneration;
+      const load=workletModuleLoaded?Promise.resolve():
+        ctx.audioWorklet.addModule("audio-capture-worklet.js");
+      load.then(()=>{
+        if(generation!==workletGeneration||!soundModelToggle.checked||
+           !state.started||state.audioContext!==ctx)return;
+        workletModuleLoaded=true;
         workletTap=new AudioWorkletNode(ctx,"robotito-audio-capture");
         workletSilentGain=ctx.createGain();
         workletSilentGain.gain.value=0;
@@ -1218,8 +1230,22 @@ function setupAudio(stream){
         };
         soundModel?.clearAudio();
         workletActive=true;
-      }).catch(error=>console.warn("Continuous local audio capture unavailable",error));
-    }
+      }).catch(error=>{
+        // The analyser-based capture remains available without Worklet.
+        console.warn("Continuous local audio capture unavailable",error);
+      });
+    };
+    const handleSoundModelToggle=()=>{
+      if(soundModelToggle?.checked){
+        soundModel?.enable();
+        startContinuousCapture();
+      }else{
+        stopContinuousCapture();
+        soundModel?.disable();
+      }
+    };
+    soundModelToggle?.addEventListener("change",handleSoundModelToggle);
+    if(soundModelToggle?.checked)handleSoundModelToggle();
     const perception=window.ROBOTITO_AUDIO_PERCEPTION?.create?.({
       // A sound-model is optional; without calibrated evidence we NEVER
       // identify an uncertain cough, sneeze, laugh or crying episode.
@@ -1263,12 +1289,11 @@ function setupAudio(stream){
     let lastTick=0,prevSpectrum=null;
     const tick=(at=0)=>{
       if(!state.started||state.audioContext!==ctx){
+        stopContinuousCapture();
         soundModel?.disable();
+        soundModelToggle?.removeEventListener("change",handleSoundModelToggle);
         document.removeEventListener("visibilitychange",clearModelOnHidden);
-        try{
-          workletTap?.disconnect();workletSilentGain?.disconnect();
-          src.disconnect();analyser.disconnect();ctx.close();
-        }catch{}
+        try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
         return;
       }
       requestAnimationFrame(tick);

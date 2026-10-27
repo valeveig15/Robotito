@@ -225,6 +225,30 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {suppression:true,cooldown:true,translations:48};
     });
     console.log("Robotito browser acoustic event integration:",JSON.stringify(acousticIntegration));
+    // Exercise the actual audio rendering thread rather than only parsing
+    // the AudioWorklet class in Node. An offline source requires no mic.
+    const continuousCapture=await page.evaluate(async()=>{
+      const ctx=new OfflineAudioContext(1,4096,48000);
+      await ctx.audioWorklet.addModule("audio-capture-worklet.js");
+      const node=new AudioWorkletNode(ctx,"robotito-audio-capture");
+      const packets=[];
+      node.port.onmessage=event=>{if(event.data?.type==="pcm")packets.push(event.data);};
+      const source=ctx.createConstantSource();
+      source.offset.value=.25;
+      source.connect(node);
+      node.connect(ctx.destination);
+      source.start();
+      await ctx.startRendering();
+      await new Promise(resolve=>setTimeout(resolve,100));
+      node.port.onmessage=null;
+      return packets.map(row=>({count:row.samples.length,rate:row.sampleRate,
+        beginning:row.samples[0],ending:row.samples.at(-1)}));
+    });
+    if(continuousCapture.length!==2||
+       continuousCapture.some(row=>row.count!==2048||row.rate!==48000||
+         Math.abs(row.beginning-.25)>.02||Math.abs(row.ending-.25)>.02))
+      throw new Error("Real AudioWorklet PCM capture failed: "+JSON.stringify(continuousCapture));
+    console.log("Robotito real AudioWorklet integration:",JSON.stringify(continuousCapture));
 
 
 
