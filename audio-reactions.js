@@ -14,10 +14,36 @@ function create({clock=()=>Date.now()}={}){
  let lastVocalAt=-Infinity;
  const VOCAL_GROUP=new Set(["laugh","cry","cough","sneeze"]);
  const VOCAL_GROUP_COOLDOWN=1700;
+ let musicStartedAt=null,musicFrames=0,musicLastAt=0,musicActive=false;
+ function updateMusic(status,{suppressed=false,now=clock()}={}){
+  // Keep movement downstream of acoustic classification. An instantaneous
+  // music candidate is insufficient: require independent, spaced frames.
+  if(suppressed||!status||status.kind!=="music"||
+     !Number.isFinite(status.musicConfidence)||status.musicConfidence<.76||
+     !Number.isFinite(now)||(musicFrames>0&&(now<musicLastAt||now-musicLastAt>450))){
+   musicStartedAt=null;musicFrames=0;musicActive=false;
+   musicLastAt=Number.isFinite(now)?now:0;
+   return false;
+  }
+  if(musicStartedAt===null)musicStartedAt=now;
+  if(musicFrames===0||now-musicLastAt>=35)musicFrames++;
+  musicLastAt=now;
+  if(musicFrames>=6&&now-musicStartedAt>=330)musicActive=true;
+  return musicActive;
+ }
  function decide(event,{suppressed=false,now=clock()}={}){
   if(suppressed||!event||!Number.isFinite(event.confidence))return null;
   const policy=REACTIONS[event.kind];
   if(!policy||event.confidence<policy.minimum)return null;
+  // A "clap" label with an arbitrary confidence must not start an
+  // animation: require five distinct acoustic bursts or model evidence.
+  if(event.kind==="clap"){
+   const acoustic=event.metadata?.origin==="acoustic-heuristic"&&
+     Number.isInteger(event.metadata.bursts)&&event.metadata.bursts>=5;
+   const model=typeof event.metadata?.model==="string"&&
+     event.metadata.model.trim()&&event.metadata.evidenceFrames>=2;
+   if(!acoustic&&!model)return null;
+  }
   if(policy.requiresModel&&!event.metadata?.model)return null;
   if(now-(last[event.kind]??-Infinity)<policy.cooldown)return null;
   if(VOCAL_GROUP.has(event.kind)&&now-lastVocalAt<VOCAL_GROUP_COOLDOWN)return null;
@@ -25,8 +51,11 @@ function create({clock=()=>Date.now()}={}){
   if(VOCAL_GROUP.has(event.kind))lastVocalAt=now;
   return {kind:event.kind,action:policy.action,confidence:event.confidence,at:now};
  }
- function reset(){for(const key of Object.keys(last))delete last[key];lastVocalAt=-Infinity;}
- return {decide,reset};
+ function reset(){
+  for(const key of Object.keys(last))delete last[key];
+  lastVocalAt=-Infinity;musicStartedAt=null;musicFrames=0;musicLastAt=0;musicActive=false;
+ }
+ return {decide,updateMusic,reset};
 }
 root.ROBOTITO_AUDIO_REACTIONS={create,REACTIONS};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_AUDIO_REACTIONS;

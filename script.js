@@ -1256,7 +1256,10 @@ function setupAudio(stream){
       state.musicConfidence=Math.round((status.musicConfidence||0)*100);
       const heard=$("#heardLabel");if(heard)heard.textContent=state.audioKind;
       if(rms>.04)state.lastHeardAt=Date.now();
-      robot.classList.toggle("dancing",status.kind==="music"&&status.musicConfidence>.75&&!state.sleeping&&!state.classMode&&!state.speaking);
+      const dance=!!reactionPolicy?.updateMusic?.(status,{
+        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||document.hidden
+      });
+      robot.classList.toggle("dancing",dance);
       prevSpectrum=freq.slice();
     };
     requestAnimationFrame(tick);
