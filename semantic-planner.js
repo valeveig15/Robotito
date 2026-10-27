@@ -115,7 +115,9 @@ const STOPWORDS=new Set("el la los las un una unos unas de del al a por para y e
 // Remove nonsemantic vocatives/courtesy before interpreting the speech act;
 // the raw user text remains unchanged for display, logging and recall.
 function stripAddress(text){
- return normalize(text).replace(/^(?:(?:por\s+favor|please|robotito|osito|che|oye|hey)\s*[,!:]?\s*)+/i,"").trim();
+ // In Italian "che" means "what"; only remove Rioplatense "che" when
+ // explicitly separated as a vocative (e.g. "Che, robotito, ...").
+ return normalize(text).replace(/^(?:(?:por\s+favor|please|robotito|osito|oye|hey)\s*[,!:]?\s*|che\s*[,!:]\s*)+/i,"").trim();
 }
 function semanticTokens(text){
  // Multiword gesture names are treated as one lexical concept.
