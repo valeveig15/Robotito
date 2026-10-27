@@ -223,10 +223,31 @@ function correctionParts(text){
  return {before:normalize(text.slice(0,last.start)),after:normalize(text.slice(last.end)).replace(/^[\s,.:;-]+/,"").trim()};
 }
 function splitActions(text){
- // Split only on explicit sequencing, never on a bare "y" inside a concept.
- const parts=normalize(text).split(/\s+(?:y\s+despues|y\s+luego|y\s+después|despues|después|luego|and\s+then|then|e\s+depois|puis|poi)\s+/i)
-  .map(x=>x.trim()).filter(Boolean);
- return parts.slice(0,8);
+ const source=normalize(text);
+ // A narrated instruction never becomes a live instruction because it
+ // contains a sequencing conjunction, with or without quote characters.
+ if(isReportedUtterance(source))return [source];
+ const separator=/^\s+(?:y\s+despues|y\s+luego|y\s+después|despues|después|luego|and\s+then|then|e\s+depois|puis|poi)\s+|^\s*[,;]\s*(?:mejor|en\s+cambio|instead)\s+/i;
+ const parts=[];let current="",close=null;
+ for(let i=0;i<source.length;i++){
+  const ch=source[i],prev=source[i-1]||"",next=source[i+1]||"";
+  // Apostrophes in contractions are letters, not quotation boundaries.
+  const apostrophe=(ch==="'"||ch==="’")&&/[\p{L}]/u.test(prev)&&/[\p{L}]/u.test(next);
+  if(!apostrophe){
+   const closing={'"':'"',"'" : "'","«":"»","“":"”","‘":"’"};
+   if(close===ch)close=null;
+   else if(!close&&closing[ch])close=closing[ch];
+  }
+  if(!close){
+   const match=source.slice(i).match(separator);
+   if(match&&current.trim()&&parts.length<7){
+    parts.push(current.trim());current="";i+=match[0].length-1;continue;
+   }
+  }
+  current+=ch;
+ }
+ if(current.trim())parts.push(current.trim());
+ return parts.length?parts:[source];
 }
 function inferFrame(text,{context,language,now},inSequence=false){
  const fallback=legacyPlan(text,{context,language,now});
