@@ -112,6 +112,11 @@ for(const [role,words] of Object.entries(SEMANTIC_ROLES)){
   }
 }
 const STOPWORDS=new Set("el la los las un una unos unas de del al a por para y e o que se me te le nos mi mis tu tus su sus en con lo esto eso ese esa este esta es son era eran fue fueron it the a an of to for is are was were do does and or what how my your i you me please por favor".split(" "));
+// Remove nonsemantic vocatives/courtesy before interpreting the speech act;
+// the raw user text remains unchanged for display, logging and recall.
+function stripAddress(text){
+ return normalize(text).replace(/^(?:(?:por\s+favor|please|robotito|osito|che|oye|hey)\s*[,!:]?\s*)+/i,"").trim();
+}
 function semanticTokens(text){
  // Multiword gesture names are treated as one lexical concept.
  return (fold(text).replace(/\bhigh[\s-]+five\b/g,"highfive").match(/[\p{L}\p{N}]+/gu)||[]).filter(Boolean);
@@ -121,7 +126,7 @@ function tokenRoles(token){
  if(roles)return roles;
  // Morphological family matching, not matching a phrase entered in a test.
  if(token.length>=5){
-  const stem=token.replace(/(?:aciones|iciones|mente|ando|iendo|ados|adas|ando|ieron|aria|erias|amos|emos|aste|iste|arlo|erlo|irlo|ando|iendo|arme|erme|irme|amelo|emelo|imelo|ar|er|ir|ado|ada|idos|idas|es|s)$/,"");
+  const stem=token.replace(/(?:aciones|iciones|mente|ando|iendo|ados|adas|ando|ieron|arias|erias|irias|arian|erian|irian|aria|iria|amos|emos|aste|iste|arlo|erlo|irlo|ando|iendo|arme|erme|irme|amelo|emelo|imelo|ar|er|ir|ado|ada|idos|idas|es|s)$/,"");
   if(stem.length>=4){
    const out=[];
    for(const [word,roles] of SEMANTIC_INDEX)if(word.length>=4&&word.startsWith(stem)&&Math.abs(word.length-token.length)<9)out.push(...roles);
@@ -253,8 +258,9 @@ function splitActions(text){
  return parts.length?parts:[source];
 }
 function inferFrame(text,{context,language,now},inSequence=false){
- const fallback=legacyPlan(text,{context,language,now});
- const features=semanticFeatures(text),q=fold(text),previous=context?.focus||null;
+ const directedText=stripAddress(text)||text;
+ const fallback=legacyPlan(directedText,{context,language,now});
+ const features=semanticFeatures(directedText),q=fold(directedText),previous=context?.focus||null;
  const roles=features.roles;
  let {intent,source,confidence}=fallback;
  const reported=(features.mentionQuestion||features.reportedUtterance)&&features.speechAct==="statement";
@@ -303,7 +309,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
  if(entities.exerciseNumber==null&&previous?.intent==="exercise"&&isReferenceOnly(q))entities.exerciseNumber=previous.entities?.exerciseNumber??null;
  if(!entities.date&&previous?.entities?.date&&isReferenceOnly(q))entities.date=previous.entities.date;
  const inheritedSubject=/\b(?:ese|esa|esto|eso|otro|otra|lo anterior|it|that|one|lo de ayer)\b/.test(q);
- const topic=isReferenceOnly(q)&&previous?.entities?.topic?previous.entities.topic:topicEntity(correction?.after||text,intent,(inheritedSubject||correction&&previous)?previous:null);
+ const topic=isReferenceOnly(q)&&previous?.entities?.topic?previous.entities.topic:topicEntity(correction?.after||directedText,intent,(inheritedSubject||correction&&previous)?previous:null);
  entities={...entities,topic:topic||null};
  if(inheritedSubject&&previous?.entities?.subject&&!entities.subject)entities.subject=previous.entities.subject;
  const depth=fallback.depth==="normal"&&intent==="definition"?"brief":
