@@ -187,6 +187,8 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       const model=window.ROBOTITO_SOUND_MODEL,choice=document.querySelector("#audioModelEnabled");
       if(!model?.create||!choice||choice.checked)
         throw new Error("Optional sound model must be available but off by default");
+      if(typeof window.AudioWorkletNode!=="function")
+        throw new Error("AudioWorklet unavailable in CI Chromium");
       for(const lang of ["es","en","pt","fr","it","de"])
         if(window.ROBOTITO_I18N.t("audioModelOptIn",lang)==="audioModelOptIn")
           throw new Error("Missing translated model consent control: "+lang);
