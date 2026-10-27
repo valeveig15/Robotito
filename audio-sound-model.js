@@ -4,6 +4,7 @@
 (function(root){
 "use strict";
 const WINDOW_SAMPLES=15600,STEP_SAMPLES=7800,TARGET_RATE=16000;
+const MAX_INFERENCE_MS=2500;
 const LABELS={
  sneeze:/\bsneez(?:e|ing)\b/i,
  cough:/\bcough(?:ing)?\b/i,
@@ -34,7 +35,8 @@ function mapCategories(categories){
 function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type:"module"}),
  clock=()=>Date.now(),onUpdate=()=>{}}={}){
  let worker=null,state="off",statusMessage="",last=null,writeAt=0,filled=0,sinceLast=0;
- let sequence=0,minimumAcceptedId=0,busy=false,ring=new Float32Array(WINDOW_SAMPLES);
+ let sequence=0,minimumAcceptedId=0,pendingId=0,pendingAt=0,busy=false;
+ let ring=new Float32Array(WINDOW_SAMPLES);
  const version="YAMNet AudioSet (uncalibrated for Robotito)";
  const publish=()=>{try{onUpdate(getStatus());}catch(e){console.warn("Sound model state",e);}};
  function getStatus(){
@@ -47,14 +49,15 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type
   // Clear a session's PCM and reject a prediction whose samples predate
   // class mode, sleep, Robotito's own voice or an interrupted microphone.
   filled=0;sinceLast=0;writeAt=0;last=null;
-  minimumAcceptedId=sequence+1;
+  minimumAcceptedId=sequence+1;pendingId=0;pendingAt=0;busy=false;
   ring.fill(0);publish();
  }
  function disable(){
   const previous=worker;worker=null;
   if(previous)try{previous.terminate();}catch{}
   state="off";statusMessage="";last=null;writeAt=0;filled=0;sinceLast=0;busy=false;
-  ring=new Float32Array(WINDOW_SAMPLES);minimumAcceptedId=sequence+1;publish();
+  ring=new Float32Array(WINDOW_SAMPLES);minimumAcceptedId=sequence+1;
+  pendingId=0;pendingAt=0;publish();
  }
  function enable(){
   if(state==="loading"||state==="ready")return true;
@@ -78,9 +81,13 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type
    const data=event?.data||{};
    if(data.type==="ready"){state="ready";statusMessage="";publish();}
    else if(data.type==="result"){
-    busy=false;
-    if(!Number.isInteger(data.id)||data.id>sequence||
-       data.id<minimumAcceptedId||data.id<= (last?.id||0))return;
+    // Delayed results from a prior class/sleep interval must not unlock a
+    // newer in-flight classification, nor appear fresh when they are stale.
+    if(!Number.isInteger(data.id)||data.id!==pendingId)return;
+    busy=false;pendingId=0;
+    const elapsed=clock()-pendingAt;pendingAt=0;
+    if(data.id<minimumAcceptedId||data.id<= (last?.id||0)||
+       elapsed<0||elapsed>MAX_INFERENCE_MS)return;
     const mapped=mapCategories(data.categories);
     last={id:data.id,observedAt:clock(),...mapped};publish();
    }else if(data.type==="error")fail(data.message||"Model unavailable");
@@ -103,15 +110,22 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js",{type
    writeAt=(writeAt+1)%WINDOW_SAMPLES;
    filled=Math.min(WINDOW_SAMPLES,filled+1);sinceLast++;
   }
+  // Do not keep the queue stuck forever when WASM inference hangs.
+  if(busy&&clock()-pendingAt>MAX_INFERENCE_MS){
+   const failed=worker;worker=null;try{failed?.terminate();}catch{}
+   state="error";statusMessage="El clasificador no respondió a tiempo";
+   last=null;filled=0;sinceLast=0;ring.fill(0);busy=false;
+   pendingId=0;pendingAt=0;publish();return;
+  }
   if(filled<WINDOW_SAMPLES||sinceLast<STEP_SAMPLES||busy)return;
   const frame=new Float32Array(WINDOW_SAMPLES);
   for(let i=0;i<WINDOW_SAMPLES;i++)frame[i]=ring[(writeAt+i)%WINDOW_SAMPLES];
-  busy=true;sinceLast=0;
-  try{worker.postMessage({type:"classify",id:++sequence,sampleRate:TARGET_RATE,samples:frame},[frame.buffer]);}
+  busy=true;sinceLast=0;pendingAt=clock();pendingId=++sequence;
+  try{worker.postMessage({type:"classify",id:pendingId,sampleRate:TARGET_RATE,samples:frame},[frame.buffer]);}
   catch(error){
    busy=false;state="error";statusMessage=String(error);
    const failed=worker;worker=null;try{failed?.terminate();}catch{}
-   ring.fill(0);filled=0;last=null;publish();
+   ring.fill(0);filled=0;last=null;pendingId=0;pendingAt=0;publish();
   }
  }
  return {enable,disable,clearAudio,pushPCM,getStatus,calibrated:false,version};
