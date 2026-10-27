@@ -106,6 +106,9 @@ for(const reported of [
 }
 const metalinguistic=planner.plan('Explícame por qué se dice "esto y después aquello"');
 assert.equal(metalinguistic.actions.length,1);count++;
+const singleCorrection=planner.plan("No, mejor decime la definición");
+assert.equal(singleCorrection.actions.length,1);count++;
+assert.equal(singleCorrection.intent,"definition");count++;
 const correctionSequence=planner.plan("No abras el libro, mejor explicame la teoría");
 assert.equal(correctionSequence.actions.length,2);count++;
 assert.equal(correctionSequence.actions[0].shouldExecute,false);count++;
