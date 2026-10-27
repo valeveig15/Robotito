@@ -241,6 +241,8 @@ eq(onlyEvents(safeHuman).filter(event=>event.kind==="sneeze").length,1,
 let now=200000;
 const policy=reactions.create({clock:()=>now});
 eq(policy.decide({kind:"clap",confidence:.68}),null,"Low-confidence claps do nothing");
+eq(policy.decide({kind:"clap",confidence:1}),null,
+ "Clap confidence without repeated-burst or model provenance is insufficient");
 eq(policy.decide({kind:"impact",confidence:.98}),null,"Impact never triggers applause");
 eq(policy.decide({kind:"sneeze",confidence:1}),null,"Unproven sneeze never triggers speech");
 eq(policy.decide({kind:"laugh",confidence:1}),null,"Unproven laugh never changes mood");
@@ -254,8 +256,16 @@ eq(policy.decide({kind:"cough",confidence:.99,metadata:{model:"mock-calibrated"}
  "One sneeze/cough episode must not produce two different reactions");
 now+=5200;
 eq(policy.decide(sneezeEvent)?.action,"bless","New sneeze after cooldown may react");
-eq(policy.decide({kind:"clap",confidence:.9})?.action,"clap","Confirmed applause gets animation");
-eq(policy.decide({kind:"clap",confidence:.95}),null,"Repeated claps do not spam animation");
+const verifiedClap={kind:"clap",confidence:.9,
+ metadata:{origin:"acoustic-heuristic",bursts:5}};
+eq(policy.decide(verifiedClap)?.action,"clap","Confirmed applause gets animation");
+eq(policy.decide({...verifiedClap,confidence:.95}),null,"Repeated claps do not spam animation");
+eq(reactions.create().decide({kind:"clap",confidence:.99,
+ metadata:{model:"test-calibrated",evidenceFrames:2}})?.action,"clap",
+ "Two independent calibrated model frames can verify a clap");
+eq(reactions.create().decide({kind:"clap",confidence:1,
+ metadata:{origin:"acoustic-heuristic",bursts:1}}),null,
+ "One impact cannot be promoted to applause");
 now+=1750;
 eq(policy.decide({kind:"laugh",confidence:.93,metadata:{model:"calibrated"}})?.action,
   "smile","Calibrated laughter yields a temporary smile");
@@ -267,4 +277,30 @@ eq(policy.decide({kind:"cough",confidence:.96,metadata:{model:"calibrated"}})?.a
   "notice","Calibrated cough prompts attention without unsolicited speech");
 eq(policy.decide({kind:"music",confidence:1}),null,
   "Music is controlled by continuous rhythm state rather than event spam");
+// Dance is a natural reaction with its own stability, false-positive,
+// interruption and cooldown-independent policy, not an immediate detector
+// side effect.
+let danceAt=300000;
+const dancePolicy=reactions.create({clock:()=>danceAt});
+const stableMusic={kind:"music",musicConfidence:.94};
+for(let i=0;i<5;i++,danceAt+=60)
+ eq(dancePolicy.updateMusic(stableMusic),false,"Do not start dancing on short music fragments");
+eq(dancePolicy.updateMusic(stableMusic),false,"Duration matters, not only frame count");
+danceAt+=65;
+eq(dancePolicy.updateMusic(stableMusic),true,"Sustained classified music starts dance");
+danceAt+=60;
+eq(dancePolicy.updateMusic(stableMusic),true,"Continuous music keeps movement");
+danceAt+=60;
+eq(dancePolicy.updateMusic({kind:"noise",musicConfidence:.96}),false,
+ "Strong periodic noise classification immediately stops the dance");
+danceAt+=55;
+eq(dancePolicy.updateMusic(stableMusic),false,"Stale rhythm may not restart dancing");
+dancePolicy.reset();
+for(let i=0;i<9;i++,danceAt+=70)dancePolicy.updateMusic(stableMusic);
+eq(dancePolicy.updateMusic(stableMusic,{suppressed:true}),false,
+ "Class/sleep/self-voice suppression immediately stops dancing");
+eq(dancePolicy.updateMusic(stableMusic,{now:danceAt+30}),false,
+ "Music evidence must restart after interruption");
+danceAt+=1800;
+eq(dancePolicy.updateMusic(stableMusic),false,"Long audio gap invalidates dance evidence");
 console.log("Robotito acoustic event regression:",checks,"assertions; seed:",seed);
