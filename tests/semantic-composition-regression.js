@@ -68,6 +68,28 @@ for(const raw of ["No me expliques el libro","Don't show my class notes","No me 
  assert.equal(f.shouldExecute,false,raw);checks++;
  assert.equal(f.mayReadClass,false,raw);checks++;
 }
+// Central policy prevents negative commands from invoking tools or class memories.
+for(const raw of [
+ "No choques los cinco","Por favor no abras el libro",
+ "Can you please not open the book?","Don't show my class notes",
+ "Não mostre a aula"
+]){
+ const frame=planner.plan(raw);
+ assert.equal(frame.negative,true,raw);checks++;
+ assert.equal(frame.shouldExecute,false,raw);checks++;
+ assert.equal(frame.mayReadClass,false,raw);checks++;
+ const routed=intentEngine.classify(raw,{plan:frame});
+ assert.equal(routed.useClassMemory,false,raw);checks++;
+}
+for(const raw of ["¿Qué significa 'no hagas eso'?","Explicame qué significa no hagas eso"]){
+ const frame=planner.plan(raw);
+ assert.equal(frame.shouldExecute,true,raw);checks++;
+ assert.equal(frame.negative,false,raw);checks++;
+}
+const classExcluded=planner.plan("Explicame la fotosíntesis sin usar mis apuntes");
+assert.equal(classExcluded.shouldExecute,true);checks++;
+assert.equal(classExcluded.source,"general");checks++;
+assert.equal(classExcluded.mayReadClass,false);checks++;
 const weather=planner.plan("¿Cómo va a estar el clima mañana?");
 let history=planner.advance(planner.createContext(),weather);
 const night=planner.plan("¿Y de noche?",{context:history});

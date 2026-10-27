@@ -129,6 +129,32 @@ function tokenRoles(token){
  }
  return [];
 }
+// Only negation of an addressed directive blocks execution. Negated phrases
+// in quoted speech, explanations and academic content remain data.
+function negativeDirective(input){
+ const q=fold(input).replace(/^[!?¡¿\s]+/g,"")
+   .replace(/^(?:(?:che|oye|hey|robotito|osito|robot)\s*[,!:]?\s*)+/,"")
+   .replace(/^(?:(?:por favor|please|bitte)\s*[,!:]?\s*)+/,"");
+ // German negative imperative has a trailing 'nicht' rather than a leading
+ // negator. Require an imperative verb family so quoted occurrences are inert.
+ const verb=semanticTokens(q)[0]||"";
+ if(/\bnicht\s*[.!?]*$/.test(q)
+   &&["erkl","zeig","offn","oeffn","such","mach","schreib","nenn","sag","zeichn","lies","les"].some(stem=>verb.startsWith(stem))
+   && !/\b(?:wort|begriff|ausdruck|bedeutung|von)\s+nicht\b/.test(q))return true;
+ if(/^n['’][a-z]/.test(q)&&/\bpas\b/.test(q))return true;
+ if(/^(?:can|could|would)\s+you\s+(?:please\s+)?not\b/.test(q))return true;
+ if(/^please\s+(?:do\s+not|don't|not)\b/.test(q))return true;
+ if(/^(?:don'?t|do\s+not|never|nao|non|nicht|ne)\b/.test(q))return true;
+ if(!/^(?:no|nunca)\b/.test(q))return false;
+ // Uncertainty, personal feelings and self-correction are not commands.
+ if(/^(?:no\s*[,;:]\s*(?:mejor|perdon|digo)|no\s+(?:entiendo|se|comprendo|recuerdo|puedo|creo|estoy|tengo|quiero\s+saber|me\s+(?:gusta|interesa)|te\s+(?:quiero|amo|adoro)|me\s+(?:quieres|amas|adoras)|es|era|son|hay))\b/.test(q))return false;
+ if(/^no\s+(?:quiero|queremos|deseo|permito)\s+que\b/.test(q))return true;
+ const cmd=q.match(/^(?:no|nunca)\s+(?:(?:me|te|nos|le|les|lo|la|los|las|se)\s+)?([\p{L}]+)/u);
+ if(!cmd)return false;
+ // Productive Spanish subjunctive (-es/-as), not full-sentence matching.
+ return /(?:as|es)$/.test(cmd[1])
+   && !/^(?:quieres|tienes|puedes|sabes|eres|haces|dices|amas|odias)$/.test(cmd[1]);
+}
 function semanticFeatures(text){
  const tokens=semanticTokens(text),roles={};
  for(const token of tokens)for(const role of tokenRoles(token))roles[role]=(roles[role]||0)+1;
@@ -147,13 +173,12 @@ function semanticFeatures(text){
  const vocative=/^\s*(?:(?:che|oye|hey|hola)\s*,?\s*)?(?:robotito|osito|robot)\s*[,!:\s]/i.test(text);
  const mentionQuestion=/(?:\b(?:profesor|profesora|profe|teacher|docente)\b.{0,35}\b(?:dijo|pregunto|preguntaron|preguntaba|said|asked)\b|\b(?:pregunto|preguntaron|preguntaba|asked|dijo que|pregunta que)\b)/.test(fold(text))
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
- const negative=/\b(?:no (?:me |nos |lo )?(?:expliques|explique|expliquen|muestres|mostrar|hagas|hagamos|busques|consultes|uses|uses|quiero)|nunca (?:me )?(?:explique|muestres)|don't (?:explain|show|search|use)|do not (?:explain|show|search|use)|sin (?:consultar|usar))\b/.test(fold(text));
- const imperativeNegation=leadingRequest&&(/\b(?:nicht|pas)\b/.test(fold(text))||/^(?:non|nao)\s+/.test(fold(text)));
- const effectiveNegative=negative||imperativeNegation;
+ const effectiveNegative=negativeDirective(text);
  const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
+ const personalSentiment=/^(?:no|nunca)\s+(?:te|les|los|las|me|nos)\s+(?:quiero|amo|adoro|amas|quieres)\b/.test(fold(text));
  let speechAct="statement";
  if(question&&!mentionQuestion)speechAct="question";
- else if((!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
+ else if(!personalSentiment&&(effectiveNegative||!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
@@ -198,7 +223,8 @@ function inferFrame(text,{context,language,now},inSequence=false){
  let {intent,source,confidence}=fallback;
  const reported=features.mentionQuestion&&features.speechAct==="statement";
  const has=role=>Boolean(roles[role]);
- const explicitClass=(/[\s\S]/.test(q)&&(fallback.mayReadClass&&features.speechAct!=="statement"||
+ const excludesClass=/\b(?:sin\s+(?:usar|consultar|leer)|without\s+(?:using|reading))\s+(?:(?:la|mi|mis|los|las|my|the)\s+)?(?:clase|apuntes|transcripcion|class|notes|transcript)\b/.test(q);
+ const explicitClass=(!excludesClass&&/[\s\S]/.test(q)&&(fallback.mayReadClass&&features.speechAct!=="statement"||
    /\b(?:segun (?:la|mi) clase|en (?:mi|la) clase|mis apuntes|la transcripcion|according to (?:my|the) class|class notes|in my class|de la profesora)\b/.test(q)
    ||((has("CLASS")&&has("REPORT"))&&features.speechAct!=="statement")));
  const explicitExercise=has("EXERCISE")&&(features.speechAct!=="statement"||/[¿?]/.test(text));
