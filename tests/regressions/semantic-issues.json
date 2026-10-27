@@ -282,5 +282,195 @@
       "depth": "step-by-step"
     },
     "reason": "Italian educational request must preserve stepwise depth"
+  },
+  {
+    "id": "NLU-031",
+    "input": "Mi hermana dijo 'buscá en mis apuntes'",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "Quoted command from a relative is inert"
+  },
+  {
+    "id": "NLU-032",
+    "input": "Ayer escuché al profesor preguntar '¿Qué es permutación?'",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false,
+      "mayReadClass": false
+    },
+    "reason": "Overheard interrogative is not the user's query"
+  },
+  {
+    "id": "NLU-033",
+    "input": "No busques en mis apuntes, explicame una permutación",
+    "expected": {
+      "shouldExecute": true,
+      "mayReadClass": false
+    },
+    "reason": "Prohibition and positive general explanation need separate source gates",
+    "expectedActions": [
+      {
+        "shouldExecute": false,
+        "source": "classes",
+        "mayReadClass": false
+      },
+      {
+        "shouldExecute": true,
+        "source": "general",
+        "mayReadClass": false
+      }
+    ]
+  },
+  {
+    "id": "NLU-034",
+    "input": "No me expliques el ejercicio 4, resolvelo",
+    "expected": {
+      "shouldExecute": true,
+      "mayReadClass": false
+    },
+    "reason": "Explicit numbered exercise reference survives contradictory clauses",
+    "expectedActions": [
+      {
+        "shouldExecute": false,
+        "entities.exerciseNumber": 4
+      },
+      {
+        "shouldExecute": true,
+        "entities.exerciseNumber": 4,
+        "intent": "exercise"
+      }
+    ]
+  },
+  {
+    "id": "NLU-035",
+    "input": "resolvelo",
+    "expected": {
+      "shouldExecute": false,
+      "needsClarification": true
+    },
+    "reason": "No exercise number or antecedent: do not invent an action"
+  },
+  {
+    "id": "NLU-036",
+    "input": "No, mejor decime la definición",
+    "expected": {
+      "intent": "definition",
+      "negative": false,
+      "shouldExecute": true
+    },
+    "reason": "Self-correction is not a forbidden instruction"
+  },
+  {
+    "id": "NLU-037",
+    "input": "¿Y en portugués?",
+    "expected": {
+      "intent": "follow-up",
+      "needsClarification": true,
+      "shouldExecute": false
+    },
+    "reason": "Change language without antecedent must be clarified"
+  },
+  {
+    "id": "NLU-038",
+    "input": "¿Qué significa 'no hagas eso'?",
+    "expected": {
+      "intent": "definition",
+      "negative": false,
+      "shouldExecute": true
+    },
+    "reason": "A negation in quoted study material is not the user's ban"
+  },
+  {
+    "id": "NLU-039",
+    "input": "No choques los cinco",
+    "expected": {
+      "negative": true,
+      "shouldExecute": false
+    },
+    "reason": "High-five prohibition must not execute its gesture"
+  },
+  {
+    "id": "NLU-040",
+    "input": "No busques en mis apuntes, chocá los cinco",
+    "expected": {
+      "shouldExecute": true,
+      "mayReadClass": false
+    },
+    "reason": "Do not read classes; preserve explicitly allowed high-five",
+    "expectedActions": [
+      {
+        "shouldExecute": false,
+        "mayReadClass": false
+      },
+      {
+        "shouldExecute": true,
+        "mayReadClass": false
+      }
+    ]
+  },
+  {
+    "id": "NLU-041",
+    "input": "No me muestres el libro pero decime el clima",
+    "expected": {
+      "shouldExecute": true
+    },
+    "reason": "Opposed book/weather instructions need independent gates",
+    "expectedActions": [
+      {
+        "shouldExecute": false,
+        "source": "books"
+      },
+      {
+        "shouldExecute": true,
+        "source": "weather"
+      }
+    ]
+  },
+  {
+    "id": "NLU-042",
+    "input": "La profesora dijo 'chocá los cinco y después mostrame el libro'",
+    "expected": {
+      "speechAct": "statement",
+      "shouldExecute": false
+    },
+    "reason": "Sequencing inside quotations must not create executable actions",
+    "expectedActions": [
+      {
+        "shouldExecute": false
+      }
+    ]
+  },
+  {
+    "id": "NLU-043",
+    "input": "Che cos'è permutazione?",
+    "expected": {
+      "intent": "definition",
+      "source": "general",
+      "shouldExecute": true
+    },
+    "reason": "Italian 'che' must not be stripped as Spanish vocative"
+  },
+  {
+    "id": "NLU-044",
+    "input": "Por favor ¿Qué es una clase?",
+    "expected": {
+      "intent": "definition",
+      "source": "general",
+      "mayReadClass": false
+    },
+    "reason": "Courtesy and a class noun do not authorize class retrieval"
+  },
+  {
+    "id": "NLU-045",
+    "input": "Explicame la fotosíntesis sin usar mis apuntes",
+    "expected": {
+      "intent": "explanation",
+      "source": "general",
+      "mayReadClass": false
+    },
+    "reason": "Explicit source exclusion must override keyword routing"
   }
 ]

@@ -25,5 +25,18 @@ for(const entry of corpus){
     }
     checks++;
   }
+  if(entry.expectedActions!==undefined){
+    assert.ok(Array.isArray(entry.expectedActions),"Action oracle must be an array: "+entry.id);checks++;
+    assert.equal(actual.actions.length,entry.expectedActions.length,entry.id+" / action count");checks++;
+    for(let index=0;index<entry.expectedActions.length;index++){
+      const expectedAction=entry.expectedActions[index];
+      for(const [field,expected] of Object.entries(expectedAction)){
+        const actualValue=field.split(".").reduce((value,key)=>value?.[key],actual.actions[index]);
+        assert.deepEqual(actualValue,expected,
+          entry.id+" / actions["+index+"]."+field+" / "+entry.input);
+        checks++;
+      }
+    }
+  }
 }
 console.log("Permanent issue regressions:",corpus.length,"cases,",checks,"assertions passed");
