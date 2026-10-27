@@ -85,6 +85,12 @@ The user can now opt in to an **on-device YAMNet AudioSet** model (Google MediaP
 
 **This is a pre-trained classifier but NOT a validated or calibrated classifier for Robotito.** Its labels are displayed as *possible* sounds, only at a confidence threshold; automatic cough/sneeze/laughter/crying reactions remain **disabled** until a diverse real-sound dataset, per-class confusion matrices and a human-approved activation profile have established safe thresholds. This protects against a false unsolicited “¡Salud!”. `tests/audio-model-adapter-regression.js` verifies opt-in, bounded PCM, label mapping, freshness and opt-out using a fake worker; CI does **not** download the real model or test true accuracy. Browser support and network are required for this optional download.
 
+## Evaluación de sonido real con corpus etiquetado (P03, sin falsos certificados)
+
+La aceptación del clasificador humano requiere un corpus real con ejemplos positivos y negativos, fuentes de uso autorizado y contextos distintos. El comando `npm run evaluate:audio -- /ruta/manifest.json` carga **solamente archivos locales** definidos en el manifiesto, resamplea sus ventanas a 16 kHz en Chromium, ejecuta el YAMNet real en un Worker del navegador y guarda una matriz de confusión y tasas de precisión/recall/falsos positivos por tipo. Ver `tests/fixtures/audio-manifest.example.json`. No hay subida de los archivos de sonido a Robotito ni generación de modelos calibrados por este proceso; la descarga opcional de MediaPipe/YAMNet requiere conexión y se inicia explícitamente al ejecutar el comando.
+
+**Advertencia:** el informe devuelve siempre `calibrated:false` y `automaticHumanReactionsApproved:false`. Cada clase necesita muestras diversas, análisis de falsos positivos por entorno, revisión humana y un proceso explícito de aprobación de umbrales. Los escenarios sintéticos de CI verifican la aritmética y los fallos seguros del evaluador, no sustituyen una prueba de audio real; no se incluye ningún archivo de audio en el repositorio.
+
 ## Audio event classifier contract (October 2026)
 
 The browser includes **no pretrained classifier for laughter, crying, coughs or sneezes**. These categories and an isolated model-confirmed clap can be identified only if a separately validated, locally executing model is supplied before microphone initialization as `window.ROBOTITO_AUDIO_EVENT_MODEL`, exposing:
