@@ -217,6 +217,32 @@ function topicEntity(text,intent,previous){
  if(!topic&&previous?.entities?.topic)topic=previous.entities.topic;
  return topic||null;
 }
+// Elliptical requests alter the most recent response; they do not grant
+// authority to search new sources or another person's class materials.
+const FOLLOWUP_LANGUAGE_NAMES={
+ es:["espanol","castellano","spanish"],en:["ingles","english"],
+ pt:["portugues","portuguese"],fr:["frances","french","francais"],
+ it:["italiano","italian"],de:["aleman","german","deutsch"]
+};
+function followUpModifier(input){
+ const q=fold(stripAddress(input)).replace(/^[?¿!¡.,:;\s]+|[?¿!¡.,:;\s]+$/g,"").trim();
+ if(!q||q.split(/\s+/).length>11)return null;
+ const lang=q.match(/^(?:(?:y|and|e|et|und)\s+)?(?:en|in|em|auf|in lingua)\s+([\p{L}]+)$/u);
+ if(lang)for(const [code,names] of Object.entries(FOLLOWUP_LANGUAGE_NAMES))
+  if(names.includes(lang[1]))return {kind:"language",targetLanguage:code};
+ if(/^(?:(?:y|and|e)\s+)?(?:mas|more|plus|piu|mehr)\s+(?:breve|corto|corta|conciso|short|shorter|court|kurz|resumido)$/.test(q)
+   ||/^(?:explicalo|explicamelo|resumilo|decilo|repetilo|say it|make it|make that)\s+(?:mas\s+)?(?:breve|corto|conciso|shorter|short|kurz)$/.test(q)
+   ||/^(?:en una frase|in one sentence)$/.test(q))return {kind:"brief"};
+ if(/^(?:(?:y|and|e)\s+)?(?:mas|more|plus|piu|mehr)\s+(?:en\s+)?(?:profundidad|detalle|detallado|detail|detailed|depth|approfondi|ausfuhrlich)$/.test(q)
+   ||/^(?:desarrollalo|amplialo|profundiza|expand on it|elaborate|go deeper|explain it further)$/.test(q))return {kind:"detailed"};
+ if(/^(?:como\s+(?:en|para)\s+(?:un\s+)?examen|en formato\s+(?:de\s+)?examen|para\s+(?:el\s+)?examen|exam style|for an exam)$/.test(q))
+  return {kind:"exam"};
+ if(/^(?:(?:y|and|e)\s+)?(?:con\s+)?(?:un\s+)?ejemplo$/.test(q)
+   ||/^(?:dame|poneme|mostrame|give me|show me)\s+(?:un\s+)?(?:ejemplo|example)$/.test(q)
+   ||/^(?:(?:and|with)\s+)?(?:an?\s+)?example$/.test(q))
+  return {kind:"example"};
+ return null;
+}
 function isReferenceOnly(q){
  q=fold(q).replace(/^[¿?!\s]+|[?!\s]+$/g,"");
  return /^(?:(?:y|and|e|et|und)\s+)?(?:eso|ese|esa|este|esta|aquello|el otro|la otra|lo de ayer|de noche|por la noche|a la noche|en la noche|de tarde|por la tarde|en la tarde|por la manana|en la manana|de manana|in the afternoon|in the morning|at night|at noon|tomorrow|manana|demain|morgen|tonight|that one|the other|what about that)[?.! ]*$/i.test(q.trim());
@@ -263,6 +289,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const directedText=stripAddress(text)||text;
  const fallback=legacyPlan(directedText,{context,language,now});
  const features=semanticFeatures(directedText),q=fold(directedText),previous=context?.focus||null;
+ const followUp=followUpModifier(directedText);
  const roles=features.roles;
  let {intent,source,confidence}=fallback;
  const reported=(features.mentionQuestion||features.reportedUtterance)&&features.speechAct==="statement";
@@ -314,7 +341,8 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const topic=isReferenceOnly(q)&&previous?.entities?.topic?previous.entities.topic:topicEntity(correction?.after||directedText,intent,(inheritedSubject||correction&&previous)?previous:null);
  entities={...entities,topic:topic||null};
  if(inheritedSubject&&previous?.entities?.subject&&!entities.subject)entities.subject=previous.entities.subject;
- const depth=fallback.depth==="normal"&&intent==="definition"?"brief":
+ const examRequested=/\b(?:para (?:un |el )?examen|como (?:en|para) (?:un )?examen|modo examen|exam style|exam answer)\b/.test(q);
+ const depth=examRequested?"exam":fallback.depth==="normal"&&intent==="definition"?"brief":
   fallback.depth==="normal"&&intent==="explanation"?"detailed":fallback.depth;
  const ambiguousReference=isReferenceOnly(q)&&!previous;
  const negativeCommand=features.negative&&["request","question"].includes(features.speechAct);
@@ -325,6 +353,15 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const shouldRespond=features.speechAct!=="statement"||features.vocative||features.implicit;
  const mayReadClass=shouldExecute&&!needsClarification&&(source==="classes"||source==="materials")
   &&(explicitClass||explicitExercise||(isReferenceOnly(q)&&previous?.source===source));
+ if(followUp){
+  const hasAntecedent=Boolean(previous&&previous.intent!=="conversation");
+  return {...fallback,intent:"follow-up",source:"conversation",confidence:.95,
+   language:fallback.language,depth:followUp.kind==="brief"?"brief":followUp.kind==="detailed"?"detailed":followUp.kind==="exam"?"exam":depth,
+   speechAct:"request",addressed:true,shouldRespond:true,shouldExecute:hasAntecedent,
+   negative:false,needsClarification:!hasAntecedent,mayReadClass:false,followUp,
+   entities:{...entities,topic:previous?.entities?.topic||null},
+   references:{usesPrevious:hasAntecedent,previousSource:previous?.source||null},modelRefined:false};
+ }
  return {...fallback,intent,source,confidence,language:fallback.language,depth,
   speechAct:features.speechAct,addressed:features.directed||Boolean(inSequence),
   shouldRespond,shouldExecute:shouldExecute&&!needsClarification,negative:features.negative,correction:correction||null,
@@ -357,7 +394,7 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
  return frame;
 }
 
-function advance(context,planned){const entry={intent:planned.intent,source:planned.source,language:planned.language,entities:planned.entities,topic:planned.topic,speechAct:planned.speechAct};const canFocus=planned.speechAct!=="social"&&!planned.needsClarification&&planned.intent!=="empty"&&
+function advance(context,planned){const entry={intent:planned.intent,source:planned.source,language:planned.language,entities:planned.entities,topic:planned.topic,speechAct:planned.speechAct};const canFocus=planned.speechAct!=="social"&&!planned.needsClarification&&planned.intent!=="empty"&&planned.intent!=="follow-up"&&
  (planned.shouldExecute===true||["task","book","weather"].includes(planned.intent));return {version:2,turns:[...(context?.turns||[]).slice(-19),entry],focus:canFocus?entry:context?.focus||null};}
 // Optional on-device language-model refinement for novel phrasings. Never
 // call a remote inference endpoint; the deterministic planner is the fallback.

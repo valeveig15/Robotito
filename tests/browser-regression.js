@@ -116,6 +116,49 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
         throw new Error("Sequential quiz action did not execute: "+bubble);
       return {comment:1,negated:1,compound:2};
     });
+    const followUpIntegration=await page.evaluate(async()=>{
+      const chat=window.ROBOTITO_CHAT,planner=window.ROBOTITO_SEMANTIC_PLANNER;
+      const bubble=document.querySelector("#speechBubble");
+      if(!chat?.send||!planner?.plan||!bubble)throw new Error("Contextual response integration unavailable");
+      await chat.send("¿Qué es una permutación?",{channel:"text"});
+      const original=bubble.textContent;
+      if(!original||original.length<10)throw new Error("Missing baseline answer");
+      const priorFocus=chat.context().focus?.intent;
+      await chat.send("más breve",{channel:"text"});
+      const concise=bubble.textContent;
+      if(!concise||concise.length>original.length||concise.length>241)
+        throw new Error("Brief follow-up did not summarize previous assistant answer");
+      if(chat.context().focus?.intent!==priorFocus)
+        throw new Error("Reply modifier replaced the conversational subject");
+      const oldModel=window.LanguageModel;
+      try{
+        window.LanguageModel={create:async()=>({
+          prompt:async()=> "Isso é uma explicação em português.",
+          destroy:()=>{}
+        })};
+        await chat.send("¿Y en portugués?",{channel:"text"});
+        if(!/português/.test(bubble.textContent))
+          throw new Error("One-turn language follow-up failed: "+bubble.textContent);
+        if(document.documentElement.lang!=="es")
+          throw new Error("A translated follow-up changed permanent UI language");
+      }finally{window.LanguageModel=oldModel;}
+      const oldHandler=window.ROBOTITO_ROUTER.handle;
+      const seen=[];
+      try{
+        window.ROBOTITO_ROUTER.handle=async(text,{plan}={})=>{
+          seen.push({text,depth:plan?.depth});
+          return true;
+        };
+        await chat.send("más en profundidad",{channel:"text"});
+        await chat.send("como para un examen",{channel:"text"});
+      }finally{window.ROBOTITO_ROUTER.handle=oldHandler;}
+      if(seen.length!==2||seen[0].depth!=="detailed"||seen[1].depth!=="exam")
+        throw new Error("Detailed/exam modifiers not routed through original question: "+JSON.stringify(seen));
+      if(seen.some(({text})=>!/permutaci/i.test(text)))
+        throw new Error("A contextual modifier lost the original topic");
+      return {brief:1,translated:1,depthModes:seen.map(x=>x.depth)};
+    });
+    console.log("Robotito contextual follow-up browser integration:",JSON.stringify(followUpIntegration));
     console.log("Robotito unified dialogue browser integration:",JSON.stringify(dialogueIntegration));
     const recognitionIntegration=await page.evaluate(()=>{
       const qa=window.ROBOTITO_SPEECH_QA;

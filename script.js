@@ -541,6 +541,10 @@ async function localizeGeneratedSpeech(text,target=responseLanguage()){
 function commitSpeechMessage(text,ms,lang,token){
   if(token!==state.speechBubbleToken)return;
   state.lastSaid=text;
+  // Local ephemeral reply state is scoped to the active conversational owner.
+  const replyOwner=state.currentVoicePerson||state.currentPerson||"local";
+  robotitoReplyByOwner.set(replyOwner,{text,language:lang||state.languageMode||"es"});
+  if(robotitoReplyByOwner.size>24)robotitoReplyByOwner.delete(robotitoReplyByOwner.keys().next().value);
   window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
     source:"assistant",timestamp:Date.now(),language:lang||state.languageMode||"es",
     data:{role:"assistant",text}}).catch(e=>console.warn("reply memory",e));
@@ -3545,6 +3549,62 @@ async function answerWhatLearnedToday(){
   say(answer.slice(0,320),5600);
 }
 
+const robotitoReplyByOwner=new Map();
+const robotitoRequestByOwner=new Map();
+function shortenPreviousAnswer(value){
+ const original=String(value||"").trim();
+ const sentence=original.match(/^[^.!?\n]+(?:[.!?]|$)/)?.[0]?.trim()||original;
+ if(sentence.length<=240)return sentence;
+ const cut=sentence.slice(0,239).replace(/\s+\S*$/,"").trim();
+ return (cut||sentence.slice(0,239))+"…";
+}
+// Re-running the *user's own academic query* preserves its original source
+// restrictions. Never fabricate a more detailed answer from stored fragments.
+async function handleSemanticFollowUp(plan,owner,channel){
+ const reply=robotitoReplyByOwner.get(owner),prior=robotitoRequestByOwner.get(owner);
+ const kind=plan?.followUp?.kind;
+ const clarify=()=>say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+ if(!kind||!reply?.text){clarify();return true;}
+ if(kind==="brief"){sayInLanguage(shortenPreviousAnswer(reply.text),reply.language);return true;}
+ if(kind==="language"){
+  const target=plan.followUp.targetLanguage;
+  if(!window.ROBOTITO_I18N?.supported?.(target)){clarify();return true;}
+  if(target===reply.language){sayInLanguage(reply.text,target);return true;}
+  // Offline-only translation of prior replies. Do not leak private class
+  // content or conversation memories to an unconsented third-party API.
+  let translated=null;
+  try{
+   if(typeof window.LanguageModel?.create==="function"){
+    const session=await window.LanguageModel.create({temperature:0});
+    translated=String(await session.prompt(
+      "Translate the following assistant answer to "+languageLabel(target)+
+      ". Keep any names, numbers and formulas unchanged. Return only the translation:\n"+
+      String(reply.text).slice(0,3000))||"").trim();
+    session.destroy?.();
+   }
+  }catch(error){console.warn("on-device follow-up translation",error);}
+  if(translated){
+   const detected=detectGeneratedSpeechLanguage(translated);
+   if(detected==="und"||detected===target){sayInLanguage(translated,target);return true;}
+  }
+  sayInLanguage(localizedSpeechFallback(target),target);
+  return true;
+ }
+ if(!prior?.text){clarify();return true;}
+ if(kind==="example"&&!prior.topic){clarify();return true;}
+ if(kind==="example"){
+  const classSource=prior.source==="classes"||prior.source==="materials";
+  const text="Dame un ejemplo de "+prior.topic+(classSource?" según mis apuntes":"");
+  await handleSpeech(text,{channel});
+  return true;
+ }
+ if(kind==="detailed"||kind==="exam"){
+  const suffix=kind==="exam"?" Respondé como para un examen, en detalle.":" Explicá en profundidad y en detalle.";
+  await handleSpeech(prior.text+suffix,{channel});
+  return true;
+ }
+ clarify();return true;
+}
 let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
 const robotitoContextsByOwner=new Map();
 let robotitoContextOwner="local";
@@ -3564,6 +3624,10 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     context:robotitoConversationContext,language:state.languageMode||"es",channel
   });
   if(interpretation){
+    if(interpretation.followUp){
+      await handleSemanticFollowUp(interpretation,owner,channel);
+      return;
+    }
     if(!atomic&&interpretation.actions?.length>1){
       if(interpretation.needsClarification){
         say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
@@ -3584,6 +3648,13 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     }
     robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER.advance(robotitoConversationContext,interpretation);
     state.lastDetectedLanguage=interpretation.language;
+    if(interpretation.shouldExecute&&!interpretation.needsClarification&&
+      ["definition","explanation","comparison","example","summary","factual-question",
+       "class-question","exercise","material-question","calculation","weather"].includes(interpretation.intent)){
+      robotitoRequestByOwner.set(owner,{text:rawText,source:interpretation.source,
+        topic:interpretation.entities?.topic||null});
+      if(robotitoRequestByOwner.size>24)robotitoRequestByOwner.delete(robotitoRequestByOwner.keys().next().value);
+    }
     if(interpretation.needsClarification){
       say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
       return;
