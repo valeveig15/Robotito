@@ -18,6 +18,10 @@ ROBOTITO_TEST_SEED=17 ROBOTITO_REPLAY_PROPERTY='property-name' ROBOTITO_REPLAY_C
 
 Failures report seed, index, original input and a reduced case when a shrinker exists. Shrinkers are read lazily (at most 64 candidates), and the smallest failing candidate is retained instead of allowing a later larger case to replace it. To add a permanent regression, first add a unique issue ID, failing input, expected result and why it was wrong to `tests/regressions/semantic-issues.json`; fix the behavior and keep the case in CI.
 
+Historical issue fixtures can also assert individual fields of every action in a compound request using `expectedActions` (including nested paths such as `entities.exerciseNumber`). This prevents a correct top-level intent from concealing an unauthorized first action.
+
+The Chromium scenario matrix also crosses offline/online operation, tab suspension, class/mute audio gates and responsive viewports. A separate browser check denies microphone permission via Playwright and verifies that no recording starts. The offline scenarios write, read and delete local IndexedDB records. They are **simulated network and permission conditions**, not measurements from actual phones or microphones.
+
 Coverage targets are the explicitly declared pairwise and critical triple relationships, **not** the entire Cartesian product. The property matrix certifies 785 targets per seed. Each browser matrix certifies 441 targets and exercises real Chromium handlers at simulated screen sizes, not physical devices. Hardware-dependent camera, microphone, voice and real-device accessibility need separate validation.
 
 A desktop overflow defect found by the new test was traced to `layout-resizer.js` computing grid tracks without subtracting container padding. The correction and overflow assertion remain as regression coverage.
