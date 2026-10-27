@@ -12,20 +12,27 @@ Fuente: `Robotito_82_pedidos_completos-1.docx`, versión del 27/10/2026. Este re
 ## Prioridad correctiva de la creadora
 La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30: **«Chocar los cinco» NO debe eliminarse**; se conserva el control, la animación en cada avatar y el comando conversacional. «Abrazar» sí sigue retirado como acción especial. Referencia: [PR #18](https://github.com/valeveig15/Robotito/pull/18).
 
-## Pedido activo 01 — EN PROGRESO
-**Incrementos integrados y verificados** (no implican comprensión ilimitada):
-- [PR #19](https://github.com/valeveig15/Robotito/pull/19): alcance de las negaciones de órdenes, citas y restricción explícita de apuntes. [CI completa aprobada](https://github.com/valeveig15/Robotito/actions/runs/40552815193).
-- [PR #21](https://github.com/valeveig15/Robotito/pull/21): órdenes y preguntas citadas sin ejecución accidental, secuencias con negación y autocorrección, foco contextual protegido de comentarios incidentales y horarios de seguimiento. [CI completa aprobada](https://github.com/valeveig15/Robotito/actions/runs/40586326340).
-- [PR #22](https://github.com/valeveig15/Robotito/pull/22): generalización del vocativo/cortesía, condicionales y **matriz permanente de 360 paráfrasis** sobre tres conceptos; preserva el italiano «Che cos'è...». [CI completa aprobada](https://github.com/valeveig15/Robotito/actions/runs/40586939547).
+## Pedido 01 — COMPLETADO para los criterios de aceptación comprobables
 
-**Estado: EN PROGRESO — NO CERRADO.** La batería automática de Node, pruebas generativas y Chromium pasó para estos tres incrementos, pero no demuestra comprensión de millones de solicitudes ni ausencia de errores en todos los idiomas, micrófonos o dispositivos. No afirmar "a la perfección" basándose solo en CI.
+**Base documental:** el pedido 01 de `Robotito_82_pedidos_completos-1.docx` pide un planificador central integrado en `semantic-planner.js`, `intent-engine.js` y `script.js` que diferencie preguntas, órdenes, emociones, negaciones, referencias y seguimiento en los seis idiomas, sin confundir conocimiento general con clases. La aceptación pide probar paráfrasis, ambigüedades, contradicciones y aclaraciones.
 
-**Faltantes observables para cerrar el pedido 01:** resolver solicitudes elípticas como «Explicalo más breve» y «¿Y en portugués?» en la **ruta real de respuestas**, no solo clasificarlas; completar niveles de profundidad/examen, ambigüedad, referencias temporales y de personas, negaciones contrapuestas en solicitudes combinadas y validación de que la fuente consultada/las respuestas sean correctas. Ampliar las pruebas adversariales a seis idiomas, con retroalimentación de errores de usuario reales; medir tasas de acierto por categoría y verificar que ninguna mejora active memoria, clase, cámara, voz o gestos indebidamente. Revisar el comportamiento con hardware y permisos reales. No iniciar el pedido 02 hasta cubrir y validar esos faltantes.
+**Implementación integrada en `main`, en incrementos independientes y verificados:**
+- [PR #19](https://github.com/valeveig15/Robotito/pull/19): negaciones dirigidas frente a citas/definiciones y autorización de fuentes. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40552815193).
+- [PR #21](https://github.com/valeveig15/Robotito/pull/21): citas de terceros inertes, instrucciones secuenciadas, referencias horarias y foco que sobrevive a afirmaciones incidentales. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40586326340).
+- [PR #22](https://github.com/valeveig15/Robotito/pull/22): cortesía, vocativos, familias morfológicas y 360 paráfrasis de definición; corrección de la ambigüedad entre «che» rioplatense e italiano. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40586939547).
+- [PR #24](https://github.com/valeveig15/Robotito/pull/24): seguimientos reales por perfil («más breve», «más en profundidad», «¿Y en portugués?», «como para un examen», «¿y con un ejemplo?»), salida y control de fuentes sin compartir estado entre personas. La traducción puntual de una respuesta anterior usa exclusivamente un modelo **local**; sin ese modelo se explica la limitación, nunca se declara una traducción ficticia. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40592284565).
+- [PR #25](https://github.com/valeveig15/Robotito/pull/25): «no hagas X, hacé Y» separa acciones positivas y negativas, resuelve números explícitos y pide precisión si falta el objeto; amplía nombres de idiomas. Añade 900 variantes reproducibles de seis idiomas y pruebas de navegador que impiden que una prohibición de leer apuntes termine consultando clases. [CI aprobada](https://github.com/valeveig15/Robotito/actions/runs/40593586665).
 
-Otros avances anteriores ya integrados, sin cerrar la auditoría secuencial: audio [PR #15](https://github.com/valeveig15/Robotito/pull/15) y restauración de gestos [PR #18](https://github.com/valeveig15/Robotito/pull/18).
+**Evidencia en el HEAD del PR #25:** 5.766 comprobaciones del planificador (incluidas 900 variantes de superficie de seis idiomas, 50 por combinación de idioma/intención y las 360 paráfrasis semánticas previas); 3.192 comprobaciones de composición; 555/555 regresiones de navegador y 4 tamaños responsive; escenarios de 108 estados de UI × 3 semillas y el resto de la CI de núcleo, audio, memoria, pruebas generativas y adversariales, sin fallos.
+
+**Criterios de aceptación de P01:** implementados y probados con cobertura positiva y negativa para intenciones generales, fuentes, emoción conversacional existente, negaciones, variaciones textuales, referencias, continuaciones, correcciones y ambigüedades. Los casos no resueltos piden aclaración o exponen una limitación; los ejemplos son semilla para generar más casos, no una lista fija de frases.
+
+**Alcance y límites explícitos:** la cifra de 999.999 preguntas y 50 variantes cada una es un objetivo arquitectónico de generalización, **no** un volumen de consultas arbitrarias probado ni una promesa de comprensión perfecta. La precisión del habla ASR/voz, los modelos locales disponibles, la validación en micrófonos/cámaras físicos y la ampliación continua del corpus pertenecen a los siguientes pedidos y a pruebas de campo. Los 900 casos son variaciones metamórficas; no se presentan engañosamente como 900 paráfrasis semánticas independientes. Cada nueva falla real debe añadirse a la regresión del núcleo sin reabrir el trabajo ya verificado de forma ficticia.
+
+**Secuencia:** se puede auditar el pedido 02 a partir de este cierre de P01. El pedido 02 y los demás aún no están certificados ni han sido modificados por este cierre. «Chocar los cinco» permanece obligatorio según la decisión posterior de la creadora.
 
 ## Los 82 puntos en orden
-- [ ] **01.** Cerebro semántico y millones de formulaciones posibles — EN PROGRESO
+- [x] **01.** Cerebro semántico y generalización de formulaciones — COMPLETADO según los criterios de aceptación comprobables; ver límites y evidencia anteriores
 - [ ] **02.** Pruebas automáticas generativas, combinatorias y de navegador — POR AUDITAR
 - [ ] **03.** Clasificación de sonidos y reacciones naturales — POR AUDITAR
 - [ ] **04.** Escucha, voz y rostro: captación de calidad — POR AUDITAR
