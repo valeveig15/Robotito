@@ -5,8 +5,10 @@ let classifier=null;
 async function initialize(){
  importScripts("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@1.1.1/audio_bundle.js");
  const {AudioClassifier,FilesetResolver}=self.audio||{};
- if(!AudioClassifier||!FilesetResolver)
-  throw new Error("MediaPipe Tasks Audio bundle did not expose its runtime");
+ if(!AudioClassifier||!FilesetResolver){
+  const keys=Object.getOwnPropertyNames(self).filter(k=>/audio|media|file|task|vision|module/i.test(k));
+  throw new Error("MediaPipe runtime exports unavailable. Worker globals: "+keys.join(", "));
+ }
  const files=await FilesetResolver.forAudioTasks(
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-audio@1.1.1/wasm");
  classifier=await AudioClassifier.createFromOptions(files,{
