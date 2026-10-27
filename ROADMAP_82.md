@@ -13,9 +13,14 @@ Fuente: `Robotito_82_pedidos_completos-1.docx`, versión del 27/10/2026. Este re
 La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30: **«Chocar los cinco» NO debe eliminarse**; se conserva el control, la animación en cada avatar y el comando conversacional. «Abrazar» sí sigue retirado como acción especial. Referencia: [PR #18](https://github.com/valeveig15/Robotito/pull/18).
 
 ## Pedido activo 01 — EN PROGRESO
-**Ya integrado:** [PR #19](https://github.com/valeveig15/Robotito/pull/19), que corrige el alcance de negaciones, citas y exclusión de apuntes en el planificador real. [GitHub Actions: verificación satisfactoria](https://github.com/valeveig15/Robotito/actions/runs/40552815193). **Esto NO cierra el punto 01.**
+**Incrementos integrados y verificados** (no implican comprensión ilimitada):
+- [PR #19](https://github.com/valeveig15/Robotito/pull/19): alcance de las negaciones de órdenes, citas y restricción explícita de apuntes. [CI completa aprobada](https://github.com/valeveig15/Robotito/actions/runs/40552815193).
+- [PR #21](https://github.com/valeveig15/Robotito/pull/21): órdenes y preguntas citadas sin ejecución accidental, secuencias con negación y autocorrección, foco contextual protegido de comentarios incidentales y horarios de seguimiento. [CI completa aprobada](https://github.com/valeveig15/Robotito/actions/runs/40586326340).
+- [PR #22](https://github.com/valeveig15/Robotito/pull/22): generalización del vocativo/cortesía, condicionales y **matriz permanente de 360 paráfrasis** sobre tres conceptos; preserva el italiano «Che cos'è...». [CI completa aprobada](https://github.com/valeveig15/Robotito/actions/runs/40586939547).
 
-**Todavía pendiente:** ampliar comprensión general y manejo de ambigüedades, contradicciones, seguimiento, solicitudes combinadas, variantes de los seis idiomas y entornos reales; verificar que las nuevas correcciones no perjudiquen memoria, aula, cámara, música, gestos ni voz.
+**Estado: EN PROGRESO — NO CERRADO.** La batería automática de Node, pruebas generativas y Chromium pasó para estos tres incrementos, pero no demuestra comprensión de millones de solicitudes ni ausencia de errores en todos los idiomas, micrófonos o dispositivos. No afirmar "a la perfección" basándose solo en CI.
+
+**Faltantes observables para cerrar el pedido 01:** resolver solicitudes elípticas como «Explicalo más breve» y «¿Y en portugués?» en la **ruta real de respuestas**, no solo clasificarlas; completar niveles de profundidad/examen, ambigüedad, referencias temporales y de personas, negaciones contrapuestas en solicitudes combinadas y validación de que la fuente consultada/las respuestas sean correctas. Ampliar las pruebas adversariales a seis idiomas, con retroalimentación de errores de usuario reales; medir tasas de acierto por categoría y verificar que ninguna mejora active memoria, clase, cámara, voz o gestos indebidamente. Revisar el comportamiento con hardware y permisos reales. No iniciar el pedido 02 hasta cubrir y validar esos faltantes.
 
 Otros avances anteriores ya integrados, sin cerrar la auditoría secuencial: audio [PR #15](https://github.com/valeveig15/Robotito/pull/15) y restauración de gestos [PR #18](https://github.com/valeveig15/Robotito/pull/18).
 
