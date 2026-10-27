@@ -175,6 +175,17 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const viewports=[[390,844],[360,740],[844,390],[768,1024]];
     for(const [width,height] of viewports){
       await page.setViewportSize({width,height});
+      // Class mode is a frequent primary action: preserve a large touch target.
+      const classLaunch=await page.evaluate(()=>{
+        const control=document.querySelector("#startClassBtn");
+        if(!control)throw new Error("Start Class button missing");
+        const style=getComputedStyle(control);
+        return {minHeight:parseFloat(style.minHeight),fontSize:parseFloat(style.fontSize)};
+      });
+      if(classLaunch.minHeight<(width<=600?76:68)||classLaunch.fontSize<16){
+        throw new Error(`Start Class control too small at ${width}x${height}: ${JSON.stringify(classLaunch)}`);
+      }
+
       const layout=await page.evaluate(()=>{
         document.querySelector("#languageGate")?.classList.add("hidden");
         const scene=document.querySelector(".world-scene")?.getBoundingClientRect();
