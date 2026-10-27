@@ -46,4 +46,8 @@ La CI del repositorio está configurada en `.github/workflows/regression.yml`, p
 - [ ] Commit, rama y PR/merge identificados por sus enlaces.
 - [ ] Limitaciones y siguientes etapas identificadas sin declarar trabajo pendiente como terminado.
 
-> Este documento establece el **procedimiento de desarrollo**. No declara que ninguno de los 26 pedidos funcionales esté automáticamente implementado. Cada pedido deberá auditarse y resolverse en incrementos verificables.
+> Este documento establece el **procedimiento de desarrollo**. No declara que ninguno de los 82 pedidos funcionales esté automáticamente implementado. Cada pedido deberá auditarse y resolverse en incrementos verificables.
+
+## Plan de 82 pedidos (vigente desde 27/10/2026)
+
+Consultar [ROADMAP_82.md](ROADMAP_82.md) para el orden y progreso verificable. No iniciar el pedido siguiente hasta que se cierre íntegramente el anterior. **No eliminar «Chocar los cinco»:** la creadora confirmó expresamente que pertenece a los avatares aprobados; debe conservarse en voz, botones y animaciones (PR #18).
