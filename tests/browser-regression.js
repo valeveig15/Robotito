@@ -184,6 +184,12 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const acousticIntegration=await page.evaluate(()=>{
       const detector=window.ROBOTITO_AUDIO_PERCEPTION,reactions=window.ROBOTITO_AUDIO_REACTIONS;
       if(!detector?.create||!reactions?.create)throw new Error("Acoustic detector or reaction policy not loaded");
+      const model=window.ROBOTITO_SOUND_MODEL,choice=document.querySelector("#audioModelEnabled");
+      if(!model?.create||!choice||choice.checked)
+        throw new Error("Optional sound model must be available but off by default");
+      for(const lang of ["es","en","pt","fr","it","de"])
+        if(window.ROBOTITO_I18N.t("audioModelOptIn",lang)==="audioModelOptIn")
+          throw new Error("Missing translated model consent control: "+lang);
       let now=18000;
       const policy=reactions.create({clock:()=>now});
       if(policy.decide({kind:"sneeze",confidence:1})!==null)
