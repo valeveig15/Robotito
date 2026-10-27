@@ -48,8 +48,9 @@ const blocked=[
  "Por favor no abras el libro","Por favor no toques el perro",
  "No quiero que me choques los cinco","Don't high five",
  "Don't show my class notes","Can you please not open the book?",
- "Ne montre pas mon cours","Não mostre a aula","Non mostrare il libro",
- "Bitte nicht zeigen"
+ "Ne montre pas mon cours","N'explique pas les permutations",
+ "Não mostre a aula","Non mostrare il libro",
+ "Bitte nicht zeigen","Erkläre Permutationen nicht"
 ];
 for(const phrase of blocked)
  check(phrase,{shouldExecute:false,negative:true,mayReadClass:false});
@@ -61,7 +62,8 @@ for(const phrase of [
 for(const phrase of [
  "¿Qué significa 'no hagas eso'?","Explicame qué significa no hagas eso",
  "Explicame la fotosíntesis sin usar mis apuntes","No entiendo qué es la fotosíntesis",
- "No, mejor decime qué es un impulso","Chocá los cinco","High five"
+ "No, mejor decime qué es un impulso","Chocá los cinco","High five",
+ "Erkläre das Wort nicht"
 ])
  check(phrase,{shouldExecute:true,negative:false});
 check("Explicame la fotosíntesis sin usar mis apuntes",
