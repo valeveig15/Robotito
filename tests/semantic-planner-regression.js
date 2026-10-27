@@ -94,4 +94,23 @@ const definition=planner.plan("¿Qué es permutación?");
 let context=planner.advance(planner.createContext(),definition);
 context=planner.advance(context,planner.plan("Mi hermana dijo 'chocá los cinco'"));
 check("¿Y el otro?",{intent:"definition",needsClarification:true},{context});
+// Sequencing applies only to the speaker's instruction, not quoted speech.
+for(const reported of [
+ "La profesora dijo 'chocá los cinco y después mostrame el libro'",
+ 'Mi hermana contó "buscá la clase y después choca los cinco"',
+ 'Dijo "no abras el libro y después mirá el video"'
+]){
+ check(reported,{shouldExecute:false,speechAct:"statement",mayReadClass:false});
+ assert.equal(planner.plan(reported).actions.length,1,reported);count++;
+}
+const metalinguistic=planner.plan('Explícame por qué se dice "esto y después aquello"');
+assert.equal(metalinguistic.actions.length,1);count++;
+const correctionSequence=planner.plan("No abras el libro, mejor explicame la teoría");
+assert.equal(correctionSequence.actions.length,2);count++;
+assert.equal(correctionSequence.actions[0].shouldExecute,false);count++;
+assert.equal(correctionSequence.actions[1].shouldExecute,true);count++;
+const preservedHighFive=planner.plan("Chocá los cinco y después haceme una pregunta");
+assert.equal(preservedHighFive.actions.length,2);count++;
+assert.equal(preservedHighFive.actions[0].shouldExecute,true);count++;
+assert.equal(preservedHighFive.actions[1].intent,"quiz");count++;
 console.log("Structured-planner checks passed:",count);
