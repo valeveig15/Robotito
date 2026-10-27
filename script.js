@@ -1245,9 +1245,14 @@ function setupAudio(stream){
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
       if(soundModelToggle?.checked&&soundModel?.getStatus().state==="ready"){
-        analyser.getFloatTimeDomainData(rawTime);
-        if(!state.speaking&&!state.classMode&&!state.sleeping&&!document.hidden)
+        if(state.speaking||state.classMode||state.sleeping||document.hidden){
+          // No inference about a recorded class, a sleeping avatar, a hidden
+          // tab or Robotito's own voice. Discard audio before resuming.
+          soundModel.clearAudio();
+        }else{
+          analyser.getFloatTimeDomainData(rawTime);
           soundModel.pushPCM(rawTime,ctx.sampleRate);
+        }
       }
       let power=0;
       for(const v of time){const sample=(v-128)/128;power+=sample*sample;}
