@@ -105,7 +105,7 @@ const criticalTriples=[
         controlsVisible:!!controls&&(document.documentElement.clientWidth>900
           ||controls.width>0&&controls.height>0),
         actionIds:[...document.querySelectorAll(".world-controls .quick-actions button")].map(x=>x.dataset.action),
-        buttonsVisible:buttons.length===5&&buttons.every(x=>x.width>20&&x.height>=(document.documentElement.clientWidth>900?20:38)),
+        buttonsVisible:buttons.length===6&&buttons.every(x=>x.width>20&&x.height>=(document.documentElement.clientWidth>900?20:38)),
         canSpeak,suppressedResult:result.kind==="unknown"&&result.events.length===0,
         volumeBounds:result.confidence>=0&&result.confidence<=1
       };
@@ -125,7 +125,7 @@ const criticalTriples=[
       assert.equal(result.separated,true,"Mobile scene and controls separated "+JSON.stringify(row));
     assert.equal(result.controlsVisible,true,"Controls visible "+JSON.stringify(row));
     assert.equal(result.buttonsVisible,true,"Touch controls sized "+JSON.stringify(row));
-    assert.deepEqual(result.actionIds,["pet","feed","play","surprise","poke"],
+    assert.deepEqual(result.actionIds,["pet","feed","highfive","play","surprise","poke"],
       "Only approved interactions remain across avatars and languages "+JSON.stringify(row));
     assert.ok(result.scrollWidth<=result.width+1,
       "No horizontal overflow "+JSON.stringify({row,result}));

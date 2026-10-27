@@ -59,22 +59,41 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return true;
     });
     if(!languageIntegration)throw new Error("Language integration unavailable");
-    const retiredActions=await page.evaluate(async()=>{
+    const gestures=await page.evaluate(async()=>{
       const actions=[...document.querySelectorAll(".world-controls .quick-actions button")]
         .map(button=>button.dataset.action);
-      if(JSON.stringify(actions)!==JSON.stringify(["pet","feed","play","surprise","poke"]))
-        throw new Error("Retired interactions remain in main controls: "+actions);
+      const expected=["pet","feed","highfive","play","surprise","poke"];
+      if(JSON.stringify(actions)!==JSON.stringify(expected))
+        throw new Error("Main actions mismatch: "+actions);
       const robot=document.querySelector("#robotito"),chat=window.ROBOTITO_CHAT;
-      if(!robot||!chat?.send)throw new Error("Missing avatar or shared typed/voice command router");
-      for(const utterance of ["abrazame","chocá los cinco","hug me","high five"]){
-        robot.classList.remove("hugging","highfive");
+      const highfive=document.querySelector('.quick-actions [data-action="highfive"]');
+      if(!robot||!chat?.send||!highfive)throw new Error("Missing avatar, button or shared dialogue");
+      highfive.click();
+      if(!robot.classList.contains("highfive"))
+        throw new Error("Chocar los cinco button must animate the avatar");
+      for(const utterance of ["chocá los cinco","chocame los cinco","high five","high-five"]){
+        robot.classList.remove("highfive");
         await chat.send(utterance,{channel:"text"});
-        if(robot.classList.contains("hugging")||robot.classList.contains("highfive"))
-          throw new Error("Retired gesture triggered from conversational input: "+utterance);
+        if(!robot.classList.contains("highfive"))
+          throw new Error("Chocar los cinco not activated through typed/voice router: "+utterance);
       }
-      return {available:actions,retiredCommands:4};
+      robot.classList.remove("highfive");
+      await chat.send("La profesora dijo high five",{channel:"text"});
+      if(robot.classList.contains("highfive"))
+        throw new Error("Quoted gestures must not activate an action");
+      for(const utterance of ["abrazame","hug me"]){
+        robot.classList.remove("hugging");
+        await chat.send(utterance,{channel:"text"});
+        if(robot.classList.contains("hugging"))
+          throw new Error("Retired hug action triggered: "+utterance);
+      }
+      for(const lang of ["es","en","pt","fr","it","de"]){
+        const label=window.ROBOTITO_I18N.t("highfive",lang);
+        if(!label||label==="highfive")throw new Error("Missing localized high-five control "+lang);
+      }
+      return {available:actions,highfiveCommands:4,retiredHugCommands:2,translations:6};
     });
-    console.log("Robotito retired gesture regression:",JSON.stringify(retiredActions));
+    console.log("Robotito restored high-five regression:",JSON.stringify(gestures));
     const dialogueIntegration=await page.evaluate(async()=>{
       const chat=window.ROBOTITO_CHAT;
       if(!chat?.send||!chat.context)throw new Error("Unified dialogue unavailable");
@@ -201,7 +220,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
           scrollWidth:document.documentElement.scrollWidth,
           separated:!!scene&&!!controls&&controls.top>=scene.bottom-1,
           controlsVisible:!!controls&&controls.width>0&&controls.height>0,
-          buttonsVisible:buttons.length===5&&buttons.every(box=>box.width>20&&box.height>=38)
+          buttonsVisible:buttons.length===6&&buttons.every(box=>box.width>20&&box.height>=38)
         };
       });
       if(layout.scrollWidth>layout.viewport+1||!layout.separated||!layout.controlsVisible||!layout.buttonsVisible){

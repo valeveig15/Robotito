@@ -179,7 +179,7 @@
     const world=document.querySelector("#world"),scene=world?.querySelector(":scope > .world-scene"),controls=world?.querySelector(":scope > .world-controls");
     results.push(truthy("mobile","escena y controles son hermanos",scene&&controls&&scene.parentElement===controls.parentElement));
     results.push(same("mobile","controles no están dentro de escena",scene?.contains(controls),false));
-    const expectedActions=["pet","feed","play","surprise","poke"];
+    const expectedActions=["pet","feed","highfive","play","surprise","poke"];
     const actualActions=[...(controls?.querySelectorAll(".quick-actions [data-action]")||[])]
       .map(button=>button.dataset.action);
     results.push(result(JSON.stringify(actualActions)===JSON.stringify(expectedActions),

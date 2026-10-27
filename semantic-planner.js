@@ -94,6 +94,7 @@ const SEMANTIC_ROLES={
   BOOK:["libro","libros","lectura","novela","book","books","novel","livro","livre","buch"],
   TASK:["tarea","tareas","pendiente","deberes","task","tasks","homework","tarefa","devoirs"],
   CORRECT:["corregir","corregime","revisar","revisame","correct","correction","corrigir"],
+  GESTURE:["chocar","choca","chocame","choquemos","highfive"],
   ORDER:["resolver","resuelve","resolvé","solve","soluciona","calcular","calcula","calculá","calculate","dame","dar","callate","sugerir","sugerime","sugira","recommend","mostrar","mostrame","decir","decime","dime","buscar","busca","buscame","search","find","abrir","cerrar","guardar","borrar","cambiar","dibujar","callar","hacer","haceme","poner","repetir","show","open","close","save","delete","change","draw","stop","repeat"],
   SEEK:["quiero","necesito","podrias","podras","podes","puedes","quisiera","necesitaria","me gustaria","would","could","can","please","preciso","gostaria"],
   NEGATE:["no","nunca","jamas","not","never","nao","non","nicht"],
@@ -111,7 +112,8 @@ for(const [role,words] of Object.entries(SEMANTIC_ROLES)){
 }
 const STOPWORDS=new Set("el la los las un una unos unas de del al a por para y e o que se me te le nos mi mis tu tus su sus en con lo esto eso ese esa este esta es son era eran fue fueron it the a an of to for is are was were do does and or what how my your i you me please por favor".split(" "));
 function semanticTokens(text){
- return (fold(text).match(/[\p{L}\p{N}]+/gu)||[]).filter(Boolean);
+ // Multiword gesture names are treated as one lexical concept.
+ return (fold(text).replace(/\bhigh[\s-]+five\b/g,"highfive").match(/[\p{L}\p{N}]+/gu)||[]).filter(Boolean);
 }
 function tokenRoles(token){
  const roles=SEMANTIC_INDEX.get(token);
@@ -132,7 +134,12 @@ function semanticFeatures(text){
  for(const token of tokens)for(const role of tokenRoles(token))roles[role]=(roles[role]||0)+1;
  const first=tokens.slice(0,5),last=tokens.slice(-6);
  const question=/(?:[¿?])/.test(text)||/^(?:what|how|why|when|where|who|which|que|cual|como|quien|cuando|donde|cuanto|por que|qual|o que|was|wie)\b/.test(fold(text));
- const leadingRequest=first.some(token=>tokenRoles(token).some(role=>["ORDER","SEEK","DEFINE","EXPLAIN","COMPARE","SUMMARIZE"].includes(role)))
+ // Only a directed gesture verb (plus optional courtesy/vocative) is a command.
+ // A teacher or user mentioning the same gesture must remain a statement.
+ const gestureRequest=tokens.some((token,index)=>tokenRoles(token).includes("GESTURE")
+   &&tokens.slice(0,index).every(previous=>STOPWORDS.has(previous)
+     ||["favor","robotito","che","oye","hey"].includes(previous)));
+ const leadingRequest=gestureRequest||first.some(token=>tokenRoles(token).some(role=>["ORDER","SEEK","DEFINE","EXPLAIN","COMPARE","SUMMARIZE"].includes(role)))
    ||/^(?:explic|defin|compar|resum|pregunt|mostra|recomend|correg|busca|resolv|solve|solucion|show|explain|tell|define|could|would|please|can you)\p{L}*/iu.test(fold(text))
    ||(/^(?:segun|according|in my|na minha|dans mon)\b/.test(fold(text))&&Object.keys(roles).some(r=>["DEFINE","EXPLAIN","SUMMARIZE","QUESTION","ORDER"].includes(r)));
  const implicit=/\b(?:no entiendo|nunca entendi|me cuesta entender|me gustaria saber|necesito saber|quisiera entender|i don't understand|i never understood|help me understand)\b/.test(fold(text));

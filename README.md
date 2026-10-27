@@ -10,8 +10,8 @@ Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, 
 - Emociones: tranquilo, feliz, triste, enojado, asustado, hambriento, con sueño, curioso, concentrado, aburrido, cariñoso, orgulloso, confundido, emocionado, avergonzado y molesto.
 - Los estados visuales se limpian al cambiar de emoción para evitar expresiones superpuestas.
 - El susto dura menos de un segundo y después vuelve a la normalidad.
-- Interacciones principales: acariciar, alimentar, jugar, asustar y molestar.
-- También entiende por voz o texto pedidos como “juguemos”; las antiguas acciones especiales de abrazar y chocar los cinco se retiraron, sin desactivar la conversación afectuosa.
+- Interacciones principales: acariciar, alimentar, **chocar los cinco**, jugar, asustar y molestar. La acción especial «Abrazar» se retiró del menú.
+- También entiende por voz o texto pedidos como “chocá los cinco”, “high five” y “juguemos”. Chocar los cinco conserva su gesto animado y el comportamiento propio del avatar.
 - Silencio temporizado por voz: “callate” lo deja sin hablar durante 25 segundos; “callate por 2 minutos” respeta la duración indicada; “ya podés hablar” lo reactiva antes. Mientras está callado sigue escuchando, recordando y mostrando respuestas escritas.
 - Si no ve ni escucha a nadie, primero se aburre, luego cabecea y finalmente se duerme.
 - A las 3 horas sin comer aparece hambre; a las 4 horas se enoja por hambre.
