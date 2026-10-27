@@ -75,6 +75,34 @@ const truth=(a,msg)=>{assert.ok(a,msg);assertions++;};
       truth(/simulated counterexample/.test(error.message),"root cause retained");
     }
     truth(failed,"failure is not swallowed");
+
+    // Later larger failures must never replace earlier smaller examples.
+    let shrunk=false;
+    try{
+      await kit.checkProperty({name:"self-shrink",runs:1,seed:8,
+        generate:()=>({value:100,extra:"large"}),
+        check:({value})=>{if(value>1)throw Error("value must be <=1");},
+        shrink:()=>[{value:5},{value:0},{value:2},{value:20}]});
+    }catch(error){
+      shrunk=true;
+      truth(error.message.includes('Shrunk: {"value":2}'),
+        "smallest failing counterexample is retained");
+      truth(error.message.includes("ROBOTITO_REPLAY_CASE=0"),
+        "shrunk case keeps reproducible replay instructions");
+    }
+    truth(shrunk,"shrink still reports a failing property");
+    let enumerated=0,bounded=false;
+    try{
+      await kit.checkProperty({name:"self-bounded-shrink",runs:1,seed:11,
+        generate:()=>({value:99999,extra:"large"}),
+        check:({value})=>{if(value>1)throw Error("simulated failure");},
+        shrink:function*(){while(true){enumerated++;yield {value:2};}}});
+    }catch(error){
+      bounded=true;
+      truth(error.message.includes("Shrunk:"),"unbounded shrink retains failure");
+    }
+    truth(bounded,"infinite shrinker terminates");
+    truth(enumerated<=65,"only 64 shrink candidates are inspected");
   }finally{
     if(savedProperty===undefined)delete process.env.ROBOTITO_REPLAY_PROPERTY;
     else process.env.ROBOTITO_REPLAY_PROPERTY=savedProperty;
