@@ -8,8 +8,9 @@
 - `npm run test:semantic`: structured semantic-frame and legacy-adapter regression.
 - `npm run test:audio`: temporal acoustic classification, uncertain-event abstention and avatar-reaction regression.
 - `ROBOTITO_TEST_SEED=123 npm run test:universal`: reproduce a specific generative run.
+- `ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios`: reproduce real Chromium fault, viewport and audio-state combinations.
 
-GitHub Actions runs the checks for pushes and pull requests. **A passing automated suite is evidence only for the cases and environments actually tested**; it does not prove perfect natural-language understanding, sound classification or device support.
+GitHub Actions runs the checks for pushes and pull requests. The browser scenario suite also covers explicit microphone permission rejection, offline IndexedDB round trips, hidden-tab interruptions, class/mute audio suppression and mobile layout under combined simulated faults. Historical regression entries can assert per-clause `expectedActions` in addition to the top-level semantic frame. **A passing automated suite is evidence only for the cases and environments actually tested**; it does not prove perfect natural-language understanding, sound classification or device support.
 
 ## Central dialogue
 
