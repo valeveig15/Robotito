@@ -95,8 +95,10 @@ function coveringArray(factors,{seed=17,criticalTriples=[],maxCases=2048,candida
   return cases;
 }
 function stableJson(value){
-  try{return JSON.stringify(value,(key,entry)=>typeof entry==="bigint"?String(entry):entry);}
-  catch{return String(value);}
+  try{
+    const encoded=JSON.stringify(value,(key,entry)=>typeof entry==="bigint"?String(entry):entry);
+    return typeof encoded==="string"?encoded:String(value);
+  }catch{return String(value);}
 }
 async function checkProperty({name,runs=200,seed=process.env.ROBOTITO_TEST_SEED||17,generate,check,shrink}={}){
   if(typeof name!=="string"||!name||!Number.isSafeInteger(runs)||runs<1
@@ -115,9 +117,16 @@ async function checkProperty({name,runs=200,seed=process.env.ROBOTITO_TEST_SEED|
     catch(error){
       let minimal=value;
       if(typeof shrink==="function"){
-        for(const candidate of Array.from(shrink(value)).slice(0,64)){
+        // A shrinker can be lazy or infinite: inspect at most 64 candidates
+        // without exhausting the iterator. Keep the smallest failing input.
+        let examined=0,smallest=stableJson(value);
+        for(const candidate of shrink(value)){
+          if(examined++>=64)break;
+          const encoded=stableJson(candidate);
+          if(encoded.length>smallest.length||
+             (encoded.length===smallest.length&&encoded>=smallest))continue;
           try{await check(candidate,{index,seed});}
-          catch{minimal=candidate;}
+          catch{minimal=candidate;smallest=encoded;}
         }
       }
       const replay="ROBOTITO_TEST_SEED="+seed+" ROBOTITO_REPLAY_PROPERTY='"+name
