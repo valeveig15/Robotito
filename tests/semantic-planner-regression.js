@@ -76,7 +76,8 @@ for(const utterance of ["Mi hermana dijo 'buscá en mis apuntes'",
  "El profesor comentó «resuelve el ejercicio 4»"]){
  check(utterance,{speechAct:"statement",shouldExecute:false,mayReadClass:false});
 }
-for(const question of ["¿Qué dijo el profesor sobre 'chocá los cinco'?","¿Qué es permutación?"])
+for(const question of ["¿Qué dijo el profesor sobre 'chocá los cinco'?",
+ "O que a professora disse sobre impulso?","¿Qué es permutación?"])
  check(question,{shouldExecute:true});
 for(const [base,follow,part] of [
  ["¿Cómo va a estar el clima mañana?","¿Y en la tarde?","afternoon"],
