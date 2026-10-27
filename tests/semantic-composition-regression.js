@@ -90,6 +90,18 @@ const classExcluded=planner.plan("Explicame la fotosíntesis sin usar mis apunte
 assert.equal(classExcluded.shouldExecute,true);checks++;
 assert.equal(classExcluded.source,"general");checks++;
 assert.equal(classExcluded.mayReadClass,false);checks++;
+// A quote from a third party is not permission to run an avatar action
+// or read class records, even when the quotation looks imperative.
+for(const raw of ["Mi hermana dijo 'buscá en mis apuntes'",
+ "Ayer escuché al profesor preguntar '¿Qué es permutación?'",
+ "Mi mamá dijo 'chocá los cinco'",
+ "My teacher said 'show my class notes'"]){
+ const frame=planner.plan(raw);
+ assert.equal(frame.speechAct,"statement",raw);checks++;
+ assert.equal(frame.shouldExecute,false,raw);checks++;
+ assert.equal(frame.mayReadClass,false,raw);checks++;
+ assert.equal(intentEngine.classify(raw,{plan:frame}).useClassMemory,false,raw);checks++;
+}
 const weather=planner.plan("¿Cómo va a estar el clima mañana?");
 let history=planner.advance(planner.createContext(),weather);
 const night=planner.plan("¿Y de noche?",{context:history});
