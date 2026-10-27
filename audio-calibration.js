@@ -22,6 +22,7 @@ function evaluate(observations){
  if(!Array.isArray(observations)||!observations.length)throw Error("A nonempty labelled dataset is required");
  const seen=new Set(),matrix=Object.fromEntries(ALL.map(k=>[k,Object.fromEntries(ALL.map(v=>[v,0]))]));
  let negativeHours=0;
+ const negativeExposureByTarget=Object.fromEntries(HUMAN.map(kind=>[kind,0]));
  const byEnv={},byLabel=Object.fromEntries(ALL.map(kind=>[kind,0]));
  for(const obs of observations){
   if(!obs||typeof obs.id!=="string"||!obs.id.trim()||seen.has(obs.id))throw Error("Every clip needs a unique ID");
@@ -38,17 +39,20 @@ function evaluate(observations){
   byLabel[obs.label]++;
   byEnv[obs.environment]=(byEnv[obs.environment]||0)+1;
   if(!HUMAN.includes(obs.label))negativeHours+=obs.durationSeconds/3600;
+  for(const kind of HUMAN)if(obs.label!==kind)
+   negativeExposureByTarget[kind]+=obs.durationSeconds/3600;
  }
  const metrics=Object.fromEntries(HUMAN.map(kind=>{
   const tp=matrix[kind][kind],fp=ALL.filter(k=>k!==kind).reduce((n,k)=>n+matrix[k][kind],0);
   const fn=ALL.filter(k=>k!==kind).reduce((n,k)=>n+matrix[kind][k],0);
   return [kind,{tp,fp,fn,precision:tp+fp?tp/(tp+fp):null,
     recall:tp+fn?tp/(tp+fn):null,
-    falsePositivesPerNegativeHour:negativeHours?fp/negativeHours:null}];
+    falsePositivesPerNegativeHour:negativeExposureByTarget[kind]
+      ?fp/negativeExposureByTarget[kind]:null}];
  }));
  return {schemaVersion:1,source:"labelled audio and real model observations",
   clipCount:observations.length,byLabel,byEnvironment:byEnv,
-  confusion:matrix,metrics,negativeHours,
+  confusion:matrix,metrics,negativeHours,negativeExposureByTarget,
   // No amount of unit-test success can grant real-data calibration approval.
   calibrated:false,automaticHumanReactionsApproved:false,
   approvalBlocker:"Human-reviewed representative recordings, adequate samples for every label, per-environment false-positive analysis and signed off thresholds required"};
