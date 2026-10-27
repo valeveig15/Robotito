@@ -227,6 +227,9 @@ function splitActions(text){
  // A narrated instruction never becomes a live instruction because it
  // contains a sequencing conjunction, with or without quote characters.
  if(isReportedUtterance(source))return [source];
+ // A self-correction ("No, mejor decime...") is one revised request;
+ // splitting its leading 'No' would corrupt intent and context.
+ if(/^no\s*[,;]\s*(?:mejor|en cambio)\b/i.test(source))return [source];
  const separator=/^\s+(?:y\s+despues|y\s+luego|y\s+después|despues|después|luego|and\s+then|then|e\s+depois|puis|poi)\s+|^\s*[,;]\s*(?:mejor|en\s+cambio|instead)\s+/i;
  const parts=[];let current="",close=null;
  for(let i=0;i<source.length;i++){
