@@ -59,4 +59,28 @@ bridge.enable();
 eq(instances.length,3,"Retry starts a fresh worker rather than reusing one");
 eq(bridge.getStatus().state,"ready","Model can be retried after network recovery");
 bridge.disable();
+// Old results after a class/sleep interruption must not release a newer
+// pending request; hanging WASM inferences must fail and allow a retry.
+const delayed=model.create({workerFactory:()=>new FakeWorker(),clock:()=>current});
+delayed.enable();
+const delayedWorker=instances.at(-1);
+delayed.pushPCM(new Float32Array(24000).fill(.3),16000);
+const staleRequest=delayedWorker.requests.find(x=>x.type==="classify");
+delayed.clearAudio();
+delayed.pushPCM(new Float32Array(24000).fill(.3),16000);
+const newer=delayedWorker.requests.filter(x=>x.type==="classify").at(-1);
+eq(newer.id>staleRequest.id,true,"New audio window gets a distinct inference ID");
+delayedWorker.respond({type:"result",id:staleRequest.id,
+ categories:[{categoryName:"Sneeze",score:1}]});
+eq(delayed.getStatus().candidate,null,"Stale prediction stays discarded");
+delayed.pushPCM(new Float32Array(10000),16000);
+eq(delayedWorker.requests.filter(x=>x.type==="classify").length,2,
+ "Stale prediction must not unlock a newer in-flight request");
+current+=2600;
+delayed.pushPCM(new Float32Array(2000),16000);
+eq(delayed.getStatus().state,"error","Hanging inference times out");
+eq(delayedWorker.closed,true,"Hanging worker is terminated");
+delayed.enable();
+eq(delayed.getStatus().state,"ready","Model supports retry after hanging inference");
+delayed.disable();
 console.log("Optional on-device sound model regression:",checked,"assertions passed");
