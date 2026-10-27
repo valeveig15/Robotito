@@ -3664,6 +3664,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   // Object display is handled by ROBOTITO_ROUTER and drawRequestedThing.
   if(await handleSayInLanguageCommand(interpreted))return;
   if(handleSocialSpeech(text)) return;
+  if(/\b(choca los cinco|chocame los cinco|dame cinco|high five)\b/.test(text)){highFiveRobot();return;}
   if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
   if(answerArithmetic(interpreted,detectedLang))return;
   if(await handleWeatherAndDayQuestions(interpreted,interpretation))return;
@@ -4540,6 +4541,15 @@ function temporaryRobotClass(cls,ms=1400){
   robot.classList.add(cls);
   setTimeout(()=>robot.classList.remove(cls),ms);
 }
+function highFiveRobot(){
+  changeMoodScore(3);
+  adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.35,trust:.30,irritation:-.10});
+  setMood("excited","Robotito celebró a su manera.");
+  temporaryRobotClass("highfive",1200);
+  speciesAct("highfive",1300);
+  say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.",speciesLine("play")]));
+  setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
+}
 function playRobot(){
   changeMoodScore(4);
   if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
@@ -5160,6 +5170,7 @@ function bindUI(){
     const a=btn.dataset.action;
     if(a==="feed")feedRobot(false);
     else if(a==="pet")petRobot();
+    else if(a==="highfive")highFiveRobot();
     else if(a==="play")playRobot();
     else if(a==="surprise")scareRobot();
     else if(a==="poke")pokeRobot();
