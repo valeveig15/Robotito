@@ -190,7 +190,107 @@ const criticalTriples=[
   assert.deepEqual(interruptedMicrophone,
     {start:{ok:false,reason:"no-audio-track"},active:false},
     "Unavailable microphone must not create a phantom class recording");
-    // Capability matrix complements the existing real-device/mood/permission scenarios.
+  // Actual Chromium permission rejection: no test may silently assume a mic.
+  // The app must not create a recording on a denied microphone permission.
+  const origin="http://127.0.0.1:"+port;
+  await page.context().grantPermissions([],{origin});
+  const deniedMicrophone=await page.evaluate(async()=>{
+    const state=await navigator.permissions.query({name:"microphone"})
+      .then(result=>result.state).catch(()=>"unsupported");
+    let request="unavailable";
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      stream.getTracks().forEach(track=>track.stop());
+      request="granted";
+    }catch(error){request=error.name||"denied";}
+    const start=await window.ROBOTITO_CLASS_AUDIO.start("Prueba permiso denegado");
+    return {state,request,start,active:window.ROBOTITO_CLASS_AUDIO.isRecording()};
+  });
+  assert.equal(deniedMicrophone.state,"denied","Chromium must deny microphone explicitly");
+  assert.equal(deniedMicrophone.request,"NotAllowedError","Mic request must be rejected");
+  assert.deepEqual(deniedMicrophone.start,{ok:false,reason:"no-audio-track"},
+    "Denied microphone cannot start a phantom class recording");
+  assert.equal(deniedMicrophone.active,false,"No hidden recording after denial");
+  await page.context().clearPermissions();
+
+  // Executed fault combinations, not merely policy values: network loss,
+  // visibility interruption, mode suppression, narrow layouts, IndexedDB
+  // round-trip and cleanup must coexist without mixing private class data.
+  const faultFactors={
+    viewport:["small-phone","landscape","desktop"],
+    network:["online","offline"],
+    mode:["normal","class","muted"],
+    visibility:["visible","hidden"]
+  };
+  const faultTriples=[
+    ["viewport","network","visibility"],
+    ["network","mode","visibility"]
+  ];
+  const faultCases=coveringArray(faultFactors,{seed,criticalTriples:faultTriples,maxCases:100});
+  const faultCoverage=coverageReport(faultCases,faultFactors,{criticalTriples:faultTriples});
+  assert.equal(faultCoverage.complete,true,"All fault pairs and risky triples covered");
+  let faultChecked=0;
+  try{
+    for(const row of faultCases){
+      await page.setViewportSize(viewports[row.viewport]);
+      await page.context().setOffline(row.network==="offline");
+      const observation=await page.evaluate(async ({row,id})=>{
+        const saved=Object.getOwnPropertyDescriptor(document,"hidden");
+        if(row.visibility==="hidden"){
+          Object.defineProperty(document,"hidden",{configurable:true,get:()=>true});
+          document.dispatchEvent(new Event("visibilitychange"));
+        }
+        try{
+          const hidden=document.hidden;
+          const suppress=hidden||row.mode!=="normal";
+          const detector=window.ROBOTITO_AUDIO_PERCEPTION.create({clock:()=>100});
+          const acoustic=detector.process({
+            rms:.92,flat:.97,harmonic:.01,zcr:.35,low:46,mid:60,high:43
+          },{now:100,suppress});
+          const canSpeak=window.ROBOTITO_RUNTIME_POLICY.canSpeak({
+            classMode:row.mode==="class",muted:row.mode==="muted",
+            voiceEnabled:true,synthesisAvailable:true
+          });
+          const store=window.ROBOTITO_STORE;
+          await store.putRecord({id,type:"preferences",owner:"p02-fault-tests",
+            data:{kind:row.network,mode:row.mode,visible:!hidden}});
+          const record=await store.getRecord(id);
+          await store.deleteRecord(id);
+          const removed=await store.getRecord(id);
+          const scene=document.querySelector(".world-scene")?.getBoundingClientRect();
+          const controls=document.querySelector(".world-controls")?.getBoundingClientRect();
+          return {
+            online:navigator.onLine,hidden,canSpeak,
+            suppressed:acoustic.events.length===0&&acoustic.musicConfidence===0,
+            roundTrip:record?.data?.kind===row.network&&record?.data?.mode===row.mode&&!removed,
+            noOverflow:document.documentElement.scrollWidth<=document.documentElement.clientWidth+1,
+            noMobileOverlap:document.documentElement.clientWidth>900||
+              (!!scene&&!!controls&&controls.top>=scene.bottom-1)
+          };
+        }finally{
+          if(saved)Object.defineProperty(document,"hidden",saved);
+          else delete document.hidden;
+          if(row.visibility==="hidden")document.dispatchEvent(new Event("visibilitychange"));
+        }
+      },{row,id:"p02-fault-"+seed+"-"+faultChecked});
+      assert.equal(observation.online,row.network==="online",JSON.stringify(row)+" connectivity");
+      assert.equal(observation.hidden,row.visibility==="hidden",JSON.stringify(row)+" visibility");
+      assert.equal(observation.canSpeak,row.mode==="normal",JSON.stringify(row)+" voice gate");
+      if(row.mode!=="normal"||row.visibility==="hidden")
+        assert.equal(observation.suppressed,true,JSON.stringify(row)+" acoustic suppression");
+      assert.equal(observation.roundTrip,true,JSON.stringify(row)+" offline storage");
+      assert.equal(observation.noOverflow,true,JSON.stringify(row)+" no horizontal overflow");
+      assert.equal(observation.noMobileOverlap,true,JSON.stringify(row)+" controls do not overlap");
+      faultChecked++;
+    }
+  }finally{
+    await page.context().setOffline(false);
+    await page.context().clearPermissions();
+    await page.setViewportSize(viewports.desktop);
+  }
+  console.log("Robotito adversarial browser matrix:",faultChecked,"real fault states /",
+    faultCoverage.covered,"pair/triple targets; seed:",seed);
+  // Capability matrix complements actual denial, network loss and mode faults.
   const speechFactors={
     language:["es","en","pt","fr","it","de"],
     viewport:["small-phone","phone","landscape","tablet","desktop"],
