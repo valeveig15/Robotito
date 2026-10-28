@@ -192,9 +192,14 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
         throw new Error("Higher unrelated sound should veto tentative sneeze");
       if(typeof window.AudioWorkletNode!=="function")
         throw new Error("AudioWorklet unavailable in CI Chromium");
-      for(const lang of ["es","en","pt","fr","it","de"])
+      for(const lang of ["es","en","pt","fr","it","de"]){
         if(window.ROBOTITO_I18N.t("audioModelOptIn",lang)==="audioModelOptIn")
           throw new Error("Missing translated model consent control: "+lang);
+        if(window.ROBOTITO_I18N.t("audioModelCaptureUnsupported",lang)==="audioModelCaptureUnsupported")
+          throw new Error("Missing unsupported-capture notice: "+lang);
+      }
+      if(!window.ROBOTITO_AUDIO_SCRIPT_FALLBACK?.create)
+        throw new Error("Legacy sound-capture module not loaded by app");
       let now=18000;
       const policy=reactions.create({clock:()=>now});
       if(policy.decide({kind:"sneeze",confidence:1})!==null)
