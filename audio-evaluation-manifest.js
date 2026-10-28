@@ -3,7 +3,7 @@ const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypt
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
-const {normalizeAnnotationReview}=require("./audio-annotation-review.js");
+const {normalizeAnnotationReview,verifyReviewedAudioDigest}=require("./audio-annotation-review.js");
 const labels=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
 const human=new Set(["clap","laugh","cry","cough","sneeze"]);
 const rights=new Set(["owned","consented","open-license"]);
@@ -78,8 +78,14 @@ function loadManifest(location){
    if(previous)throw Error("Duplicate audio recording: "+item.id+" repeats "+previous);
    seenAudio.set(digest,item.id);
    const annotationReview=continuous?normalizeAnnotationReview(item.annotationReview):undefined;
+   // Fingerprint is already calculated to reject duplicated recordings.
+   // Bind a completed annotation review to THESE actual bytes as well.
+   // Drafts/legacy unreviewed manifests remain usable for offline preflight.
+   const reviewedAudioDigestVerified=continuous?
+    verifyReviewedAudioDigest(annotationReview,item.audioSha256,digest,item.id):false;
    all.push({...item,deviceClass,sourceGroup,evaluationSplit,
-    ...(continuous?{annotationReview}:{}),absolutePath:physical});
+    ...(continuous?{annotationReview,reviewedAudioDigestVerified}:{}),
+    absolutePath:physical});
   }
  }
  // Reject leaks between development and validation/test before loading YAMNet.
