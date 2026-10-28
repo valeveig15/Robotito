@@ -202,6 +202,11 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
         throw new Error("Legacy sound-capture module not loaded by app");
       let now=18000;
       const policy=reactions.create({clock:()=>now});
+      for(const kind of ["laugh","cry","cough","sneeze","clap"]){
+        if(policy.decide({kind,confidence:.99,
+          metadata:{model:"unvalidated-yamnet",calibrated:true,evidenceFrames:12}})!==null)
+          throw new Error("Optional model must not authorize human reaction: "+kind);
+      }
       if(policy.decide({kind:"sneeze",confidence:1})!==null)
         throw new Error("Uncalibrated sneeze must not trigger speech");
       if(policy.decide({kind:"clap",confidence:.99})!==null)
@@ -230,7 +235,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
           if(!label||label===key)throw new Error("Missing acoustic translation "+lang+"/"+kind);
         }
       }
-      return {suppression:true,cooldown:true,translations:48};
+      return {suppression:true,cooldown:true,modelReactionsDefaultDenied:true,translations:48};
     });
     console.log("Robotito browser acoustic event integration:",JSON.stringify(acousticIntegration));
     // Exercise the fallback as loaded by the actual page. The artificial

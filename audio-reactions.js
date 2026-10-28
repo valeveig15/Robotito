@@ -9,7 +9,11 @@ const REACTIONS=Object.freeze({
  cough:{action:"notice",minimum:.94,cooldown:9500,requiresModel:true},
  sneeze:{action:"bless",minimum:.96,cooldown:5200,requiresModel:true}
 });
-function create({clock=()=>Date.now()}={}){
+// No downloaded/pretrained model can authorize unsolicited human reactions.
+// Only an independently validated and deliberately approved deployment may
+// set this capability to true. It is false for Robotito's shipped app.
+function create({clock=()=>Date.now(),humanModelReactionsApproved=false}={}){
+ const approved=humanModelReactionsApproved===true;
  const last=Object.create(null);
  let lastVocalAt=-Infinity;
  const VOCAL_GROUP=new Set(["laugh","cry","cough","sneeze"]);
@@ -32,19 +36,22 @@ function create({clock=()=>Date.now()}={}){
   return musicActive;
  }
  function decide(event,{suppressed=false,now=clock()}={}){
-  if(suppressed||!event||!Number.isFinite(event.confidence))return null;
+  if(suppressed||!event||!Number.isFinite(now)||now<0||
+     !Number.isFinite(event.confidence)||event.confidence<0||event.confidence>1)return null;
   const policy=REACTIONS[event.kind];
   if(!policy||event.confidence<policy.minimum)return null;
-  // A "clap" label with an arbitrary confidence must not start an
-  // animation: require five distinct acoustic bursts or model evidence.
+  // A model name is not proof of calibration or permission to react.
+  // Require an explicit deployment approval AND actual independently
+  // counted evidence. Heuristic high-fives/claps remain available.
+  const modelEvidence=approved&&event.metadata?.calibrated===true&&
+   typeof event.metadata.model==="string"&&!!event.metadata.model.trim()&&
+   Number.isInteger(event.metadata.evidenceFrames)&&event.metadata.evidenceFrames>=2;
   if(event.kind==="clap"){
    const acoustic=event.metadata?.origin==="acoustic-heuristic"&&
      Number.isInteger(event.metadata.bursts)&&event.metadata.bursts>=5;
-   const model=typeof event.metadata?.model==="string"&&
-     event.metadata.model.trim()&&event.metadata.evidenceFrames>=2;
-   if(!acoustic&&!model)return null;
+   if(!acoustic&&!modelEvidence)return null;
   }
-  if(policy.requiresModel&&!event.metadata?.model)return null;
+  if(policy.requiresModel&&!modelEvidence)return null;
   if(now-(last[event.kind]??-Infinity)<policy.cooldown)return null;
   if(VOCAL_GROUP.has(event.kind)&&now-lastVocalAt<VOCAL_GROUP_COOLDOWN)return null;
   last[event.kind]=now;
