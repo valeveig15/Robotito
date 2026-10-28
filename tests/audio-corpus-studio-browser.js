@@ -137,7 +137,7 @@ async function saveDownload(page,selector){
   // Revoking consent while actively recording must stop every track and
   // discard data, not turn the partial sample into a downloadable file.
   await page.click("#startRecording");
-  await page.waitForFunction(()=>!document.querySelector("#stopRecording").disabled);
+  await page.waitForFunction(()=>document.querySelector("#status").textContent.includes("Grabación activa"));
   await page.locator("#consent").uncheck();
   await page.waitForFunction(()=>document.querySelector("#stopRecording").disabled);
   assert.equal(await page.evaluate(()=>window.__latestMicTrack.readyState),"ended",
@@ -151,6 +151,7 @@ async function saveDownload(page,selector){
   await page.locator("#consent").check();
   await page.evaluate(()=>{
    const live=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+   window.__restoreGetUserMedia=()=>{navigator.mediaDevices.getUserMedia=live;};
    navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{
     window.__grantDeferred=async()=>{
      const stream=await live({audio:true,video:false});
@@ -166,6 +167,7 @@ async function saveDownload(page,selector){
   assert.equal(await page.locator("#stopRecording").isDisabled(),true);
   await page.evaluate(()=>window.__grantDeferred());
   await page.waitForFunction(()=>window.__deferredMicTrack?.readyState==="ended");
+  await page.evaluate(()=>window.__restoreGetUserMedia());
   assert.equal(await page.locator("#downloadAudio").isDisabled(),true,
    "A late permission grant must never create a downloadable sample");
   // The same cancellation guarantee covers asynchronous audio decoding:
@@ -192,6 +194,28 @@ async function saveDownload(page,selector){
   assert.equal(await page.locator("#downloadManifest").isDisabled(),true,
    "A late file decode may never resurrect discarded private audio");
   assert.match(await page.locator("#duration").textContent(),/Todavía no hay/);
+  // A backgrounded page must not keep capturing or save a late onstop.
+  await page.click("#startRecording");
+  await page.waitForFunction(()=>document.querySelector("#status").textContent.includes("Grabación activa"));
+  await page.evaluate(()=>{
+   Object.defineProperty(document,"hidden",{configurable:true,value:true});
+   document.dispatchEvent(new Event("visibilitychange"));
+  });
+  assert.equal(await page.evaluate(()=>window.__latestMicTrack.readyState),"ended",
+   "Hiding the page stops the browser microphone track");
+  await page.waitForTimeout(250);
+  assert.equal(await page.locator("#downloadManifest").isDisabled(),true,
+   "Hidden-page recording cannot leave a later downloadable blob");
+  await page.evaluate(()=>{
+   delete document.hidden;
+   document.dispatchEvent(new Event("visibilitychange"));
+   window.dispatchEvent(new Event("pagehide"));
+  });
+  assert.equal(await page.locator("#startRecording").isDisabled(),true,
+   "Pagehide closes the collection session before BFCache restore");
+  await page.evaluate(()=>window.dispatchEvent(new Event("pageshow")));
+  assert.equal(await page.locator("#startRecording").isDisabled(),false,
+   "Pageshow permits a new explicit permission session after cleanup");
   assert.deepEqual(external,[],"No external requests across cancellation cases");
   console.log("Robotito private corpus studio Chromium integration passed:",
    JSON.stringify({realBrowserWav:true,manifestPreflight:true,
