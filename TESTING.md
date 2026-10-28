@@ -105,6 +105,10 @@ La CI ahora ejecuta `npm run test:audio:real`: inicializa **YAMNet y MediaPipe r
 
 **Evidencia temporal del clasificador:** para clips con más de una ventana YAMNet, el evaluador conserva las clases de **cada ventana en orden**, exige al menos dos ventanas adyacentes que coincidan para declarar un sonido humano y se abstiene si hay dos tipos humanos distintos en una sola grabación. Esto impide fabricar simultaneidad mediante máximos de ventanas dispares o contar picos aislados como certeza. Clips subsegundo conservan una sola ventana válida; el informe registra cuántos clips usaron esta ruta y cuántos tenían conflictos. Esto sigue siendo un **criterio conservador de evaluación**, no un umbral calibrado ni una medición de las acciones del avatar.
 
+### Validación previa de corpus autorizados (P03)
+
+El evaluador comprueba **antes de cargar YAMNet** los ID únicos de clips y sesiones, etiquetas, derechos, intervalos positivos de anotación y silencio, archivos regulares de hasta 50 MB y rutas físicas que no pueden escapar de la carpeta del manifiesto mediante enlaces simbólicos. Las grabaciones `open-license` necesitan `license` y `source`; ESC-50 ya los incluye. El informe conserva la procedencia sin exponer rutas privadas. No es una auditoría legal de permisos ni una evaluación de precisión.
+
 ### Grabaciones continuas con eventos temporales etiquetados (P03)
 
 La integración de CI ahora ejecuta `npm run test:audio:timeline:real`: genera localmente un WAV sintético y un manifiesto temporal, abre **Chromium y YAMNet reales**, evalúa el archivo con el comando de usuario y valida el informe guardado, tiempos observados y supresiones. Esta prueba comprueba el **recorrido completo de código**, no la exactitud de detección de sonidos humanos; no se almacenan ni descargan grabaciones humanas.
