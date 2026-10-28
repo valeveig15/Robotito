@@ -46,7 +46,7 @@ function cleanup(){
 }
 function blank(message){
  state.epoch++;cleanup();state.phase="idle";state.report=null;
- state.permissionMs=null;state.frames=0;state.activeFrames=0;state.peak=0;
+ state.permissionMs=null;state.runAt=0;state.frames=0;state.activeFrames=0;state.peak=0;
  el("levelText").textContent="Sin mediciones.";
  el("result").textContent="";
  ui();announce(message);
@@ -133,7 +133,12 @@ async function start(){
   state.buffer=new Float32Array(analyser.fftSize);
   await context.resume();
   if(token!==state.epoch||state.closed||document.hidden||!el("consent").checked){
-   cleanup();return;
+   // The old grant may resolve after a new test has begun. Never clean up
+   // the new test's tracks from this stale asynchronous continuation.
+   stopTracks(stream);
+   try{source.disconnect();analyser.disconnect();}catch{}
+   try{await context.close();}catch{}
+   return;
   }
   state.phase="running";state.runAt=performance.now();
   ui();announce("Micrófono activo solo para medir el nivel. Detené la prueba al terminar.");
