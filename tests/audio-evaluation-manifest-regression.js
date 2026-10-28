@@ -30,6 +30,11 @@ try{
   "Completed labels must be bound to actual local bytes");checks++;
  assert.equal(read({sessions:[session]}).sessions[0].reviewedAnnotationDigestVerified,true,
   "Complete review must bind human event marks to the reviewed audio");checks++;
+ assert.equal(execFileSync(process.execPath,[
+  path.join(__dirname,"../scripts/fingerprint-reviewed-annotations.js"),
+  path.join(root,"m.json"),"session","--confirm-reviewed"],{encoding:"utf8"}).trim(),
+  session.reviewAnnotationsSha256,
+  "Explicit manual migration command yields canonical review digest only");checks++;
  assert.throws(()=>read({sessions:[{...session,reviewAnnotationsSha256:undefined}]}),
   /requires reviewAnnotationsSha256/);checks++;
  assert.throws(()=>read({sessions:[{...session,reviewAnnotationsSha256:"f".repeat(64)}]}),
