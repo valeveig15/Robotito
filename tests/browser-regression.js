@@ -197,9 +197,13 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
           throw new Error("Missing translated model consent control: "+lang);
         if(window.ROBOTITO_I18N.t("audioModelCaptureUnsupported",lang)==="audioModelCaptureUnsupported")
           throw new Error("Missing unsupported-capture notice: "+lang);
+        if(window.ROBOTITO_I18N.t("audioModelMicrophoneUnavailable",lang)==="audioModelMicrophoneUnavailable")
+          throw new Error("Missing microphone-loss notice: "+lang);
       }
       if(!window.ROBOTITO_AUDIO_SCRIPT_FALLBACK?.create)
         throw new Error("Legacy sound-capture module not loaded by app");
+      if(!window.ROBOTITO_AUDIO_MICROPHONE_GATE?.create)
+        throw new Error("Microphone track-loss module not loaded by app");
       let now=18000;
       const policy=reactions.create({clock:()=>now});
       for(const kind of ["laugh","cry","cough","sneeze","clap"]){
@@ -238,6 +242,28 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {suppression:true,cooldown:true,modelReactionsDefaultDenied:true,translations:48};
     });
     console.log("Robotito browser acoustic event integration:",JSON.stringify(acousticIntegration));
+    // Real Chromium MediaStreamTrack lifecycle, without a microphone device.
+    const trackLifecycle=await page.evaluate(async()=>{
+      const ctx=new AudioContext();
+      let gate;
+      try{
+        const stream=ctx.createMediaStreamDestination().stream;
+        const track=stream.getAudioTracks()[0];
+        gate=window.ROBOTITO_AUDIO_MICROPHONE_GATE.create({stream});
+        if(!gate.isLive())throw Error("Fresh browser audio track must be live");
+        track.enabled=false;
+        if(gate.isLive())throw Error("Disabled browser track leaked PCM authorization");
+        track.enabled=true;
+        if(!gate.isLive())throw Error("Reenabled track must recover");
+        track.stop();
+        if(gate.isLive()||gate.status()!=="ended")
+          throw Error("Stopped browser track must never authorize PCM");
+        gate.dispose();
+        if(gate.isLive())throw Error("Disposed browser track gate must be denied");
+        return {live:true,disabledDenied:true,stoppedDenied:true,disposedDenied:true};
+      }finally{gate?.dispose();await ctx.close();}
+    });
+    console.log("Robotito real browser microphone lifecycle:",JSON.stringify(trackLifecycle));
     // Exercise the fallback as loaded by the actual page. The artificial
     // browser nodes avoid a microphone and still verify privacy-gated PCM.
     const legacyFallback=await page.evaluate(()=>{
