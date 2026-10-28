@@ -17,6 +17,23 @@ eq(report.overall.metrics.sneeze.fn,0,"Covered ground truth not missed");
 eq(report.sessions[0].alerts.length,1,"Requires two independent aligned windows");
 eq(report.sessions[0].observedSeconds<6,true,"Suppression and missing coverage excluded");
 eq(report.calibrated,false,"Offline metrics cannot calibrate the model");
+const boundary={...a,id:"boundary",annotations:[],suppressions:[
+ {startSeconds:1.4,endSeconds:1.5}],frames:[
+ {atSeconds:1.1,windowStartSeconds:.6,windowEndSeconds:1.57,
+  scores:{sneeze:.995},suppressed:false},
+ {atSeconds:1.6,windowStartSeconds:1.1,windowEndSeconds:2.07,
+  scores:{sneeze:.995},suppressed:false}
+ ]};
+const excluded=evaluateContinuous([boundary]);
+eq(excluded.overall.metrics.sneeze.fp,0,
+ "Frames overlapping suppression are never eligible despite safe timestamps");
+eq(excluded.overall.observedSeconds,0,
+ "Partly suppressed windows do not count as observed negative audio");
+eq(excluded.sessions[0].skippedFrames,2,
+ "Every contaminated frame is reported as skipped");
+assert.throws(()=>evaluateContinuous([{...boundary,id:"wrong-bounds",frames:[
+ {atSeconds:1.1,windowStartSeconds:1.5,windowEndSeconds:1.57,scores:{noise:.9}}
+]}]),/Invalid timestamped audio window bounds/);checks++;
 eq(report.automaticHumanReactionsApproved,false,"No unsolicited reactions authorized");
 const b={...a,id:"wrong",annotations:[],suppressions:[],
  frames:times.map(t=>frame(t,[1.25,1.75].includes(t)?"sneeze":"noise"))};
