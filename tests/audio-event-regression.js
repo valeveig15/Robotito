@@ -133,6 +133,10 @@ for(const kind of ["laugh","cry","cough","sneeze"]){
  const events=onlyEvents(results).filter(x=>x.kind===kind);
  eq(events.length,1,"Calibrated, stable "+kind+" produces one event (cooldown)");
  ok(events[0].metadata.model===model.version,"Event retains classifier provenance "+kind);
+ eq(events[0].metadata.calibrated,true,
+  "Model event carries explicit calibrated origin only after detector contract "+kind);
+ ok(events[0].metadata.evidenceFrames>=audio.MODEL_GATE[kind].frames,
+  "Model event retains independent temporal evidence count "+kind);
  when+=10000;
 }
 modelPhase.scores={clap:.995,laugh:.01,cry:.01,cough:.01,sneeze:.01};
