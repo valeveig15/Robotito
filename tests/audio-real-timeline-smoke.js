@@ -4,6 +4,7 @@
 const assert=require("node:assert/strict");
 const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const {execFileSync,spawnSync}=require("node:child_process");
+const {createHash}=require("node:crypto");
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-timeline-real-"));
 function wav(seconds=2.5,rate=16000){
  const samples=Math.floor(seconds*rate),bytes=Buffer.alloc(44+samples*2);
@@ -20,11 +21,12 @@ function wav(seconds=2.5,rate=16000){
 }
 try{
  const audio=path.join(temp,"generated.wav"),manifestPath=path.join(temp,"manifest.json");
- fs.writeFileSync(audio,wav());
+ const originalAudio=wav(),audioSha256=createHash("sha256").update(originalAudio).digest("hex");
+ fs.writeFileSync(audio,originalAudio);
  fs.writeFileSync(manifestPath,JSON.stringify({name:"CI synthetic audio only",
   sessions:[{id:"synthetic-01",path:"generated.wav",environment:"synthetic-tone",
    rights:"owned",sourceGroup:"synthetic-source-1",evaluationSplit:"test",
-   annotationReview:"complete",annotations:[],
+   annotationReview:"complete",audioSha256,annotations:[],
    suppressions:[{startSeconds:1.05,endSeconds:1.45}]}]}));
  // Unreviewed data must fail before any Chromium worker or model download.
  const draftPath=path.join(temp,"draft-manifest.json");
@@ -49,6 +51,19 @@ try{
  assert.match(deniedDraft.stderr,/requires annotationReview=complete/);
  assert.equal(fs.existsSync(path.join(temp,"robotito-audio-evaluation.json")),false,
   "Unreviewed sessions must not generate a misleading saved report");
+ // Swapping a recording with the same filename, duration and data format
+ // must abort before any model is loaded or report is written.
+ const replaced=Buffer.from(originalAudio);replaced[48]^=1;
+ fs.writeFileSync(audio,replaced);
+ const deniedChanged=spawnSync(process.execPath,[
+  "scripts/evaluate-audio-dataset.js",manifestPath],{
+  cwd:path.resolve(__dirname,".."),timeout:10000,encoding:"utf8"
+ });
+ assert.notEqual(deniedChanged.status,0,"Changed reviewed audio must be denied");
+ assert.match(deniedChanged.stderr,/Reviewed audio SHA-256 mismatch/);
+ assert.equal(fs.existsSync(path.join(temp,"robotito-audio-evaluation.json")),false,
+  "Review/audio mismatch cannot leave a misleading report");
+ fs.writeFileSync(audio,originalAudio);
  // The standalone preflight never downloads or initializes YAMNet.
  const preflight=execFileSync(process.execPath,["scripts/validate-audio-dataset.js",manifestPath],{
   cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
@@ -58,7 +73,8 @@ try{
  const invalidPath=path.join(temp,"invalid-annotations.json");
  fs.writeFileSync(invalidPath,JSON.stringify({sessions:[{
   id:"out-of-bounds",path:"generated.wav",rights:"owned",environment:"synthetic-tone",
-  annotationReview:"complete",annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}]
+  annotationReview:"complete",audioSha256,
+  annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}]
  }]}));
  const invalidValidation=spawnSync(process.execPath,[
   "scripts/validate-audio-dataset.js",invalidPath],{
@@ -99,6 +115,8 @@ try{
  const report=JSON.parse(fs.readFileSync(
   path.join(temp,"robotito-audio-evaluation.json"),"utf8"));
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
+ assert.equal(report.datasetIntegrity.reviewedAudioSHA256Verified,true,
+  "Real evaluated sessions are bound to the exact reviewed audio bytes");
  assert.equal(report.datasetIntegrity.allEvaluatedSessionsHumanReviewed,true,
   "Evaluated negative hours require a declared completed human review");
  assert.equal(report.datasetIntegrity.humanReviewIndependentlyVerified,false,
