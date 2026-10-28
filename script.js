@@ -1171,7 +1171,11 @@ function setupAudio(stream){
     let workletTap=null,workletSilentGain=null,workletActive=false;
     let workletCaptureEnabled=false;
     let workletGeneration=0,workletModuleLoaded=false;
-    const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.();
+    // YAMNet is exploratory, not calibrated for unsolicited human reactions.
+    // A future approval must be explicit and backed by real audio validation.
+    const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.({
+      humanModelReactionsApproved:false
+    });
     // Off by default. Model files and code from third parties are fetched
     // only following explicit checkbox opt-in, never on page load.
     const soundModel=window.ROBOTITO_SOUND_MODEL?.create?.({
