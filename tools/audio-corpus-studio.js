@@ -4,7 +4,8 @@
 // external scripts or YAMNet. Audio stays in RAM until explicit downloads.
 const byId=id=>document.getElementById(id);
 const state={blob:null,ext:"",duration:0,url:null,events:[],suppressions:[],
- recorder:null,stream:null,chunks:[],recording:false};
+ recorder:null,stream:null,chunks:[],recording:false,pendingMic:false,
+ importing:false,epoch:0,closed:false};
 const MAX_BYTES=50*1024*1024;
 const kinds=new Set(["clap","laugh","cry","cough","sneeze"]);
 const extensions=new Set(["wav","webm","ogg","mp3","m4a","flac"]);
@@ -15,11 +16,12 @@ const status=(message,kind="")=>{
 };
 const clipNumber=x=>Number(x.toFixed(4));
 function updateControls(){
- const ready=!!state.blob&&!state.recording;
- byId("startRecording").disabled=state.recording;
- byId("stopRecording").disabled=!state.recording;
- byId("discardAudio").disabled=!state.blob||state.recording;
- byId("audioFile").disabled=state.recording;
+ const active=state.recording||state.pendingMic;
+ const ready=!!state.blob&&!active&&!state.importing;
+ byId("startRecording").disabled=active||state.closed;
+ byId("stopRecording").disabled=!active;
+ byId("discardAudio").disabled=(!state.blob&&!state.importing)||active;
+ byId("audioFile").disabled=active;
  const exportable=ready&&byId("consent").checked;
  byId("downloadAudio").disabled=!exportable;
  byId("downloadManifest").disabled=!exportable;
@@ -31,6 +33,10 @@ function stopTracks(){
  }
 }
 function clearExisting(){
+ // Revokes an in-flight decode or earlier microphone request. Late async
+ // completions must never restore audio after discard or consent withdrawal.
+ state.epoch++;state.importing=false;
+ byId("audioFile").value="";
  if(state.url){URL.revokeObjectURL(state.url);state.url=null;}
  state.blob=null;state.ext="";state.duration=0;
  state.events=[];state.suppressions=[];
@@ -49,7 +55,7 @@ function extension(name,mime){
  if(/flac/.test(mime))return "flac";
  throw Error("Formato no identificado. Elegí WAV, WebM, OGG, MP3, M4A o FLAC.");
 }
-async function acceptAudio(blob,name){
+async function acceptAudio(blob,name,token){
  if(!(blob instanceof Blob)||blob.size===0||blob.size>MAX_BYTES)
   throw Error("El audio debe existir y pesar menos de 50 MB.");
  const ext=extension(name,blob.type);
@@ -59,6 +65,7 @@ async function acceptAudio(blob,name){
  catch{throw Error("El navegador no puede decodificar este audio.");}
  if(!Number.isFinite(buffer.duration)||buffer.duration<=0)
   throw Error("El audio no tiene duración válida.");
+ if(state.closed||token!==state.epoch||state.recording||state.pendingMic)return;
  clearExisting();
  state.blob=blob;state.ext=ext;state.duration=buffer.duration;
  state.url=URL.createObjectURL(blob);
@@ -148,67 +155,117 @@ function exportOne(which){
   status("Archivo descargado. Guardá audio y JSON juntos en la misma carpeta.","success");
  }catch(error){status(error.message,"error");}
 }
+function cancelCapture(){
+ // Cancels even a pending getUserMedia prompt. Its eventual resolved stream
+ // will be closed, without attaching a recorder or storing a single chunk.
+ const recorder=state.recorder;
+ state.epoch++;state.pendingMic=false;state.recording=false;
+ state.recorder=null;state.chunks=[];
+ try{if(recorder?.state==="recording")recorder.stop();}catch{}
+ stopTracks();clearExisting();updateControls();
+}
 async function startRecording(){
- if(state.recording)return;
+ if(state.recording||state.pendingMic||state.closed)return;
+ if(!byId("consent").checked){
+  status("Confirmá el consentimiento antes de activar el micrófono.","error");return;
+ }
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder!=="function"){
+  status("Este navegador no permite grabar audio.","error");return;
+ }
+ // Erase the previous sample before requesting new audio. A cancellation
+ // must invalidate both pending permission and any earlier import decode.
+ clearExisting();
+ const token=++state.epoch;
+ state.pendingMic=true;updateControls();
  let stream=null;
  try{
-  if(!byId("consent").checked)
-   throw Error("Confirmá el consentimiento antes de activar el micrófono.");
-  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder!=="function")
-   throw Error("Este navegador no permite grabar audio.");
   stream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-  state.stream=stream;
+  if(token!==state.epoch||state.closed||!byId("consent").checked||document.hidden){
+   for(const track of stream.getTracks())try{track.stop();}catch{}
+   return;
+  }
+  state.stream=stream;state.pendingMic=false;
   const preferred=["audio/webm;codecs=opus","audio/ogg;codecs=opus"];
   const supported=preferred.find(x=>MediaRecorder.isTypeSupported?.(x));
   const recorder=new MediaRecorder(stream,supported?{mimeType:supported}:undefined);
-  // The pending recording replaces the old sample, never resurrecting it if
-  // the new mic session fails or the user revokes consent.
-  clearExisting();
   state.recorder=recorder;state.chunks=[];state.recording=true;
-  recorder.ondataavailable=event=>{if(event.data?.size)state.chunks.push(event.data);};
-  let failed=false;
-  recorder.onerror=()=>{failed=true;stopTracks();state.recording=false;
-   state.recorder=null;state.chunks=[];updateControls();
-   status("Falló la grabación. No se guardó audio.","error");};
+  for(const track of stream.getTracks())track.addEventListener?.("ended",()=>{
+   if(token!==state.epoch||!state.recording)return;
+   cancelCapture();status("Se desconectó el micrófono. Se descartó la grabación.","error");
+  });
+  recorder.ondataavailable=event=>{
+   if(token===state.epoch&&byId("consent").checked&&event.data?.size)
+    state.chunks.push(event.data);
+  };
+  recorder.onerror=()=>{
+   if(token!==state.epoch)return;
+   cancelCapture();status("Falló la grabación. No se guardó audio.","error");
+  };
   recorder.onstop=async()=>{
+   if(token!==state.epoch)return;
    stopTracks();state.recording=false;state.recorder=null;
    updateControls();
-   if(failed)return;
+   if(state.closed||!byId("consent").checked||document.hidden){
+    cancelCapture();return;
+   }
    try{
     const blob=new Blob(state.chunks,{type:recorder.mimeType||supported||"audio/webm"});
     state.chunks=[];
-    await acceptAudio(blob,"grabacion."+extension("",blob.type));
-   }catch(error){status(error.message,"error");}
+    await acceptAudio(blob,"grabacion."+extension("",blob.type),token);
+   }catch(error){if(token===state.epoch)status(error.message,"error");}
   };
-  recorder.start();
-  updateControls();
+  recorder.start();updateControls();
   status("Grabación activa. Presioná «Detener grabación» para cortar el micrófono.","success");
  }catch(error){
   if(stream)for(const track of stream.getTracks())try{track.stop();}catch{}
-  state.stream=null;state.recording=false;state.recorder=null;
-  updateControls();status("No se inició la grabación: "+error.message,"error");
+  if(token===state.epoch){
+   cancelCapture();
+   status("No se inició la grabación: "+error.message,"error");
+  }
  }
 }
 function stopRecording(){
+ if(state.pendingMic){cancelCapture();status("Se canceló el permiso de grabación.","success");return;}
  if(!state.recording)return;
- try{if(state.recorder?.state==="recording")state.recorder.stop();}
+ try{
+  if(state.recorder?.state!=="recording")throw Error("Grabadora no disponible");
+  state.recording=false;updateControls();
+  state.recorder.stop();
+  status("Grabación detenida. Preparando el audio localmente.","success");
+ }catch(error){cancelCapture();status("Se descartó la grabación: "+error.message,"error");}
  finally{stopTracks();}
 }
 byId("audioFile").addEventListener("change",async event=>{
- if(state.recording)return;
+ if(state.recording||state.pendingMic||state.closed)return;
  const file=event.target.files?.[0];
  if(!file)return;
- try{await acceptAudio(file,file.name);}catch(error){clearExisting();status(error.message,"error");}
+ const token=++state.epoch;
+ state.importing=true;updateControls();
+ try{await acceptAudio(file,file.name,token);}
+ catch(error){if(token===state.epoch){clearExisting();status(error.message,"error");}}
 });
-byId("consent").addEventListener("change",updateControls);
+byId("consent").addEventListener("change",()=>{
+ if(!byId("consent").checked){
+  cancelCapture();status("Se retiró el consentimiento: audio y grabación descartados.","success");
+ }else updateControls();
+});
 byId("startRecording").addEventListener("click",startRecording);
 byId("stopRecording").addEventListener("click",stopRecording);
-byId("discardAudio").addEventListener("click",()=>{clearExisting();byId("audioFile").value="";
- status("Audio descartado de la memoria de esta página.","success");});
+byId("discardAudio").addEventListener("click",()=>{
+ clearExisting();status("Audio descartado de la memoria de esta página.","success");
+});
 byId("addEvent").addEventListener("click",()=>add("events"));
 byId("addSuppression").addEventListener("click",()=>add("suppressions"));
 byId("downloadAudio").addEventListener("click",()=>exportOne("audio"));
 byId("downloadManifest").addEventListener("click",()=>exportOne("manifest"));
-window.addEventListener("pagehide",()=>{stopTracks();if(state.url)URL.revokeObjectURL(state.url);});
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden&&(state.recording||state.pendingMic)){
+  cancelCapture();status("Grabación descartada al ocultar la pestaña.","success");
+ }
+});
+window.addEventListener("pagehide",()=>{
+ state.closed=true;cancelCapture();
+});
+window.addEventListener("pageshow",()=>{state.closed=false;updateControls();});
 updateControls();
 })();
