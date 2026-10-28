@@ -37,4 +37,28 @@ for(let i=0;i<16;i++)capture.process([[new Float32Array(128).fill(.2)]]);
 assert.equal(transfers.length,3,"Explicit resume restarts a full PCM packet");
 assert.equal(transfers[2].message.samples[0],Math.fround(.2),
  "Partial audio before suppression is not mixed with new session");
-console.log("Robotito contiguous and privacy-gated AudioWorklet regression passed");
+// After 250ms of microphone audio with no renewal, the processor must close
+// itself even if the main thread was frozen and could not send capture:false.
+capture.port.onmessage({data:{type:"capture",enabled:true}});
+const beforeLease=transfers.length;
+for(let i=0;i<160;i++)capture.process([[new Float32Array(128).fill(.3)]]);
+const expiryCount=transfers.length;
+assert.ok(expiryCount>beforeLease,"An authorized lease allows normal PCM briefly");
+for(let i=0;i<64;i++)capture.process([[new Float32Array(128).fill(.8)]]);
+assert.equal(transfers.length,expiryCount,
+ "A frozen main thread cannot leave continuous microphone transfer enabled");
+assert.equal(capture.enabled,false,"Lease expiration fails closed");
+assert.equal(capture.filled,0,"Partial audio is erased on automatic expiration");
+capture.port.onmessage({data:{type:"capture",enabled:true}});
+for(let i=0;i<16;i++)capture.process([[new Float32Array(128).fill(.4)]]);
+assert.equal(transfers.at(-1).message.samples[0],Math.fround(.4),
+ "A new lease cannot expose bytes captured before automatic expiration");
+const steady=new Klass();
+steady.port.onmessage({data:{type:"capture",enabled:true}});
+for(let i=0;i<180;i++){
+ if(i%16===0)steady.port.onmessage({data:{type:"capture",enabled:true}});
+ steady.process([[new Float32Array(128).fill(.6)]]);
+}
+assert.equal(steady.enabled,true,
+ "Regular live permission heartbeats keep the capture lease valid");
+console.log("Robotito contiguous, pause and expiring audio lease regression passed");
