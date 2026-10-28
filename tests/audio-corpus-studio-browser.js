@@ -84,6 +84,21 @@ async function saveDownload(page,selector){
   await page.locator("#suppressStart").fill("1.1");
   await page.locator("#suppressEnd").fill("1.3");
   await page.click("#addSuppression");
+  // The UI must reject either ordering of a contradictory label/mask.
+  await page.locator("#suppressStart").fill("0.5");
+  await page.locator("#suppressEnd").fill("0.7");
+  await page.click("#addSuppression");
+  assert.match(await page.locator("#status").textContent(),/Ground-truth event overlaps suppressed audio/);
+  assert.equal(await page.locator("#suppressionsList li").count(),1,
+   "A masked annotated event cannot be silently accepted as suppression");
+  await page.locator("#eventStart").fill("1.2");
+  await page.locator("#eventEnd").fill("1.45");
+  await page.click("#addEvent");
+  assert.match(await page.locator("#status").textContent(),/Ground-truth event overlaps suppressed audio/);
+  assert.equal(await page.locator("#eventsList li").count(),1,
+   "An annotated event cannot be inserted into an already suppressed interval");
+  await page.locator("#eventStart").fill("0.3");
+  await page.locator("#eventEnd").fill("0.55");
   assert.equal(await page.locator("#eventsList li").count(),1);
   assert.equal(await page.locator("#suppressionsList li").count(),1);
   await page.locator("#sourceGroup").fill("personal name");

@@ -11,6 +11,8 @@ const kinds=new Set(["clap","laugh","cry","cough","sneeze"]);
 const extensions=new Set(["wav","webm","ogg","mp3","m4a","flac"]);
 const devices=new Set(["unspecified","phone","tablet","built-in","headset","usb","recorder","other"]);
 const splits=new Set(["development","validation","test","unspecified"]);
+const assertNoMaskedEvents=window.ROBOTITO_AUDIO_ANNOTATION_INTEGRITY?.assertNoMaskedEvents;
+if(typeof assertNoMaskedEvents!=="function")throw Error("Annotation integrity guard unavailable");
 const status=(message,kind="")=>{
  const el=byId("status");el.textContent=message;el.className=kind;
 };
@@ -108,8 +110,12 @@ function add(which){
   if(which==="events"){
    const kind=byId("eventKind").value;
    if(!kinds.has(kind))throw Error("Etiqueta de sonido desconocida.");
+   assertNoMaskedEvents([...state.events,{kind,...item}],state.suppressions);
    state.events.push({kind,...item});
-  }else state.suppressions.push(item);
+  }else{
+   assertNoMaskedEvents(state.events,[...state.suppressions,item]);
+   state.suppressions.push(item);
+  }
   render(which);status("Intervalo agregado.","success");
  }catch(error){status(error.message,"error");}
 }
@@ -132,6 +138,8 @@ function exportData(){
  if(checks.some(x=>!Number.isFinite(x.startSeconds)||!Number.isFinite(x.endSeconds)||
     x.startSeconds<0||x.startSeconds>=x.endSeconds||
     x.endSeconds>state.duration+1e-4))throw Error("Hay intervalos fuera del audio.");
+ // Guard exported data too, not just clicks, for consistency with preflight.
+ assertNoMaskedEvents(state.events,state.suppressions);
  const manifest={name:"Sesión autorizada para evaluación P03",sessions:[{
   id,path:fileName,environment,deviceClass,sourceGroup,evaluationSplit:split,
   rights,annotations:state.events.map(x=>({...x})),
