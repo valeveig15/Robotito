@@ -70,7 +70,7 @@ async function main(){
     const playback=offline.createBufferSource();
     playback.buffer=audio;playback.connect(offline.destination);playback.start();
     const rendered=await offline.startRendering(),pcm=rendered.getChannelData(0);
-    const scores={};
+    const windowScores=[];
     const plan=window.ROBOTITO_AUDIO_EVALUATION_WINDOWS;
     const spans=plan.plan(pcm.length);
     let paddedWindows=0;
@@ -78,11 +78,10 @@ async function main(){
      const slice=plan.frame(pcm,span);
      const categories=await window.__soundEvalClassify(slice);
      const mapped=window.ROBOTITO_SOUND_MODEL.mapCategories(categories);
-     for(const [kind,n] of Object.entries(mapped.scores))
-      scores[kind]=Math.max(scores[kind]||0,n);
+     windowScores.push(mapped.scores);
      if(span.paddingStart||span.paddingEnd)paddedWindows++;
     }
-    return {scores,windows:spans.length,paddedWindows,
+    return {windowScores,windows:spans.length,paddedWindows,
       trailingSamplesCovered:spans.at(-1)?.end===pcm.length,
       durationSeconds:audio.duration};
    },file);
