@@ -21,6 +21,20 @@ function plan(length,{windowSamples=WINDOW_SAMPLES,hopSamples=HOP_SAMPLES}={}){
  if(windows.at(-1).start<tailStart)add(tailStart);
  return windows;
 }
+// Skip the entire classifier window if it contains ANY suppressed audio.
+// Checking only the prediction timestamp could still classify own speech.
+function overlapsSuppression(startSeconds,endSeconds,suppressions=[]){
+ if(!Number.isFinite(startSeconds)||!Number.isFinite(endSeconds)||
+    startSeconds<0||endSeconds<=startSeconds||!Array.isArray(suppressions))
+  throw new Error("Invalid audio or suppression intervals");
+ return suppressions.some(period=>{
+  if(!period||!Number.isFinite(period.startSeconds)||
+     !Number.isFinite(period.endSeconds)||period.startSeconds<0||
+     period.endSeconds<=period.startSeconds)
+   throw new Error("Invalid suppression interval");
+  return startSeconds<period.endSeconds&&period.startSeconds<endSeconds;
+ });
+}
 function frame(samples,spec,windowSamples=WINDOW_SAMPLES){
  if(!samples||!spec||!Number.isSafeInteger(windowSamples)||windowSamples<1||
     spec.start<0||spec.end>samples.length||spec.start>=spec.end||
@@ -31,7 +45,7 @@ function frame(samples,spec,windowSamples=WINDOW_SAMPLES){
  pcm.set(samples.subarray(spec.start,spec.end),spec.paddingStart);
  return pcm;
 }
-root.ROBOTITO_AUDIO_EVALUATION_WINDOWS={plan,frame,WINDOW_SAMPLES,HOP_SAMPLES};
+root.ROBOTITO_AUDIO_EVALUATION_WINDOWS={plan,frame,overlapsSuppression,WINDOW_SAMPLES,HOP_SAMPLES};
 if(typeof module!=="undefined"&&module.exports)
  module.exports=root.ROBOTITO_AUDIO_EVALUATION_WINDOWS;
 })(typeof window!=="undefined"?window:globalThis);
