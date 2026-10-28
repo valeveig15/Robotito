@@ -2,6 +2,7 @@
 const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
+const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
 const labels=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
 const human=new Set(["clap","laugh","cry","cough","sneeze"]);
 const rights=new Set(["owned","consented","open-license"]);
@@ -54,6 +55,8 @@ function loadManifest(location){
      range(x);
     }
     for(const x of item.suppressions??[])range(x);
+    // A labelled event must not be declared ground truth in redacted time.
+    assertNoMaskedEvents(item.annotations,item.suppressions??[]);
    }
    // Validate the manually supplied coarse device category up front.
    // Never auto-collect a browser device ID or serial number.
