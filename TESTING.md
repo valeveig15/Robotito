@@ -101,6 +101,8 @@ La CI ahora ejecuta `npm run test:audio:real`: inicializa **YAMNet y MediaPipe r
 
 ## Audio event classifier contract (October 2026)
 
+YAMNet devuelve muchas clases ajenas a nuestra lista de sonidos. Sus puntuaciones ahora **compiten como alternativa desconocida** con estornudo, tos, risa, llanto, música y aplausos. Si otra clase es más probable o la diferencia es menor de 0,12, la interfaz se abstiene en lugar de mostrar una identificación humana débil. También evita tratar el canto de pájaros como música de una persona. Son reglas conservadoras sobre puntuaciones no calibradas, no equivalen a precisión demostrada.
+
 The browser includes an **optional pretrained YAMNet classifier** for laughter, crying, coughs and sneezes, but it is **not calibrated or approved for automatic human-event reactions**. These categories and an isolated model-confirmed clap can be identified only if a separately validated, locally executing model is supplied before microphone initialization as `window.ROBOTITO_AUDIO_EVENT_MODEL`, exposing:
 
 ```javascript
