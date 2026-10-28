@@ -94,6 +94,29 @@ ok(suppressed.musicConfidence===0,"suppression clears accumulated music evidence
 const resumed=feed(detector,clapFrames.slice(20),{start:36100});
 ok(!onlyEvents(resumed).some(x=>x.kind==="clap"),
  "clap evidence cannot survive a recording interruption");
+// A browser stall or a manual system-clock correction must not reuse old
+// rhythmic/clap/model evidence as if the microphones were uninterrupted.
+const stalled=audio.create({clock:()=>0});
+const musicBeforeStall=feed(stalled,musicFrames,{start:220000});
+ok(musicBeforeStall.some(x=>x.kind==="music"),
+ "Control: sustained music produces a music state before the stall");
+const afterStall=stalled.process(sample({rms:.002}),{now:230000});
+eq(afterStall.musicConfidence,0,
+ "A long browser stall clears old rhythmic music evidence");
+eq(afterStall.events,[],
+ "The first sound after a stall cannot inherit a previous reaction");
+const backward=audio.create({clock:()=>0});
+feed(backward,musicFrames,{start:420000});
+const afterClockRollback=backward.process(sample({rms:.002}),{now:40000});
+eq(afterClockRollback.musicConfidence,0,
+ "A backward system clock correction resets accumulated evidence");
+eq(afterClockRollback.kind,"silence",
+ "After a backward correction, fresh silence is processed instead of cached music");
+const afterInvalidClock=backward.process(sample({rms:.24}),{now:NaN});
+eq(afterInvalidClock.events,[],
+ "Invalid acoustic timestamps never emit human events");
+eq(afterInvalidClock.kind,"unknown",
+ "Invalid timestamps fail closed rather than reporting a stale sound");
 for(const kind of ["laugh","cry","cough","sneeze"]){
  detector=audio.create({clock:()=>0});
  const results=feed(detector,Array.from({length:40},()=>sample({rms:.15,harmonic:.8,flat:.2})),{start:45000});
