@@ -187,6 +187,9 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       const model=window.ROBOTITO_SOUND_MODEL,choice=document.querySelector("#audioModelEnabled");
       if(!model?.create||!choice||choice.checked)
         throw new Error("Optional sound model must be available but off by default");
+      if(model.mapCategories([{categoryName:"Sneeze",score:.96},
+        {categoryName:"Bird singing",score:.99}]).candidate.kind!=="unknown")
+        throw new Error("Higher unrelated sound should veto tentative sneeze");
       if(typeof window.AudioWorkletNode!=="function")
         throw new Error("AudioWorklet unavailable in CI Chromium");
       for(const lang of ["es","en","pt","fr","it","de"])
