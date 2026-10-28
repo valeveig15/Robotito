@@ -32,9 +32,10 @@ function fingerprint(file){
  }finally{fs.closeSync(fd);}
  return hash.digest("hex");
 }
-function loadManifest(location){
- const actual=fs.realpathSync(location),base=path.dirname(actual);
- const manifest=JSON.parse(fs.readFileSync(actual,"utf8"));
+// Shared validation lets the local corpus assembler check the entire
+// prospective dataset BEFORE writing anything. A single entrypoint applies
+// the same rights, SHA-256, source-group and path rules to all workflows.
+function validateManifestData(manifest,base){
  if(!manifest||typeof manifest!=="object"||Array.isArray(manifest))
   throw Error("Audio manifest must be an object");
  const clips=manifest.clips??[],sessions=manifest.sessions??[];
@@ -101,4 +102,8 @@ function loadManifest(location){
  const groupAudit=sourceAudit(all);
  return {base,manifest,clips:all.slice(0,clips.length),sessions:all.slice(clips.length),groupAudit};
 }
-module.exports={loadManifest};
+function loadManifest(location){
+ const actual=fs.realpathSync(location),base=path.dirname(actual);
+ return validateManifestData(JSON.parse(fs.readFileSync(actual,"utf8")),base);
+}
+module.exports={loadManifest,validateManifestData};
