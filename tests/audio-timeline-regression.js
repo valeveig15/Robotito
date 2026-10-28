@@ -14,6 +14,30 @@ const report=evaluateContinuous([a]);
 eq(report.overall.metrics.sneeze.tp,1,"Real annotated sound is matched");
 eq(report.overall.metrics.sneeze.fp,0,"One sustained sound does not repeat inside cooldown");
 eq(report.overall.metrics.sneeze.fn,0,"Covered ground truth not missed");
+eq(report.overall.metrics.sneeze.evaluableEvents,1,
+ "Observed event with consecutive frames can be fairly evaluated");
+const oneFrame={...a,id:"one-frame",durationSeconds:3,
+ frames:[frame(2.25,"noise")],
+ annotations:[{kind:"sneeze",startSeconds:2.2,endSeconds:2.3}],suppressions:[]};
+const oneFrameResult=evaluateContinuous([oneFrame]).overall.metrics.sneeze;
+eq(oneFrameResult.annotatedEvents,1,"Ground truth remains disclosed");
+eq(oneFrameResult.evaluableEvents,0,
+ "One observed frame cannot evaluate a two-frame reference detector");
+eq(oneFrameResult.unevaluableEvents,1,
+ "Unevaluable annotation is explicitly counted");
+eq(oneFrameResult.fn,0,"Insufficient coverage must not fabricate missed detections");
+const wrongWithCoverage={...oneFrame,id:"wrong-with-coverage",
+ frames:[frame(2.25,"noise"),frame(2.75,"noise")],
+ annotations:[{kind:"sneeze",startSeconds:2.15,endSeconds:2.8}]};
+const withCoverage=evaluateContinuous([wrongWithCoverage]).overall.metrics.sneeze;
+eq(withCoverage.evaluableEvents,1,
+ "Two consecutive nonhuman windows permit a valid false-negative assessment");
+eq(withCoverage.fn,1,"A covered sound with no correct evidence is a real reference miss");
+const separated={...oneFrame,id:"separated",durationSeconds:120,
+ frames:[frame(.25,"noise"),frame(100.25,"noise")],
+ annotations:[{kind:"sneeze",startSeconds:0,endSeconds:101}]};
+eq(evaluateContinuous([separated]).overall.metrics.sneeze.unevaluableEvents,1,
+ "Two distant observed windows are not evidence of continuous coverage");
 eq(report.sessions[0].alerts.length,1,"Requires two independent aligned windows");
 eq(report.sessions[0].observedSeconds<6,true,"Suppression and missing coverage excluded");
 eq(report.calibrated,false,"Offline metrics cannot calibrate the model");

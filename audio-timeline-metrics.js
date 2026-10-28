@@ -139,7 +139,23 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   const metrics={};
   for(const kind of HUMAN){
    const labels=truth.filter(x=>x.kind===kind);
-   const eligibleLabels=labels.filter(x=>seconds(intersection(active,[x.interval]))>0);
+   // Two temporally consecutive, genuinely analysed windows must intersect
+   // a ground-truth event for this TWO-frame detector to have a chance.
+   // With one window or a long missing gap, report "unevaluable" rather
+   // than claiming a false negative on an impossible detection.
+   const hasEvidenceCoverage=interval=>{
+    const overlapping=scored.filter(frame=>{
+     const [start,end]=rangeForFrame(frame);
+     return start<interval[1]&&interval[0]<end&&covered(frame.atSeconds,active);
+    });
+    return overlapping.some((frame,i)=>{
+     const next=overlapping[i+1];
+     if(!next)return false;
+     const delta=next.atSeconds-frame.atSeconds;
+     return delta>=hopSeconds*.5&&delta<=hopSeconds*1.9;
+    });
+   };
+   const eligibleLabels=labels.filter(x=>hasEvidenceCoverage(x.interval));
    const matched=new Set();
    let tp=0,fp=0;
    for(const alert of alerts.filter(x=>x.kind===kind)){
@@ -150,7 +166,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    }
    const negativeSeconds=seconds(subtract(active,union(labels.map(x=>x.interval))));
    metrics[kind]={tp,fp,fn:eligibleLabels.length-tp,annotatedEvents:labels.length,
-    evaluableEvents:eligibleLabels.length,negativeSeconds,
+    evaluableEvents:eligibleLabels.length,
+    unevaluableEvents:labels.length-eligibleLabels.length,negativeSeconds,
     ...rateMetrics(fp,negativeSeconds)};
   }
   results.push({id:session.id,environment:session.environment,
@@ -162,13 +179,15 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
  const aggregate=items=>{
   const summary={sessionCount:items.length,observedSeconds:0,metrics:{}};
   for(const kind of HUMAN)summary.metrics[kind]={
-   tp:0,fp:0,fn:0,negativeSeconds:0,negativeHours:0,
+   tp:0,fp:0,fn:0,annotatedEvents:0,evaluableEvents:0,unevaluableEvents:0,
+   negativeSeconds:0,negativeHours:0,
    falseAlertsPerNegativeHour:null,falseAlertsPerNegativeHourUpper95:null};
   for(const item of items){
    summary.observedSeconds+=item.observedSeconds;
    for(const kind of HUMAN){
     const dest=summary.metrics[kind],src=item.metrics[kind];
-    for(const field of ["tp","fp","fn","negativeSeconds"])dest[field]+=src[field];
+    for(const field of ["tp","fp","fn","annotatedEvents","evaluableEvents",
+     "unevaluableEvents","negativeSeconds"])dest[field]+=src[field];
    }
   }
   for(const kind of HUMAN){
@@ -183,6 +202,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   metricScope:"Offline reference event detector on annotated observed intervals; NOT deployed Robotito alerts",
   uncertainty:"One-sided 95% Poisson event-rate bound assumes independent stationary false episodes; zero observed alarms never proves zero risk",
   assumptions:{hopSeconds,matchToleranceSeconds,adjacentFramesRequired:2,
+   recallDenominator:"annotated events with at least two consecutive analysed overlapping windows",
    cooldownSeconds:COOLDOWN,unobservedTimeExcluded:true},
   overall:aggregate(results),byEnvironment,sessions:results,
   approvalBlocker:"Real annotated continuous recordings, consent, independent threshold validation and deployed-reaction testing required"};
