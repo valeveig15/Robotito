@@ -23,7 +23,8 @@ button.secondary{background:#edf3f7;color:#22415b;border:1px solid #b6cad7}
 .check input{margin-top:5px}code{overflow-wrap:anywhere}
 @media(max-width:520px){body{padding:12px}section{padding:14px}}
 </style>
-<script defer src="./audio-corpus-studio.js"></script>
+<script defer src="../audio-annotation-integrity.js?v=20261028-masked-groundtruth1"></script>
+<script defer src="./audio-corpus-studio.js?v=20261028-masked-groundtruth1"></script>
 </head>
 <body>
 <header><p class="muted">Robotito · Herramienta de desarrollo P03 · No es parte de la escucha cotidiana</p>
@@ -70,7 +71,7 @@ button.secondary{background:#edf3f7;color:#22415b;border:1px solid #b6cad7}
 </div>
 <div class="controls"><button id="addEvent" type="button">Agregar sonido</button></div>
 <ul id="eventsList" class="records" aria-label="Sonidos anotados"></ul>
-<p class="muted">Los intervalos suprimidos no se envían al clasificador: marcá allí voz propia de Robotito, Modo Clase u otros tramos que no deban evaluarse.</p>
+<p class="muted">Los intervalos suprimidos no se envían al clasificador: marcá allí voz propia de Robotito, Modo Clase u otros tramos que no deban evaluarse. **No pueden solaparse con sonidos anotados**: corregí una de las marcas para evitar resultados contradictorios.</p>
 <div class="grid"><div><label for="suppressStart">Suprimir desde (segundos)</label><input id="suppressStart" type="number" min="0" step=".01" value="0"></div>
 <div><label for="suppressEnd">Suprimir hasta (segundos)</label><input id="suppressEnd" type="number" min="0" step=".01" value="0.1"></div></div>
 <div class="controls"><button id="addSuppression" class="secondary" type="button">Agregar supresión</button></div>
