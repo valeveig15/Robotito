@@ -20,6 +20,18 @@ function requireCompleteAnnotationReview(value,id){
 // Hashes live only in the user's local manifest; evaluation reports contain
 // verification status, never audio fingerprints or the original file path.
 const HEX_SHA256=/^[a-f0-9]{64}$/;
+function verifyReviewedAnnotationDigest(review,claimed,actual,id){
+ const state=normalizeAnnotationReview(review);
+ if(claimed!==undefined&&!HEX_SHA256.test(claimed))
+  throw Error("Invalid reviewed annotation SHA-256 for "+String(id||"unknown"));
+ if(state==="draft")return false;
+ if(!HEX_SHA256.test(claimed||""))
+  throw Error("Reviewed session "+String(id||"unknown")+" requires reviewAnnotationsSha256");
+ if(claimed!==actual)
+  throw Error("Reviewed annotation SHA-256 mismatch for "+String(id||"unknown")+
+   ": labels or suppressions changed after review");
+ return true;
+}
 function verifyReviewedAudioDigest(review,claimed,actual,id){
  const state=normalizeAnnotationReview(review);
  if(claimed!==undefined&&!HEX_SHA256.test(claimed))
@@ -32,7 +44,8 @@ function verifyReviewedAudioDigest(review,claimed,actual,id){
    ": recording changed after annotation review");
  return true;
 }
-const api={normalizeAnnotationReview,requireCompleteAnnotationReview,verifyReviewedAudioDigest};
+const api={normalizeAnnotationReview,requireCompleteAnnotationReview,
+ verifyReviewedAudioDigest,verifyReviewedAnnotationDigest};
 root.ROBOTITO_AUDIO_ANNOTATION_REVIEW=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);

@@ -5,6 +5,7 @@ const {spawn,execFileSync}=require("node:child_process");
 const {chromium}=require("playwright");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
 const {createHash}=require("node:crypto");
+const {canonicalReviewedAnnotations}=require("../audio-review-payload.js");
 const root=path.resolve(__dirname,"..");
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-corpus-studio-"));
 const port=Number(process.env.ROBOTITO_STUDIO_PORT||8837);
@@ -115,6 +116,8 @@ async function saveDownload(page,selector,saveName=null){
    "Unchecked sessions export as explicit draft, never as certified negatives");
   assert.equal(draft.sessions[0].audioSha256,undefined,
    "Drafts must not masquerade as SHA-bound human reviews");
+  assert.equal(draft.sessions[0].reviewAnnotationsSha256,undefined,
+   "Unreviewed drafts must not present a confirmed annotation fingerprint");
   await page.locator("#reviewComplete").check();
   const audio=await saveDownload(page,"#downloadAudio");
   const json=await saveDownload(page,"#downloadManifest");
@@ -127,6 +130,9 @@ async function saveDownload(page,selector,saveName=null){
   const manifest=JSON.parse(fs.readFileSync(json.destination,"utf8"));
   assert.equal(manifest.sessions[0].annotationReview,"complete",
    "Explicit reviewer affirmation is retained in the exported manifest");
+  assert.equal(manifest.sessions[0].reviewAnnotationsSha256,
+   createHash("sha256").update(canonicalReviewedAnnotations(manifest.sessions[0])).digest("hex"),
+   "Browser binds annotation and suppression snapshot into an explicit reviewed hash");
   assert.equal(manifest.sessions[0].audioSha256,
    createHash("sha256").update(fs.readFileSync(audio.destination)).digest("hex"),
    "Browser hashes EXACT downloaded bytes before binding them to reviewed labels");
@@ -140,6 +146,17 @@ async function saveDownload(page,selector,saveName=null){
    "Exported JSON must pass the exact project's preflight parser");
   assert.equal(loadManifest(json.destination).sessions[0].reviewedAudioDigestVerified,true,
    "Local preflight must verify complete review's SHA-256");
+  assert.equal(loadManifest(json.destination).sessions[0].reviewedAnnotationDigestVerified,true,
+   "Local manifest parser confirms reviewed sound labels have not been edited");
+  for(const altered of [
+   {...manifest.sessions[0],annotations:[{kind:"cough",startSeconds:.3,endSeconds:.55}]},
+   {...manifest.sessions[0],suppressions:[{startSeconds:1.1,endSeconds:1.4}]}
+  ]){
+   fs.writeFileSync(json.destination,JSON.stringify({...manifest,sessions:[altered]}));
+   assert.throws(()=>loadManifest(json.destination),/Reviewed annotation SHA-256 mismatch/,
+    "Changing only tags or excluded periods must invalidate the prior review");
+  }
+  fs.writeFileSync(json.destination,JSON.stringify(manifest));
   const originalAudio=fs.readFileSync(audio.destination),changedAudio=Buffer.from(originalAudio);
   changedAudio[45]^=1; // same valid WAV length and duration, different content
   fs.writeFileSync(audio.destination,changedAudio);

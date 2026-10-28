@@ -22,6 +22,7 @@
     "evaluate:audio": "node scripts/evaluate-audio-dataset.js",
     "validate:audio": "node scripts/validate-audio-dataset.js",
     "fingerprint:audio": "node scripts/fingerprint-reviewed-audio.js",
+    "fingerprint:audio:annotations": "node scripts/fingerprint-reviewed-annotations.js",
     "prepare:audio:esc50": "node scripts/prepare-esc50-manifest.js",
     "test:audio:real": "node tests/audio-real-smoke.js",
     "test:audio:timeline:real": "node tests/audio-real-timeline-smoke.js",

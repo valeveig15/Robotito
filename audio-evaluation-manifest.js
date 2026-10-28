@@ -3,7 +3,9 @@ const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypt
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
-const {normalizeAnnotationReview,verifyReviewedAudioDigest}=require("./audio-annotation-review.js");
+const {normalizeAnnotationReview,verifyReviewedAudioDigest,
+ verifyReviewedAnnotationDigest}=require("./audio-annotation-review.js");
+const {canonicalReviewedAnnotations}=require("./audio-review-payload.js");
 const labels=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
 const human=new Set(["clap","laugh","cry","cough","sneeze"]);
 const rights=new Set(["owned","consented","open-license"]);
@@ -83,8 +85,14 @@ function loadManifest(location){
    // Drafts/legacy unreviewed manifests remain usable for offline preflight.
    const reviewedAudioDigestVerified=continuous?
     verifyReviewedAudioDigest(annotationReview,item.audioSha256,digest,item.id):false;
+   const reviewedAnnotationDigestVerified=continuous?
+    verifyReviewedAnnotationDigest(annotationReview,item.reviewAnnotationsSha256,
+     crypto.createHash("sha256").update(canonicalReviewedAnnotations({
+      ...item,suppressions:item.suppressions??[]
+     })).digest("hex"),item.id):false;
    all.push({...item,deviceClass,sourceGroup,evaluationSplit,
-    ...(continuous?{annotationReview,reviewedAudioDigestVerified}:{}),
+    ...(continuous?{annotationReview,reviewedAudioDigestVerified,
+      reviewedAnnotationDigestVerified}:{}),
     absolutePath:physical});
   }
  }

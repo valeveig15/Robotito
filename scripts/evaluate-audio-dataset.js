@@ -132,6 +132,8 @@ async function main(){
     allEvaluatedSessionsHumanReviewed:true,
     reviewedAudioSHA256Verified:sessions.length? sessions.every(x=>x.reviewedAudioDigestVerified):null,
     reviewedAudioRecheckedAtInference:true,
+    reviewedAnnotationSHA256Verified:sessions.length?
+     sessions.every(x=>x.reviewedAnnotationDigestVerified):null,
     humanReviewIndependentlyVerified:false,exactDuplicateFilesRejected:true,
     uniqueAudioFiles:clips.length+sessions.length,
     comparison:"Local SHA-256 over file bytes (not perceptual similarity)",

@@ -13,7 +13,9 @@ const devices=new Set(["unspecified","phone","tablet","built-in","headset","usb"
 const splits=new Set(["development","validation","test","unspecified"]);
 const assertNoMaskedEvents=window.ROBOTITO_AUDIO_ANNOTATION_INTEGRITY?.assertNoMaskedEvents;
 const normalizeAnnotationReview=window.ROBOTITO_AUDIO_ANNOTATION_REVIEW?.normalizeAnnotationReview;
-if(typeof assertNoMaskedEvents!=="function"||typeof normalizeAnnotationReview!=="function")
+const canonicalReviewedAnnotations=window.ROBOTITO_AUDIO_REVIEW_PAYLOAD?.canonicalReviewedAnnotations;
+if(typeof assertNoMaskedEvents!=="function"||typeof normalizeAnnotationReview!=="function"||
+ typeof canonicalReviewedAnnotations!=="function")
  throw Error("Audio annotation validation unavailable");
 const status=(message,kind="")=>{
  const el=byId("status");el.textContent=message;el.className=kind;
@@ -173,12 +175,28 @@ function download(blob,fileName){
  document.body.append(link);link.click();link.remove();
  setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
-function exportOne(which){
+async function exportOne(which){
  try{
   const {fileName,manifest}=exportData();
   if(which==="audio")download(state.blob,fileName);
-  else download(new Blob([JSON.stringify(manifest,null,2)+"\n"],{type:"application/json"}),
-   "manifest-"+byId("sessionId").value.trim()+".json");
+  else{
+   const session=manifest.sessions[0];
+   if(session.annotationReview==="complete"){
+    const epoch=state.epoch;
+    const payload=canonicalReviewedAnnotations(session);
+    const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(payload));
+    // Recheck the actual current ground truth and consent after the await,
+    // not just the snapshot made before the user could change annotations.
+    if(epoch!==state.epoch||
+       canonicalReviewedAnnotations(exportData().manifest.sessions[0])!==payload||
+       !byId("reviewComplete").checked)
+     throw Error("La revisión cambió mientras se preparaba el manifiesto. Volvé a exportar.");
+    session.reviewAnnotationsSha256=Array.from(new Uint8Array(hash),
+     b=>b.toString(16).padStart(2,"0")).join("");
+   }
+   download(new Blob([JSON.stringify(manifest,null,2)+"\n"],{type:"application/json"}),
+    "manifest-"+byId("sessionId").value.trim()+".json");
+  }
   const reviewed=manifest.sessions[0].annotationReview==="complete";
   status((reviewed?"Archivo revisado descargado. ":"Borrador descargado: no se evaluarán tasas de falsas alarmas. ")+
    "Guardá audio y JSON juntos en la misma carpeta.","success");
