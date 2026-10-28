@@ -117,7 +117,7 @@ async function saveDownload(page,selector){
   await page.waitForTimeout(750);
   await page.click("#stopRecording");
   await page.waitForFunction(()=>!document.querySelector("#downloadAudio").disabled,
-   {timeout:15000});
+   null,{timeout:15000});
   assert.match(await page.locator("#duration").textContent(),/WEBM|OGG/,
    "Capture must produce a decodable recording and display its format");
   assert.equal(await page.locator("#stopRecording").isDisabled(),true);
