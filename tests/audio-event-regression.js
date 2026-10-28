@@ -262,7 +262,17 @@ eq(onlyEvents(safeHuman).filter(event=>event.kind==="sneeze").length,1,
 // Reaction policy is separate from detection: a plausible event does not
 // authorize unprompted speech without calibrated evidence and temporal cooldown.
 let now=200000;
-const policy=reactions.create({clock:()=>now});
+const unapproved=reactions.create({clock:()=>now});
+for(const kind of ["laugh","cry","cough","sneeze","clap"]){
+ const hypothetical={kind,confidence:.99,metadata:{model:"claims-calibrated",
+  calibrated:true,evidenceFrames:9}};
+ eq(unapproved.decide(hypothetical),null,
+  "Default policy must reject unapproved "+kind+" model output");
+ eq(unapproved.decide({...hypothetical,metadata:{model:"claims-calibrated",
+  evidenceFrames:9}}),null,
+  "A model name alone cannot authorize "+kind);
+}
+const policy=reactions.create({clock:()=>now,humanModelReactionsApproved:true});
 eq(policy.decide({kind:"clap",confidence:.68}),null,"Low-confidence claps do nothing");
 eq(policy.decide({kind:"clap",confidence:1}),null,
  "Clap confidence without repeated-burst or model provenance is insufficient");
@@ -271,11 +281,19 @@ eq(policy.decide({kind:"sneeze",confidence:1}),null,"Unproven sneeze never trigg
 eq(policy.decide({kind:"laugh",confidence:1}),null,"Unproven laugh never changes mood");
 eq(policy.decide({kind:"cry",confidence:.995,metadata:{model:"calibrated"}},
   {suppressed:true}),null,"Class-mode suppression prevents concern");
-const sneezeEvent={kind:"sneeze",confidence:.98,metadata:{model:"mock-calibrated"}};
+const sneezeEvent={kind:"sneeze",confidence:.98,
+ metadata:{model:"mock-calibrated",calibrated:true,evidenceFrames:3}};
+eq(policy.decide({kind:"sneeze",confidence:.98,
+ metadata:{model:"mock-calibrated",evidenceFrames:3}}),null,
+ "Explicit approval cannot replace calibrated evidence");
+eq(policy.decide({kind:"sneeze",confidence:.98,
+ metadata:{model:"mock-calibrated",calibrated:true,evidenceFrames:1}}),null,
+ "One model frame cannot authorize a sneeze");
 eq(policy.decide(sneezeEvent)?.action,"bless","Verified sneeze receives one localized blessing");
 now+=500;
 eq(policy.decide(sneezeEvent),null,"Sneeze cooldown suppresses duplicate");
-eq(policy.decide({kind:"cough",confidence:.99,metadata:{model:"mock-calibrated"}}),null,
+eq(policy.decide({kind:"cough",confidence:.99,
+ metadata:{model:"mock-calibrated",calibrated:true,evidenceFrames:3}}),null,
  "One sneeze/cough episode must not produce two different reactions");
 now+=5200;
 eq(policy.decide(sneezeEvent)?.action,"bless","New sneeze after cooldown may react");
@@ -283,21 +301,30 @@ const verifiedClap={kind:"clap",confidence:.9,
  metadata:{origin:"acoustic-heuristic",bursts:5}};
 eq(policy.decide(verifiedClap)?.action,"clap","Confirmed applause gets animation");
 eq(policy.decide({...verifiedClap,confidence:.95}),null,"Repeated claps do not spam animation");
-eq(reactions.create().decide({kind:"clap",confidence:.99,
- metadata:{model:"test-calibrated",evidenceFrames:2}})?.action,"clap",
+eq(reactions.create({humanModelReactionsApproved:true}).decide({kind:"clap",confidence:.99,
+ metadata:{model:"test-calibrated",calibrated:true,evidenceFrames:2}})?.action,"clap",
  "Two independent calibrated model frames can verify a clap");
 eq(reactions.create().decide({kind:"clap",confidence:1,
  metadata:{origin:"acoustic-heuristic",bursts:1}}),null,
  "One impact cannot be promoted to applause");
 now+=1750;
-eq(policy.decide({kind:"laugh",confidence:.93,metadata:{model:"calibrated"}})?.action,
+eq(policy.decide({kind:"laugh",confidence:.93,
+ metadata:{model:"calibrated",calibrated:true,evidenceFrames:7}})?.action,
   "smile","Calibrated laughter yields a temporary smile");
 now+=1750;
-eq(policy.decide({kind:"cry",confidence:.94,metadata:{model:"calibrated"}})?.action,
+eq(policy.decide({kind:"cry",confidence:.94,
+ metadata:{model:"calibrated",calibrated:true,evidenceFrames:12}})?.action,
   "comfort","Calibrated crying yields a restrained comfort response");
 now+=1750;
-eq(policy.decide({kind:"cough",confidence:.96,metadata:{model:"calibrated"}})?.action,
+eq(policy.decide({kind:"cough",confidence:.96,
+ metadata:{model:"calibrated",calibrated:true,evidenceFrames:3}})?.action,
   "notice","Calibrated cough prompts attention without unsolicited speech");
+eq(unapproved.decide(verifiedClap)?.action,"clap",
+ "Explicitly locked human model reactions still allow legitimate acoustic applause");
+eq(policy.decide({kind:"sneeze",confidence:1.5,metadata:sneezeEvent.metadata}),null,
+ "Impossible model probabilities never authorize reactions");
+eq(policy.decide({kind:"sneeze",confidence:.99,metadata:sneezeEvent.metadata},
+ {now:NaN}),null,"Invalid clock time never authorizes speech");
 eq(policy.decide({kind:"music",confidence:1}),null,
   "Music is controlled by continuous rhythm state rather than event spam");
 // Dance is a natural reaction with its own stability, false-positive,
