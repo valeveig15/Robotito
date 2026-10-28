@@ -125,6 +125,7 @@ async function main(){
   // Only the aggregate check is reported; local SHA-256 digests stay private.
   result.datasetIntegrity={...groupAudit,durationPreflight,
     allEvaluatedSessionsHumanReviewed:true,
+    reviewedAudioSHA256Verified:sessions.length? sessions.every(x=>x.reviewedAudioDigestVerified):null,
     humanReviewIndependentlyVerified:false,exactDuplicateFilesRejected:true,
     uniqueAudioFiles:clips.length+sessions.length,
     comparison:"Local SHA-256 over file bytes (not perceptual similarity)",
