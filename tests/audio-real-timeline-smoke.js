@@ -117,6 +117,8 @@ try{
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
  assert.equal(report.datasetIntegrity.reviewedAudioSHA256Verified,true,
   "Real evaluated sessions are bound to the exact reviewed audio bytes");
+ assert.equal(report.datasetIntegrity.reviewedAudioRecheckedAtInference,true,
+  "YAMNet input bytes are verified again after separate media preflight");
  assert.equal(report.datasetIntegrity.allEvaluatedSessionsHumanReviewed,true,
   "Evaluated negative hours require a declared completed human review");
  assert.equal(report.datasetIntegrity.humanReviewIndependentlyVerified,false,
