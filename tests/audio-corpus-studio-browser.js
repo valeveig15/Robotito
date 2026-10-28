@@ -38,8 +38,9 @@ async function saveDownload(page,selector){
   const page=await context.newPage();
   const external=[];
   page.on("request",request=>{
-   if(!request.url().startsWith("http://127.0.0.1:"+port+"/"))
-    external.push(request.url());
+   if(!request.url().startsWith("http://127.0.0.1:"+port+"/")&&
+      !request.url().startsWith("blob:http://127.0.0.1:"+port+"/")&&
+      !request.url().startsWith("data:"))external.push(request.url());
   });
   await page.goto("http://127.0.0.1:"+port+"/tools/audio-corpus-studio.html",
    {waitUntil:"load"});
