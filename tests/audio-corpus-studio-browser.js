@@ -49,7 +49,12 @@ async function saveDownload(page,selector){
   let micCalls=await page.evaluate(()=>{
    const original=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
    window.__micCalls=0;
-   navigator.mediaDevices.getUserMedia=(...args)=>{window.__micCalls++;return original(...args);};
+   navigator.mediaDevices.getUserMedia=(...args)=>{
+    window.__micCalls++;
+    return original(...args).then(stream=>{
+     window.__latestMicTrack=stream.getAudioTracks()[0];return stream;
+    });
+   };
    return window.__micCalls;
   });
   assert.equal(micCalls,0,"Page must never request microphone automatically");
@@ -129,6 +134,65 @@ async function saveDownload(page,selector){
   assert.equal(loadManifest(micManifest.destination).sessions.length,1,
    "Recorded audio export must share the same manifest schema");
   assert.deepEqual(external,[],"Microphone recording must never be uploaded");
+  // Revoking consent while actively recording must stop every track and
+  // discard data, not turn the partial sample into a downloadable file.
+  await page.click("#startRecording");
+  await page.waitForFunction(()=>!document.querySelector("#stopRecording").disabled);
+  await page.locator("#consent").uncheck();
+  await page.waitForFunction(()=>document.querySelector("#stopRecording").disabled);
+  assert.equal(await page.evaluate(()=>window.__latestMicTrack.readyState),"ended",
+   "Revocation must stop the actual browser microphone track");
+  await page.waitForTimeout(350);
+  assert.equal(await page.locator("#downloadAudio").isDisabled(),true,
+   "Late ondataavailable/onstop must never restore revoked audio");
+  assert.match(await page.locator("#status").textContent(),/retiró el consentimiento/);
+  // Cancel a pending permission request BEFORE getUserMedia resolves; its
+  // eventually granted stream must be immediately stopped, never recorded.
+  await page.locator("#consent").check();
+  await page.evaluate(()=>{
+   const live=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+   navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{
+    window.__grantDeferred=async()=>{
+     const stream=await live({audio:true,video:false});
+     window.__deferredMicTrack=stream.getAudioTracks()[0];resolve(stream);
+    };
+   });
+  });
+  await page.click("#startRecording");
+  await page.waitForFunction(()=>typeof window.__grantDeferred==="function");
+  assert.equal(await page.locator("#stopRecording").isDisabled(),false,
+   "Pending browser permission is explicitly cancelable");
+  await page.click("#stopRecording");
+  assert.equal(await page.locator("#stopRecording").isDisabled(),true);
+  await page.evaluate(()=>window.__grantDeferred());
+  await page.waitForFunction(()=>window.__deferredMicTrack?.readyState==="ended");
+  assert.equal(await page.locator("#downloadAudio").isDisabled(),true,
+   "A late permission grant must never create a downloadable sample");
+  // The same cancellation guarantee covers asynchronous audio decoding:
+  // discard while decodeAudioData is pending, then complete the stale decode.
+  await page.evaluate(()=>{
+   const original=OfflineAudioContext.prototype.decodeAudioData;
+   window.__restoreDecode=()=>{OfflineAudioContext.prototype.decodeAudioData=original;};
+   OfflineAudioContext.prototype.decodeAudioData=function(...args){
+    return new Promise((resolve,reject)=>{
+     window.__releaseDecode=()=>original.apply(this,args).then(resolve,reject);
+    });
+   };
+  });
+  await page.locator("#audioFile").setInputFiles({
+   name:"delayed.wav",mimeType:"audio/wav",buffer:wav()
+  });
+  await page.waitForFunction(()=>typeof window.__releaseDecode==="function");
+  assert.equal(await page.locator("#discardAudio").isDisabled(),false,
+   "A pending file decode must be cancelable even without a loaded blob");
+  await page.click("#discardAudio");
+  await page.evaluate(()=>window.__releaseDecode());
+  await page.waitForTimeout(350);
+  await page.evaluate(()=>window.__restoreDecode());
+  assert.equal(await page.locator("#downloadManifest").isDisabled(),true,
+   "A late file decode may never resurrect discarded private audio");
+  assert.match(await page.locator("#duration").textContent(),/Todavía no hay/);
+  assert.deepEqual(external,[],"No external requests across cancellation cases");
   console.log("Robotito private corpus studio Chromium integration passed:",
    JSON.stringify({realBrowserWav:true,manifestPreflight:true,
     corruptAnnotationRejected:true,optInFakeMicrophone:true,noExternalRequests:true}));
