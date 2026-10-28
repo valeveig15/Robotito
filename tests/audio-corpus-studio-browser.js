@@ -4,6 +4,7 @@ const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const {spawn,execFileSync}=require("node:child_process");
 const {chromium}=require("playwright");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
+const {createHash}=require("node:crypto");
 const root=path.resolve(__dirname,"..");
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-corpus-studio-"));
 const port=Number(process.env.ROBOTITO_STUDIO_PORT||8837);
@@ -112,6 +113,8 @@ async function saveDownload(page,selector,saveName=null){
   const draft=JSON.parse(fs.readFileSync(draftDownload.destination,"utf8"));
   assert.equal(draft.sessions[0].annotationReview,"draft",
    "Unchecked sessions export as explicit draft, never as certified negatives");
+  assert.equal(draft.sessions[0].audioSha256,undefined,
+   "Drafts must not masquerade as SHA-bound human reviews");
   await page.locator("#reviewComplete").check();
   const audio=await saveDownload(page,"#downloadAudio");
   const json=await saveDownload(page,"#downloadManifest");
@@ -124,6 +127,9 @@ async function saveDownload(page,selector,saveName=null){
   const manifest=JSON.parse(fs.readFileSync(json.destination,"utf8"));
   assert.equal(manifest.sessions[0].annotationReview,"complete",
    "Explicit reviewer affirmation is retained in the exported manifest");
+  assert.equal(manifest.sessions[0].audioSha256,
+   createHash("sha256").update(fs.readFileSync(audio.destination)).digest("hex"),
+   "Browser hashes EXACT downloaded bytes before binding them to reviewed labels");
   assert.deepEqual(manifest.sessions[0].annotations,
    [{kind:"sneeze",startSeconds:.3,endSeconds:.55}]);
   assert.deepEqual(manifest.sessions[0].suppressions,
@@ -132,6 +138,16 @@ async function saveDownload(page,selector,saveName=null){
    "Manifest path must resolve to downloaded audio in same folder");
   assert.equal(loadManifest(json.destination).sessions.length,1,
    "Exported JSON must pass the exact project's preflight parser");
+  assert.equal(loadManifest(json.destination).sessions[0].reviewedAudioDigestVerified,true,
+   "Local preflight must verify complete review's SHA-256");
+  const originalAudio=fs.readFileSync(audio.destination),changedAudio=Buffer.from(originalAudio);
+  changedAudio[45]^=1; // same valid WAV length and duration, different content
+  fs.writeFileSync(audio.destination,changedAudio);
+  assert.throws(()=>loadManifest(json.destination),/Reviewed audio SHA-256 mismatch/,
+   "Swapping an equally long sound after review must fail before inference");
+  fs.writeFileSync(audio.destination,originalAudio);
+  assert.equal(loadManifest(json.destination).sessions[0].reviewedAudioDigestVerified,true,
+   "Restoring original audio permits validating the human-reviewed labels");
   const output=execFileSync(process.execPath,["scripts/validate-audio-dataset.js",
    json.destination],{cwd:root,encoding:"utf8",timeout:30000});
   assert.match(output,/decodedFilesVerified": 1/,
