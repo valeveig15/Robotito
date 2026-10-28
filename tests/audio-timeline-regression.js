@@ -115,10 +115,15 @@ eq(evaluateContinuous([gap]).overall.metrics.sneeze.fp,0,
  "Large missing data gaps cannot create consecutive evidence");
 eq(evaluateContinuous([gap]).overall.observedSeconds<2,true,
  "Unobserved time is not counted as negative evidence");
-const combined=evaluateContinuous([b,{...b,id:"street",environment:"street",deviceClass:"phone"}]);
+const combined=evaluateContinuous([b,{...b,id:"street",environment:"street",deviceClass:"phone",
+ sourceGroup:"take-street",evaluationSplit:"test"}]);
 eq(combined.byEnvironment.quiet.sessionCount,1,"Report keeps environmental splits");
 eq(combined.byEnvironment.street.sessionCount,1,"Second environment retained");
 eq(combined.byDevice.phone.sessionCount,1,"Phone timeline receives its own observation denominator");
+eq(combined.bySplit.test.metrics.sneeze.fp,1,
+ "Continuous reference false episodes use only their declared test split");
+eq(combined.bySplit.unspecified.sessionCount,1,
+ "Legacy timeline sessions stay explicitly unassigned");
 eq(combined.byDevice.unspecified.sessionCount,1,"Legacy sessions never impersonate measured phones");
 eq(combined.byDevice.phone.metrics.sneeze.fp,1,
  "False episodes stay tied to the device cohort that generated them");
@@ -127,6 +132,7 @@ for(const bad of [
  [{...a,frames:[frame(2,"noise"),frame(1,"sneeze")]}],
  [{...a,rights:"unknown"}],
  [{...a,deviceClass:"physical-serial-number"}],
+ [{...a,evaluationSplit:"validation"}],
  [{...a,suppressions:[{startSeconds:4,endSeconds:3}]}],
  [{...a,frames:[{atSeconds:0,scores:null}]}],
  [{...a,annotations:[{kind:"sneeze",startSeconds:2,endSeconds:8}]}],
