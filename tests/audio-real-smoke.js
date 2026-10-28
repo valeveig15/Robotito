@@ -116,5 +116,72 @@ const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.
   assert.equal(shortClip.paddingStart,5800,"Subsecond audio must be centred");
   assert.ok(shortClip.categories>0,"Real YAMNet must actually classify the short frame");
   console.log("Robotito real subsecond sound evaluation:",JSON.stringify(shortClip));
+  // Full browser integration of the actual AudioWorklet -> streaming PCM
+  // resampler -> real MediaPipe YAMNet Worker. Prior checks exercised
+  // worklet output and YAMNet independently but did not connect them.
+  // This deliberately uses a synthesized oscillator, NOT microphone input.
+  await page.locator("body").click();
+  const fullAudioPath=await page.evaluate(async()=>{
+   return await new Promise((resolve,reject)=>{
+    let done=false,started=false,ctx=null,node=null,osc=null,heartbeat=null;
+    let packets=0,firstRate=0;
+    const timeout=setTimeout(()=>finish(Error("Real worklet to YAMNet integration timed out")),30000);
+    function finish(error,result){
+     if(done)return;
+     done=true;clearTimeout(timeout);
+     if(heartbeat!==null)clearInterval(heartbeat);
+     if(node){
+      node.port.onmessage=null;
+      node.port.postMessage({type:"capture",enabled:false});
+     }
+     try{osc?.stop();}catch{}
+     try{node?.disconnect();}catch{}
+     try{osc?.disconnect();}catch{}
+     void ctx?.close?.();
+     bridge.disable();
+     if(error)reject(error);else resolve(result);
+    }
+    async function begin(){
+     ctx=new AudioContext({sampleRate:48000});
+     await ctx.audioWorklet.addModule("../audio-capture-worklet.js");
+     node=new AudioWorkletNode(ctx,"robotito-audio-capture");
+     const muted=ctx.createGain();muted.gain.value=0;
+     osc=ctx.createOscillator();osc.frequency.value=440;
+     osc.connect(node);node.connect(muted);muted.connect(ctx.destination);
+     node.port.onmessage=event=>{
+      const data=event.data||{};
+      if(data.type==="pcm"){
+       packets++;firstRate=firstRate||data.sampleRate;
+       bridge.pushPCM(data.samples,data.sampleRate);
+      }
+     };
+     // The live app refreshes a 250ms audio-thread authorization.
+     // This checks that those heartbeats really permit PCM delivery.
+     const renew=()=>node.port.postMessage({type:"capture",enabled:true});
+     renew();heartbeat=setInterval(renew,45);
+     await ctx.resume();
+     osc.start();
+    }
+    const bridge=window.ROBOTITO_SOUND_MODEL.create({
+     workerFactory:()=>new Worker("../audio-model-worker.js"),
+     onUpdate:status=>{
+      if(status.state==="error"){finish(Error(status.message));return;}
+      if(status.state!=="ready")return;
+      if(!started){started=true;void begin().catch(finish);return;}
+      if(status.scores&&!done)
+       finish(null,{packets,inputRate:firstRate,candidate:status.candidate?.kind,
+        mappedKinds:Object.keys(status.scores).length});
+     }
+    });
+    bridge.enable();
+   });
+  });
+  assert.ok(fullAudioPath.packets>=7,
+    "Real AudioWorklet must deliver multiple PCM packets to the model bridge");
+  assert.equal(fullAudioPath.inputRate,48000,
+    "Live audio processing thread must report real AudioContext sample rate");
+  assert.ok(typeof fullAudioPath.candidate==="string"&&fullAudioPath.mappedKinds>=5,
+    "Actual YAMNet Worker must classify audio sourced from real Worklet");
+  console.log("Robotito real Worklet -> PCM -> YAMNet:",JSON.stringify(fullAudioPath));
  }finally{if(browser)await browser.close();server.kill("SIGTERM");}
 })().catch(error=>{console.error(error);process.exitCode=1;});
