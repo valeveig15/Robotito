@@ -2,6 +2,9 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
 const {createHash}=require("node:crypto");
+const {canonicalReviewedAnnotations}=require("../audio-review-payload.js");
+const seal=session=>({...session,reviewAnnotationsSha256:createHash("sha256")
+ .update(canonicalReviewedAnnotations(session)).digest("hex")});
 const {execFileSync}=require("node:child_process");
 const root=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-manifest-"));
 let checks=0;
@@ -15,16 +18,31 @@ try{
   path.join(__dirname,"../scripts/fingerprint-reviewed-audio.js"),
   path.join(root,"session.wav")],{encoding:"utf8"}).trim(),reviewedSHA,
   "Offline helper outputs only the expected SHA-256 for manually reviewed audio");checks++;
- const session={id:"session",path:"session.wav",environment:"street",rights:"consented",
+ const session=seal({id:"session",path:"session.wav",environment:"street",rights:"consented",
   annotationReview:"complete",audioSha256:reviewedSHA,
   annotations:[{kind:"sneeze",startSeconds:1,endSeconds:2}],
-  suppressions:[{startSeconds:3,endSeconds:4}]};
+  suppressions:[{startSeconds:3,endSeconds:4}]});
  assert.equal(read({clips:[item]}).clips.length,1);checks++;
  assert.equal(read({clips:[item]}).clips[0].deviceClass,"unspecified");checks++;
  assert.equal(read({clips:[{...item,deviceClass:"usb"}]}).clips[0].deviceClass,"usb");checks++;
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
  assert.equal(read({sessions:[session]}).sessions[0].reviewedAudioDigestVerified,true,
   "Completed labels must be bound to actual local bytes");checks++;
+ assert.equal(read({sessions:[session]}).sessions[0].reviewedAnnotationDigestVerified,true,
+  "Complete review must bind human event marks to the reviewed audio");checks++;
+ assert.throws(()=>read({sessions:[{...session,reviewAnnotationsSha256:undefined}]}),
+  /requires reviewAnnotationsSha256/);checks++;
+ assert.throws(()=>read({sessions:[{...session,reviewAnnotationsSha256:"f".repeat(64)}]}),
+  /Reviewed annotation SHA-256 mismatch/);checks++;
+ assert.throws(()=>read({sessions:[{...session,annotations:[{
+  ...session.annotations[0],endSeconds:1.8}]}]}),
+  /Reviewed annotation SHA-256 mismatch/);checks++;
+ assert.throws(()=>read({sessions:[{...session,suppressions:[{
+  startSeconds:3,endSeconds:4.2}]}]}),
+  /Reviewed annotation SHA-256 mismatch/);checks++;
+ assert.equal(read({sessions:[seal({...session,suppressions:[{
+  startSeconds:2,endSeconds:3}]})]}).sessions.length,1,
+  "Explicitly resealed and reviewed contiguous spans remain valid");checks++;
  assert.throws(()=>read({sessions:[{...session,audioSha256:undefined}]}),
   /requires audioSha256/);checks++;
  assert.throws(()=>read({sessions:[{...session,audioSha256:"0".repeat(64)}]}),
@@ -51,8 +69,8 @@ try{
  assert.throws(()=>read({sessions:[{...session,suppressions:[
   {startSeconds:0,endSeconds:1.1}]}]}),
   /Ground-truth event overlaps suppressed audio/);checks++;
- assert.equal(read({sessions:[{...session,suppressions:[
-  {startSeconds:2,endSeconds:3}]}]}).sessions.length,1);checks++;
+ assert.equal(read({sessions:[seal({...session,suppressions:[
+  {startSeconds:2,endSeconds:3}]})]}).sessions.length,1);checks++;
  assert.equal(read({sessions:[{...session,deviceClass:"phone"}]}).sessions[0].deviceClass,"phone");checks++;
  assert.equal(read({clips:[item],sessions:[session]}).sessions.length,1);checks++;
  const groupedClip={...item,sourceGroup:"take-001",evaluationSplit:"development"};
