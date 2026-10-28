@@ -59,7 +59,7 @@ eq(report.classifyWindows(spacedWindows).predicted,"sneeze",
  "Actual YAMNet hop retains two independent positive windows");
 assert.throws(()=>report.classifyWindows([
  {...positive,windowStartSeconds:0},positive
-]),/Window start times/);checks++;
+]),/Window start times/);assertions++;
 eq(report.classifyWindows([neutral,positive,positive,cough,cough]).predicted,
  "unknown","Distinct human events in one file are not a single-label result");
 eq(report.classifyWindows([positive]).predicted,"sneeze",
