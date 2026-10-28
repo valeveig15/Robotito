@@ -47,6 +47,7 @@ function cleanup(){
 function blank(message){
  state.epoch++;cleanup();state.phase="idle";state.report=null;
  state.permissionMs=null;state.runAt=0;state.frames=0;state.activeFrames=0;state.peak=0;
+ for(const id of ["heardLevel","checkedMute","checkedReconnect"])el(id).checked=false;
  el("levelText").textContent="Sin mediciones.";
  el("result").textContent="";
  ui();announce(message);
