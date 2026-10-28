@@ -1,5 +1,6 @@
 "use strict";
 const fs=require("node:fs"),path=require("node:path");
+const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const labels=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
 const human=new Set(["clap","laugh","cry","cough","sneeze"]);
 const rights=new Set(["owned","consented","open-license"]);
@@ -40,6 +41,9 @@ function loadManifest(location){
     }
     for(const x of item.suppressions??[])range(x);
    }
+   // Validate the manually supplied coarse device category up front.
+   // Never auto-collect a browser device ID or serial number.
+   const deviceClass=normalizeDeviceClass(item.deviceClass);
    const resolved=path.resolve(base,item.path);
    if(!contained(base,resolved))throw Error("Audio leaves manifest folder");
    const physical=fs.realpathSync(resolved);
@@ -47,7 +51,7 @@ function loadManifest(location){
    const stat=fs.statSync(physical);
    if(!stat.isFile()||stat.size<=0||stat.size>50*1024*1024)
     throw Error("Invalid or oversized audio file");
-   all.push({...item,absolutePath:physical});
+   all.push({...item,deviceClass,absolutePath:physical});
   }
  }
  return {base,manifest,clips:all.slice(0,clips.length),sessions:all.slice(clips.length)};
