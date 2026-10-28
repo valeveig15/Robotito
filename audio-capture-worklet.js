@@ -5,8 +5,18 @@ class RobotitoAudioCaptureProcessor extends AudioWorkletProcessor {
   super();
   this.chunk=new Float32Array(2048);
   this.filled=0;
+  // Explicit opt-in and active listening are both required. In particular,
+  // do not transfer any PCM to the main thread during class/sleep/own voice.
+  this.enabled=false;
+  this.port.onmessage=event=>{
+   if(event.data?.type!=="capture")return;
+   const next=event.data.enabled===true;
+   if(next===this.enabled)return;
+   this.enabled=next;this.filled=0;this.chunk.fill(0);
+  };
  }
  process(inputs){
+  if(!this.enabled)return true;
   const channel=inputs[0]?.[0];
   if(channel){
    for(let i=0;i<channel.length;i++){
