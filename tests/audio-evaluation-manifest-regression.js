@@ -7,7 +7,8 @@ const item={id:"clip",path:"audio.wav",label:"cough",environment:"room",rights:"
 function read(data){fs.writeFileSync(path.join(root,"m.json"),JSON.stringify(data));return loadManifest(path.join(root,"m.json"));}
 try{
  fs.writeFileSync(path.join(root,"audio.wav"),Buffer.from("test"));
- const session={id:"session",path:"audio.wav",environment:"street",rights:"consented",
+ fs.writeFileSync(path.join(root,"session.wav"),Buffer.from("different authorized session"));
+ const session={id:"session",path:"session.wav",environment:"street",rights:"consented",
   annotations:[{kind:"sneeze",startSeconds:1,endSeconds:2}],
   suppressions:[{startSeconds:3,endSeconds:4}]};
  assert.equal(read({clips:[item]}).clips.length,1);checks++;
@@ -16,6 +17,24 @@ try{
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
  assert.equal(read({sessions:[{...session,deviceClass:"phone"}]}).sessions[0].deviceClass,"phone");checks++;
  assert.equal(read({clips:[item],sessions:[session]}).sessions.length,1);checks++;
+ // Distinct IDs cannot disguise the SAME content as independent evidence.
+ fs.writeFileSync(path.join(root,"copy.wav"),Buffer.from("test"));
+ const copy={...item,id:"different-id",label:"noise",path:"copy.wav"};
+ assert.throws(()=>read({clips:[item,copy]}),
+  /Duplicate audio recording: different-id repeats clip/);checks++;
+ assert.throws(()=>read({clips:[item],sessions:[{...session,path:"audio.wav"}]}),
+  /Duplicate audio recording: session repeats clip/);checks++;
+ assert.throws(()=>read({clips:[item],sessions:[{...session,path:"copy.wav"}]}),
+  /Duplicate audio recording: session repeats clip/);checks++;
+ fs.linkSync(path.join(root,"audio.wav"),path.join(root,"hard-link.wav"));
+ assert.throws(()=>read({clips:[item,{...copy,path:"hard-link.wav"}]}),
+  /Duplicate audio recording/);checks++;
+ fs.symlinkSync(path.join(root,"audio.wav"),path.join(root,"internal-link.wav"));
+ assert.throws(()=>read({clips:[item,{...copy,path:"internal-link.wav"}]}),
+  /Duplicate audio recording/);checks++;
+ assert.equal(read({clips:[item,{...copy,path:"session.wav"}]}).clips.length,2);checks++;
+ // Only duplicate byte streams are rejected, not recordings with shared labels.
+ assert.equal(read({clips:[item],sessions:[session]}).clips.length,1);checks++;
  assert.equal(read({clips:[{...item,rights:"open-license"}],
   license:"CC-BY-NC-3.0",source:"original dataset"}).clips.length,1);checks++;
  for(const data of [

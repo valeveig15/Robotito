@@ -33,6 +33,12 @@ try{
  const report=JSON.parse(fs.readFileSync(
   path.join(temp,"robotito-audio-evaluation.json"),"utf8"));
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
+ assert.equal(report.datasetIntegrity.exactDuplicateFilesRejected,true,
+  "Real YAMNet evaluation must be preceded by duplicate-file protection");
+ assert.equal(report.datasetIntegrity.uniqueAudioFiles,1,
+  "Count physically distinct source recordings without exposing audio hashes");
+ assert.equal(JSON.stringify(report).includes("sha256:"),false,
+  "No local recording fingerprints are exported in the report");
  assert.equal(report.continuousEvaluation.overall.sessionCount,1);
  assert.equal(report.continuousEvaluation.sessions[0].environment,"synthetic-tone");
  const evaluated=report.continuousEvaluation.sessions[0];

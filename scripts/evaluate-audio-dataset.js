@@ -110,6 +110,12 @@ async function main(){
   if(timelineSessions.length)
    result.continuousEvaluation=evaluateContinuous(timelineSessions);
   result.datasetName=String(manifest.name||"unnamed");
+  // Preflight rejects exact duplicate PCM files before browser inference.
+  // Only the aggregate check is reported; local SHA-256 digests stay private.
+  result.datasetIntegrity={exactDuplicateFilesRejected:true,
+    uniqueAudioFiles:clips.length+sessions.length,
+    comparison:"Local SHA-256 over file bytes (not perceptual similarity)",
+    limitation:"Edited or cropped copies and overlapping recording sessions require independent human audit"};
   result.datasetProvenance={license:manifest.license||null,
     source:manifest.source||null,citation:manifest.citation||null};
   result.modelVersion="YAMNet float32/1 through MediaPipe Tasks Audio 1.1.1";
