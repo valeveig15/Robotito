@@ -30,6 +30,42 @@ function range(obj,duration,name){
  return [obj.startSeconds,obj.endSeconds];
 }
 function covered(t,ranges){return ranges.some(([a,b])=>t>=a&&t<=b);}
+// One-sided exact 95% Poisson upper bound for independent false episodes,
+// conditional on time exposure. Even with zero observed false alarms, the
+// upper bound stays positive (2.996 episodes per observed negative interval).
+// The independence/stationary-rate assumptions must NOT be treated as
+// validated for real microphones or a deployed avatar.
+function poissonUpper95(events){
+ if(!Number.isSafeInteger(events)||events<0)
+  throw Error("False alarm count must be a nonnegative integer");
+ if(events===0)return -Math.log(.05);
+ let logFactorial=0;
+ for(let i=2;i<=events;i++)logFactorial+=Math.log(i);
+ const cdf=mean=>{
+  let term=Math.exp(-mean+events*Math.log(mean)-logFactorial);
+  let sum=term;
+  for(let i=events;i>0;i--){
+   term*=i/mean;
+   sum+=term;
+   if(term<sum*1e-16)break;
+  }
+  return sum;
+ };
+ let lo=events,hi=events+12*Math.sqrt(events+1)+16;
+ while(cdf(hi)>.05)hi*=2;
+ for(let i=0;i<55;i++){
+  const mid=(lo+hi)/2;
+  if(cdf(mid)>.05)lo=mid;else hi=mid;
+ }
+ return (lo+hi)/2;
+}
+function rateMetrics(fp,negativeSeconds){
+ const negativeHours=negativeSeconds/3600;
+ return {negativeHours,
+  falseAlertsPerNegativeHour:negativeHours?fp/negativeHours:null,
+  falseAlertsPerNegativeHourUpper95:negativeHours?
+   poissonUpper95(fp)/negativeHours:null};
+}
 function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75}={}){
  if(!Array.isArray(sessions)||!sessions.length)throw Error("At least one annotated session required");
  if(!finite(hopSeconds)||hopSeconds<=0||hopSeconds>5||
@@ -115,7 +151,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    const negativeSeconds=seconds(subtract(active,union(labels.map(x=>x.interval))));
    metrics[kind]={tp,fp,fn:eligibleLabels.length-tp,annotatedEvents:labels.length,
     evaluableEvents:eligibleLabels.length,negativeSeconds,
-    falseAlertsPerNegativeHour:negativeSeconds?fp*3600/negativeSeconds:null};
+    ...rateMetrics(fp,negativeSeconds)};
   }
   results.push({id:session.id,environment:session.environment,
    durationSeconds:session.durationSeconds,observedSeconds,
@@ -126,7 +162,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
  const aggregate=items=>{
   const summary={sessionCount:items.length,observedSeconds:0,metrics:{}};
   for(const kind of HUMAN)summary.metrics[kind]={
-   tp:0,fp:0,fn:0,negativeSeconds:0,falseAlertsPerNegativeHour:null};
+   tp:0,fp:0,fn:0,negativeSeconds:0,negativeHours:0,
+   falseAlertsPerNegativeHour:null,falseAlertsPerNegativeHourUpper95:null};
   for(const item of items){
    summary.observedSeconds+=item.observedSeconds;
    for(const kind of HUMAN){
@@ -136,7 +173,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   }
   for(const kind of HUMAN){
    const m=summary.metrics[kind];
-   if(m.negativeSeconds)m.falseAlertsPerNegativeHour=m.fp*3600/m.negativeSeconds;
+   Object.assign(m,rateMetrics(m.fp,m.negativeSeconds));
   }
   return summary;
  };
@@ -144,9 +181,10 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   .map(name=>[name,aggregate(results.filter(x=>x.environment===name))]));
  return {schemaVersion:1,calibrated:false,automaticHumanReactionsApproved:false,
   metricScope:"Offline reference event detector on annotated observed intervals; NOT deployed Robotito alerts",
+  uncertainty:"One-sided 95% Poisson event-rate bound assumes independent stationary false episodes; zero observed alarms never proves zero risk",
   assumptions:{hopSeconds,matchToleranceSeconds,adjacentFramesRequired:2,
    cooldownSeconds:COOLDOWN,unobservedTimeExcluded:true},
   overall:aggregate(results),byEnvironment,sessions:results,
   approvalBlocker:"Real annotated continuous recordings, consent, independent threshold validation and deployed-reaction testing required"};
 }
-module.exports={evaluateContinuous,union,subtract,intersection};
+module.exports={evaluateContinuous,union,subtract,intersection,poissonUpper95,rateMetrics};
