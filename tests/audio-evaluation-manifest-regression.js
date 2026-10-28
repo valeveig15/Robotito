@@ -17,6 +17,24 @@ try{
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
  assert.equal(read({sessions:[{...session,deviceClass:"phone"}]}).sessions[0].deviceClass,"phone");checks++;
  assert.equal(read({clips:[item],sessions:[session]}).sessions.length,1);checks++;
+ const groupedClip={...item,sourceGroup:"take-001",evaluationSplit:"development"};
+ const groupedSession={...session,sourceGroup:"take-002",evaluationSplit:"test"};
+ const verified=read({clips:[groupedClip],sessions:[groupedSession]});
+ assert.equal(verified.groupAudit.sourceGroups,2);checks++;
+ assert.equal(verified.groupAudit.recordingsBySplit.development,1);checks++;
+ assert.equal(verified.groupAudit.recordingsBySplit.test,1);checks++;
+ assert.equal(verified.groupAudit.ungroupedRecordings,0);checks++;
+ assert.equal(verified.groupAudit.independentlyVerified,false);checks++;
+ const noGroups=read({clips:[item],sessions:[session]});
+ assert.equal(noGroups.groupAudit.ungroupedRecordings,2);checks++;
+ assert.equal(noGroups.groupAudit.recordingsBySplit.unspecified,2);checks++;
+ // Distinct derivative clips may share a source group within one split.
+ assert.equal(read({clips:[groupedClip,{...item,id:"derivative",path:"session.wav",
+  sourceGroup:"take-001",evaluationSplit:"development"}]}).groupAudit.sourceGroups,1);checks++;
+ assert.throws(()=>read({clips:[groupedClip],sessions:[{...groupedSession,
+  sourceGroup:"take-001",evaluationSplit:"test"}]}),/across evaluation splits/);checks++;
+ assert.throws(()=>read({clips:[groupedClip],sessions:[{...groupedSession,
+  sourceGroup:"take-001",evaluationSplit:"unspecified"}]}),/across evaluation splits/);checks++;
  // Distinct IDs cannot disguise the SAME content as independent evidence.
  fs.writeFileSync(path.join(root,"copy.wav"),Buffer.from("test"));
  const copy={...item,id:"different-id",label:"noise",path:"copy.wav"};
@@ -42,6 +60,11 @@ try{
   {clips:[{...item,label:"unrecognized"}]},{clips:[{...item,path:""}]},
   {clips:[{...item,path:"../secret.wav"}]},
   {clips:[{...item,deviceClass:"id-9384"}]},
+  {clips:[{...item,evaluationSplit:"test"}]},
+  {clips:[{...item,sourceGroup:"take-001",evaluationSplit:"production"}]},
+  {clips:[{...item,sourceGroup:"person@example.com"}]},
+  {clips:[{...item,sourceGroup:""}]},
+  {sessions:[{...session,sourceGroup:42}]},
   {sessions:[{...session,deviceClass:null}]},
   {clips:[{...item,rights:"open-license"}]},
   {sessions:[{...session,annotations:[{kind:"noise",startSeconds:0,endSeconds:1}]}]},
