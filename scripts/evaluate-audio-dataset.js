@@ -71,17 +71,20 @@ async function main(){
     playback.buffer=audio;playback.connect(offline.destination);playback.start();
     const rendered=await offline.startRendering(),pcm=rendered.getChannelData(0);
     const scores={};
-    let windows=0;
-    for(let i=0;i+15600<=pcm.length;i+=7800){
-     const frame=new Float32Array(pcm.slice(i,i+15600));
-     const categories=await window.__soundEvalClassify(frame);
+    const plan=window.ROBOTITO_AUDIO_EVALUATION_WINDOWS;
+    const spans=plan.plan(pcm.length);
+    let paddedWindows=0;
+    for(const span of spans){
+     const slice=plan.frame(pcm,span);
+     const categories=await window.__soundEvalClassify(slice);
      const mapped=window.ROBOTITO_SOUND_MODEL.mapCategories(categories);
      for(const [kind,n] of Object.entries(mapped.scores))
       scores[kind]=Math.max(scores[kind]||0,n);
-     windows++;
+     if(span.paddingStart||span.paddingEnd)paddedWindows++;
     }
-    if(!windows)throw Error("Clip shorter than 0.975 seconds");
-    return {scores,windows,durationSeconds:audio.duration};
+    return {scores,windows:spans.length,paddedWindows,
+      trailingSamplesCovered:spans.at(-1)?.end===pcm.length,
+      durationSeconds:audio.duration};
    },file);
    observations.push({id:item.id,label:item.label,environment:item.environment,
      rights:item.rights,...observation});
