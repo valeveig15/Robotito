@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robotito — diagnóstico privado del micrófono (P03)</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#203449;background:#eef4f8}
+*{box-sizing:border-box}body{max-width:860px;margin:auto;padding:24px 16px 56px}
+h1{font-size:1.75rem}h2{font-size:1.13rem}p,li{line-height:1.52}
+main{display:grid;gap:16px}section{background:#fff;border:1px solid #cadbe7;border-radius:13px;padding:17px}
+.notice{padding:12px;background:#eff7fb;border-left:4px solid #317ca0;border-radius:5px}
+button{font:inherit;font-weight:600;background:#235b85;color:white;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}.secondary{background:#e7eff5;color:#233f59;border:1px solid #b6cbdb}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}label{display:block;margin:9px 0;font-weight:600}
+label.check{display:flex;align-items:flex-start;gap:10px;font-weight:400}
+.check input{margin-top:4px}select{font:inherit;border:1px solid #9bb2c6;border-radius:8px;padding:9px;width:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+#state{font-weight:600}#levelMeter{width:100%;height:20px}#result{min-height:1.5em;white-space:pre-wrap}
+.small{color:#50687b;font-size:.93rem}code{overflow-wrap:anywhere}
+@media(max-width:500px){body{padding:12px}section{padding:13px}}
+</style>
+<script defer src="./audio-device-check.js?v=20261028-fieldcheck1"></script>
+</head>
+<body>
+<header>
+<p class="small">Robotito · Diagnóstico manual P03 · Independiente de la app cotidiana</p>
+<h1>Comprobar el micrófono de tu dispositivo</h1>
+<p class="notice"><strong>Privacidad:</strong> solo se accede al micrófono tras tu confirmación y un clic. Se calculan niveles numéricos en memoria: <strong>no se graba, reproduce, guarda ni sube audio</strong>. No se ejecuta YAMNet. Al detener o salir se cierran las pistas de entrada. El informe JSON es opcional y no incluye sonidos, nombres de dispositivo ni identificadores.</p>
+</header>
+<main>
+<section aria-labelledby="start-title">
+<h2 id="start-title">1. Elegí el contexto y autorizá la prueba</h2>
+<div class="grid">
+<div><label for="deviceClass">Tipo de dispositivo (declarado)</label>
+<select id="deviceClass"><option value="unspecified">Sin especificar</option><option value="phone">Teléfono</option><option value="tablet">Tableta</option><option value="built-in">Micrófono integrado</option><option value="headset">Auriculares con micrófono</option><option value="usb">Micrófono USB</option><option value="recorder">Grabadora externa</option><option value="other">Otro</option></select></div>
+<div><label for="environment">Entorno (categoría general)</label>
+<select id="environment"><option value="quiet">Interior silencioso</option><option value="conversation">Conversación</option><option value="tv-music">TV o música</option><option value="street">Calle</option><option value="other">Otro</option></select></div>
+</div>
+<label class="check" for="consent"><input id="consent" type="checkbox"><span>Autorizo esta prueba local. Confirmo que no voy a captar sonidos ajenos sin permiso. Puedo retirarlo en cualquier momento.</span></label>
+<div class="controls"><button id="start" type="button">Iniciar prueba de micrófono</button><button id="stop" class="secondary" type="button" disabled>Detener / cancelar</button></div>
+<p id="state" role="status" aria-live="polite">Micrófono inactivo.</p>
+</section>
+<section aria-labelledby="level-title">
+<h2 id="level-title">2. Comprobá el nivel del sonido</h2>
+<p>Hablá, aplaudí una vez o producí un sonido <em>propio</em> cerca del micrófono y comprobá que el nivel cambie. No se identifican ni clasifican sonidos.</p>
+<label for="levelMeter">Nivel relativo de entrada (no son decibelios calibrados)</label>
+<progress id="levelMeter" max="100" value="0"></progress>
+<p id="levelText" aria-live="off">Sin mediciones.</p>
+<p class="small">El tiempo hasta obtener permiso <strong>no</strong> es la latencia del reconocimiento de sonidos de Robotito. Las mediciones pueden depender del navegador y su procesamiento de audio.</p>
+</section>
+<section aria-labelledby="manual-title">
+<h2 id="manual-title">3. Comprobaciones de hardware (manuales)</h2>
+<p>Cuando hayas terminado, indicá únicamente los hechos que observaste. Si la pestaña queda oculta mientras el micrófono está activo, la prueba se cancela y se cierran las pistas.</p>
+<label class="check" for="heardLevel"><input type="checkbox" id="heardLevel"><span>Vi que el nivel de entrada cambiaba cuando hice un sonido.</span></label>
+<label class="check" for="checkedMute"><input type="checkbox" id="checkedMute"><span>Probé manualmente el silencio o mute del dispositivo y comprobé el comportamiento.</span></label>
+<label class="check" for="checkedReconnect"><input type="checkbox" id="checkedReconnect"><span>Probé manualmente desconectar y volver a conectar el micrófono, cuando corresponde.</span></label>
+<p class="small">Estas casillas son declaraciones de la persona que hace la prueba, no comprobaciones automáticas de hardware.</p>
+<div class="controls"><button id="download" type="button" disabled>Descargar informe JSON sin audio</button><button id="reset" class="secondary" type="button">Borrar resultados</button></div>
+<p id="result" role="status" aria-live="polite"></p>
+</section>
+</main>
+</body>
+</html>
