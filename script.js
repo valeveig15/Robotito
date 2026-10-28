@@ -1190,12 +1190,14 @@ function setupAudio(stream){
     });
     const soundModelToggle=$("#audioModelEnabled");
     const forwardSamples=(samples,rate)=>{
-      if(!soundModelToggle?.checked||soundModel?.getStatus().state!=="ready")return;
+      if(!state.started||state.audioContext!==ctx||!soundModelToggle?.checked||
+         soundModel?.getStatus().state!=="ready")return;
       if(state.speaking||state.classMode||state.sleeping||document.hidden)
         soundModel.clearAudio();
       else soundModel.pushPCM(samples,rate);
     };
-    const allowedToCapture=()=>soundModelToggle?.checked&&
+    const allowedToCapture=()=>state.started&&state.audioContext===ctx&&
+      soundModelToggle?.checked&&
       soundModel?.getStatus().state==="ready"&&!state.speaking&&
       !state.classMode&&!state.sleeping&&!document.hidden;
     // This is used only if AudioWorklet is absent or cannot initialize.
