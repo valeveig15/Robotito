@@ -255,6 +255,41 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
          Math.abs(row.beginning-.25)>.02||Math.abs(row.ending-.25)>.02))
       throw new Error("Real AudioWorklet PCM capture failed: "+JSON.stringify(continuousCapture));
     console.log("Robotito real AudioWorklet integration:",JSON.stringify(continuousCapture));
+    // Independently verify the REAL Chromium audio rendering thread denies
+    // all PCM when never authorized, and stops transferring on lease expiry
+    // if the main thread does not renew its capture heartbeat.
+    const leaseSafety=await page.evaluate(async()=>{
+      const run=async allow=>{
+        const ctx=new OfflineAudioContext(1,48000,48000);
+        await ctx.audioWorklet.addModule("audio-capture-worklet.js");
+        const node=new AudioWorkletNode(ctx,"robotito-audio-capture");
+        const samples=[];
+        node.port.onmessage=e=>{
+          if(e.data?.type==="pcm")samples.push(e.data.samples.length);
+        };
+        const source=ctx.createConstantSource();
+        source.offset.value=.3;
+        source.connect(node);node.connect(ctx.destination);
+        if(allow){
+          node.port.postMessage({type:"capture",enabled:true});
+          await new Promise(resolve=>setTimeout(resolve,100));
+        }
+        source.start();
+        await ctx.startRendering();
+        await new Promise(resolve=>setTimeout(resolve,100));
+        node.port.onmessage=null;
+        return samples;
+      };
+      return {withoutConsent:await run(false),oneTimeConsent:await run(true)};
+    });
+    if(leaseSafety.withoutConsent.length!==0||
+       leaseSafety.oneTimeConsent.length<1||
+       leaseSafety.oneTimeConsent.length>6||
+       leaseSafety.oneTimeConsent.some(n=>n!==2048))
+      throw new Error("Real AudioWorklet must deny default and expire unattended capture: "+
+        JSON.stringify(leaseSafety));
+    console.log("Robotito real AudioWorklet self-expiring capture:",JSON.stringify(leaseSafety));
+
 
 
 
