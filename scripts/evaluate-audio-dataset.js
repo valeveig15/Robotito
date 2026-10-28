@@ -2,11 +2,11 @@
 // Manual real-audio evaluation only. Requires labelled, authorized local
 // audio clips and network access to the opt-in MediaPipe/YAMNet assets.
 // Run: npm run evaluate:audio -- /path/to/manifest.json
-const fs=require("node:fs"),path=require("node:path"),{spawn}=require("node:child_process");
+const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto"),{spawn}=require("node:child_process");
 const {chromium}=require("playwright"),{evaluate}=require("../audio-calibration.js");
 const {evaluateContinuous}=require("../audio-timeline-metrics.js");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
-const {requireCompleteAnnotationReview}=require("../audio-annotation-review.js");
+const {requireCompleteAnnotationReview,verifyReviewedAudioDigest}=require("../audio-annotation-review.js");
 const {inspectCorpus}=require("../audio-media-preflight.js");
 const root=path.resolve(__dirname,".."),manifestPath=process.argv[2];
 const port=Number(process.env.ROBOTITO_AUDIO_EVAL_PORT||8799);
@@ -56,7 +56,12 @@ async function main(){
   });
   const observations=[],timelineSessions=[];
   for(const item of [...clips,...sessions]){
-   const file=fs.readFileSync(item.absolutePath).toString("base64");
+   const audioBytes=fs.readFileSync(item.absolutePath);
+   if(item.annotationReview==="complete"){
+    const actual=crypto.createHash("sha256").update(audioBytes).digest("hex");
+    verifyReviewedAudioDigest(item.annotationReview,item.audioSha256,actual,item.id);
+   }
+   const file=audioBytes.toString("base64");
    const observation=await page.evaluate(async ({fileBase64,suppressions})=>{
     const bytes=Uint8Array.from(atob(fileBase64),c=>c.charCodeAt(0));
     const audioContext=new AudioContext();
@@ -126,6 +131,7 @@ async function main(){
   result.datasetIntegrity={...groupAudit,durationPreflight,
     allEvaluatedSessionsHumanReviewed:true,
     reviewedAudioSHA256Verified:sessions.length? sessions.every(x=>x.reviewedAudioDigestVerified):null,
+    reviewedAudioRecheckedAtInference:true,
     humanReviewIndependentlyVerified:false,exactDuplicateFilesRejected:true,
     uniqueAudioFiles:clips.length+sessions.length,
     comparison:"Local SHA-256 over file bytes (not perceptual similarity)",
