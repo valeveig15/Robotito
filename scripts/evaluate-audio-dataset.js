@@ -5,31 +5,11 @@
 const fs=require("node:fs"),path=require("node:path"),{spawn}=require("node:child_process");
 const {chromium}=require("playwright"),{evaluate}=require("../audio-calibration.js");
 const {evaluateContinuous}=require("../audio-timeline-metrics.js");
+const {loadManifest}=require("../audio-evaluation-manifest.js");
 const root=path.resolve(__dirname,".."),manifestPath=process.argv[2];
 const port=Number(process.env.ROBOTITO_AUDIO_EVAL_PORT||8799);
 if(!manifestPath)throw Error("Usage: npm run evaluate:audio -- /path/to/manifest.json");
-const base=path.dirname(path.resolve(manifestPath));
-const manifest=JSON.parse(fs.readFileSync(manifestPath,"utf8"));
-const clips=manifest.clips||[],sessions=manifest.sessions||[];
-if(!Array.isArray(clips)||!Array.isArray(sessions)||!clips.length&&!sessions.length)
- throw Error("Manifest needs labelled clips or annotated continuous sessions");
-const supported=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
-for(const item of [...clips,...sessions]){
- if(!item.id||!sessions.includes(item)&&!supported.has(item.label)||
-    !["owned","consented","open-license"].includes(item.rights)||
-    typeof item.environment!=="string"||!item.environment.trim()||typeof item.path!=="string")
-  throw Error("Clip needs id, valid label, environment, rights and local path");
- const file=path.resolve(base,item.path);
- if(!file.startsWith(base+path.sep))throw Error("Audio must stay inside manifest folder");
- item.absolutePath=file;
- const real=fs.realpathSync(file);
- if(!real.startsWith(base+path.sep))throw Error("Audio symlink leaves manifest folder: "+item.id);
- const size=fs.statSync(file).size;
- if(size<=0||size>50*1024*1024)throw Error("Invalid or oversized clip: "+item.id);
- if(sessions.includes(item)&&(!Array.isArray(item.annotations)||
-   !Array.isArray(item.suppressions||[])))
-  throw Error("Continuous session needs reviewed event intervals and optional suppressions");
-}
+const {base,manifest,clips,sessions}=loadManifest(manifestPath);
 async function main(){
  const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],{cwd:root,stdio:"ignore"});
  let browser=null;
@@ -130,6 +110,8 @@ async function main(){
   if(timelineSessions.length)
    result.continuousEvaluation=evaluateContinuous(timelineSessions);
   result.datasetName=String(manifest.name||"unnamed");
+  result.datasetProvenance={license:manifest.license||null,
+    source:manifest.source||null,citation:manifest.citation||null};
   result.modelVersion="YAMNet float32/1 through MediaPipe Tasks Audio 1.1.1";
   result.createdAt=new Date().toISOString();
   const destination=path.join(base,"robotito-audio-evaluation.json");
