@@ -58,7 +58,7 @@ try{
  const invalidPath=path.join(temp,"invalid-annotations.json");
  fs.writeFileSync(invalidPath,JSON.stringify({sessions:[{
   id:"out-of-bounds",path:"generated.wav",rights:"owned",environment:"synthetic-tone",
-  annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}]
+  annotationReview:"complete",annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}]
  }]}));
  const invalidValidation=spawnSync(process.execPath,[
   "scripts/validate-audio-dataset.js",invalidPath],{
