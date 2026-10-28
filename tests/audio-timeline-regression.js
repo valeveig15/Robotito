@@ -33,6 +33,19 @@ const withCoverage=evaluateContinuous([wrongWithCoverage]).overall.metrics.sneez
 eq(withCoverage.evaluableEvents,1,
  "Two consecutive nonhuman windows permit a valid false-negative assessment");
 eq(withCoverage.fn,1,"A covered sound with no correct evidence is a real reference miss");
+// The tail planner sometimes creates a second frame closer than the normal
+// hop. A near-duplicate cannot be an extra detection or evaluable ground truth.
+const nearDuplicate={...oneFrame,id:"near-duplicate",durationSeconds:3,
+ frames:[frame(1.0,"sneeze"),frame(1.28,"sneeze")],
+ annotations:[{kind:"sneeze",startSeconds:.9,endSeconds:1.4}]};
+const nearDuplicateStats=evaluateContinuous([nearDuplicate]);
+eq(nearDuplicateStats.overall.metrics.sneeze.tp,0,
+ "Near-duplicate classifier windows cannot yield a true alert");
+eq(nearDuplicateStats.overall.metrics.sneeze.unevaluableEvents,1,
+ "Ground truth with insufficient independent windows remains unevaluable");
+const nearDuplicateNegative=evaluateContinuous([{...nearDuplicate,id:"near-duplicate-negative",annotations:[]}]);
+eq(nearDuplicateNegative.overall.metrics.sneeze.fp,0,
+ "Near-duplicate windows cannot fabricate a false alert either");
 const separated={...oneFrame,id:"separated",durationSeconds:120,
  frames:[frame(.25,"noise"),frame(100.25,"noise")],
  annotations:[{kind:"sneeze",startSeconds:0,endSeconds:101}]};
