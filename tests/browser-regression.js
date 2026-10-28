@@ -240,6 +240,9 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       source.offset.value=.25;
       source.connect(node);
       node.connect(ctx.destination);
+      // The AudioWorklet is initially closed even when the node exists.
+      node.port.postMessage({type:"capture",enabled:true});
+      await new Promise(resolve=>setTimeout(resolve,100));
       source.start();
       await ctx.startRendering();
       await new Promise(resolve=>setTimeout(resolve,100));
