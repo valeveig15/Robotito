@@ -15,6 +15,14 @@ try{
  assert.equal(read({clips:[item]}).clips[0].deviceClass,"unspecified");checks++;
  assert.equal(read({clips:[{...item,deviceClass:"usb"}]}).clips[0].deviceClass,"usb");checks++;
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
+ assert.throws(()=>read({sessions:[{...session,suppressions:[
+  {startSeconds:1.5,endSeconds:2.4}]}]}),
+  /Ground-truth event overlaps suppressed audio/);checks++;
+ assert.throws(()=>read({sessions:[{...session,suppressions:[
+  {startSeconds:0,endSeconds:1.1}]}]}),
+  /Ground-truth event overlaps suppressed audio/);checks++;
+ assert.equal(read({sessions:[{...session,suppressions:[
+  {startSeconds:2,endSeconds:3}]}]}).sessions.length,1);checks++;
  assert.equal(read({sessions:[{...session,deviceClass:"phone"}]}).sessions[0].deviceClass,"phone");checks++;
  assert.equal(read({clips:[item],sessions:[session]}).sessions.length,1);checks++;
  const groupedClip={...item,sourceGroup:"take-001",evaluationSplit:"development"};
