@@ -1,6 +1,7 @@
 "use strict";
 const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
+const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const labels=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
 const human=new Set(["clap","laugh","cry","cough","sneeze"]);
 const rights=new Set(["owned","consented","open-license"]);
@@ -57,6 +58,8 @@ function loadManifest(location){
    // Validate the manually supplied coarse device category up front.
    // Never auto-collect a browser device ID or serial number.
    const deviceClass=normalizeDeviceClass(item.deviceClass);
+   const sourceGroup=normalizeSourceGroup(item.sourceGroup);
+   const evaluationSplit=normalizeEvaluationSplit(item.evaluationSplit,sourceGroup);
    const resolved=path.resolve(base,item.path);
    if(!contained(base,resolved))throw Error("Audio leaves manifest folder");
    const physical=fs.realpathSync(resolved);
@@ -70,9 +73,12 @@ function loadManifest(location){
    const digest=fingerprint(physical),previous=seenAudio.get(digest);
    if(previous)throw Error("Duplicate audio recording: "+item.id+" repeats "+previous);
    seenAudio.set(digest,item.id);
-   all.push({...item,deviceClass,absolutePath:physical});
+   all.push({...item,deviceClass,sourceGroup,evaluationSplit,absolutePath:physical});
   }
  }
- return {base,manifest,clips:all.slice(0,clips.length),sessions:all.slice(clips.length)};
+ // Reject leaks between development and validation/test before loading YAMNet.
+ // This verifies declared groups only; it cannot discover undeclared related takes.
+ const groupAudit=sourceAudit(all);
+ return {base,manifest,clips:all.slice(0,clips.length),sessions:all.slice(clips.length),groupAudit};
 }
 module.exports={loadManifest};
