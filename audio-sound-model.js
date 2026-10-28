@@ -17,19 +17,31 @@ const LABELS={
  noise:/\b(?:noise|static|hum|wind)\b/i
 };
 function mapCategories(categories){
- const score=Object.fromEntries(Object.keys(LABELS).map(k=>[k,0]));
+ const score=Object.fromEntries([...Object.keys(LABELS),"unknown"].map(k=>[k,0]));
  let strongest={kind:"unknown",score:0,label:""};
  for(const row of Array.isArray(categories)?categories:[]){
   const label=String(row?.categoryName||row?.displayName||"");
   const confidence=Number(row?.score);
   if(!Number.isFinite(confidence)||confidence<0||confidence>1)continue;
+  let matched=false;
   for(const [kind,pattern]of Object.entries(LABELS)){
-   if(pattern.test(label)){
-    score[kind]=Math.max(score[kind],confidence);
+   // A bird singing is not evidence of a human song or music.
+   const birdMusic=kind==="music"&&/\b(?:bird|birds|chirping|insect)\b/i.test(label);
+   if(pattern.test(label)&&!birdMusic){
+    matched=true;score[kind]=Math.max(score[kind],confidence);
     if(confidence>strongest.score)strongest={kind,score:confidence,label};
    }
   }
+  if(!matched){
+   score.unknown=Math.max(score.unknown,confidence);
+   if(confidence>strongest.score)strongest={kind:"unknown",score:confidence,label};
+  }
  }
+ const competitors=Object.entries(score).sort((a,b)=>b[1]-a[1]);
+ const first=competitors[0],second=competitors[1];
+ if(first&&second&&first[1]-second[1]<.12&&first[1]>=.60)
+  strongest={kind:"unknown",score:first[1],label:strongest.label,
+   uncertain:true,runnerUp:second[1]};
  return {scores:score,candidate:strongest};
 }
 // Stateful band-limited resampling: retains fractional phase at every
