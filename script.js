@@ -1170,6 +1170,7 @@ function setupAudio(stream){
     const time=new Uint8Array(analyser.fftSize);
     const rawTime=new Float32Array(analyser.fftSize);
     let workletTap=null,workletSilentGain=null,workletActive=false;
+    let workletCaptureEnabled=false;
     let workletGeneration=0,workletModuleLoaded=false;
     const reactionPolicy=window.ROBOTITO_AUDIO_REACTIONS?.create?.();
     // Off by default. Model files and code from third parties are fetched
@@ -1195,13 +1196,30 @@ function setupAudio(stream){
         soundModel.clearAudio();
       else soundModel.pushPCM(samples,rate);
     };
-    const clearModelOnHidden=()=>{if(document.hidden)soundModel?.clearAudio();};
+    const allowedToCapture=()=>soundModelToggle?.checked&&
+      soundModel?.getStatus().state==="ready"&&!state.speaking&&
+      !state.classMode&&!state.sleeping&&!document.hidden;
+    const updateWorkletCapture=()=>{
+      if(!workletActive||!workletTap)return;
+      const next=Boolean(allowedToCapture());
+      if(next===workletCaptureEnabled)return;
+      workletCaptureEnabled=next;
+      // Pause before transferring any further microphone PCM from the
+      // audio rendering thread. Always reset phase/session evidence.
+      workletTap.port.postMessage({type:"capture",enabled:next});
+      soundModel?.clearAudio();
+    };
+    const clearModelOnHidden=()=>{
+      if(document.hidden)soundModel?.clearAudio();
+      updateWorkletCapture();
+    };
     document.addEventListener("visibilitychange",clearModelOnHidden);
     const stopContinuousCapture=()=>{
       // Disable and disconnect everything the optional model requested.
       // A pending module load from an earlier consent generation must be inert.
-      workletGeneration++;workletActive=false;
+      workletGeneration++;workletActive=false;workletCaptureEnabled=false;
       if(workletTap){
+        try{workletTap.port.postMessage({type:"capture",enabled:false});}catch{}
         workletTap.port.onmessage=null;
         // Disconnect the original mic-source edge as well as the output.
         // Leaving src -> worklet attached could retain unwanted capture.
@@ -1233,6 +1251,7 @@ function setupAudio(stream){
         };
         soundModel?.clearAudio();
         workletActive=true;
+        updateWorkletCapture();
       }).catch(error=>{
         // The analyser-based capture remains available without Worklet.
         console.warn("Continuous local audio capture unavailable",error);
@@ -1302,6 +1321,7 @@ function setupAudio(stream){
       requestAnimationFrame(tick);
       if(at-lastTick<45)return;
       lastTick=at;
+      updateWorkletCapture();
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
       if(!workletActive&&soundModelToggle?.checked&&soundModel?.getStatus().state==="ready"){
