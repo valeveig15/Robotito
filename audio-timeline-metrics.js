@@ -51,6 +51,16 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
       frame.atSeconds<=prev||!frame.scores||typeof frame.scores!=="object"||
       Array.isArray(frame.scores))
     throw Error("Observations must have strictly increasing timestamps and scores");
+   const bounded=Object.hasOwn(frame,"windowStartSeconds")||
+    Object.hasOwn(frame,"windowEndSeconds");
+   if(bounded&&(!finite(frame.windowStartSeconds)||!finite(frame.windowEndSeconds)||
+      frame.windowEndSeconds<=frame.windowStartSeconds||
+      frame.windowEndSeconds>session.durationSeconds+1e-6||
+      frame.atSeconds<frame.windowStartSeconds||
+      frame.atSeconds>frame.windowEndSeconds+1e-6))
+    throw Error("Invalid timestamped audio window bounds");
+   if(Object.hasOwn(frame,"suppressed")&&typeof frame.suppressed!=="boolean")
+    throw Error("Invalid suppressed-frame flag");
    prev=frame.atSeconds;
   }
   const truth=session.annotations.map(event=>{
@@ -58,15 +68,25 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    return {kind:event.kind,interval:range(event,session.durationSeconds,"event")};
   });
   const suppressed=union((session.suppressions||[]).map(x=>range(x,session.durationSeconds,"suppression")));
-  const observed=union(session.frames.map(x=>[
-   Math.max(0,x.atSeconds-hopSeconds/2),
-   Math.min(session.durationSeconds,x.atSeconds+hopSeconds/2)]));
+  const rangeForFrame=frame=>Object.hasOwn(frame,"windowStartSeconds")
+    ?[frame.windowStartSeconds,frame.windowEndSeconds]
+    :[Math.max(0,frame.atSeconds-hopSeconds/2),
+      Math.min(session.durationSeconds,frame.atSeconds+hopSeconds/2)];
+  const blocked=frame=>frame.suppressed===true||
+    suppressed.some(([start,end])=>{
+     const [a,b]=rangeForFrame(frame);
+     return a<end&&start<b;
+    });
+  // Only fully evaluated windows contribute negative listening exposure.
+  // Windows partially containing suppressed speech cannot produce evidence.
+  const scored=session.frames.filter(frame=>!blocked(frame));
+  const observed=union(scored.map(rangeForFrame));
   const active=subtract(observed,suppressed),observedSeconds=seconds(active);
   let prevKind=null,consecutive=0,lastTime=-Infinity;
   const lastAlert=Object.fromEntries(HUMAN.map(x=>[x,-Infinity])),alerts=[];
   for(const frame of session.frames){
    const t=frame.atSeconds,kind=classify(frame.scores);
-   const eligible=covered(t,active)&&HUMAN.includes(kind);
+   const eligible=!blocked(frame)&&covered(t,active)&&HUMAN.includes(kind);
    if(!eligible||kind!==prevKind||
       t-lastTime<hopSeconds*.5||t-lastTime>hopSeconds*1.9){
     prevKind=null;consecutive=0;
@@ -100,7 +120,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   results.push({id:session.id,environment:session.environment,
    durationSeconds:session.durationSeconds,observedSeconds,
    missingOrSuppressedSeconds:Math.max(0,session.durationSeconds-observedSeconds),
-   classifiedFrames:session.frames.length,alerts,metrics});
+   classifiedFrames:scored.length,
+   skippedFrames:session.frames.length-scored.length,alerts,metrics});
  }
  const aggregate=items=>{
   const summary={sessionCount:items.length,observedSeconds:0,metrics:{}};
