@@ -1,5 +1,5 @@
 "use strict";
-const fs=require("node:fs"),path=require("node:path");
+const fs=require("node:fs"),path=require("node:path"),crypto=require("node:crypto");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const labels=new Set(["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"]);
 const human=new Set(["clap","laugh","cry","cough","sneeze"]);
@@ -14,6 +14,19 @@ function contained(root,file){
  const diff=path.relative(root,file);
  return !!diff&&diff!==".."&&!diff.startsWith(".."+path.sep)&&!path.isAbsolute(diff);
 }
+// Verify byte-identical recordings locally before any model inference.
+// Fixed-size chunks avoid loading 50-MiB clips into memory merely to hash.
+// File digests never leave this process or appear in generated reports.
+function fingerprint(file){
+ const hash=crypto.createHash("sha256"),chunk=Buffer.allocUnsafe(64*1024);
+ const fd=fs.openSync(file,"r");
+ try{
+  let count;
+  while((count=fs.readSync(fd,chunk,0,chunk.length,null))>0)
+   hash.update(chunk.subarray(0,count));
+ }finally{fs.closeSync(fd);}
+ return hash.digest("hex");
+}
 function loadManifest(location){
  const actual=fs.realpathSync(location),base=path.dirname(actual);
  const manifest=JSON.parse(fs.readFileSync(actual,"utf8"));
@@ -22,7 +35,7 @@ function loadManifest(location){
  const clips=manifest.clips??[],sessions=manifest.sessions??[];
  if(!Array.isArray(clips)||!Array.isArray(sessions)||!clips.length&&!sessions.length)
   throw Error("Manifest needs labelled clips or annotated continuous sessions");
- const ids=new Set(),all=[];
+ const ids=new Set(),seenAudio=new Map(),all=[];
  for(const [rows,continuous]of [[clips,false],[sessions,true]]){
   for(const item of rows){
    if(!nonempty(item?.id)||ids.has(item.id))throw Error("Duplicate or missing audio ID");
@@ -51,6 +64,12 @@ function loadManifest(location){
    const stat=fs.statSync(physical);
    if(!stat.isFile()||stat.size<=0||stat.size>50*1024*1024)
     throw Error("Invalid or oversized audio file");
+   // IDs and filenames alone do not make observations independent.
+   // Reject copies and symlink/hard-link aliases, even across clips and
+   // continuous sessions, before YAMNet can inflate sample counts.
+   const digest=fingerprint(physical),previous=seenAudio.get(digest);
+   if(previous)throw Error("Duplicate audio recording: "+item.id+" repeats "+previous);
+   seenAudio.set(digest,item.id);
    all.push({...item,deviceClass,absolutePath:physical});
   }
  }
