@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robotito — laboratorio privado de sonidos (P03)</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#193046;background:#eef4f8}
+*{box-sizing:border-box}body{max-width:900px;margin:0 auto;padding:24px 16px 65px}
+h1{font-size:1.8rem;margin:12px 0}h2{font-size:1.16rem}p,li{line-height:1.5}
+main{display:grid;gap:16px}section{background:white;border:1px solid #ccdbe7;border-radius:14px;padding:18px}
+label{display:block;margin:12px 0 6px;font-weight:600}input:not([type="checkbox"]):not([type="file"]),select{width:100%;padding:10px;border-radius:8px;border:1px solid #90a5b9;font:inherit}
+input[type=file]{max-width:100%}audio{display:block;width:100%;margin:14px 0}
+button{padding:10px 15px;font:inherit;font-weight:600;border:0;border-radius:8px;background:#275b83;color:white;cursor:pointer}
+button:hover:not(:disabled){background:#143d60}button:disabled{opacity:.45;cursor:not-allowed}
+button.secondary{background:#edf3f7;color:#22415b;border:1px solid #b6cad7}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 15px}
+.muted{color:#455e72;font-size:.94rem}.notice{background:#eef6fd;padding:10px 12px;border-left:4px solid #557eaf;border-radius:5px}
+#status{min-height:1.7em;font-weight:600}#status.error{color:#9d1d2a}#status.success{color:#256e42}
+.records{list-style:none;padding:0}.records li{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #e1e8ed;padding:8px 0}
+.records button{font-size:.9rem;padding:6px 10px}.check{display:flex;align-items:flex-start;gap:10px;font-weight:500}
+.check input{margin-top:5px}code{overflow-wrap:anywhere}
+@media(max-width:520px){body{padding:12px}section{padding:14px}}
+</style>
+<script defer src="./audio-corpus-studio.js"></script>
+</head>
+<body>
+<header><p class="muted">Robotito · Herramienta de desarrollo P03 · No es parte de la escucha cotidiana</p>
+<h1>Preparar una grabación para evaluar sonidos</h1>
+<p class="notice"><strong>Privacidad:</strong> todo se procesa en este navegador. No se envía audio, etiquetas ni información personal a ningún servidor. La grabación solo empieza cuando presionás «Grabar» y autorizás el micrófono. Esta herramienta no descarga modelos ni activa reacciones del avatar.</p>
+</header>
+<main>
+<section aria-labelledby="source-title">
+<h2 id="source-title">1. Elegí un audio</h2>
+<p>Podés importar un audio autorizado o grabar uno nuevo con tu micrófono. Usá un solo archivo por manifiesto.</p>
+<label for="audioFile">Seleccionar archivo local</label>
+<input id="audioFile" type="file" accept="audio/*,.wav,.webm,.ogg,.mp3,.m4a,.flac">
+<div class="controls"><button id="startRecording" type="button">Grabar con micrófono</button><button id="stopRecording" type="button" disabled>Detener grabación</button><button id="discardAudio" class="secondary" type="button" disabled>Descartar audio</button></div>
+<audio id="preview" controls hidden></audio>
+<p id="duration" class="muted">Todavía no hay un audio cargado.</p>
+</section>
+<section aria-labelledby="metadata-title">
+<h2 id="metadata-title">2. Identificá la fuente sin datos personales</h2>
+<div class="grid">
+<div><label for="sessionId">ID único de la sesión</label><input id="sessionId" value="sesion-001" maxlength="64" autocomplete="off"></div>
+<div><label for="environment">Entorno (p. ej., habitación, calle, TV)</label><input id="environment" value="habitacion" maxlength="100"></div>
+<div><label for="sourceGroup">Grupo de grabación original (seudónimo)</label><input id="sourceGroup" value="grabacion-original-001" maxlength="64" autocomplete="off"></div>
+<div><label for="evaluationSplit">Conjunto de evaluación</label><select id="evaluationSplit">
+<option value="development">Desarrollo</option><option value="validation">Validación</option><option value="test">Prueba independiente</option><option value="unspecified">Sin asignar</option>
+</select></div>
+<div><label for="deviceClass">Tipo de micrófono (declarado, no detectado)</label><select id="deviceClass">
+<option value="unspecified">No especificado</option><option value="phone">Teléfono</option><option value="tablet">Tableta</option>
+<option value="built-in">Integrado</option><option value="headset">Auriculares con micrófono</option><option value="usb">USB</option><option value="recorder">Grabadora</option><option value="other">Otro</option>
+</select></div>
+<div><label for="rights">Derechos sobre el audio</label><select id="rights">
+<option value="owned">Grabación propia</option><option value="consented">Con consentimiento explícito de participantes</option>
+</select></div>
+</div>
+<label class="check" for="consent"><input id="consent" type="checkbox"> <span>Confirmo que tengo derecho a utilizar este audio, que las personas reconocibles consintieron su uso cuando corresponde y que no contiene información privada que no deba conservar.</span></label>
+<p class="muted">Evitá nombres, números de serie y datos personales en los identificadores. No uses la partición «prueba» para ajustar umbrales.</p>
+</section>
+<section aria-labelledby="events-title">
+<h2 id="events-title">3. Marcá sonidos e intervalos suprimidos</h2>
+<p class="muted">Los segundos son relativos al comienzo del audio. Una sesión sin eventos anotados también sirve para medir falsas alarmas en ruido de fondo, siempre que hayas comprobado que no contiene los eventos buscados.</p>
+<div class="grid">
+<div><label for="eventKind">Sonido</label><select id="eventKind"><option value="sneeze">Estornudo</option><option value="cough">Tos</option><option value="laugh">Risa</option><option value="cry">Llanto</option><option value="clap">Aplauso / palmadas</option></select></div>
+<div><label for="eventStart">Desde (segundos)</label><input id="eventStart" type="number" min="0" step=".01" value="0.2"></div>
+<div><label for="eventEnd">Hasta (segundos)</label><input id="eventEnd" type="number" min="0" step=".01" value="0.5"></div>
+</div>
+<div class="controls"><button id="addEvent" type="button">Agregar sonido</button></div>
+<ul id="eventsList" class="records" aria-label="Sonidos anotados"></ul>
+<p class="muted">Los intervalos suprimidos no se envían al clasificador: marcá allí voz propia de Robotito, Modo Clase u otros tramos que no deban evaluarse.</p>
+<div class="grid"><div><label for="suppressStart">Suprimir desde (segundos)</label><input id="suppressStart" type="number" min="0" step=".01" value="0"></div>
+<div><label for="suppressEnd">Suprimir hasta (segundos)</label><input id="suppressEnd" type="number" min="0" step=".01" value="0.1"></div></div>
+<div class="controls"><button id="addSuppression" class="secondary" type="button">Agregar supresión</button></div>
+<ul id="suppressionsList" class="records" aria-label="Intervalos suprimidos"></ul>
+</section>
+<section aria-labelledby="export-title">
+<h2 id="export-title">4. Descargá audio y manifiesto</h2>
+<p>Se crean dos archivos locales: <code>&lt;id&gt;.&lt;extensión&gt;</code> y <code>manifest-&lt;id&gt;.json</code>. Guardalos <strong>en la misma carpeta</strong> para que las rutas relativas funcionen.</p>
+<div class="controls"><button id="downloadAudio" type="button">Descargar audio</button><button id="downloadManifest" type="button">Descargar manifiesto JSON</button></div>
+<p class="muted">Antes de evaluar, ejecutá <code>npm run validate:audio -- /ruta/manifest-sesion-001.json</code>. Después podés ejecutar <code>npm run evaluate:audio -- /ruta/manifest-sesion-001.json</code>. El evaluador sigue sin autorizar automáticamente reacciones.</p>
+<p id="status" role="status" aria-live="polite"></p>
+</section>
+</main>
+</body>
+</html>
