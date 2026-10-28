@@ -5,6 +5,9 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const {execFileSync,spawnSync}=require("node:child_process");
 const {createHash}=require("node:crypto");
+const {canonicalReviewedAnnotations}=require("../audio-review-payload.js");
+const seal=x=>({...x,reviewAnnotationsSha256:createHash("sha256")
+ .update(canonicalReviewedAnnotations(x)).digest("hex")});
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-timeline-real-"));
 function wav(seconds=2.5,rate=16000){
  const samples=Math.floor(seconds*rate),bytes=Buffer.alloc(44+samples*2);
@@ -23,11 +26,24 @@ try{
  const audio=path.join(temp,"generated.wav"),manifestPath=path.join(temp,"manifest.json");
  const originalAudio=wav(),audioSha256=createHash("sha256").update(originalAudio).digest("hex");
  fs.writeFileSync(audio,originalAudio);
- fs.writeFileSync(manifestPath,JSON.stringify({name:"CI synthetic audio only",
-  sessions:[{id:"synthetic-01",path:"generated.wav",environment:"synthetic-tone",
-   rights:"owned",sourceGroup:"synthetic-source-1",evaluationSplit:"test",
-   annotationReview:"complete",audioSha256,annotations:[],
-   suppressions:[{startSeconds:1.05,endSeconds:1.45}]}]}));
+ const reviewed=seal({id:"synthetic-01",path:"generated.wav",environment:"synthetic-tone",
+  rights:"owned",sourceGroup:"synthetic-source-1",evaluationSplit:"test",
+  annotationReview:"complete",audioSha256,annotations:[],
+  suppressions:[{startSeconds:1.05,endSeconds:1.45}]});
+ fs.writeFileSync(manifestPath,JSON.stringify({name:"CI synthetic audio only",sessions:[reviewed]}));
+ const tamperedManifest=path.join(temp,"tampered-labels.json");
+ fs.writeFileSync(tamperedManifest,JSON.stringify({sessions:[{
+  ...reviewed,annotations:[{kind:"sneeze",startSeconds:.1,endSeconds:.3}]
+ }]}));
+ const deniedTampering=spawnSync(process.execPath,[
+  "scripts/evaluate-audio-dataset.js",tamperedManifest],{
+  cwd:path.resolve(__dirname,".."),timeout:10000,encoding:"utf8"
+ });
+ assert.notEqual(deniedTampering.status,0,
+  "Changing labels without new review must fail before model initialization");
+ assert.match(deniedTampering.stderr,/Reviewed annotation SHA-256 mismatch/);
+ assert.equal(fs.existsSync(path.join(temp,"robotito-audio-evaluation.json")),false,
+  "Tampered labels must not leave false statistical evidence");
  // Unreviewed data must fail before any Chromium worker or model download.
  const draftPath=path.join(temp,"draft-manifest.json");
  fs.writeFileSync(draftPath,JSON.stringify({sessions:[{
@@ -74,8 +90,8 @@ try{
  fs.writeFileSync(invalidPath,JSON.stringify({sessions:[{
   id:"out-of-bounds",path:"generated.wav",rights:"owned",environment:"synthetic-tone",
   annotationReview:"complete",audioSha256,
-  annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}]
- }]}));
+  annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}],suppressions:[]
+ }].map(seal)}));
  const invalidValidation=spawnSync(process.execPath,[
   "scripts/validate-audio-dataset.js",invalidPath],{
    cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
@@ -115,6 +131,8 @@ try{
  const report=JSON.parse(fs.readFileSync(
   path.join(temp,"robotito-audio-evaluation.json"),"utf8"));
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
+ assert.equal(report.datasetIntegrity.reviewedAnnotationSHA256Verified,true,
+  "Real YAMNet report confirms labelled annotations were not modified");
  assert.equal(report.datasetIntegrity.reviewedAudioSHA256Verified,true,
   "Real evaluated sessions are bound to the exact reviewed audio bytes");
  assert.equal(report.datasetIntegrity.reviewedAudioRecheckedAtInference,true,
@@ -145,6 +163,8 @@ try{
   "Real YAMNet timeline report stays stratified by holdout split");
  assert.equal(report.datasetIntegrity.uniqueAudioFiles,1,
   "Count physically distinct source recordings without exposing audio hashes");
+ assert.equal(JSON.stringify(report).includes(reviewed.reviewAnnotationsSha256),false,
+  "A privacy-preserving report must not reveal reviewed annotation digests");
  assert.equal(JSON.stringify(report).includes("sha256:"),false,
   "No local recording fingerprints are exported in the report");
  assert.equal(report.continuousEvaluation.overall.sessionCount,1);
