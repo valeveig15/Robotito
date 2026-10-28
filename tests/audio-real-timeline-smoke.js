@@ -45,7 +45,7 @@ try{
   "Direct timeline metrics also audit their source-group declarations");
  assert.equal(report.continuousEvaluation.sourceGroupAudit.independentlyVerified,false,
   "A program cannot prove manual source-group labels are correct");
- assert.equal(report.continuousEvaluation.bySplit.test.sessionCount,
+ assert.equal(report.continuousEvaluation.bySplit.test.sessionCount,1,
   "Real YAMNet timeline report stays stratified by holdout split");
  assert.equal(report.datasetIntegrity.uniqueAudioFiles,1,
   "Count physically distinct source recordings without exposing audio hashes");
