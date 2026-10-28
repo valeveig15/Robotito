@@ -83,4 +83,48 @@ eq(delayedWorker.closed,true,"Hanging worker is terminated");
 delayed.enable();
 eq(delayed.getStatus().state,"ready","Model supports retry after hanging inference");
 delayed.disable();
+
+// Streaming resampler invariants: 16/44.1/48 kHz, arbitrary Worklet splits,
+// passband fidelity and out-of-band attenuation. Neither overcounting nor
+// fractional phase reset can masquerade as "sound recognition".
+function sine(n,rate,frequency,amplitude=.6){
+ return Float32Array.from({length:n},(_,i)=>amplitude*Math.sin(2*Math.PI*frequency*i/rate));
+}
+function resample(input,rate,chunks){
+ const stream=model.createResampler(),out=[];
+ let offset=0,k=0;
+ while(offset<input.length){
+  const end=Math.min(input.length,offset+chunks[k++%chunks.length]);
+  stream.push(input.subarray(offset,end),rate,value=>out.push(value));
+  offset=end;
+ }
+ return out;
+}
+for(const rate of [16000,44100,48000]){
+ const input=sine(rate,rate,1000);
+ const single=resample(input,rate,[rate]);
+ const split=resample(input,rate,[128,2048,257,384,999]);
+ eq(single.length,16000,"One second always becomes 16000 samples at "+rate);
+ eq(split.length,16000,"Fractional phase is conserved across Worklet chunks at "+rate);
+ let maxError=0;
+ for(let i=0;i<single.length;i++)maxError=Math.max(maxError,Math.abs(single[i]-split[i]));
+ assert.ok(maxError<1e-8,"Chunk boundaries must not change output samples at "+rate+
+  ": "+maxError);checked++;
+ const level=split.slice(2500).reduce((sum,v)=>sum+v*v,0)/(split.length-2500);
+ assert.ok(level>.12&&level<.22,"Speech/music passband amplitude at "+rate+": "+level);checked++;
+ const silence=resample(new Float32Array(rate),rate,[203,1500,99]);
+ eq(silence.every(v=>v===0),true,"Silence stays silence at "+rate);
+}
+for(const rate of [44100,48000]){
+ const alias=resample(sine(rate,rate,11000),rate,[2048,191,333]);
+ const rms=Math.sqrt(alias.slice(3000).reduce((n,x)=>n+x*x,0)/(alias.length-3000));
+ assert.ok(rms<.12,"Above-Nyquist signal must not sound like 5 kHz voice at "+
+  rate+": rms "+rms);checked++;
+}
+const resetResampler=model.createResampler(),before=[],after=[];
+resetResampler.push(new Float32Array(270).fill(.6),48000,v=>before.push(v));
+resetResampler.reset();
+resetResampler.push(new Float32Array(44100),44100,v=>after.push(v));
+eq(after.length,16000,"Reset clears fractional phase and input-rate history");
+eq(after.every(v=>v===0),true,"Reset prevents audio bleeding into next session");
 console.log("Optional on-device sound model regression:",checked,"assertions passed");
