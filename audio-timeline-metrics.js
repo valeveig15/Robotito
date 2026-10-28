@@ -4,6 +4,7 @@
 const {classify,HUMAN}=require("./audio-calibration.js");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
+const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
 const COOLDOWN={clap:1.9,laugh:8,cry:18,cough:9.5,sneeze:5.2};
 const finite=n=>Number.isFinite(n)&&n>=0;
 const seconds=spans=>spans.reduce((sum,[a,b])=>sum+b-a,0);
@@ -112,6 +113,9 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    return {kind:event.kind,interval:range(event,session.durationSeconds,"event")};
   });
   const suppressed=union((session.suppressions||[]).map(x=>range(x,session.durationSeconds,"suppression")));
+  // Direct API callers must obey the same data-integrity restriction as
+  // the manifest and collection UI, even if they skip local preflight.
+  assertNoMaskedEvents(session.annotations,session.suppressions||[]);
   const rangeForFrame=frame=>Object.hasOwn(frame,"windowStartSeconds")
     ?[frame.windowStartSeconds,frame.windowEndSeconds]
     :[Math.max(0,frame.atSeconds-hopSeconds/2),
