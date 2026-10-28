@@ -12,7 +12,9 @@ const extensions=new Set(["wav","webm","ogg","mp3","m4a","flac"]);
 const devices=new Set(["unspecified","phone","tablet","built-in","headset","usb","recorder","other"]);
 const splits=new Set(["development","validation","test","unspecified"]);
 const assertNoMaskedEvents=window.ROBOTITO_AUDIO_ANNOTATION_INTEGRITY?.assertNoMaskedEvents;
-if(typeof assertNoMaskedEvents!=="function")throw Error("Annotation integrity guard unavailable");
+const normalizeAnnotationReview=window.ROBOTITO_AUDIO_ANNOTATION_REVIEW?.normalizeAnnotationReview;
+if(typeof assertNoMaskedEvents!=="function"||typeof normalizeAnnotationReview!=="function")
+ throw Error("Audio annotation validation unavailable");
 const status=(message,kind="")=>{
  const el=byId("status");el.textContent=message;el.className=kind;
 };
@@ -42,6 +44,7 @@ function clearExisting(){
  if(state.url){URL.revokeObjectURL(state.url);state.url=null;}
  state.blob=null;state.ext="";state.duration=0;
  state.events=[];state.suppressions=[];
+ byId("reviewComplete").checked=false;
  const player=byId("preview");player.pause();player.removeAttribute("src");player.hidden=true;
  byId("duration").textContent="Todavía no hay un audio cargado.";
  render("events");render("suppressions");updateControls();
@@ -97,7 +100,11 @@ function render(which){
   const remove=document.createElement("button");
   remove.type="button";remove.className="secondary";remove.textContent="Quitar";
   remove.setAttribute("aria-label","Quitar intervalo "+(index+1));
-  remove.addEventListener("click",()=>{rows.splice(index,1);render(which);});
+  remove.addEventListener("click",()=>{
+   rows.splice(index,1);
+   byId("reviewComplete").checked=false;
+   render(which);
+  });
   li.append(span,remove);target.append(li);
  });
 }
@@ -116,7 +123,9 @@ function add(which){
    assertNoMaskedEvents(state.events,[...state.suppressions,item]);
    state.suppressions.push(item);
   }
-  render(which);status("Intervalo agregado.","success");
+  // A change to ground truth invalidates the earlier review attestation.
+  byId("reviewComplete").checked=false;
+  render(which);status("Intervalo agregado. Revisá nuevamente el audio antes de evaluar.","success");
  }catch(error){status(error.message,"error");}
 }
 function exportData(){
@@ -142,7 +151,8 @@ function exportData(){
  assertNoMaskedEvents(state.events,state.suppressions);
  const manifest={name:"Sesión autorizada para evaluación P03",sessions:[{
   id,path:fileName,environment,deviceClass,sourceGroup,evaluationSplit:split,
-  rights,annotations:state.events.map(x=>({...x})),
+  rights,annotationReview:normalizeAnnotationReview(byId("reviewComplete").checked?
+   "complete":"draft"),annotations:state.events.map(x=>({...x})),
   suppressions:state.suppressions.map(x=>({...x}))
  }]};
  return {fileName,manifest};
@@ -160,7 +170,9 @@ function exportOne(which){
   if(which==="audio")download(state.blob,fileName);
   else download(new Blob([JSON.stringify(manifest,null,2)+"\n"],{type:"application/json"}),
    "manifest-"+byId("sessionId").value.trim()+".json");
-  status("Archivo descargado. Guardá audio y JSON juntos en la misma carpeta.","success");
+  const reviewed=manifest.sessions[0].annotationReview==="complete";
+  status((reviewed?"Archivo revisado descargado. ":"Borrador descargado: no se evaluarán tasas de falsas alarmas. ")+
+   "Guardá audio y JSON juntos en la misma carpeta.","success");
  }catch(error){status(error.message,"error");}
 }
 function cancelCapture(){
