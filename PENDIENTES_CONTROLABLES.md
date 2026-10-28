@@ -23,6 +23,8 @@ Ya se agregó separación opcional por `sourceGroup` seudónimo y `evaluationSpl
 
 El preflight del corpus ahora rechaza copias de archivos idénticos con IDs diferentes o en clips y sesiones simultáneos. No detecta necesariamente extractos/transformaciones de la misma grabación ni prueba separación entre hablantes o conjuntos de validación; esa independencia debe verificarse con audio humano real autorizado.
 
+La captura avanzada ya comprueba el ciclo de vida de las pistas reales del navegador y bloquea transferencias de audio cuando se silencian, se deshabilitan o terminan; el modelo se apaga ante desconexión definitiva. La regresión usa pistas simuladas y una pista de navegador generada sin hardware, por lo que faltan pruebas de desconexión, permisos y latencia con micrófonos físicos de distintos dispositivos.
+
 El respaldo de audio del navegador ahora usa bloques contiguos mediante `ScriptProcessorNode` optativo cuando no hay `AudioWorklet`; se eliminó la toma repetida de instantáneas `AnalyserNode`. La compatibilidad real con sistemas antiguos sigue pendiente y no habilita reacciones humanas sin calibración.
 
 Para impedir reacciones humanas no autorizadas, la política del avatar ahora exige autorización independiente `humanModelReactionsApproved` (apagada en la aplicación), además del modelo declarado calibrado y evidencia temporal suficiente. La aprobación solo podrá habilitarse tras analizar grabaciones humanas y probar falsos episodios y reacciones reales; la protección por código no reemplaza ese requisito.
