@@ -50,6 +50,12 @@ fake.respond({type:"result",id:request.id,categories:[
  {categoryName:"Sneeze",score:.97},{categoryName:"Speech",score:.95}
 ]});
 eq(bridge.getStatus().candidate.kind,"unknown","Close sneeze/speech candidates remain uncertain");
+eq(bridge.getStatus().performance.completedInferences,1,
+ "One real completion is counted once");
+eq(bridge.getStatus().performance.lastInferenceMs,0,
+ "Fake clock shows deterministic zero inference latency");
+eq(bridge.getStatus().performance.averageInferenceMs,0,
+ "Average inference latency is computed from completed jobs only");
 eq(bridge.getStatus().calibrated,false,
  "YAMNet predictions are not presented as field-calibrated event proof");
 current+=2700;
@@ -59,6 +65,10 @@ eq(bridge.getStatus().candidate,null,"Suppression clears the previous candidate 
 fake.respond({type:"result",id:request.id,categories:[{categoryName:"Sneeze",score:1}]});
 eq(bridge.getStatus().candidate,null,"Late result from before class/sleep is ignored");
 bridge.disable();eq(fake.closed,true,"Disabling opt-in closes remote-code worker");
+eq(bridge.getStatus().performance.completedInferences,0,
+ "Disabling clears session-specific latency telemetry");
+eq(bridge.getStatus().performance.lastInferenceMs,null,
+ "No previous user's timing metadata survives model disable");
 eq(bridge.getStatus().candidate,null,"Opt-out clears cached audio evidence");
 fake.respond({type:"result",id:request.id+1,categories:[{categoryName:"Cough",score:1}]});
 eq(bridge.getStatus().state,"off","Late inference cannot reactivate disabled model");
@@ -92,6 +102,10 @@ eq(delayedWorker.requests.filter(x=>x.type==="classify").length,2,
 current+=2600;
 delayed.pushPCM(new Float32Array(2000),16000);
 eq(delayed.getStatus().state,"error","Hanging inference times out");
+eq(delayed.getStatus().performance.timedOutInferences,1,
+ "Timed-out inference is tracked explicitly");
+eq(delayed.getStatus().performance.completedInferences,0,
+ "Timed-out inference cannot masquerade as successful latency");
 eq(delayedWorker.closed,true,"Hanging worker is terminated");
 delayed.enable();
 eq(delayed.getStatus().state,"ready","Model supports retry after hanging inference");
