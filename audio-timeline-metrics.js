@@ -124,7 +124,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    const t=frame.atSeconds,kind=classify(frame.scores);
    const eligible=!blocked(frame)&&covered(t,active)&&HUMAN.includes(kind);
    if(!eligible||kind!==prevKind||
-      t-lastTime<hopSeconds*.5||t-lastTime>hopSeconds*1.9){
+      t-lastTime<hopSeconds*.95||t-lastTime>hopSeconds*1.9){
     prevKind=null;consecutive=0;
    }
    if(eligible){
@@ -152,7 +152,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
      const next=overlapping[i+1];
      if(!next)return false;
      const delta=next.atSeconds-frame.atSeconds;
-     return delta>=hopSeconds*.5&&delta<=hopSeconds*1.9;
+     return delta>=hopSeconds*.95&&delta<=hopSeconds*1.9;
     });
    };
    const eligibleLabels=labels.filter(x=>hasEvidenceCoverage(x.interval));
