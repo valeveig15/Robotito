@@ -124,6 +124,14 @@ eq(combined.bySplit.test.metrics.sneeze.fp,1,
  "Continuous reference false episodes use only their declared test split");
 eq(combined.bySplit.unspecified.sessionCount,1,
  "Legacy timeline sessions stay explicitly unassigned");
+eq(combined.sourceGroupAudit.sourceGroups,1,
+ "Direct timeline audit counts only declared recording groups");
+eq(combined.sourceGroupAudit.ungroupedRecordings,1,
+ "Unassigned sessions never impersonate independent sources");
+assert.throws(()=>evaluateContinuous([
+ {...b,id:"group-dev",sourceGroup:"one-session",evaluationSplit:"development"},
+ {...b,id:"group-test",sourceGroup:"one-session",evaluationSplit:"test"}
+]),/across evaluation splits/);checks++;
 eq(combined.byDevice.unspecified.sessionCount,1,"Legacy sessions never impersonate measured phones");
 eq(combined.byDevice.phone.metrics.sneeze.fp,1,
  "False episodes stay tied to the device cohort that generated them");
