@@ -62,6 +62,8 @@ const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.
       bridge.pushPCM(source.subarray(i,Math.min(rate,i+2048)),rate);
     };
     bridge=window.ROBOTITO_SOUND_MODEL.create({
+     // This test page lives under /tests; the application itself is at /.
+     workerFactory:()=>new Worker("../audio-model-worker.js"),
      onUpdate:status=>{
       if(status.state==="error"){stop(new Error(status.message));return;}
       if(status.state!=="ready")return;
