@@ -1203,6 +1203,9 @@ function setupAudio(stream){
       workletGeneration++;workletActive=false;
       if(workletTap){
         workletTap.port.onmessage=null;
+        // Disconnect the original mic-source edge as well as the output.
+        // Leaving src -> worklet attached could retain unwanted capture.
+        try{src.disconnect(workletTap);}catch{}
         try{workletTap.disconnect();}catch{}
         workletTap=null;
       }
