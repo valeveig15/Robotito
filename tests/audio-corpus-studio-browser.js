@@ -112,12 +112,12 @@ async function saveDownload(page,selector){
   const draft=JSON.parse(fs.readFileSync(draftDownload.destination,"utf8"));
   assert.equal(draft.sessions[0].annotationReview,"draft",
    "Unchecked sessions export as explicit draft, never as certified negatives");
-  assert.equal(loadManifest(draftDownload.destination).sessions[0].annotationReview,"draft",
-   "Offline manifest parser can inspect unfinished drafts");
   await page.locator("#reviewComplete").check();
   const audio=await saveDownload(page,"#downloadAudio");
   const json=await saveDownload(page,"#downloadManifest");
   assert.equal(audio.name,"synthetic-lab-1.wav");
+  assert.equal(loadManifest(draftDownload.destination).sessions[0].annotationReview,"draft",
+   "Once the WAV is downloaded, legacy-compatible preflight can inspect an unfinished draft");
   assert.equal(json.name,"manifest-synthetic-lab-1.json");
   assert.deepEqual(fs.readFileSync(audio.destination),wav(),
    "Original selected bytes must download unmodified and named to match manifest");
