@@ -102,6 +102,8 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
  clock=()=>Date.now(),onUpdate=()=>{}}={}){
  let worker=null,state="off",statusMessage="",last=null,writeAt=0,filled=0,sinceLast=0;
  let sequence=0,minimumAcceptedId=0,pendingId=0,pendingAt=0,busy=false;
+ let inferenceCount=0,inferenceTotalMs=0,lastInferenceMs=null,
+  maxInferenceMs=0,timedOutInferences=0;
  let ring=new Float32Array(WINDOW_SAMPLES);
  const resampler=createResampler();
  const version="YAMNet AudioSet (uncalibrated for Robotito)";
@@ -109,7 +111,11 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
  function getStatus(){
   const recent=last&&clock()-last.observedAt<=2600?last:null;
   return {state,message:statusMessage,version,calibrated:false,
-    candidate:recent?{...recent.candidate}:null,scores:recent?{...recent.scores}:null};
+    candidate:recent?{...recent.candidate}:null,scores:recent?{...recent.scores}:null,
+    performance:{completedInferences:inferenceCount,
+      lastInferenceMs,averageInferenceMs:inferenceCount?inferenceTotalMs/inferenceCount:null,
+      maxInferenceMs:inferenceCount?maxInferenceMs:null,
+      timedOutInferences,activeInference:busy}};
  }
  function clearAudio(){
   if(!filled&&!last&&!busy&&!resampler.getInputRate())return;
@@ -124,7 +130,9 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
   if(previous)try{previous.terminate();}catch{}
   state="off";statusMessage="";last=null;writeAt=0;filled=0;sinceLast=0;busy=false;
   ring=new Float32Array(WINDOW_SAMPLES);minimumAcceptedId=sequence+1;
-  pendingId=0;pendingAt=0;resampler.reset();publish();
+  pendingId=0;pendingAt=0;resampler.reset();
+  inferenceCount=0;inferenceTotalMs=0;lastInferenceMs=null;
+  maxInferenceMs=0;timedOutInferences=0;publish();
  }
  function enable(){
   if(state==="loading"||state==="ready")return true;
@@ -155,6 +163,8 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
     const elapsed=clock()-pendingAt;pendingAt=0;
     if(data.id<minimumAcceptedId||data.id<= (last?.id||0)||
        elapsed<0||elapsed>MAX_INFERENCE_MS)return;
+    inferenceCount++;inferenceTotalMs+=elapsed;lastInferenceMs=elapsed;
+    maxInferenceMs=Math.max(maxInferenceMs,elapsed);
     const mapped=mapCategories(data.categories);
     last={id:data.id,observedAt:clock(),...mapped};publish();
    }else if(data.type==="error")fail(data.message||"Model unavailable");
@@ -178,6 +188,7 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
   });
   // Do not keep the queue stuck forever when WASM inference hangs.
   if(busy&&clock()-pendingAt>MAX_INFERENCE_MS){
+   timedOutInferences++;
    const failed=worker;worker=null;try{failed?.terminate();}catch{}
    state="error";statusMessage="El clasificador no respondió a tiempo";
    last=null;filled=0;sinceLast=0;ring.fill(0);busy=false;
