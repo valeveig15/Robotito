@@ -40,6 +40,28 @@ eq(x.metricScope.includes("NOT continuous alarm episodes"),true,
 eq(x.negativeExposureByTarget.sneeze,20/3600,"Non-target human cough counts as sneeze-negative exposure");
 eq(x.byEnvironment.street,2,"Environmental strata counted");
 eq(x.calibrated,false,"Synthetic tests NEVER authorize calibration");
+const positive={sneeze:.995,cough:.01,unknown:.02};
+const neutral={unknown:.99,noise:.96};
+const cough={cough:.995,unknown:.01};
+const isolated=report.classifyWindows([neutral,positive,neutral,neutral]);
+eq(isolated.predicted,"unknown","One isolated spike in a long recording must abstain");
+const repeated=report.classifyWindows([neutral,positive,positive,neutral]);
+eq(repeated.predicted,"sneeze","Two adjacent positive windows qualify as clip-level evidence");
+eq(report.classifyWindows([neutral,positive,positive,cough,cough]).predicted,
+ "unknown","Distinct human events in one file are not a single-label result");
+eq(report.classifyWindows([positive]).predicted,"sneeze",
+ "A short single-window sound can be evaluated without invented frames");
+const reportWindows=report.evaluate([
+ {...base,id:"temporal-positive",label:"sneeze",windowScores:[neutral,positive,positive]},
+ {...base,id:"temporal-isolated",label:"noise",windowScores:[neutral,positive,neutral]},
+ {...base,id:"temporal-conflict",label:"cough",windowScores:[positive,positive,cough,cough]}
+]);
+eq(reportWindows.confusion.sneeze.sneeze,1,"Real window decisions enter the confusion matrix");
+eq(reportWindows.confusion.noise.unknown,1,"Single spike does not count as false-positive clip");
+eq(reportWindows.temporalEvaluation.clips,3,"Window-based clip count is audited");
+eq(reportWindows.temporalEvaluation.conflictingClips,1,
+ "Mixed-human source clips are flagged for annotation review");
+eq(reportWindows.calibrated,false,"Temporal gates cannot authorize reactions");
 eq(x.schemaVersion,2,"Clip metrics get a versioned output schema");
 eq(x.environmentMetrics.street.clipCount,2,"Environment sample count is explicit");
 eq(x.metrics.sneeze.falsePositiveClipRateUpper95>.25,true,
