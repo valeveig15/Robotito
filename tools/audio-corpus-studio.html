@@ -25,7 +25,7 @@ button.secondary{background:#edf3f7;color:#22415b;border:1px solid #b6cad7}
 </style>
 <script defer src="../audio-annotation-integrity.js?v=20261028-masked-groundtruth1"></script>
 <script defer src="../audio-annotation-review.js?v=20261028-review1"></script>
-<script defer src="./audio-corpus-studio.js?v=20261028-review1"></script>
+<script defer src="./audio-corpus-studio.js?v=20261028-review-hash1"></script>
 </head>
 <body>
 <header><p class="muted">Robotito · Herramienta de desarrollo P03 · No es parte de la escucha cotidiana</p>
@@ -80,7 +80,7 @@ button.secondary{background:#edf3f7;color:#22415b;border:1px solid #b6cad7}
 </section>
 <section aria-labelledby="export-title">
 <h2 id="export-title">4. Descargá audio y manifiesto</h2>
-<label class="check" for="reviewComplete"><input type="checkbox" id="reviewComplete"> <span>Escuché y revisé la <strong>grabación completa</strong>, identifiqué todos los sonidos de tos, estornudo, risa, llanto y palmadas presentes y marqué los intervalos que no deben analizarse. Si no marco esto, el archivo se exportará como <strong>borrador</strong> y no se usará para calcular tasas de falsas alarmas.</span></label>
+<label class="check" for="reviewComplete"><input type="checkbox" id="reviewComplete"> <span>Escuché y revisé la <strong>grabación completa</strong>, identifiqué todos los sonidos de tos, estornudo, risa, llanto y palmadas presentes y marqué los intervalos que no deben analizarse. Si no marco esto, el archivo se exportará como <strong>borrador</strong> y no se usará para calcular tasas de falsas alarmas. Al confirmar la revisión, el manifiesto contendrá una huella SHA-256 del audio, calculada <strong>localmente</strong>, para detectar cambios del archivo antes de evaluar; no se incluye esa huella en los informes.</span></label>
 <p>Se crean dos archivos locales: <code>&lt;id&gt;.&lt;extensión&gt;</code> y <code>manifest-&lt;id&gt;.json</code>. Guardalos <strong>en la misma carpeta</strong> para que las rutas relativas funcionen.</p>
 <div class="controls"><button id="downloadAudio" type="button">Descargar audio</button><button id="downloadManifest" type="button">Descargar manifiesto JSON</button></div>
 <p class="muted">Antes de evaluar, ejecutá <code>npm run validate:audio -- /ruta/manifest-sesion-001.json</code>. Después podés ejecutar <code>npm run evaluate:audio -- /ruta/manifest-sesion-001.json</code>. El evaluador sigue sin autorizar automáticamente reacciones.</p>
