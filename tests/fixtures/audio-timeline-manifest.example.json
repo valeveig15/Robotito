@@ -1,0 +1,14 @@
+{
+  "name": "Sesión de evaluación acústica privada: ejemplo sin archivos",
+  "sessions": [{
+    "id": "sesion-ejemplo-01",
+    "path": "clips/sesion-ejemplo.wav",
+    "environment": "habitacion-con-ruido",
+    "rights": "owned",
+    "annotations": [
+      {"kind": "sneeze", "startSeconds": 12.1, "endSeconds": 12.6},
+      {"kind": "cough", "startSeconds": 25.2, "endSeconds": 25.5}
+    ],
+    "suppressions": [{"startSeconds": 30, "endSeconds": 40}]
+  }]
+}
