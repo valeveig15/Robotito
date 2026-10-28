@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("node:assert/strict");
-const {plan,frame,WINDOW_SAMPLES}=require("../audio-evaluation-windows.js");
+const {plan,frame,overlapsSuppression,WINDOW_SAMPLES}=require("../audio-evaluation-windows.js");
 let checked=0;
 const eq=(got,want,name)=>{assert.deepEqual(got,want,name);checked++;};
 for(const [duration,expected]of [[2400,1],[8000,1],[15599,1],
@@ -25,5 +25,13 @@ eq(frame(new Float32Array(4000).fill(.3),short).length,WINDOW_SAMPLES,
  "Short single sneeze/cough is actually sent to classifier");
 for(const n of [0,-1,Infinity,1.2]){assert.throws(()=>plan(n));checked++;}
 assert.throws(()=>frame(new Float32Array(4),{start:0,end:7,paddingStart:0,paddingEnd:0}));
+checked++;
+eq(overlapsSuppression(0,.975,[{startSeconds:.9,endSeconds:1.1}]),true,
+ "Partly overlapped voice interval vetoes whole YAMNet frame");
+eq(overlapsSuppression(1.1,2,[{startSeconds:.9,endSeconds:1.1}]),false,
+ "Touching boundary does not suppress unaffected frame");
+eq(overlapsSuppression(0,.975,[{startSeconds:1,endSeconds:2}]),false,
+ "Unrelated later suppression leaves frame unchanged");
+assert.throws(()=>overlapsSuppression(0,.975,[{startSeconds:1.2,endSeconds:1.1}]));
 checked++;
 console.log("Robotito short and trailing audio-window regression:",checked,"assertions passed");
