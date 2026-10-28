@@ -69,7 +69,7 @@ async function main(){
   const observations=[],timelineSessions=[];
   for(const item of [...clips,...sessions]){
    const file=fs.readFileSync(item.absolutePath).toString("base64");
-   const observation=await page.evaluate(async fileBase64=>{
+   const observation=await page.evaluate(async ({fileBase64,suppressions})=>{
     const bytes=Uint8Array.from(atob(fileBase64),c=>c.charCodeAt(0));
     const audioContext=new AudioContext();
     let audio;
@@ -81,9 +81,18 @@ async function main(){
     const rendered=await offline.startRendering(),pcm=rendered.getChannelData(0);
     const windowScores=[];
     const plan=window.ROBOTITO_AUDIO_EVALUATION_WINDOWS;
-    const spans=plan.plan(pcm.length);
+    const spans=plan.plan(pcm.length),skipped=[];
     let paddedWindows=0;
     for(const span of spans){
+     const startSeconds=span.start/16000,endSeconds=span.end/16000;
+     const suppressed=plan.overlapsSuppression(startSeconds,endSeconds,suppressions);
+     skipped.push(suppressed);
+     if(suppressed){
+      // Never send samples containing class/sleep/own-voice audio to YAMNet,
+      // even when the prediction's centre lies outside suppression.
+      windowScores.push({unknown:1});
+      continue;
+     }
      const slice=plan.frame(pcm,span);
      const categories=await window.__soundEvalClassify(slice);
      const mapped=window.ROBOTITO_SOUND_MODEL.mapCategories(categories);
@@ -91,13 +100,19 @@ async function main(){
      if(span.paddingStart||span.paddingEnd)paddedWindows++;
     }
     const frames=spans.map((span,i)=>({
-      atSeconds:Math.min(audio.duration,(span.start+7800)/16000),
+      // A model cannot react until it has received the ENTIRE window.
+      atSeconds:span.end/16000,
+      windowStartSeconds:span.start/16000,
+      windowEndSeconds:span.end/16000,
+      suppressed:skipped[i],
       scores:windowScores[i]
     }));
     return {windowScores,frames,windows:spans.length,paddedWindows,
+      skippedWindows:skipped.filter(Boolean).length,
+      scoredWindows:skipped.filter(x=>!x).length,
       trailingSamplesCovered:spans.at(-1)?.end===pcm.length,
       durationSeconds:audio.duration};
-   },file);
+   },{fileBase64:file,suppressions:sessions.includes(item)?item.suppressions||[]:[]});
    if(sessions.includes(item))
     timelineSessions.push({id:item.id,environment:item.environment,
       rights:item.rights,durationSeconds:observation.durationSeconds,
@@ -105,7 +120,8 @@ async function main(){
       frames:observation.frames});
    else observations.push({id:item.id,label:item.label,environment:item.environment,
      rights:item.rights,...observation});
-   console.log("Evaluated",item.id,observation.windows,"YAMNet windows");
+   console.log("Evaluated",item.id,observation.scoredWindows,"YAMNet windows;",
+     observation.skippedWindows,"suppressed windows never classified");
   }
   const result=observations.length?evaluate(observations):{
     schemaVersion:2,clipCount:0,metricScope:"No isolated labelled clips",
