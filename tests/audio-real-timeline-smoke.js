@@ -35,8 +35,13 @@ try{
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
  assert.equal(report.continuousEvaluation.overall.sessionCount,1);
  assert.equal(report.continuousEvaluation.sessions[0].environment,"synthetic-tone");
- assert.ok(report.continuousEvaluation.sessions[0].classifiedFrames>=2,
+ const evaluated=report.continuousEvaluation.sessions[0];
+ assert.ok(evaluated.classifiedFrames>=2,
   "Audio must be decoded, windowed and classified by real YAMNet");
+ assert.ok(evaluated.skippedFrames>=1,
+  "YAMNet must not receive even partly suppressed audio windows");
+ assert.equal(evaluated.classifiedFrames+evaluated.skippedFrames>=4,true,
+  "Suppression accounts for every planned time window");
  assert.ok(report.continuousEvaluation.overall.observedSeconds>1);
  assert.ok(report.continuousEvaluation.overall.observedSeconds<2.5,
   "Missing or suppressed time cannot inflate negative listening hours");
@@ -47,7 +52,7 @@ try{
  assert.equal(report.continuousEvaluation.byEnvironment["synthetic-tone"].sessionCount,1);
  assert.ok(output.includes("Saved non-calibrating evaluation report"),
   "The real CLI must finish successfully");
- console.log("Genuine end-to-end continuous YAMNet evaluation: 11 checks passed");
+ console.log("Genuine end-to-end continuous YAMNet evaluation with suppressed-window isolation passed");
 }finally{
  fs.rmSync(temp,{recursive:true,force:true});
 }
