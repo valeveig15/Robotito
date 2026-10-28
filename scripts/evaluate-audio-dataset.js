@@ -118,6 +118,10 @@ async function main(){
   fs.writeFileSync(destination,JSON.stringify(result,null,2)+"\n");
   console.log("Saved non-calibrating evaluation report:",destination);
   console.log(JSON.stringify({clips:result.clipCount,metrics:result.metrics,
+    clipDeviceCounts:result.byDevice||null,
+    continuousSessionCountsByDevice:result.continuousEvaluation?
+      Object.fromEntries(Object.entries(result.continuousEvaluation.byDevice)
+        .map(([device,summary])=>[device,summary.sessionCount])):null,
     continuousReference:result.continuousEvaluation?.overall||null,
     calibrated:false,automaticHumanReactionsApproved:false},null,2));
  }finally{
