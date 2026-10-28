@@ -6,6 +6,7 @@ const fs=require("node:fs"),path=require("node:path"),{spawn}=require("node:chil
 const {chromium}=require("playwright"),{evaluate}=require("../audio-calibration.js");
 const {evaluateContinuous}=require("../audio-timeline-metrics.js");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
+const {inspectCorpus}=require("../audio-media-preflight.js");
 const root=path.resolve(__dirname,".."),manifestPath=process.argv[2];
 const port=Number(process.env.ROBOTITO_AUDIO_EVAL_PORT||8799);
 if(!manifestPath)throw Error("Usage: npm run evaluate:audio -- /path/to/manifest.json");
@@ -18,6 +19,9 @@ async function main(){
   browser=await chromium.launch({headless:true});
   const page=await browser.newPage();
   await page.goto("http://127.0.0.1:"+port+"/tests/audio-eval.html",{waitUntil:"domcontentloaded"});
+  // Decode and validate every recording BEFORE initializing the Worker.
+  // Later invalid sessions cannot leave an already evaluated partial corpus.
+  const durationPreflight=await inspectCorpus(page,[...clips,...sessions]);
   await page.evaluate(async()=>{
    await new Promise((resolve,reject)=>{
     const worker=new Worker("../audio-model-worker.js");
@@ -114,7 +118,7 @@ async function main(){
   result.datasetName=String(manifest.name||"unnamed");
   // Preflight rejects exact duplicate PCM files before browser inference.
   // Only the aggregate check is reported; local SHA-256 digests stay private.
-  result.datasetIntegrity={...groupAudit,exactDuplicateFilesRejected:true,
+  result.datasetIntegrity={...groupAudit,durationPreflight,exactDuplicateFilesRejected:true,
     uniqueAudioFiles:clips.length+sessions.length,
     comparison:"Local SHA-256 over file bytes (not perceptual similarity)",
     limitation:"Edited or cropped copies and overlapping recording sessions require independent human audit"};

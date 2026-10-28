@@ -3,7 +3,7 @@
 // YAMNet inference, temporal event metrics and a saved report. No user audio.
 const assert=require("node:assert/strict");
 const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
-const {execFileSync}=require("node:child_process");
+const {execFileSync,spawnSync}=require("node:child_process");
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-timeline-real-"));
 function wav(seconds=2.5,rate=16000){
  const samples=Math.floor(seconds*rate),bytes=Buffer.alloc(44+samples*2);
@@ -25,6 +25,48 @@ try{
   sessions:[{id:"synthetic-01",path:"generated.wav",environment:"synthetic-tone",
    rights:"owned",sourceGroup:"synthetic-source-1",evaluationSplit:"test",annotations:[],
    suppressions:[{startSeconds:1.05,endSeconds:1.45}]}]}));
+ // The standalone preflight never downloads or initializes YAMNet.
+ const preflight=execFileSync(process.execPath,["scripts/validate-audio-dataset.js",manifestPath],{
+  cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
+ });
+ assert.ok(preflight.includes('"decodedFilesVerified": 1'),
+  "Real browser preflight decodes the actual WAV without classifying it");
+ const invalidPath=path.join(temp,"invalid-annotations.json");
+ fs.writeFileSync(invalidPath,JSON.stringify({sessions:[{
+  id:"out-of-bounds",path:"generated.wav",rights:"owned",environment:"synthetic-tone",
+  annotations:[{kind:"sneeze",startSeconds:2.4,endSeconds:3.0}]
+ }]}));
+ const invalidValidation=spawnSync(process.execPath,[
+  "scripts/validate-audio-dataset.js",invalidPath],{
+   cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
+  });
+ assert.notEqual(invalidValidation.status,0,
+  "An annotation extending beyond real WAV audio must be rejected");
+ assert.match(invalidValidation.stderr,/Out-of-bounds annotation/);
+ const badAudio=path.join(temp,"corrupt.wav");
+ fs.writeFileSync(badAudio,Buffer.from("not genuine audio"));
+ const badPath=path.join(temp,"corrupt-manifest.json");
+ fs.writeFileSync(badPath,JSON.stringify({clips:[{
+  id:"broken",path:"corrupt.wav",rights:"owned",environment:"synthetic",label:"noise"
+ }]}));
+ const invalidCodec=spawnSync(process.execPath,[
+  "scripts/validate-audio-dataset.js",badPath],{
+   cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
+  });
+ assert.notEqual(invalidCodec.status,0,"An undecodable file must be rejected");
+ assert.match(invalidCodec.stderr,/Cannot decode authorized audio/);
+ // The integrated evaluator must also abort BEFORE any model inference.
+ const deniedEvaluation=spawnSync(process.execPath,[
+  "scripts/evaluate-audio-dataset.js",invalidPath],{
+   cwd:path.resolve(__dirname,".."),
+   env:{...process.env,ROBOTITO_AUDIO_EVAL_PORT:"8826"},
+   timeout:30000,encoding:"utf8"
+  });
+ assert.notEqual(deniedEvaluation.status,0,
+  "An invalid later annotation cannot enter the YAMNet evaluation stage");
+ assert.match(deniedEvaluation.stderr,/Out-of-bounds annotation/);
+ assert.equal(fs.existsSync(path.join(temp,"robotito-audio-evaluation.json")),false,
+  "A failed corpus preflight must never create a misleading report");
  const output=execFileSync(process.execPath,["scripts/evaluate-audio-dataset.js",manifestPath],{
   cwd:path.resolve(__dirname,".."),
   env:{...process.env,ROBOTITO_AUDIO_EVAL_PORT:"8826"},
@@ -33,6 +75,12 @@ try{
  const report=JSON.parse(fs.readFileSync(
   path.join(temp,"robotito-audio-evaluation.json"),"utf8"));
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
+ assert.equal(report.datasetIntegrity.durationPreflight.decodedFilesVerified,1,
+  "Every real recording must be decoded and checked before any inference");
+ assert.equal(report.datasetIntegrity.durationPreflight.modelInferencePerformed,false,
+  "The preflight itself never executes YAMNet");
+ assert.ok(Math.abs(report.datasetIntegrity.durationPreflight.totalDecodedSeconds-2.5)<.001,
+  "Decoded duration is the source of truth rather than annotation guesses");
  assert.equal(report.datasetIntegrity.exactDuplicateFilesRejected,true,
   "Real YAMNet evaluation must be preceded by duplicate-file protection");
  assert.equal(report.datasetIntegrity.sourceGroups,1,
