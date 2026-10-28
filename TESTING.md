@@ -109,6 +109,10 @@ La CI ahora ejecuta `npm run test:audio:real`: inicializa **YAMNet y MediaPipe r
 
 El evaluador comprueba **antes de cargar YAMNet** los ID únicos de clips y sesiones, etiquetas, derechos, intervalos positivos de anotación y silencio, archivos regulares de hasta 50 MB y rutas físicas que no pueden escapar de la carpeta del manifiesto mediante enlaces simbólicos. Las grabaciones `open-license` necesitan `license` y `source`; ESC-50 ya los incluye. El informe conserva la procedencia sin exponer rutas privadas. No es una auditoría legal de permisos ni una evaluación de precisión.
 
+### Cobertura temporal y eventos no evaluables (P03)
+
+El detector de referencia exige **dos ventanas de audio analizadas y consecutivas**. Un evento humano anotado con una sola ventana válida, con intervalos sin muestras, o después de supresiones no se registra como un falso negativo: se conserva en `annotatedEvents`, aparece en `unevaluableEvents` y queda fuera del denominador `evaluableEvents`. Las sumas por entorno también lo informan. Así no se confunde falta de cobertura con fallo de clasificación; tampoco se ocultan los ejemplos sin evidencia suficiente. La regla corresponde **solo** al evaluador offline de referencia y no implica aprobar reacciones automáticas.
+
 ### Incertidumbre estadística de falsas alertas (P03)
 
 La evaluación offline de sesiones continuas informa ahora `negativeHours` y `falseAlertsPerNegativeHourUpper95`, el **límite superior unilateral del 95 % bajo el supuesto de episodios Poisson independientes y tasa estacionaria**. Con cero falsos episodios la tasa empírica es cero, **pero la cota superior es positiva** (aprox. `2.996 / horas negativas observadas`). Sin exposición observada, ambas tasas son `null`. No hay evidencia de que esas hipótesis estadísticas se cumplan en un micrófono real; es una indicación exploratoria de incertidumbre, no una garantía de precisión ni una autorización de reacciones.
