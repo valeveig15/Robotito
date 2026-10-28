@@ -112,7 +112,8 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    const duration=at-evidence.since+45;
    if(evidence.count>=gate.frames&&duration>=gate.minDuration&&duration<=gate.maxDuration){
     const confidence=evidence.score/evidence.count;
-    const event=emit(kind,confidence,at,{model:classifier.version,evidenceFrames:evidence.count});
+    const event=emit(kind,confidence,at,{model:classifier.version,
+     calibrated:true,evidenceFrames:evidence.count});
     if(event){events.push(event);modelLatched[kind]=true;}
     modelEvidence[kind]=null;
    }
