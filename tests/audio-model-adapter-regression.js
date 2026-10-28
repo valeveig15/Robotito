@@ -8,7 +8,20 @@ const samples=model.mapCategories([
  {categoryName:"Music",score:.82},{categoryName:"Speech",score:.20},
  {categoryName:"Knock",score:.25},{categoryName:"Unknown",score:.95}
 ]);
-eq(samples.candidate.kind,"music","Supported categories map to their strongest event");
+eq(samples.candidate.kind,"unknown","Unrecognized higher model class outranks weaker music");
+eq(samples.scores.unknown,.95,"Unmapped sound is an explicit competing score");
+eq(model.mapCategories([{categoryName:"Sneeze",score:.995},
+ {categoryName:"Door creak",score:.98}]).candidate.kind,"unknown",
+ "Close non-event competitor prevents a false sneeze label");
+eq(model.mapCategories([{categoryName:"Sneeze",score:.995},
+ {categoryName:"Door creak",score:.4}]).candidate.kind,"sneeze",
+ "Unopposed sneeze remains a tentative candidate");
+eq(model.mapCategories([{categoryName:"Sneezing",score:.995},
+ {categoryName:"Coughing",score:.98}]).candidate.kind,"unknown",
+ "Close cough/sneeze evidence abstains");
+eq(model.mapCategories([{categoryName:"Bird singing",score:.995},
+ {categoryName:"Sneeze",score:.96}]).candidate.kind,"unknown",
+ "Bird singing is not human music and can veto a false sneeze");
 eq(samples.scores.laugh,.73,"Laughter is a tentative event");
 eq(samples.scores.sneeze,.41,"Sneeze score is not boosted");
 eq(samples.scores.impact,.25,"Impacts are alternative labels");
@@ -36,7 +49,7 @@ eq(request.samples[0],.25,"Samples retained in rolling window");
 fake.respond({type:"result",id:request.id,categories:[
  {categoryName:"Sneeze",score:.97},{categoryName:"Speech",score:.95}
 ]});
-eq(bridge.getStatus().candidate.kind,"sneeze","Candidate exposed with uncertainty");
+eq(bridge.getStatus().candidate.kind,"unknown","Close sneeze/speech candidates remain uncertain");
 eq(bridge.getStatus().calibrated,false,
  "YAMNet predictions are not presented as field-calibrated event proof");
 current+=2700;
