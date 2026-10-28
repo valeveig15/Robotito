@@ -4,6 +4,7 @@
     "id": "sesion-ejemplo-01",
     "path": "clips/sesion-ejemplo.wav",
     "environment": "habitacion-con-ruido",
+    "deviceClass": "phone",
     "rights": "owned",
     "annotations": [
       {"kind": "sneeze", "startSeconds": 12.1, "endSeconds": 12.6},
