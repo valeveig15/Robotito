@@ -70,13 +70,13 @@ async function main(){
      if(suppressed){
       // Never send samples containing class/sleep/own-voice audio to YAMNet,
       // even when the prediction's centre lies outside suppression.
-      windowScores.push({unknown:1});
+      windowScores.push({unknown:1,windowStartSeconds:startSeconds});
       continue;
      }
      const slice=plan.frame(pcm,span);
      const categories=await window.__soundEvalClassify(slice);
      const mapped=window.ROBOTITO_SOUND_MODEL.mapCategories(categories);
-     windowScores.push(mapped.scores);
+     windowScores.push({...mapped.scores,windowStartSeconds:startSeconds});
      if(span.paddingStart||span.paddingEnd)paddedWindows++;
     }
     const frames=spans.map((span,i)=>({

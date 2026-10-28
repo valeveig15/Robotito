@@ -47,6 +47,19 @@ const isolated=report.classifyWindows([neutral,positive,neutral,neutral]);
 eq(isolated.predicted,"unknown","One isolated spike in a long recording must abstain");
 const repeated=report.classifyWindows([neutral,positive,positive,neutral]);
 eq(repeated.predicted,"sneeze","Two adjacent positive windows qualify as clip-level evidence");
+// The last YAMNet window can start only one sample after its predecessor.
+// Two near-identical pieces of PCM are not corroborating temporal evidence.
+const nearDuplicate=[{...positive,windowStartSeconds:0},
+ {...positive,windowStartSeconds:1/16000}];
+eq(report.classifyWindows(nearDuplicate).predicted,"unknown",
+ "Almost identical padded tail windows cannot confirm a human sound");
+const spacedWindows=[{...positive,windowStartSeconds:0},
+ {...positive,windowStartSeconds:.4875}];
+eq(report.classifyWindows(spacedWindows).predicted,"sneeze",
+ "Actual YAMNet hop retains two independent positive windows");
+assert.throws(()=>report.classifyWindows([
+ {...positive,windowStartSeconds:0},positive
+]),/Window start times/);assertions++;
 eq(report.classifyWindows([neutral,positive,positive,cough,cough]).predicted,
  "unknown","Distinct human events in one file are not a single-label result");
 eq(report.classifyWindows([positive]).predicted,"sneeze",

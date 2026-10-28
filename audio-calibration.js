@@ -28,14 +28,22 @@ function classifyWindows(windows){
  if(!Array.isArray(windows)||windows.length<1||
     windows.some(row=>!row||typeof row!=="object"||Array.isArray(row)))
   throw Error("Real sound evaluation needs ordered per-window model scores");
+ // A final evaluation window can overlap almost 100% of its predecessor.
+ // When genuine window offsets are known, such a near-duplicate is NOT an
+ // independent second observation of a cough, sneeze or other human event.
+ const hasTiming=windows.some(row=>Object.hasOwn(row,"windowStartSeconds"));
+ if(hasTiming&&windows.some((row,i)=>!Number.isFinite(row.windowStartSeconds)||
+    row.windowStartSeconds<0||(i>0&&row.windowStartSeconds<=windows[i-1].windowStartSeconds)))
+  throw Error("Window start times must be ordered, complete and nonnegative");
  const predictions=windows.map(row=>classify(row));
+ const independent=(i,j)=>j>=0&&j<predictions.length&&predictions[i]===predictions[j]&&
+  (!hasTiming||Math.abs(windows[j].windowStartSeconds-windows[i].windowStartSeconds)>=.4875-1e-6);
  const targetRuns=Object.fromEntries(HUMAN.map(k=>[k,0]));
  const qualifying=[];
  for(let i=0;i<predictions.length;i++){
   const kind=predictions[i];
   if(!HUMAN.includes(kind))continue;
-  const adjacent=windows.length===1||
-   predictions[i-1]===kind||predictions[i+1]===kind;
+  const adjacent=windows.length===1||independent(i,i-1)||independent(i,i+1);
   if(adjacent){targetRuns[kind]++;if(!qualifying.includes(kind))qualifying.push(kind);}
  }
  if(qualifying.length!==1){
