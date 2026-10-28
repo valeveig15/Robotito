@@ -27,6 +27,7 @@
     "test:audio:real": "node tests/audio-real-smoke.js",
     "test:audio:timeline:real": "node tests/audio-real-timeline-smoke.js",
     "test:audio:studio": "node tests/audio-corpus-studio-browser.js",
+    "test:audio:device": "node tests/audio-device-check-browser.js",
     "test:audio:matrix": "ROBOTITO_TEST_SEED=17 npm run test:audio && ROBOTITO_TEST_SEED=42 npm run test:audio && ROBOTITO_TEST_SEED=99 npm run test:audio"
   },
   "devDependencies": {

@@ -41,6 +41,9 @@ jobs:
       - name: Verify private sound-corpus recording and manifest exports
         # Fake Chromium microphone and local WAV; no person or private audio.
         run: npm run test:audio:studio
+      - name: Verify manual microphone field diagnostic with synthetic hardware
+        # Headless fake microphone only; never claims physical hardware passed.
+        run: npm run test:audio:device
       - name: Run core and browser regressions
         run: npm run test:ci
       - name: Deep reproducible stress matrix (scheduled or manual)
