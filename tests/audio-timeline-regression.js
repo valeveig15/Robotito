@@ -11,6 +11,15 @@ const a={id:"room",environment:"quiet",rights:"owned",durationSeconds:6,
  frames:rows,annotations:[{kind:"sneeze",startSeconds:2,endSeconds:3}],
  suppressions:[{startSeconds:3.7,endSeconds:4.7}]};
 const report=evaluateContinuous([a]);
+assert.throws(()=>evaluateContinuous([{...a,
+ suppressions:[{startSeconds:2.3,endSeconds:2.6}]}]),
+ /Ground-truth event overlaps suppressed audio/);checks++;
+assert.throws(()=>evaluateContinuous([{...a,
+ suppressions:[{startSeconds:1.9,endSeconds:2.1}]}]),
+ /Ground-truth event overlaps suppressed audio/);checks++;
+eq(evaluateContinuous([{...a,id:"touch-only",suppressions:[
+ {startSeconds:3,endSeconds:3.5}]}]).overall.metrics.sneeze.annotatedEvents,1,
+ "A suppression starting at the exact end of a human event is valid");
 eq(report.overall.metrics.sneeze.tp,1,"Real annotated sound is matched");
 eq(report.overall.metrics.sneeze.fp,0,"One sustained sound does not repeat inside cooldown");
 eq(report.overall.metrics.sneeze.fn,0,"Covered ground truth not missed");
