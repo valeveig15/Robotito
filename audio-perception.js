@@ -121,6 +121,17 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function process(feature,{now=clock(),suppress=false}={}){
   if(suppress){clearEvidence();return {kind:"unknown",confidence:0,musicConfidence:0,noiseFloor,events:[],candidates:{}};}
+  // Audio evidence is meaningful only within a continuous, forward-moving
+  // timeline. Browser stalls, resumed audio contexts and system-clock changes
+  // must not stitch earlier claps, rhythms or model frames to new sound.
+  if(!Number.isFinite(now)||now<0){
+   clearEvidence();
+   return {kind:"unknown",confidence:0,musicConfidence:0,noiseFloor,events:[],candidates:{}};
+  }
+  if(lastFrame&&(now<lastFrame||now-lastFrame>500)){
+   if(lastFrame-now>18000)lastEvent=Object.create(null);
+   clearEvidence();
+  }
   const f=featureFrame(feature,now);
   if(lastFrame&&now-lastFrame<38)return {kind:lastKind,confidence:lastKind==="music"?musicEvidence:.3,
    musicConfidence:musicEvidence,noiseFloor,events:[],candidates:{}};
