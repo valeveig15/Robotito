@@ -23,7 +23,7 @@ try{
  fs.writeFileSync(audio,wav());
  fs.writeFileSync(manifestPath,JSON.stringify({name:"CI synthetic audio only",
   sessions:[{id:"synthetic-01",path:"generated.wav",environment:"synthetic-tone",
-   rights:"owned",annotations:[],
+   rights:"owned",sourceGroup:"synthetic-source-1",evaluationSplit:"test",annotations:[],
    suppressions:[{startSeconds:1.05,endSeconds:1.45}]}]}));
  const output=execFileSync(process.execPath,["scripts/evaluate-audio-dataset.js",manifestPath],{
   cwd:path.resolve(__dirname,".."),
@@ -35,6 +35,14 @@ try{
  assert.equal(report.clipCount,0,"Timeline-only manifests must work");
  assert.equal(report.datasetIntegrity.exactDuplicateFilesRejected,true,
   "Real YAMNet evaluation must be preceded by duplicate-file protection");
+ assert.equal(report.datasetIntegrity.sourceGroups,1,
+  "Genuine evaluation audit retains the declared recording-source group");
+ assert.equal(report.datasetIntegrity.recordingsBySplit.test,1,
+  "Source-group validation is carried through the genuine model CLI");
+ assert.equal(report.datasetIntegrity.independentlyVerified,false,
+  "No synthetic group labels can claim independent real-world verification");
+ assert.equal(report.continuousEvaluation.bySplit.test.sessionCount,1,
+  "Real YAMNet timeline report stays stratified by holdout split");
  assert.equal(report.datasetIntegrity.uniqueAudioFiles,1,
   "Count physically distinct source recordings without exposing audio hashes");
  assert.equal(JSON.stringify(report).includes("sha256:"),false,

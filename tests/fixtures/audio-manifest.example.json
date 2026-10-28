@@ -7,6 +7,8 @@
       "label": "sneeze",
       "environment": "habitacion-silenciosa",
       "deviceClass": "built-in",
+      "sourceGroup": "grabacion-original-001",
+      "evaluationSplit": "development",
       "rights": "owned"
     },
     {
@@ -15,6 +17,8 @@
       "label": "impact",
       "environment": "habitacion-con-ruido",
       "deviceClass": "phone",
+      "sourceGroup": "grabacion-original-002",
+      "evaluationSplit": "test",
       "rights": "owned"
     }
   ]

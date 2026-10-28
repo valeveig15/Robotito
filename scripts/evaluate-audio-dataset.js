@@ -9,7 +9,7 @@ const {loadManifest}=require("../audio-evaluation-manifest.js");
 const root=path.resolve(__dirname,".."),manifestPath=process.argv[2];
 const port=Number(process.env.ROBOTITO_AUDIO_EVAL_PORT||8799);
 if(!manifestPath)throw Error("Usage: npm run evaluate:audio -- /path/to/manifest.json");
-const {base,manifest,clips,sessions}=loadManifest(manifestPath);
+const {base,manifest,clips,sessions,groupAudit}=loadManifest(manifestPath);
 async function main(){
  const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],{cwd:root,stdio:"ignore"});
  let browser=null;
@@ -95,10 +95,12 @@ async function main(){
    },{fileBase64:file,suppressions:sessions.includes(item)?item.suppressions||[]:[]});
    if(sessions.includes(item))
     timelineSessions.push({id:item.id,environment:item.environment,deviceClass:item.deviceClass,
+      sourceGroup:item.sourceGroup,evaluationSplit:item.evaluationSplit,
       rights:item.rights,durationSeconds:observation.durationSeconds,
       annotations:item.annotations,suppressions:item.suppressions||[],
       frames:observation.frames});
    else observations.push({id:item.id,label:item.label,environment:item.environment,deviceClass:item.deviceClass,
+     sourceGroup:item.sourceGroup,evaluationSplit:item.evaluationSplit,
      rights:item.rights,...observation});
    console.log("Evaluated",item.id,observation.scoredWindows,"YAMNet windows;",
      observation.skippedWindows,"suppressed windows never classified");
@@ -112,7 +114,7 @@ async function main(){
   result.datasetName=String(manifest.name||"unnamed");
   // Preflight rejects exact duplicate PCM files before browser inference.
   // Only the aggregate check is reported; local SHA-256 digests stay private.
-  result.datasetIntegrity={exactDuplicateFilesRejected:true,
+  result.datasetIntegrity={...groupAudit,exactDuplicateFilesRejected:true,
     uniqueAudioFiles:clips.length+sessions.length,
     comparison:"Local SHA-256 over file bytes (not perceptual similarity)",
     limitation:"Edited or cropped copies and overlapping recording sessions require independent human audit"};

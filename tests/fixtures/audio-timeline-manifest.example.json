@@ -5,6 +5,8 @@
     "path": "clips/sesion-ejemplo.wav",
     "environment": "habitacion-con-ruido",
     "deviceClass": "phone",
+    "sourceGroup": "sesion-original-001",
+    "evaluationSplit": "validation",
     "rights": "owned",
     "annotations": [
       {"kind": "sneeze", "startSeconds": 12.1, "endSeconds": 12.6},
