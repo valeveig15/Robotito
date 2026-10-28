@@ -93,7 +93,7 @@ async function downloadJSON(page){
   assert.equal(await page.evaluate(()=>window.__latestTrack.readyState),"ended");
   assert.equal(await page.locator("#download").isDisabled(),true,
    "Revoked consent destroys prior metrics and downloads");
-  assert.equal(await page.locator("#levelMeter").inputValue(),"0");
+  assert.equal(await page.evaluate(()=>document.querySelector("#levelMeter").value),0);
 
   // Delayed browser permission must remain cancelable: a later granted track
   // is shut immediately, never connected to AudioContext or analysed.
@@ -140,8 +140,7 @@ async function downloadJSON(page){
   await page.click("#start");
   await page.waitForFunction(()=>document.querySelector("#state").textContent.includes("Micrófono activo"));
   await page.evaluate(()=>{
-   window.__hideTrack=document.querySelector("#state"); // no raw audio exposed
-   Object.defineProperty(document,"hidden",{configurable:true,value:true});
+    Object.defineProperty(document,"hidden",{configurable:true,value:true});
    document.dispatchEvent(new Event("visibilitychange"));
   });
   assert.equal(await page.locator("#download").isDisabled(),true);
