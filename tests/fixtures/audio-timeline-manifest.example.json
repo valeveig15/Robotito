@@ -8,6 +8,7 @@
     "sourceGroup": "sesion-original-001",
     "evaluationSplit": "validation",
     "rights": "owned",
+    "annotationReview": "complete",
     "annotations": [
       {"kind": "sneeze", "startSeconds": 12.1, "endSeconds": 12.6},
       {"kind": "cough", "startSeconds": 25.2, "endSeconds": 25.5}

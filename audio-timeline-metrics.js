@@ -5,6 +5,7 @@ const {classify,HUMAN}=require("./audio-calibration.js");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
+const {requireCompleteAnnotationReview}=require("./audio-annotation-review.js");
 const COOLDOWN={clap:1.9,laugh:8,cry:18,cough:9.5,sneeze:5.2};
 const finite=n=>Number.isFinite(n)&&n>=0;
 const seconds=spans=>spans.reduce((sum,[a,b])=>sum+b-a,0);
@@ -82,6 +83,9 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   if(!session||typeof session.id!=="string"||!session.id.trim()||ids.has(session.id))
    throw Error("Each continuous session requires a unique ID");
   ids.add(session.id);
+  // A missing annotation is not proof of a negative recording. Without
+  // explicit complete review, no precision or false-alert rate is valid.
+  requireCompleteAnnotationReview(session.annotationReview,session.id);
   const deviceClass=normalizeDeviceClass(session.deviceClass);
   const group=normalizeSourceGroup(session.sourceGroup);
   const evaluationSplit=normalizeEvaluationSplit(session.evaluationSplit,group);
@@ -183,6 +187,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
     ...rateMetrics(fp,negativeSeconds)};
   }
   results.push({id:session.id,environment:session.environment,deviceClass,evaluationSplit,
+   annotationReview:"complete",
    durationSeconds:session.durationSeconds,observedSeconds,
    missingOrSuppressedSeconds:Math.max(0,session.durationSeconds-observedSeconds),
    classifiedFrames:scored.length,

@@ -8,13 +8,19 @@ function read(data){fs.writeFileSync(path.join(root,"m.json"),JSON.stringify(dat
 try{
  fs.writeFileSync(path.join(root,"audio.wav"),Buffer.from("test"));
  fs.writeFileSync(path.join(root,"session.wav"),Buffer.from("different authorized session"));
- const session={id:"session",path:"session.wav",environment:"street",rights:"consented",
+ const session={id:"session",path:"session.wav",environment:"street",rights:"consented",annotationReview:"complete",
   annotations:[{kind:"sneeze",startSeconds:1,endSeconds:2}],
   suppressions:[{startSeconds:3,endSeconds:4}]};
  assert.equal(read({clips:[item]}).clips.length,1);checks++;
  assert.equal(read({clips:[item]}).clips[0].deviceClass,"unspecified");checks++;
  assert.equal(read({clips:[{...item,deviceClass:"usb"}]}).clips[0].deviceClass,"usb");checks++;
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
+ assert.equal(read({sessions:[{...session,annotationReview:undefined}]}).sessions[0].annotationReview,"draft",
+  "Legacy session manifests must remain readable but not evaluable");checks++;
+ assert.equal(read({sessions:[{...session,annotationReview:"draft"}]}).sessions[0].annotationReview,"draft",
+  "Incomplete annotation drafts remain valid for offline media preflight");checks++;
+ assert.throws(()=>read({sessions:[{...session,annotationReview:"auto-reviewed"}]}),
+  /annotationReview must be draft or complete/);checks++;
  assert.throws(()=>read({sessions:[{...session,suppressions:[
   {startSeconds:1.5,endSeconds:2.4}]}]}),
   /Ground-truth event overlaps suppressed audio/);checks++;

@@ -6,11 +6,15 @@ const fs=require("node:fs"),path=require("node:path"),{spawn}=require("node:chil
 const {chromium}=require("playwright"),{evaluate}=require("../audio-calibration.js");
 const {evaluateContinuous}=require("../audio-timeline-metrics.js");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
+const {requireCompleteAnnotationReview}=require("../audio-annotation-review.js");
 const {inspectCorpus}=require("../audio-media-preflight.js");
 const root=path.resolve(__dirname,".."),manifestPath=process.argv[2];
 const port=Number(process.env.ROBOTITO_AUDIO_EVAL_PORT||8799);
 if(!manifestPath)throw Error("Usage: npm run evaluate:audio -- /path/to/manifest.json");
 const {base,manifest,clips,sessions,groupAudit}=loadManifest(manifestPath);
+// Fail before loading Chromium or the remote-code Worker. validate:audio
+// still accepts drafts so an annotator can inspect media before signoff.
+for(const item of sessions)requireCompleteAnnotationReview(item.annotationReview,item.id);
 async function main(){
  const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],{cwd:root,stdio:"ignore"});
  let browser=null;
@@ -100,7 +104,8 @@ async function main(){
    if(sessions.includes(item))
     timelineSessions.push({id:item.id,environment:item.environment,deviceClass:item.deviceClass,
       sourceGroup:item.sourceGroup,evaluationSplit:item.evaluationSplit,
-      rights:item.rights,durationSeconds:observation.durationSeconds,
+      rights:item.rights,annotationReview:item.annotationReview,
+      durationSeconds:observation.durationSeconds,
       annotations:item.annotations,suppressions:item.suppressions||[],
       frames:observation.frames});
    else observations.push({id:item.id,label:item.label,environment:item.environment,deviceClass:item.deviceClass,
@@ -118,7 +123,9 @@ async function main(){
   result.datasetName=String(manifest.name||"unnamed");
   // Preflight rejects exact duplicate PCM files before browser inference.
   // Only the aggregate check is reported; local SHA-256 digests stay private.
-  result.datasetIntegrity={...groupAudit,durationPreflight,exactDuplicateFilesRejected:true,
+  result.datasetIntegrity={...groupAudit,durationPreflight,
+    allEvaluatedSessionsHumanReviewed:true,
+    humanReviewIndependentlyVerified:false,exactDuplicateFilesRejected:true,
     uniqueAudioFiles:clips.length+sessions.length,
     comparison:"Local SHA-256 over file bytes (not perceptual similarity)",
     limitation:"Edited or cropped copies and overlapping recording sessions require independent human audit"};

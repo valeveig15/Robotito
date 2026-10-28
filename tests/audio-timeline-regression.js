@@ -7,10 +7,16 @@ const frame=(atSeconds,kind)=>({atSeconds,scores:kind==="sneeze"?
  {sneeze:.995,unknown:.02}:kind==="cough"?{cough:.995,unknown:.02}:{unknown:.98,noise:.9}});
 const times=[.25,.75,1.25,1.75,2.25,2.75,3.25,3.75,4.25,4.75,5.25,5.75];
 const rows=times.map(t=>frame(t,[2.25,2.75,5.25,5.75].includes(t)?"sneeze":"noise"));
-const a={id:"room",environment:"quiet",rights:"owned",durationSeconds:6,
+const a={id:"room",environment:"quiet",rights:"owned",annotationReview:"complete",durationSeconds:6,
  frames:rows,annotations:[{kind:"sneeze",startSeconds:2,endSeconds:3}],
  suppressions:[{startSeconds:3.7,endSeconds:4.7}]};
 const report=evaluateContinuous([a]);
+assert.throws(()=>evaluateContinuous([{...a,id:"draft-rejected",annotationReview:"draft",annotations:[]}]),
+ /requires annotationReview=complete/);checks++;
+assert.throws(()=>evaluateContinuous([{...a,id:"legacy-unreviewed",annotationReview:undefined,annotations:[]}]),
+ /requires annotationReview=complete/);checks++;
+assert.throws(()=>evaluateContinuous([{...a,id:"invalid-review",annotationReview:"auto"}]),
+ /annotationReview must be draft or complete/);checks++;
 assert.throws(()=>evaluateContinuous([{...a,
  suppressions:[{startSeconds:2.3,endSeconds:2.6}]}]),
  /Ground-truth event overlaps suppressed audio/);checks++;

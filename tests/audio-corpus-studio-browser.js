@@ -20,10 +20,10 @@ function wav(seconds=2.5,rate=16000){
  for(let i=0;i<samples;i++)b.writeInt16LE(Math.round(3500*Math.sin(i*440*2*Math.PI/rate)),44+i*2);
  return b;
 }
-async function saveDownload(page,selector){
+async function saveDownload(page,selector,saveName=null){
  const [download]=await Promise.all([page.waitForEvent("download"),page.click(selector)]);
  const name=download.suggestedFilename();
- const destination=path.join(temp,name);
+ const destination=path.join(temp,saveName||name);
  await download.saveAs(destination);
  return {name,destination};
 }
@@ -106,13 +106,24 @@ async function saveDownload(page,selector){
   assert.match(await page.locator("#status").textContent(),/grupo de grabación/i,
    "Personal or invalid group IDs cannot appear in manifests");
   await page.locator("#sourceGroup").fill("synthetic-source-1");
+  assert.equal(await page.locator("#reviewComplete").isChecked(),false,
+   "Merely entering labels never asserts that the whole audio was reviewed");
+  const draftDownload=await saveDownload(page,"#downloadManifest","draft-synthetic-lab-1.json");
+  const draft=JSON.parse(fs.readFileSync(draftDownload.destination,"utf8"));
+  assert.equal(draft.sessions[0].annotationReview,"draft",
+   "Unchecked sessions export as explicit draft, never as certified negatives");
+  await page.locator("#reviewComplete").check();
   const audio=await saveDownload(page,"#downloadAudio");
   const json=await saveDownload(page,"#downloadManifest");
   assert.equal(audio.name,"synthetic-lab-1.wav");
+  assert.equal(loadManifest(draftDownload.destination).sessions[0].annotationReview,"draft",
+   "Once the WAV is downloaded, legacy-compatible preflight can inspect an unfinished draft");
   assert.equal(json.name,"manifest-synthetic-lab-1.json");
   assert.deepEqual(fs.readFileSync(audio.destination),wav(),
    "Original selected bytes must download unmodified and named to match manifest");
   const manifest=JSON.parse(fs.readFileSync(json.destination,"utf8"));
+  assert.equal(manifest.sessions[0].annotationReview,"complete",
+   "Explicit reviewer affirmation is retained in the exported manifest");
   assert.deepEqual(manifest.sessions[0].annotations,
    [{kind:"sneeze",startSeconds:.3,endSeconds:.55}]);
   assert.deepEqual(manifest.sessions[0].suppressions,
@@ -126,7 +137,19 @@ async function saveDownload(page,selector){
   assert.match(output,/decodedFilesVerified": 1/,
    "Downloaded WAV and exported manifest pass actual Chromium duration preflight");
   assert.deepEqual(external,[],"The studio must make no requests to external origins");
+  // Changing an annotation invalidates the previous completeness claim.
+  await page.locator("#eventStart").fill("1.6");
+  await page.locator("#eventEnd").fill("1.8");
+  await page.click("#addEvent");
+  assert.equal(await page.locator("#reviewComplete").isChecked(),false,
+   "Any added sound event requires reviewing the annotations again");
+  await page.locator("#reviewComplete").check();
+  await page.locator("#eventsList li").last().getByRole("button",{name:/Quitar/}).click();
+  assert.equal(await page.locator("#reviewComplete").isChecked(),false,
+   "Deleting an event also invalidates the previous review claim");
   await page.click("#discardAudio");
+  assert.equal(await page.locator("#reviewComplete").isChecked(),false,
+   "Discarding a recording clears the human review attestation");
   assert.equal(await page.locator("#downloadAudio").isDisabled(),true,
    "Discard must release the previously prepared sample");
   // Real Chromium MediaRecorder with its test-generated microphone device,
@@ -146,6 +169,10 @@ async function saveDownload(page,selector){
   assert.ok(fs.statSync(micAudio.destination).size>128,
    "Opt-in recording must produce nonempty downloadable audio");
   const micManifest=await saveDownload(page,"#downloadManifest");
+  assert.equal(loadManifest(micManifest.destination).sessions.length,1,
+   "A synthetic microphone recording is still accepted as a draft");
+  assert.equal(loadManifest(micManifest.destination).sessions[0].annotationReview,"draft",
+   "Fresh recordings never inherit a prior review confirmation");
   assert.equal(loadManifest(micManifest.destination).sessions.length,1,
    "Recorded audio export must share the same manifest schema");
   assert.deepEqual(external,[],"Microphone recording must never be uploaded");
