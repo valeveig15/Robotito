@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("node:assert/strict");
-const {evaluateContinuous}=require("../audio-timeline-metrics.js");
+const {evaluateContinuous,poissonUpper95}=require("../audio-timeline-metrics.js");
 let checks=0;
 const eq=(a,b,name)=>{assert.deepEqual(a,b,name);checks++;};
 const frame=(atSeconds,kind)=>({atSeconds,scores:kind==="sneeze"?
@@ -17,6 +17,22 @@ eq(report.overall.metrics.sneeze.fn,0,"Covered ground truth not missed");
 eq(report.sessions[0].alerts.length,1,"Requires two independent aligned windows");
 eq(report.sessions[0].observedSeconds<6,true,"Suppression and missing coverage excluded");
 eq(report.calibrated,false,"Offline metrics cannot calibrate the model");
+const near=(x,y,tol,msg)=>{assert.ok(Math.abs(x-y)<tol,msg);checks++;};
+near(poissonUpper95(0),-Math.log(.05),1e-10,
+ "Zero false episodes require a nonzero 95% upper rate");
+near(poissonUpper95(1),4.74386451839,1e-8,
+ "Exact one-sided upper count for one false episode");
+near(poissonUpper95(2),6.29579362187,1e-8,
+ "Exact one-sided upper count for two false episodes");
+assert.throws(()=>poissonUpper95(-1));checks++;
+assert.throws(()=>poissonUpper95(1.5));checks++;
+eq(report.overall.metrics.sneeze.falseAlertsPerNegativeHour,0,
+ "Zero observed reference alerts reported as empirical zero");
+eq(report.overall.metrics.sneeze.falseAlertsPerNegativeHourUpper95>0,true,
+ "Empirical zero must not become zero plausible false alarm rate");
+near(report.overall.metrics.sneeze.falseAlertsPerNegativeHourUpper95,
+ -Math.log(.05)*3600/report.overall.metrics.sneeze.negativeSeconds,1e-8,
+ "Confidence bound uses observed negative exposure, not recording length");
 const boundary={...a,id:"boundary",annotations:[],suppressions:[
  {startSeconds:1.4,endSeconds:1.5}],frames:[
  {atSeconds:1.1,windowStartSeconds:.6,windowEndSeconds:1.57,
@@ -41,6 +57,14 @@ const wrong=evaluateContinuous([b]);
 eq(wrong.overall.metrics.sneeze.fp,1,"Two matching false windows form one false alert");
 eq(wrong.overall.metrics.sneeze.falseAlertsPerNegativeHour>0,true,
  "Measured reference false alerts use observed negative hours");
+eq(wrong.overall.metrics.sneeze.falseAlertsPerNegativeHourUpper95>
+ wrong.overall.metrics.sneeze.falseAlertsPerNegativeHour,true,
+ "Upper event-rate bound exceeds empirical rate after false alarms");
+const missing=evaluateContinuous([{...b,id:"missing",frames:[]}]);
+eq(missing.overall.metrics.sneeze.falseAlertsPerNegativeHour,null,
+ "No listening exposure yields no numerical rate");
+eq(missing.overall.metrics.sneeze.falseAlertsPerNegativeHourUpper95,null,
+ "No listening exposure yields no uncertainty bound");
 eq(wrong.overall.metrics.sneeze.tp,0,"No hallucinated positive labels");
 const single={...b,id:"single",frames:times.map(t=>frame(t,t===1.25?"sneeze":"noise"))};
 eq(evaluateContinuous([single]).overall.metrics.sneeze.fp,0,
