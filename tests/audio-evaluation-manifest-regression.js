@@ -11,7 +11,10 @@ try{
   annotations:[{kind:"sneeze",startSeconds:1,endSeconds:2}],
   suppressions:[{startSeconds:3,endSeconds:4}]};
  assert.equal(read({clips:[item]}).clips.length,1);checks++;
+ assert.equal(read({clips:[item]}).clips[0].deviceClass,"unspecified");checks++;
+ assert.equal(read({clips:[{...item,deviceClass:"usb"}]}).clips[0].deviceClass,"usb");checks++;
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
+ assert.equal(read({sessions:[{...session,deviceClass:"phone"}]}).sessions[0].deviceClass,"phone");checks++;
  assert.equal(read({clips:[item],sessions:[session]}).sessions.length,1);checks++;
  assert.equal(read({clips:[{...item,rights:"open-license"}],
   license:"CC-BY-NC-3.0",source:"original dataset"}).clips.length,1);checks++;
@@ -19,6 +22,8 @@ try{
   {clips:[item,item]},{clips:[item],sessions:[{...session,id:"clip"}]},
   {clips:[{...item,label:"unrecognized"}]},{clips:[{...item,path:""}]},
   {clips:[{...item,path:"../secret.wav"}]},
+  {clips:[{...item,deviceClass:"id-9384"}]},
+  {sessions:[{...session,deviceClass:null}]},
   {clips:[{...item,rights:"open-license"}]},
   {sessions:[{...session,annotations:[{kind:"noise",startSeconds:0,endSeconds:1}]}]},
   {sessions:[{...session,annotations:[{kind:"cough",startSeconds:-1,endSeconds:2}]}]},

@@ -94,11 +94,11 @@ async function main(){
       durationSeconds:audio.duration};
    },{fileBase64:file,suppressions:sessions.includes(item)?item.suppressions||[]:[]});
    if(sessions.includes(item))
-    timelineSessions.push({id:item.id,environment:item.environment,
+    timelineSessions.push({id:item.id,environment:item.environment,deviceClass:item.deviceClass,
       rights:item.rights,durationSeconds:observation.durationSeconds,
       annotations:item.annotations,suppressions:item.suppressions||[],
       frames:observation.frames});
-   else observations.push({id:item.id,label:item.label,environment:item.environment,
+   else observations.push({id:item.id,label:item.label,environment:item.environment,deviceClass:item.deviceClass,
      rights:item.rights,...observation});
    console.log("Evaluated",item.id,observation.scoredWindows,"YAMNet windows;",
      observation.skippedWindows,"suppressed windows never classified");
@@ -118,6 +118,10 @@ async function main(){
   fs.writeFileSync(destination,JSON.stringify(result,null,2)+"\n");
   console.log("Saved non-calibrating evaluation report:",destination);
   console.log(JSON.stringify({clips:result.clipCount,metrics:result.metrics,
+    clipDeviceCounts:result.byDevice||null,
+    continuousSessionCountsByDevice:result.continuousEvaluation?
+      Object.fromEntries(Object.entries(result.continuousEvaluation.byDevice)
+        .map(([device,summary])=>[device,summary.sessionCount])):null,
     continuousReference:result.continuousEvaluation?.overall||null,
     calibrated:false,automaticHumanReactionsApproved:false},null,2));
  }finally{
