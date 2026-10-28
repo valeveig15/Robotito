@@ -233,6 +233,36 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return {suppression:true,cooldown:true,translations:48};
     });
     console.log("Robotito browser acoustic event integration:",JSON.stringify(acousticIntegration));
+    // Exercise the fallback as loaded by the actual page. The artificial
+    // browser nodes avoid a microphone and still verify privacy-gated PCM.
+    const legacyFallback=await page.evaluate(()=>{
+      const api=window.ROBOTITO_AUDIO_SCRIPT_FALLBACK;
+      let processor=null,allowed=false,clears=0,now=1000;
+      const captured=[];
+      const source={connect(){},disconnect(){}};
+      const context={sampleRate:48000,destination:{},
+        createScriptProcessor(){processor={onaudioprocess:null,
+          connect(){},disconnect(){}};return processor;},
+        createGain(){return {gain:{value:1},connect(){},disconnect(){}};}
+      };
+      const capture=api.create({context,source,isAllowed:()=>allowed,
+        forward:(pcm,rate)=>captured.push([pcm[0],rate]),
+        reset:()=>{clears++;},clock:()=>now});
+      if(!capture.start())throw Error("Browser did not create fallback");
+      const send=n=>processor.onaudioprocess({
+        inputBuffer:{getChannelData:()=>new Float32Array(2048).fill(n)}});
+      send(.8);
+      allowed=true;send(.2);now+=45;send(.4);
+      allowed=false;send(.7);capture.stop();
+      if(captured.length!==2||Math.abs(captured[0][0]-.2)>.001||
+         Math.abs(captured[1][0]-.4)>.001||
+         captured.some(row=>row[1]!==48000)||clears<2||
+         processor.onaudioprocess!==null||capture.isActive())
+        throw Error("Browser fallback leaked, duplicated, or retained PCM");
+      return {contiguousCallbacks:captured.length,deniedByDefault:true,
+        clearedOnSuppression:true,disconnectedOnOptOut:true};
+    });
+    console.log("Robotito Chromium fallback privacy wiring:",JSON.stringify(legacyFallback));
     // Exercise the actual audio rendering thread rather than only parsing
     // the AudioWorklet class in Node. An offline source requires no mic.
     const continuousCapture=await page.evaluate(async()=>{
