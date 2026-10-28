@@ -30,7 +30,9 @@ eq(model.mapCategories([{categoryName:"Sneeze",score:NaN}]).candidate.kind,"unkn
 let current=1000,instances=[],updates=0;
 class FakeWorker{
  constructor(){this.requests=[];this.closed=false;instances.push(this);}
- postMessage(data){this.requests.push(data);if(data.type==="init")this.onmessage({data:{type:"ready"}});}
+ postMessage(data){this.requests.push(data);
+  if(data.type==="init"&&!FakeWorker.deferReady)this.onmessage({data:{type:"ready"}});
+ }
  terminate(){this.closed=true;}
  respond(data){this.onmessage({data});}
 }
@@ -73,9 +75,12 @@ eq(bridge.getStatus().candidate,null,"Opt-out clears cached audio evidence");
 fake.respond({type:"result",id:request.id+1,categories:[{categoryName:"Cough",score:1}]});
 eq(bridge.getStatus().state,"off","Late inference cannot reactivate disabled model");
 eq(updates>1,true,"Model publishes useful status updates");
+// Initialization errors are untagged; model inference errors now have IDs.
+FakeWorker.deferReady=true;
 bridge.enable();
 const second=instances.at(-1);
 second.respond({type:"error",message:"download failed"});
+FakeWorker.deferReady=false;
 eq(second.closed,true,"Failed models release their worker");
 eq(bridge.getStatus().state,"error","Download failure stays visible");
 bridge.enable();
@@ -93,9 +98,18 @@ delayed.clearAudio();
 delayed.pushPCM(new Float32Array(24000).fill(.3),16000);
 const newer=delayedWorker.requests.filter(x=>x.type==="classify").at(-1);
 eq(newer.id>staleRequest.id,true,"New audio window gets a distinct inference ID");
+delayedWorker.respond({type:"error",id:staleRequest.id,
+ message:"Old cancelled audio inference failed"});
+eq(delayed.getStatus().state,"ready",
+ "Stale classifier errors must not disable new listening session");
+eq(delayedWorker.closed,false,
+ "A stale classification exception must not terminate the healthy Worker");
 delayedWorker.respond({type:"result",id:staleRequest.id,
  categories:[{categoryName:"Sneeze",score:1}]});
 eq(delayed.getStatus().candidate,null,"Stale prediction stays discarded");
+delayedWorker.respond({type:"error",message:"Unidentified old result"});
+eq(delayed.getStatus().state,"ready",
+ "Untagged post-initialization errors cannot invalidate current inference");
 delayed.pushPCM(new Float32Array(10000),16000);
 eq(delayedWorker.requests.filter(x=>x.type==="classify").length,2,
  "Stale prediction must not unlock a newer in-flight request");
@@ -110,6 +124,17 @@ eq(delayedWorker.closed,true,"Hanging worker is terminated");
 delayed.enable();
 eq(delayed.getStatus().state,"ready","Model supports retry after hanging inference");
 delayed.disable();
+const failed=model.create({workerFactory:()=>new FakeWorker(),clock:()=>current});
+failed.enable();
+failed.pushPCM(new Float32Array(24000).fill(.2),16000);
+const failedWorker=instances.at(-1);
+const failedRequest=failedWorker.requests.find(x=>x.type==="classify");
+failedWorker.respond({type:"error",id:failedRequest.id,message:"Current inference failed"});
+eq(failed.getStatus().state,"error",
+ "Current inference errors still terminate the faulty Worker");
+eq(failedWorker.closed,true,
+ "A real current classifier error must release the Worker");
+failed.disable();
 
 // Streaming resampler invariants: 16/44.1/48 kHz, arbitrary Worklet splits,
 // passband fidelity and out-of-band attenuation. Neither overcounting nor

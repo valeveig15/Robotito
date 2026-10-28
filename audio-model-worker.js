@@ -29,6 +29,7 @@ self.onmessage=async event=>{
     .flatMap(c=>c.categories||[]))
     .map(c=>({categoryName:String(c.categoryName||""),score:Number(c.score)}));
    self.postMessage({type:"result",id:data.id,categories});
-  }catch(e){self.postMessage({type:"error",message:"Falló la clasificación de audio: "+String(e?.message||e)});}
+  }catch(e){self.postMessage({type:"error",id:data.id,
+   message:"Falló la clasificación de audio: "+String(e?.message||e)});}
  }
 };

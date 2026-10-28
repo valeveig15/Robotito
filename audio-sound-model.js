@@ -167,7 +167,19 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
     maxInferenceMs=Math.max(maxInferenceMs,elapsed);
     const mapped=mapCategories(data.categories);
     last={id:data.id,observedAt:clock(),...mapped};publish();
-   }else if(data.type==="error")fail(data.message||"Model unavailable");
+   }else if(data.type==="error"){
+    // The Worker can finish a cancelled inference after class/sleep/own
+    // speech cleared the session. Its error must not terminate the fresh
+    // inference or silently disable a now healthy model.
+    if(Object.hasOwn(data,"id")){
+     if(!Number.isInteger(data.id)||data.id<=0||
+        data.id!==pendingId||data.id<minimumAcceptedId)return;
+    }else if(state!=="loading"){
+     // Untagged errors are reserved for initialization failures only.
+     return;
+    }
+    fail(data.message||"Model unavailable");
+   }
   };
   created.onerror=()=>fail("Model worker error");
   try{created.postMessage({type:"init"});}
