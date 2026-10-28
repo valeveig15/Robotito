@@ -5,12 +5,12 @@ let assertions=0;
 function eq(a,b,name){assert.deepEqual(a,b,name);assertions++;}
 const base={environment:"room",rights:"open-license",durationSeconds:5};
 const clips=[
- {...base,id:"true-sneeze",label:"sneeze",scores:{sneeze:.995,cough:.02,voice:.05}},
+ {...base,id:"true-sneeze",label:"sneeze",deviceClass:"built-in",scores:{sneeze:.995,cough:.02,voice:.05}},
  {...base,id:"true-cough",label:"cough",scores:{cough:.995,sneeze:.01}},
  {...base,id:"ambiguous",label:"sneeze",scores:{sneeze:.995,cough:.97}},
  {...base,id:"speech",label:"voice",scores:{voice:.999,sneeze:.97}},
  {...base,id:"knock",label:"impact",environment:"street",scores:{impact:.97,clap:.90}},
- {...base,id:"false-sneeze",label:"noise",environment:"street",scores:{sneeze:.99,noise:.10}}
+ {...base,id:"false-sneeze",label:"noise",environment:"street",deviceClass:"phone",scores:{sneeze:.99,noise:.10}}
 ];
 eq(report.classify({sneeze:.995,cough:.97}),"unknown","Cough/sneeze ambiguity abstains");
 eq(report.classify({voice:.99,sneeze:.97}),"voice","Strong speech vetoes false sneeze");
@@ -39,6 +39,15 @@ eq(x.metricScope.includes("NOT continuous alarm episodes"),true,
  "Report must disclaim that clip counting is not real-time false alarms");
 eq(x.negativeExposureByTarget.sneeze,20/3600,"Non-target human cough counts as sneeze-negative exposure");
 eq(x.byEnvironment.street,2,"Environmental strata counted");
+eq(x.byDevice.phone,1,"Phone evaluation count is explicit");
+eq(x.byDevice["built-in"],1,"Built-in microphone count is explicit");
+eq(x.byDevice.unspecified,4,"Missing device metadata remains a separate cohort");
+eq(x.deviceMetrics.phone.metrics.sneeze.fp,1,
+ "Phone-cohort false sneeze is not hidden by a different device");
+eq(x.deviceMetrics["built-in"].metrics.sneeze.tp,1,
+ "Built-in microphone positive counts only its own labelled clip");
+eq(x.deviceMetrics.unspecified.metrics.sneeze.fp,0,
+ "Unknown microphones are not invented as physical-device results");
 eq(x.calibrated,false,"Synthetic tests NEVER authorize calibration");
 const positive={sneeze:.995,cough:.01,unknown:.02};
 const neutral={unknown:.99,noise:.96};
@@ -92,6 +101,7 @@ for(const bad of [
  [],
  [{...base,id:"duplicate",label:"sneeze",scores:{}},{...base,id:"duplicate",label:"noise",scores:{}}],
  [{...base,id:"no-permission",label:"sneeze",rights:"unknown",scores:{}}],
+ [{...base,id:"invalid-device",label:"sneeze",deviceClass:"private-serial",scores:{}}],
  [{...base,id:"no-observation",label:"sneeze"}]
 ]){assert.throws(()=>report.evaluate(bad));assertions++;}
 console.log("Sound calibration report regression:",assertions,"assertions passed");
