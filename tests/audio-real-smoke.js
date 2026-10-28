@@ -85,5 +85,36 @@ const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.
   assert.ok(microphoneRates.every(x=>typeof x.kind==="string"),
     "Real PCM adaptation must yield tentative model categories");
   console.log("Robotito real microphone-rate YAMNet integration:",JSON.stringify(microphoneRates));
+  // Real YAMNet integration for a subsecond sound. The previous evaluator
+  // discarded these clips outright; the planner must build an eligible
+  // model frame with symmetric silence padding (not claim accuracy).
+  const shortClip=await page.evaluate(async()=>{
+   const planner=window.ROBOTITO_AUDIO_EVALUATION_WINDOWS;
+   const pcm=new Float32Array(4000);
+   pcm[100]=.8;pcm[3900]=.4;
+   const windows=planner.plan(pcm.length),frame=planner.frame(pcm,windows[0]);
+   const worker=new Worker("../audio-model-worker.js");
+   try{
+    const response=await new Promise((resolve,reject)=>{
+     const timeout=setTimeout(()=>reject(Error("Subsecond real inference timed out")),90000);
+     worker.onerror=e=>{clearTimeout(timeout);reject(Error(String(e.message||e)));};
+     worker.onmessage=e=>{
+      const v=e.data||{};
+      if(v.type==="error"){clearTimeout(timeout);reject(Error(v.message));}
+      if(v.type==="ready")
+       worker.postMessage({type:"classify",id:3,sampleRate:16000,samples:frame},[frame.buffer]);
+      if(v.type==="result"){clearTimeout(timeout);resolve(v);}
+     };
+     worker.postMessage({type:"init"});
+    });
+    return {duration:pcm.length,windows:windows.length,
+      paddingStart:windows[0].paddingStart,paddingEnd:windows[0].paddingEnd,
+      categories:response.categories.length};
+   }finally{worker.terminate();}
+  });
+  assert.equal(shortClip.windows,1,"A 250ms clip must not be thrown away");
+  assert.equal(shortClip.paddingStart,5800,"Subsecond audio must be centred");
+  assert.ok(shortClip.categories>0,"Real YAMNet must actually classify the short frame");
+  console.log("Robotito real subsecond sound evaluation:",JSON.stringify(shortClip));
  }finally{if(browser)await browser.close();server.kill("SIGTERM");}
 })().catch(error=>{console.error(error);process.exitCode=1;});
