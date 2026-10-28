@@ -1,6 +1,8 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const {loadManifest}=require("../audio-evaluation-manifest.js");
+const {createHash}=require("node:crypto");
+const {execFileSync}=require("node:child_process");
 const root=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-manifest-"));
 let checks=0;
 const item={id:"clip",path:"audio.wav",label:"cough",environment:"room",rights:"owned"};
@@ -8,13 +10,35 @@ function read(data){fs.writeFileSync(path.join(root,"m.json"),JSON.stringify(dat
 try{
  fs.writeFileSync(path.join(root,"audio.wav"),Buffer.from("test"));
  fs.writeFileSync(path.join(root,"session.wav"),Buffer.from("different authorized session"));
- const session={id:"session",path:"session.wav",environment:"street",rights:"consented",annotationReview:"complete",
+ const reviewedSHA=createHash("sha256").update(Buffer.from("different authorized session")).digest("hex");
+ assert.equal(execFileSync(process.execPath,[
+  path.join(__dirname,"../scripts/fingerprint-reviewed-audio.js"),
+  path.join(root,"session.wav")],{encoding:"utf8"}).trim(),reviewedSHA,
+  "Offline helper outputs only the expected SHA-256 for manually reviewed audio");checks++;
+ const session={id:"session",path:"session.wav",environment:"street",rights:"consented",
+  annotationReview:"complete",audioSha256:reviewedSHA,
   annotations:[{kind:"sneeze",startSeconds:1,endSeconds:2}],
   suppressions:[{startSeconds:3,endSeconds:4}]};
  assert.equal(read({clips:[item]}).clips.length,1);checks++;
  assert.equal(read({clips:[item]}).clips[0].deviceClass,"unspecified");checks++;
  assert.equal(read({clips:[{...item,deviceClass:"usb"}]}).clips[0].deviceClass,"usb");checks++;
  assert.equal(read({sessions:[session]}).sessions.length,1);checks++;
+ assert.equal(read({sessions:[session]}).sessions[0].reviewedAudioDigestVerified,true,
+  "Completed labels must be bound to actual local bytes");checks++;
+ assert.throws(()=>read({sessions:[{...session,audioSha256:undefined}]}),
+  /requires audioSha256/);checks++;
+ assert.throws(()=>read({sessions:[{...session,audioSha256:"0".repeat(64)}]}),
+  /Reviewed audio SHA-256 mismatch/);checks++;
+ assert.throws(()=>read({sessions:[{...session,audioSha256:"INVALID"}]}),
+  /Invalid reviewed audio SHA-256/);checks++;
+ const original=fs.readFileSync(path.join(root,"session.wav"));
+ const modified=Buffer.from(original);modified[0]^=1;
+ fs.writeFileSync(path.join(root,"session.wav"),modified);
+ assert.equal(modified.length,original.length,"Replacement has the same byte count");checks++;
+ assert.throws(()=>read({sessions:[session]}),/Reviewed audio SHA-256 mismatch/);checks++;
+ fs.writeFileSync(path.join(root,"session.wav"),original);
+ assert.equal(read({sessions:[session]}).sessions[0].reviewedAudioDigestVerified,true,
+  "Restoring the reviewed file restores valid binding");checks++;
  assert.equal(read({sessions:[{...session,annotationReview:undefined}]}).sessions[0].annotationReview,"draft",
   "Legacy session manifests must remain readable but not evaluable");checks++;
  assert.equal(read({sessions:[{...session,annotationReview:"draft"}]}).sessions[0].annotationReview,"draft",

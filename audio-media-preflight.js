@@ -2,7 +2,8 @@
 // Browser-native decoding is the source of truth for the real duration of
 // WAV/MP3/OGG and other Chromium-supported media. No YAMNet download or
 // classification happens during preflight; no decoded PCM is exported.
-const fs=require("node:fs");
+const fs=require("node:fs"),crypto=require("node:crypto");
+const {verifyReviewedAudioDigest}=require("./audio-annotation-review.js");
 const TOLERANCE_SECONDS=1e-4;
 function validateDecodedDuration(item,decoded){
  if(!item||!decoded||!Number.isFinite(decoded.durationSeconds)||
@@ -32,7 +33,12 @@ async function inspectCorpus(page,items){
  for(const item of items){
   // This is an in-memory transfer to the local Chromium test page; the
   // bytes never enter the MediaPipe worker or any remote service.
-  const fileBase64=fs.readFileSync(item.absolutePath).toString("base64");
+  const bytes=fs.readFileSync(item.absolutePath);
+  if(item.annotationReview==="complete"){
+   const actual=crypto.createHash("sha256").update(bytes).digest("hex");
+   verifyReviewedAudioDigest(item.annotationReview,item.audioSha256,actual,item.id);
+  }
+  const fileBase64=bytes.toString("base64");
   let decoded;
   try{
    decoded=await page.evaluate(async data=>{

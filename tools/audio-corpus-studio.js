@@ -3,7 +3,7 @@
 // Developer-only local corpus collection. No fetch, XHR, storage, analytics,
 // external scripts or YAMNet. Audio stays in RAM until explicit downloads.
 const byId=id=>document.getElementById(id);
-const state={blob:null,ext:"",duration:0,url:null,events:[],suppressions:[],
+const state={blob:null,ext:"",duration:0,url:null,audioSha256:null,events:[],suppressions:[],
  recorder:null,stream:null,chunks:[],recording:false,pendingMic:false,
  importing:false,epoch:0,closed:false};
 const MAX_BYTES=50*1024*1024;
@@ -42,7 +42,7 @@ function clearExisting(){
  state.epoch++;state.importing=false;
  byId("audioFile").value="";
  if(state.url){URL.revokeObjectURL(state.url);state.url=null;}
- state.blob=null;state.ext="";state.duration=0;
+ state.blob=null;state.ext="";state.duration=0;state.audioSha256=null;
  state.events=[];state.suppressions=[];
  byId("reviewComplete").checked=false;
  const player=byId("preview");player.pause();player.removeAttribute("src");player.hidden=true;
@@ -70,9 +70,16 @@ async function acceptAudio(blob,name,token){
  catch{throw Error("El navegador no puede decodificar este audio.");}
  if(!Number.isFinite(buffer.duration)||buffer.duration<=0)
   throw Error("El audio no tiene duración válida.");
+ if(!crypto?.subtle?.digest)
+  throw Error("Este navegador no puede verificar la integridad SHA-256 del audio.");
+ // Nothing is sent to a server. SHA-256 is calculated over the exact bytes
+ // to be downloaded, and kept private until explicit manifest export.
+ const hash=await crypto.subtle.digest("SHA-256",await blob.arrayBuffer());
+ const audioSha256=Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,"0")).join("");
  if(state.closed||token!==state.epoch||state.recording||state.pendingMic)return;
  clearExisting();
  state.blob=blob;state.ext=ext;state.duration=buffer.duration;
+ state.audioSha256=audioSha256;
  state.url=URL.createObjectURL(blob);
  const player=byId("preview");player.src=state.url;player.hidden=false;
  byId("duration").textContent="Duración: "+buffer.duration.toFixed(3)+" s · "+
@@ -152,7 +159,9 @@ function exportData(){
  const manifest={name:"Sesión autorizada para evaluación P03",sessions:[{
   id,path:fileName,environment,deviceClass,sourceGroup,evaluationSplit:split,
   rights,annotationReview:normalizeAnnotationReview(byId("reviewComplete").checked?
-   "complete":"draft"),annotations:state.events.map(x=>({...x})),
+   "complete":"draft"),
+  ...(byId("reviewComplete").checked?{audioSha256:state.audioSha256}:{}),
+  annotations:state.events.map(x=>({...x})),
   suppressions:state.suppressions.map(x=>({...x}))
  }]};
  return {fileName,manifest};
