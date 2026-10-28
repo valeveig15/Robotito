@@ -1168,7 +1168,6 @@ function setupAudio(stream){
     state.analyser=analyser;
     const freq=new Uint8Array(analyser.frequencyBinCount);
     const time=new Uint8Array(analyser.fftSize);
-    const rawTime=new Float32Array(analyser.fftSize);
     let workletTap=null,workletSilentGain=null,workletActive=false;
     let workletCaptureEnabled=false;
     let workletGeneration=0,workletModuleLoaded=false;
@@ -1199,6 +1198,13 @@ function setupAudio(stream){
     const allowedToCapture=()=>soundModelToggle?.checked&&
       soundModel?.getStatus().state==="ready"&&!state.speaking&&
       !state.classMode&&!state.sleeping&&!document.hidden;
+    // This is used only if AudioWorklet is absent or cannot initialize.
+    // Unlike polling AnalyserNode, ScriptProcessor delivers ordered,
+    // non-overlapping PCM blocks (where the deprecated API is supported).
+    const legacyCapture=window.ROBOTITO_AUDIO_SCRIPT_FALLBACK?.create?.({
+      context:ctx,source:src,isAllowed:allowedToCapture,
+      forward:forwardSamples,reset:()=>soundModel?.clearAudio()
+    });
     const updateWorkletCapture=()=>{
       if(!workletActive||!workletTap)return;
       const next=Boolean(allowedToCapture());
@@ -1224,6 +1230,7 @@ function setupAudio(stream){
       // Disable and disconnect everything the optional model requested.
       // A pending module load from an earlier consent generation must be inert.
       workletGeneration++;workletActive=false;workletCaptureEnabled=false;
+      legacyCapture?.stop();
       if(workletTap){
         try{workletTap.port.postMessage({type:"capture",enabled:false});}catch{}
         workletTap.port.onmessage=null;
@@ -1236,9 +1243,29 @@ function setupAudio(stream){
       if(workletSilentGain){try{workletSilentGain.disconnect();}catch{}workletSilentGain=null;}
       soundModel?.clearAudio();
     };
+    const captureUnsupported=()=>{
+      soundModelToggle.checked=false;
+      stopContinuousCapture();
+      soundModel?.disable();
+      const label=$("#audioModelStatus");
+      if(label)label.textContent=window.ROBOTITO_I18N?.t?.(
+        "audioModelCaptureUnsupported",responseLanguage())||
+        "La captura avanzada de audio no está disponible en este navegador.";
+    };
+    const startLegacyCapture=()=>{
+      try{
+        if(!legacyCapture?.start())captureUnsupported();
+      }catch(error){
+        console.warn("Legacy continuous audio capture unavailable",error);
+        captureUnsupported();
+      }
+    };
     const startContinuousCapture=()=>{
-      if(!soundModelToggle?.checked||!ctx.audioWorklet?.addModule||
-          typeof window.AudioWorkletNode!=="function")return;
+      if(!soundModelToggle?.checked)return;
+      if(!ctx.audioWorklet?.addModule||
+          typeof window.AudioWorkletNode!=="function"){
+        startLegacyCapture();return;
+      }
       const generation=++workletGeneration;
       const load=workletModuleLoaded?Promise.resolve():
         ctx.audioWorklet.addModule("audio-capture-worklet.js");
@@ -1246,6 +1273,7 @@ function setupAudio(stream){
         if(generation!==workletGeneration||!soundModelToggle.checked||
            !state.started||state.audioContext!==ctx)return;
         workletModuleLoaded=true;
+        legacyCapture?.stop();
         workletTap=new AudioWorkletNode(ctx,"robotito-audio-capture");
         workletSilentGain=ctx.createGain();
         workletSilentGain.gain.value=0;
@@ -1259,8 +1287,12 @@ function setupAudio(stream){
         workletActive=true;
         updateWorkletCapture();
       }).catch(error=>{
-        // The analyser-based capture remains available without Worklet.
-        console.warn("Continuous local audio capture unavailable",error);
+        if(generation!==workletGeneration||!soundModelToggle.checked||
+           !state.started||state.audioContext!==ctx)return;
+        // Worklet initialization may have partially connected nodes.
+        stopContinuousCapture();
+        console.warn("AudioWorklet unavailable; using contiguous legacy capture",error);
+        startLegacyCapture();
       });
     };
     const handleSoundModelToggle=()=>{
@@ -1330,10 +1362,6 @@ function setupAudio(stream){
       updateWorkletCapture();
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
-      if(!workletActive&&soundModelToggle?.checked&&soundModel?.getStatus().state==="ready"){
-        analyser.getFloatTimeDomainData(rawTime);
-        forwardSamples(rawTime,ctx.sampleRate);
-      }
       let power=0;
       for(const v of time){const sample=(v-128)/128;power+=sample*sample;}
       const rms=Math.sqrt(power/time.length);
