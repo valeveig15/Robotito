@@ -3,6 +3,7 @@
 // policy: no synthetic score or unreviewed report enables human reactions.
 const {classify,HUMAN}=require("./audio-calibration.js");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
+const {normalizeSourceGroup,normalizeEvaluationSplit}=require("./audio-source-groups.js");
 const COOLDOWN={clap:1.9,laugh:8,cry:18,cough:9.5,sneeze:5.2};
 const finite=n=>Number.isFinite(n)&&n>=0;
 const seconds=spans=>spans.reduce((sum,[a,b])=>sum+b-a,0);
@@ -78,6 +79,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    throw Error("Each continuous session requires a unique ID");
   ids.add(session.id);
   const deviceClass=normalizeDeviceClass(session.deviceClass);
+  const group=normalizeSourceGroup(session.sourceGroup);
+  const evaluationSplit=normalizeEvaluationSplit(session.evaluationSplit,group);
   if(!finite(session.durationSeconds)||session.durationSeconds<=0||
     !session.environment?.trim?.()||!["owned","consented","open-license"].includes(session.rights)||
     !Array.isArray(session.frames)||!Array.isArray(session.annotations)||
@@ -172,7 +175,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
     unevaluableEvents:labels.length-eligibleLabels.length,negativeSeconds,
     ...rateMetrics(fp,negativeSeconds)};
   }
-  results.push({id:session.id,environment:session.environment,deviceClass,
+  results.push({id:session.id,environment:session.environment,deviceClass,evaluationSplit,
    durationSeconds:session.durationSeconds,observedSeconds,
    missingOrSuppressedSeconds:Math.max(0,session.durationSeconds-observedSeconds),
    classifiedFrames:scored.length,
@@ -202,13 +205,15 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   .map(name=>[name,aggregate(results.filter(x=>x.environment===name))]));
  const byDevice=Object.fromEntries([...new Set(results.map(x=>x.deviceClass))]
   .map(name=>[name,aggregate(results.filter(x=>x.deviceClass===name))]));
+ const bySplit=Object.fromEntries([...new Set(results.map(x=>x.evaluationSplit))]
+  .map(name=>[name,aggregate(results.filter(x=>x.evaluationSplit===name))]));
  return {schemaVersion:1,calibrated:false,automaticHumanReactionsApproved:false,
   metricScope:"Offline reference event detector on annotated observed intervals; NOT deployed Robotito alerts",
   uncertainty:"One-sided 95% Poisson event-rate bound assumes independent stationary false episodes; zero observed alarms never proves zero risk",
   assumptions:{hopSeconds,matchToleranceSeconds,adjacentFramesRequired:2,
    recallDenominator:"annotated events with at least two consecutive analysed overlapping windows",
    cooldownSeconds:COOLDOWN,unobservedTimeExcluded:true},
-  overall:aggregate(results),byEnvironment,byDevice,sessions:results,
+  overall:aggregate(results),byEnvironment,byDevice,bySplit,sessions:results,
   approvalBlocker:"Real annotated continuous recordings, consent, independent threshold validation and deployed-reaction testing required"};
 }
 module.exports={evaluateContinuous,union,subtract,intersection,poissonUpper95,rateMetrics};
