@@ -19,6 +19,8 @@ El objetivo aspiracional equivale a hasta **49.999.950 formulaciones**. Las 360 
 
 La evaluación de clips distingue ahora incertidumbre por fuente original (`sourceGroupMetrics`) de la incertidumbre por archivo; muchos fragmentos correlacionados no se presentan como múltiples fuentes independientes. No se infiere una tasa si faltan grupos negativos declarados. La hipótesis estadística de grupos independientes todavía debe comprobarse con procedencia humana real, al igual que la tasa de reacciones del avatar por hora.
 
+Existe ahora un comando local `validate:audio` que decodifica previamente las grabaciones sin descargar YAMNet y rechaza anotaciones/supresiones fuera de la duración real. `evaluate:audio` ejecuta este control para todos los archivos antes de cualquier inferencia. Falta aportar corpus humano etiquetado y autorizado y medir precisión y episodios falsos en situaciones reales; el preflight solo certifica legibilidad y coherencia temporal del material.
+
 Ya se agregó separación opcional por `sourceGroup` seudónimo y `evaluationSplit` para impedir mezclar fuentes declaradas entre desarrollo, validación y prueba, y estadísticas por partición. Todavía faltan una auditoría humana de la procedencia de grabaciones transformadas y una validación verdaderamente independiente; los metadatos suministrados no prueban ausencia de contaminación.
 
 El preflight del corpus ahora rechaza copias de archivos idénticos con IDs diferentes o en clips y sesiones simultáneos. No detecta necesariamente extractos/transformaciones de la misma grabación ni prueba separación entre hablantes o conjuntos de validación; esa independencia debe verificarse con audio humano real autorizado.
