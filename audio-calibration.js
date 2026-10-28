@@ -39,10 +39,22 @@ function classifyWindows(windows){
   if(adjacent){targetRuns[kind]++;if(!qualifying.includes(kind))qualifying.push(kind);}
  }
  if(qualifying.length!==1){
-  // Multiple different human events in one file are a mixed clip, not
-  // evidence that either single clip-level label is correct.
-  return {predicted:"unknown",windowCount:windows.length,predictions,
-    reason:qualifying.length>1?"conflicting-human-events":"no-confirmed-human-event"};
+  // Multiple human events in one file are mixed, not proof of a single
+  // clip-level label. Unconfirmed single spikes also force abstention.
+  const isolatedHuman=predictions.some(k=>HUMAN.includes(k));
+  if(qualifying.length>1||isolatedHuman)
+   return {predicted:"unknown",windowCount:windows.length,predictions,
+    reason:qualifying.length>1?"conflicting-human-events":"isolated-human-spike"};
+  // Otherwise retain real background/speech/music labels rather than
+  // falsely turning every negative recording into "unknown".
+  const counts=new Map();
+  for(const kind of predictions)counts.set(kind,(counts.get(kind)||0)+1);
+  const ranked=[...counts].sort((a,b)=>b[1]-a[1]);
+  const stable=ranked[0][1]>=(windows.length===1?1:2)&&
+   (ranked.length===1||ranked[0][1]>ranked[1][1]);
+  return {predicted:stable?ranked[0][0]:"unknown",
+   windowCount:windows.length,predictions,
+   reason:stable?"stable-nonhuman-background":"ambiguous-background"};
  }
  const winner=qualifying[0];
  return {predicted:winner,windowCount:windows.length,predictions,
@@ -90,7 +102,8 @@ function evaluate(observations){
    throw Error("Every clip needs a unique ID");
   seen.add(obs.id);
   if(!ALL.includes(obs.label)||typeof obs.environment!=="string"||
-     !obs.environment.trim()||!Object.hasOwn(obs,"scores"))
+     !obs.environment.trim()||
+     (!Object.hasOwn(obs,"scores")&&!Object.hasOwn(obs,"windowScores")))
    throw Error("Each clip needs a supported label, environment and model scores");
   if(!["owned","consented","open-license"].includes(obs.rights))
    throw Error("Audio rights/consent must be specified: "+obs.id);
