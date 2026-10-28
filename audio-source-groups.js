@@ -4,13 +4,13 @@
 // This audit cannot independently verify the curator's annotations.
 const SPLITS=Object.freeze(["unspecified","development","validation","test"]);
 function normalizeSourceGroup(value){
- if(value===undefined)return null;
+ if(value===undefined||value===null)return null;
  if(typeof value!=="string"||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/.test(value))
   throw Error("sourceGroup must be a short pseudonymous recording group ID");
  return value;
 }
 function normalizeEvaluationSplit(value,sourceGroup){
- if(value===undefined)return "unspecified";
+ if(value===undefined||value==="unspecified")return "unspecified";
  if(typeof value!=="string"||!SPLITS.includes(value)||value==="unspecified")
   throw Error("evaluationSplit must be development, validation or test");
  if(!sourceGroup)throw Error("evaluationSplit requires sourceGroup for independence audit");
