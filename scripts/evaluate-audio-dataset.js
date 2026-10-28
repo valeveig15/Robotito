@@ -94,11 +94,11 @@ async function main(){
       durationSeconds:audio.duration};
    },{fileBase64:file,suppressions:sessions.includes(item)?item.suppressions||[]:[]});
    if(sessions.includes(item))
-    timelineSessions.push({id:item.id,environment:item.environment,
+    timelineSessions.push({id:item.id,environment:item.environment,deviceClass:item.deviceClass,
       rights:item.rights,durationSeconds:observation.durationSeconds,
       annotations:item.annotations,suppressions:item.suppressions||[],
       frames:observation.frames});
-   else observations.push({id:item.id,label:item.label,environment:item.environment,
+   else observations.push({id:item.id,label:item.label,environment:item.environment,deviceClass:item.deviceClass,
      rights:item.rights,...observation});
    console.log("Evaluated",item.id,observation.scoredWindows,"YAMNet windows;",
      observation.skippedWindows,"suppressed windows never classified");
