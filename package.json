@@ -21,6 +21,7 @@
     "test:audio": "node tests/audio-annotation-review-regression.js && node tests/audio-annotation-integrity-regression.js && node tests/audio-media-preflight-regression.js && node tests/audio-microphone-gate-regression.js && node tests/audio-script-fallback-regression.js && node tests/audio-evaluation-manifest-regression.js && node tests/audio-event-regression.js && node tests/audio-model-adapter-regression.js && node tests/audio-capture-worklet-regression.js && node tests/audio-calibration-regression.js && node tests/audio-evaluation-windows-regression.js && node tests/audio-esc50-regression.js && node tests/audio-timeline-regression.js",
     "evaluate:audio": "node scripts/evaluate-audio-dataset.js",
     "validate:audio": "node scripts/validate-audio-dataset.js",
+    "fingerprint:audio": "node scripts/fingerprint-reviewed-audio.js",
     "prepare:audio:esc50": "node scripts/prepare-esc50-manifest.js",
     "test:audio:real": "node tests/audio-real-smoke.js",
     "test:audio:timeline:real": "node tests/audio-real-timeline-smoke.js",
