@@ -30,7 +30,9 @@ eq(model.mapCategories([{categoryName:"Sneeze",score:NaN}]).candidate.kind,"unkn
 let current=1000,instances=[],updates=0;
 class FakeWorker{
  constructor(){this.requests=[];this.closed=false;instances.push(this);}
- postMessage(data){this.requests.push(data);if(data.type==="init")this.onmessage({data:{type:"ready"}});}
+ postMessage(data){this.requests.push(data);
+  if(data.type==="init"&&!FakeWorker.deferReady)this.onmessage({data:{type:"ready"}});
+ }
  terminate(){this.closed=true;}
  respond(data){this.onmessage({data});}
 }
@@ -73,9 +75,12 @@ eq(bridge.getStatus().candidate,null,"Opt-out clears cached audio evidence");
 fake.respond({type:"result",id:request.id+1,categories:[{categoryName:"Cough",score:1}]});
 eq(bridge.getStatus().state,"off","Late inference cannot reactivate disabled model");
 eq(updates>1,true,"Model publishes useful status updates");
+// Initialization errors are untagged; model inference errors now have IDs.
+FakeWorker.deferReady=true;
 bridge.enable();
 const second=instances.at(-1);
 second.respond({type:"error",message:"download failed"});
+FakeWorker.deferReady=false;
 eq(second.closed,true,"Failed models release their worker");
 eq(bridge.getStatus().state,"error","Download failure stays visible");
 bridge.enable();
