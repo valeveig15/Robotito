@@ -1202,7 +1202,13 @@ function setupAudio(stream){
     const updateWorkletCapture=()=>{
       if(!workletActive||!workletTap)return;
       const next=Boolean(allowedToCapture());
-      if(next===workletCaptureEnabled)return;
+      if(next===workletCaptureEnabled){
+        // Audio thread capture leases last just 250ms. Renew while this
+        // animation frame confirms continued opt-in and absence of gating.
+        // Frozen/suspended tabs cannot renew and the processor self-pauses.
+        if(next)workletTap.port.postMessage({type:"capture",enabled:true});
+        return;
+      }
       workletCaptureEnabled=next;
       // Pause before transferring any further microphone PCM from the
       // audio rendering thread. Always reset phase/session evidence.
