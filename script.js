@@ -1193,15 +1193,19 @@ function setupAudio(stream){
       }
     });
     const soundModelToggle=$("#audioModelEnabled");
+    let microphoneGate=null;
     const forwardSamples=(samples,rate)=>{
       if(!state.started||state.audioContext!==ctx||!soundModelToggle?.checked||
          soundModel?.getStatus().state!=="ready")return;
+      // Stream permissions can be revoked without stopping the Robotito UI.
+      // Drop the PCM and all cached evidence before a stale buffer can count.
+      if(!microphoneGate?.isLive()){soundModel?.clearAudio();return;}
       if(state.speaking||state.classMode||state.sleeping||document.hidden)
         soundModel.clearAudio();
       else soundModel.pushPCM(samples,rate);
     };
     const allowedToCapture=()=>state.started&&state.audioContext===ctx&&
-      soundModelToggle?.checked&&
+      microphoneGate?.isLive()&&soundModelToggle?.checked&&
       soundModel?.getStatus().state==="ready"&&!state.speaking&&
       !state.classMode&&!state.sleeping&&!document.hidden;
     // This is used only if AudioWorklet is absent or cannot initialize.
@@ -1249,6 +1253,23 @@ function setupAudio(stream){
       if(workletSilentGain){try{workletSilentGain.disconnect();}catch{}workletSilentGain=null;}
       soundModel?.clearAudio();
     };
+    const captureMicUnavailable=()=>{
+      if(!soundModelToggle?.checked)return;
+      soundModelToggle.checked=false;
+      stopContinuousCapture();
+      soundModel?.disable();
+      const label=$("#audioModelStatus");
+      if(label)label.textContent=window.ROBOTITO_I18N?.t?.(
+        "audioModelMicrophoneUnavailable",responseLanguage())||
+        "El micrófono se desconectó; se detuvo la escucha avanzada.";
+    };
+    microphoneGate=window.ROBOTITO_AUDIO_MICROPHONE_GATE?.create?.({
+      stream,onChange:status=>{
+        soundModel?.clearAudio();
+        updateWorkletCapture();
+        if(status==="ended")captureMicUnavailable();
+      }
+    });
     const captureUnsupported=()=>{
       soundModelToggle.checked=false;
       stopContinuousCapture();
@@ -1303,6 +1324,9 @@ function setupAudio(stream){
     };
     const handleSoundModelToggle=()=>{
       if(soundModelToggle?.checked){
+        if(!microphoneGate?.isLive()){
+          captureMicUnavailable();return;
+        }
         soundModel?.enable();
         startContinuousCapture();
       }else{
@@ -1319,7 +1343,8 @@ function setupAudio(stream){
       onEvent:event=>{
         const now=Date.now();
         const reaction=reactionPolicy?.decide?.(event,{
-          now,suppressed:state.classMode||state.sleeping||state.speaking||document.hidden
+          now,suppressed:state.classMode||state.sleeping||state.speaking||
+            document.hidden||!microphoneGate?.isLive()
         });
         if(!reaction)return;
         if(reaction.action==="clap"){
@@ -1359,12 +1384,14 @@ function setupAudio(stream){
         soundModel?.disable();
         soundModelToggle?.removeEventListener("change",handleSoundModelToggle);
         document.removeEventListener("visibilitychange",clearModelOnHidden);
+        microphoneGate?.dispose();
         try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
         return;
       }
       requestAnimationFrame(tick);
       if(at-lastTick<45)return;
       lastTick=at;
+      if(microphoneGate?.status()==="ended")captureMicUnavailable();
       updateWorkletCapture();
       analyser.getByteFrequencyData(freq);
       analyser.getByteTimeDomainData(time);
@@ -1390,12 +1417,14 @@ function setupAudio(stream){
         state.ambientRms=state.ambientRms*.96+rms*.04;
       }
       state.voiceThreshold=clamp(Math.max(.028,state.ambientRms*2.35),.028,.07);
-      if(!state.speaking&&rms>state.voiceThreshold&&Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
+      if(microphoneGate?.isLive()&&!state.speaking&&rms>state.voiceThreshold&&
+         Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
         state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
         state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<45000);
       }
       const status=perception?.process({rms,flat,zcr,low,mid,high,centroid,harmonic},
-        {now:Date.now(),suppress:state.speaking||state.classMode||state.sleeping||document.hidden})
+        {now:Date.now(),suppress:state.speaking||state.classMode||state.sleeping||
+          document.hidden||!microphoneGate?.isLive()})
         ||{kind:"unknown",musicConfidence:0};
       const i18n=window.ROBOTITO_I18N;
       const kind=String(status.kind||"unknown");
@@ -1403,9 +1432,10 @@ function setupAudio(stream){
       state.audioKind=i18n?.t?.(label,responseLanguage())||kind;
       state.musicConfidence=Math.round((status.musicConfidence||0)*100);
       const heard=$("#heardLabel");if(heard)heard.textContent=state.audioKind;
-      if(rms>.04)state.lastHeardAt=Date.now();
+      if(microphoneGate?.isLive()&&rms>.04)state.lastHeardAt=Date.now();
       const dance=!!reactionPolicy?.updateMusic?.(status,{
-        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||document.hidden
+        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||
+          document.hidden||!microphoneGate?.isLive()
       });
       robot.classList.toggle("dancing",dance);
       prevSpectrum=freq.slice();
