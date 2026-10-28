@@ -20,10 +20,10 @@ function wav(seconds=2.5,rate=16000){
  for(let i=0;i<samples;i++)b.writeInt16LE(Math.round(3500*Math.sin(i*440*2*Math.PI/rate)),44+i*2);
  return b;
 }
-async function saveDownload(page,selector){
+async function saveDownload(page,selector,saveName=null){
  const [download]=await Promise.all([page.waitForEvent("download"),page.click(selector)]);
  const name=download.suggestedFilename();
- const destination=path.join(temp,name);
+ const destination=path.join(temp,saveName||name);
  await download.saveAs(destination);
  return {name,destination};
 }
@@ -108,7 +108,7 @@ async function saveDownload(page,selector){
   await page.locator("#sourceGroup").fill("synthetic-source-1");
   assert.equal(await page.locator("#reviewComplete").isChecked(),false,
    "Merely entering labels never asserts that the whole audio was reviewed");
-  const draftDownload=await saveDownload(page,"#downloadManifest");
+  const draftDownload=await saveDownload(page,"#downloadManifest","draft-synthetic-lab-1.json");
   const draft=JSON.parse(fs.readFileSync(draftDownload.destination,"utf8"));
   assert.equal(draft.sessions[0].annotationReview,"draft",
    "Unchecked sessions export as explicit draft, never as certified negatives");
