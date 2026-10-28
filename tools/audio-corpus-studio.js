@@ -227,8 +227,12 @@ async function startRecording(){
 function stopRecording(){
  if(state.pendingMic){cancelCapture();status("Se canceló el permiso de grabación.","success");return;}
  if(!state.recording)return;
- try{if(state.recorder?.state==="recording")state.recorder.stop();}
- catch(error){cancelCapture();status("Se descartó la grabación: "+error.message,"error");}
+ try{
+  if(state.recorder?.state!=="recording")throw Error("Grabadora no disponible");
+  state.recording=false;updateControls();
+  state.recorder.stop();
+  status("Grabación detenida. Preparando el audio localmente.","success");
+ }catch(error){cancelCapture();status("Se descartó la grabación: "+error.message,"error");}
  finally{stopTracks();}
 }
 byId("audioFile").addEventListener("change",async event=>{
