@@ -25,11 +25,29 @@ eq(x.metrics.sneeze.fp,1,"Correct FP");
 eq(x.metrics.sneeze.fn,1,"Correct FN");
 eq(x.metrics.sneeze.precision,.5,"Precision derived from ground truth");
 eq(x.metrics.sneeze.recall,.5,"Recall derived from ground truth");
-eq(x.metrics.sneeze.falsePositivesPerNegativeHour,1/(20/3600),
- "False-positive rate uses all non-sneeze exposure hours");
+eq(x.metrics.sneeze.falsePositiveClipsPerNegativeHour,1/(20/3600),
+ "False-positive *clips* per non-sneeze recording hour");
+eq(x.metrics.sneeze.falsePositiveClipRate,.25,
+ "A clip-level false-positive proportion uses all non-sneeze clips");
+eq(x.metrics.sneeze.negativeClips,4,
+ "Negative clip count excludes the target sound class");
+eq(x.environmentMetrics.street.metrics.sneeze.fp,1,
+ "False-sneeze clips can be audited by background source");
+eq(x.environmentMetrics.room.metrics.sneeze.fp,0,
+ "Other environments are not combined into a fictitious per-site rate");
+eq(x.metricScope.includes("NOT continuous alarm episodes"),true,
+ "Report must disclaim that clip counting is not real-time false alarms");
 eq(x.negativeExposureByTarget.sneeze,20/3600,"Non-target human cough counts as sneeze-negative exposure");
 eq(x.byEnvironment.street,2,"Environmental strata counted");
 eq(x.calibrated,false,"Synthetic tests NEVER authorize calibration");
+eq(x.schemaVersion,2,"Clip metrics get a versioned output schema");
+eq(x.environmentMetrics.street.clipCount,2,"Environment sample count is explicit");
+eq(x.metrics.sneeze.falsePositiveClipRateUpper95>.25,true,
+ "Small samples yield a conservative Wilson upper bound");
+eq(x.metrics.cry.falsePositiveClipRateUpper95, x.metrics.cry.falsePositiveClipRateUpper95,
+ "Unobserved human class still reports uncertainty about false positive clips");
+eq(report.wilsonUpper95(0,0),null,"No negative examples -> no error upper bound");
+eq(report.wilsonUpper95(0,1)>.7,true,"One clean negative does not prove zero false alarms");
 eq(x.automaticHumanReactionsApproved,false,"No automatic sneeze reaction");
 for(const bad of [
  [],

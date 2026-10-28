@@ -97,6 +97,8 @@ El dataset público [ESC-50](https://github.com/karolpiczak/ESC-50) contiene 40 
 
 La CI ahora ejecuta `npm run test:audio:real`: inicializa **YAMNet y MediaPipe reales en Chromium mediante un Worker clásico compatible con el cargador WASM** y clasifica una señal artificial. Esto comprueba la descarga, carga de WASM, Worker y salida del modelo, pero **NO** mide exactitud ni falsos positivos. Si fallan los servicios externos, la prueba falla explícitamente.
 
+**Interpretación correcta de las métricas:** la matriz y sus tasas se calculan por **clip etiquetado**, no por eventos continuos. El nuevo esquema `schemaVersion:2` informa `falsePositiveClipRate`, su límite superior de Wilson 95 % y `falsePositiveClipsPerNegativeHour` (clips falsos / horas de audio negativo). También separa resultados por `environment` para encontrar confusiones en ruidos como puertas o aspiradoras. **Ninguna de esas tasas equivale a «Robotito dirá ¡Salud! X veces por hora».** Esa cifra requiere grabaciones continuas con marcas temporales, evaluación de los cooldowns y una prueba prospectiva independiente.
+
 **Advertencia:** el informe devuelve siempre `calibrated:false` y `automaticHumanReactionsApproved:false`. Cada clase necesita muestras diversas, análisis de falsos positivos por entorno, revisión humana y un proceso explícito de aprobación de umbrales. Los escenarios sintéticos de CI verifican la aritmética y los fallos seguros del evaluador, no sustituyen una prueba de audio real; no se incluye ningún archivo de audio en el repositorio.
 
 ## Audio event classifier contract (October 2026)
