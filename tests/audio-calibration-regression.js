@@ -46,6 +46,18 @@ eq(x.splitMetrics.test.metrics.sneeze.tp,1,
  "Validation holdout positives remain in their own split");
 eq(x.splitMetrics.unspecified.clipCount,4,
  "Legacy clips are not mislabeled as test samples");
+eq(x.sourceGroupAudit.sourceGroups,2,
+ "Only declared recording sources appear in the independent-group audit");
+eq(x.sourceGroupMetrics.ungroupedClips,4,
+ "Legacy clips cannot inflate independent-source confidence estimates");
+eq(x.sourceGroupMetrics.metrics.sneeze.negativeSourceGroups,1,
+ "A known positive recording source does not count as a negative source");
+eq(x.sourceGroupMetrics.metrics.sneeze.falsePositiveSourceGroups,1,
+ "A single false recording source counts once, even across derived clips");
+eq(x.sourceGroupMetricsBySplit.test.metrics.sneeze.negativeSourceGroups,0,
+ "A positive-only holdout cannot invent a negative denominator");
+eq(x.sourceGroupMetricsBySplit.test.metrics.sneeze.falsePositiveSourceGroupRate,null,
+ "Zero independent negative sources means no estimated false-positive rate");
 eq(x.byDevice["built-in"],1,"Built-in microphone count is explicit");
 eq(x.byDevice.unspecified,4,"Missing device metadata remains a separate cohort");
 eq(x.deviceMetrics.phone.metrics.sneeze.fp,1,
@@ -55,6 +67,37 @@ eq(x.deviceMetrics["built-in"].metrics.sneeze.tp,1,
 eq(x.deviceMetrics.unspecified.metrics.sneeze.fp,0,
  "Unknown microphones are not invented as physical-device results");
 eq(x.calibrated,false,"Synthetic tests NEVER authorize calibration");
+// Ten derived clips from one recording are ONE correlated negative source,
+// not ten independent examples that narrow a binomial confidence interval.
+const related=Array.from({length:8},(_,i)=>({...base,
+ id:"derived-"+i,sourceGroup:"one-original",evaluationSplit:"test",
+ label:"noise",scores:i===0?{sneeze:.999,noise:.01}:{noise:.99}}));
+related.push({...base,id:"clean-source",label:"noise",
+ sourceGroup:"another-original",evaluationSplit:"test",scores:{noise:.99}});
+const clustered=report.evaluate(related);
+eq(clustered.metrics.sneeze.negativeClips,9,
+ "Original clip-level report remains backward-compatible");
+eq(clustered.sourceGroupMetrics.metrics.sneeze.negativeSourceGroups,2,
+ "Only two independent declared sources, not nine files");
+eq(clustered.sourceGroupMetrics.metrics.sneeze.falsePositiveSourceGroups,1,
+ "Several derived clips never count as repeated false-positive sources");
+eq(clustered.sourceGroupMetrics.metrics.sneeze.falsePositiveSourceGroupRate,.5,
+ "False positive source proportion is one of two original recordings");
+eq(clustered.sourceGroupMetrics.metrics.sneeze.falsePositiveSourceGroupRateUpper95>
+ clustered.metrics.sneeze.falsePositiveClipRateUpper95,true,
+ "Cluster-aware uncertainty reveals narrow clip-based confidence");
+eq(clustered.sourceGroupMetricsBySplit.test.metrics.sneeze.negativeSourceGroups,2,
+ "Independent source counts are partitioned too");
+const unknownSource=report.evaluate([{...base,id:"unassigned",label:"noise",scores:{noise:.99}}]);
+eq(unknownSource.sourceGroupMetrics.metrics.sneeze.falsePositiveSourceGroupRate,null,
+ "Ungrouped recordings must never imply an independent-source estimate");
+eq(unknownSource.sourceGroupMetrics.metrics.sneeze.falsePositiveSourceGroupRateUpper95,null,
+ "No declared independent groups means no Wilson bound");
+assert.throws(()=>report.evaluate([
+ {...base,id:"dev",label:"noise",sourceGroup:"original-x",evaluationSplit:"development",scores:{noise:.99}},
+ {...base,id:"test",label:"noise",sourceGroup:"original-x",evaluationSplit:"test",scores:{noise:.99}}
+]),/across evaluation splits/);assertions++;
+
 const positive={sneeze:.995,cough:.01,unknown:.02};
 const neutral={unknown:.99,noise:.96};
 const cough={cough:.995,unknown:.01};

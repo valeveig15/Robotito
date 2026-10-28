@@ -2,7 +2,7 @@
 // Eval metrics are per labelled clip, NOT a measured continuous-listening
 // false-alarm rate. No automated approval of human-event reactions.
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
-const {normalizeSourceGroup,normalizeEvaluationSplit}=require("./audio-source-groups.js");
+const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const ALL=["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"];
 const HUMAN=["clap","laugh","cry","cough","sneeze"];
 const GATES={clap:{threshold:.96,margin:.20},laugh:{threshold:.89,margin:.14},
@@ -102,9 +102,45 @@ function summarize(rows){
  return {clipCount:rows.length,byLabel:counts,confusion,metrics,
   backgroundOnlyHours,negativeExposureByTarget};
 }
+// Several clips can derive from one recording. Treating each clip as an
+// independent Bernoulli trial narrows the Wilson interval deceptively.
+// This second diagnostic counts one false-positive opportunity per declared
+// source group, retaining null rates when no independent groups exist.
+function summarizeSourceGroups(rows){
+ const groups=new Map();let ungroupedClips=0;
+ for(const row of rows){
+  if(!row.sourceGroup){ungroupedClips++;continue;}
+  const members=groups.get(row.sourceGroup)||[];
+  members.push(row);groups.set(row.sourceGroup,members);
+ }
+ const metrics=Object.fromEntries(HUMAN.map(kind=>{
+  let negativeSourceGroups=0,falsePositiveSourceGroups=0,targetPresentGroupsExcluded=0;
+  for(const members of groups.values()){
+   // A group containing any genuine target event is not a pure negative
+   // source for that kind, even if other excerpts contain background.
+   if(members.some(row=>row.label===kind)){
+    targetPresentGroupsExcluded++;continue;
+   }
+   negativeSourceGroups++;
+   if(members.some(row=>row.predicted===kind))falsePositiveSourceGroups++;
+  }
+  return [kind,{negativeSourceGroups,falsePositiveSourceGroups,
+   targetPresentGroupsExcluded,
+   falsePositiveSourceGroupRate:negativeSourceGroups?
+    falsePositiveSourceGroups/negativeSourceGroups:null,
+   falsePositiveSourceGroupRateUpper95:
+    wilsonUpper95(falsePositiveSourceGroups,negativeSourceGroups)}];
+ }));
+ return {declaredSourceGroups:groups.size,ungroupedClips,
+  unit:"one declared original recording group; multiple derived clips count once",
+  uncertainty:"Wilson 95% upper bound assumes independent declared source groups; curator labels unverified",
+  independentlyVerified:false,metrics};
+}
 function evaluate(observations){
  if(!Array.isArray(observations)||!observations.length)
   throw Error("A nonempty labelled dataset is required");
+ // Public evaluation entrypoints must not bypass manifest split isolation.
+ const groupAudit=sourceAudit(observations);
  const seen=new Set(),all=[],byEnv=new Map(),byDevice=new Map(),bySplit=new Map();
  let evaluatedWindowClips=0,conflictingClips=0,singleShortClips=0;
  for(const obs of observations){
@@ -131,7 +167,7 @@ function evaluate(observations){
   const deviceClass=normalizeDeviceClass(obs.deviceClass);
   const group=normalizeSourceGroup(obs.sourceGroup);
   const evaluationSplit=normalizeEvaluationSplit(obs.evaluationSplit,group);
-  const row={label:obs.label,
+  const row={label:obs.label,sourceGroup:group,
    predicted:temporal?temporal.predicted:classify(obs.scores),
    durationSeconds:obs.durationSeconds};
   all.push(row);
@@ -149,6 +185,9 @@ function evaluate(observations){
   [name,summarize(rows)]));
  const splitMetrics=Object.fromEntries([...bySplit].map(([name,rows])=>
   [name,summarize(rows)]));
+ const sourceGroupMetrics=summarizeSourceGroups(all);
+ const sourceGroupMetricsBySplit=Object.fromEntries([...bySplit].map(([name,rows])=>
+  [name,summarizeSourceGroups(rows)]));
  return {schemaVersion:2,source:"Provided labelled clips and model scores",
   metricScope:"clip-level, one prediction per labelled file; NOT continuous alarm episodes",
   clipCount:summary.clipCount,byLabel:summary.byLabel,
@@ -158,6 +197,8 @@ function evaluate(observations){
   negativeHours:summary.backgroundOnlyHours,
   negativeExposureByTarget:summary.negativeExposureByTarget,
   environmentMetrics,deviceMetrics,splitMetrics,
+  sourceGroupMetrics,sourceGroupMetricsBySplit,
+  sourceGroupAudit:groupAudit,
   temporalEvaluation:{clips:evaluatedWindowClips,conflictingClips,
    singleWindowHumanCandidates:singleShortClips,
    method:"ordered independent window decisions; two adjacent same-class windows for multi-window human events"},

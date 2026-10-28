@@ -3,7 +3,7 @@
 // policy: no synthetic score or unreviewed report enables human reactions.
 const {classify,HUMAN}=require("./audio-calibration.js");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
-const {normalizeSourceGroup,normalizeEvaluationSplit}=require("./audio-source-groups.js");
+const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const COOLDOWN={clap:1.9,laugh:8,cry:18,cough:9.5,sneeze:5.2};
 const finite=n=>Number.isFinite(n)&&n>=0;
 const seconds=spans=>spans.reduce((sum,[a,b])=>sum+b-a,0);
@@ -70,6 +70,9 @@ function rateMetrics(fp,negativeSeconds){
 }
 function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75}={}){
  if(!Array.isArray(sessions)||!sessions.length)throw Error("At least one annotated session required");
+ // Direct reference-evaluator callers cannot mix declared source groups
+ // between development, validation and test by bypassing the CLI manifest.
+ const groupAudit=sourceAudit(sessions);
  if(!finite(hopSeconds)||hopSeconds<=0||hopSeconds>5||
     !finite(matchToleranceSeconds)||matchToleranceSeconds>5)
   throw Error("Invalid acoustic timeline cadence");
@@ -213,7 +216,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   assumptions:{hopSeconds,matchToleranceSeconds,adjacentFramesRequired:2,
    recallDenominator:"annotated events with at least two consecutive analysed overlapping windows",
    cooldownSeconds:COOLDOWN,unobservedTimeExcluded:true},
-  overall:aggregate(results),byEnvironment,byDevice,bySplit,sessions:results,
+  overall:aggregate(results),byEnvironment,byDevice,bySplit,
+  sourceGroupAudit:groupAudit,sessions:results,
   approvalBlocker:"Real annotated continuous recordings, consent, independent threshold validation and deployed-reaction testing required"};
 }
 module.exports={evaluateContinuous,union,subtract,intersection,poissonUpper95,rateMetrics};
