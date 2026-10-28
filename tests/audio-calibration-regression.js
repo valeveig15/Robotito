@@ -58,6 +58,10 @@ const reportWindows=report.evaluate([
 ]);
 eq(reportWindows.confusion.sneeze.sneeze,1,"Real window decisions enter the confusion matrix");
 eq(reportWindows.confusion.noise.unknown,1,"Single spike does not count as false-positive clip");
+eq(report.classifyWindows([{noise:.98},{noise:.98},{voice:.8}]).predicted,
+ "noise","Stable background remains background, not automatically unknown");
+eq(report.classifyWindows([{music:.9}]).predicted,"music",
+ "Single-window nonhuman class survives evaluation");
 eq(reportWindows.temporalEvaluation.clips,3,"Window-based clip count is audited");
 eq(reportWindows.temporalEvaluation.conflictingClips,1,
  "Mixed-human source clips are flagged for annotation review");
