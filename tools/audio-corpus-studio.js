@@ -161,13 +161,19 @@ async function startRecording(){
   const preferred=["audio/webm;codecs=opus","audio/ogg;codecs=opus"];
   const supported=preferred.find(x=>MediaRecorder.isTypeSupported?.(x));
   const recorder=new MediaRecorder(stream,supported?{mimeType:supported}:undefined);
+  // The pending recording replaces the old sample, never resurrecting it if
+  // the new mic session fails or the user revokes consent.
+  clearExisting();
   state.recorder=recorder;state.chunks=[];state.recording=true;
   recorder.ondataavailable=event=>{if(event.data?.size)state.chunks.push(event.data);};
-  recorder.onerror=()=>{stopTracks();state.recording=false;state.recorder=null;
-   updateControls();status("Falló la grabación. No se guardó audio.","error");};
+  let failed=false;
+  recorder.onerror=()=>{failed=true;stopTracks();state.recording=false;
+   state.recorder=null;state.chunks=[];updateControls();
+   status("Falló la grabación. No se guardó audio.","error");};
   recorder.onstop=async()=>{
    stopTracks();state.recording=false;state.recorder=null;
    updateControls();
+   if(failed)return;
    try{
     const blob=new Blob(state.chunks,{type:recorder.mimeType||supported||"audio/webm"});
     state.chunks=[];
