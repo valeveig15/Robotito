@@ -32,11 +32,66 @@ function mapCategories(categories){
  }
  return {scores:score,candidate:strongest};
 }
+// Stateful band-limited resampling: retains fractional phase at every
+// AudioWorklet boundary and filters frequencies above the 16 kHz Nyquist
+// band before downsampling. This cannot reconstruct heavily clipped audio.
+function createResampler(targetRate=TARGET_RATE){
+ let inputRate=0,inputCount=0,nextPosition=0,previous=0,stages=[];
+ function reset(){
+  inputRate=0;inputCount=0;nextPosition=0;previous=0;stages=[];
+ }
+ function setup(rate){
+  reset();inputRate=rate;
+  if(rate<=targetRate)return;
+  // Four-pole Butterworth low-pass at 6.72 kHz, with a conservative
+  // transition band below the 8 kHz Nyquist limit.
+  const omega=2*Math.PI*(targetRate*.42)/rate;
+  for(const q of [.541196100146197,1.30656296487638]){
+   const cosine=Math.cos(omega),alpha=Math.sin(omega)/(2*q),a0=1+alpha;
+   stages.push({b0:((1-cosine)/2)/a0,b1:(1-cosine)/a0,
+    b2:((1-cosine)/2)/a0,a1:(-2*cosine)/a0,
+    a2:(1-alpha)/a0,z1:0,z2:0});
+  }
+ }
+ function push(samples,rate,output){
+  if(!Number.isFinite(rate)||rate<8000||rate>192000||
+     !samples||typeof output!=="function"||!Number.isInteger(samples.length))return 0;
+  if(rate!==inputRate)setup(rate);
+  const stride=rate/targetRate;
+  let emitted=0;
+  for(let i=0;i<samples.length;i++){
+   let sample=Number(samples[i]);
+   sample=Number.isFinite(sample)?Math.max(-1,Math.min(1,sample)):0;
+   for(const stage of stages){
+    const y=stage.b0*sample+stage.z1;
+    stage.z1=stage.b1*sample-stage.a1*y+stage.z2;
+    stage.z2=stage.b2*sample-stage.a2*y;
+    sample=y;
+   }
+   if(inputCount===0){
+    output(sample);emitted++;nextPosition=stride;
+   }else{
+    // Linear interpolation is continuous across chunk boundaries;
+    // the band-limit filter above removes most out-of-band aliasing.
+    while(nextPosition<=inputCount+1e-9){
+     const fraction=Math.max(0,Math.min(1,nextPosition-(inputCount-1)));
+     output(previous+(sample-previous)*fraction);
+     emitted++;nextPosition+=stride;
+    }
+   }
+   previous=sample;
+   inputCount++;
+  }
+  return emitted;
+ }
+ return {push,reset,getInputRate:()=>inputRate};
+}
 function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
  clock=()=>Date.now(),onUpdate=()=>{}}={}){
  let worker=null,state="off",statusMessage="",last=null,writeAt=0,filled=0,sinceLast=0;
  let sequence=0,minimumAcceptedId=0,pendingId=0,pendingAt=0,busy=false;
  let ring=new Float32Array(WINDOW_SAMPLES);
+ const resampler=createResampler();
  const version="YAMNet AudioSet (uncalibrated for Robotito)";
  const publish=()=>{try{onUpdate(getStatus());}catch(e){console.warn("Sound model state",e);}};
  function getStatus(){
@@ -45,19 +100,19 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
     candidate:recent?{...recent.candidate}:null,scores:recent?{...recent.scores}:null};
  }
  function clearAudio(){
-  if(!filled&&!last)return;
+  if(!filled&&!last&&!busy&&!resampler.getInputRate())return;
   // Clear a session's PCM and reject a prediction whose samples predate
   // class mode, sleep, Robotito's own voice or an interrupted microphone.
   filled=0;sinceLast=0;writeAt=0;last=null;
   minimumAcceptedId=sequence+1;pendingId=0;pendingAt=0;busy=false;
-  ring.fill(0);publish();
+  ring.fill(0);resampler.reset();publish();
  }
  function disable(){
   const previous=worker;worker=null;
   if(previous)try{previous.terminate();}catch{}
   state="off";statusMessage="";last=null;writeAt=0;filled=0;sinceLast=0;busy=false;
   ring=new Float32Array(WINDOW_SAMPLES);minimumAcceptedId=sequence+1;
-  pendingId=0;pendingAt=0;publish();
+  pendingId=0;pendingAt=0;resampler.reset();publish();
  }
  function enable(){
   if(state==="loading"||state==="ready")return true;
@@ -74,7 +129,7 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
    if(worker!==created)return;
    worker=null;try{created.terminate();}catch{}
    state="error";statusMessage=String(message).slice(0,200);
-   busy=false;last=null;filled=0;sinceLast=0;ring.fill(0);publish();
+   busy=false;last=null;filled=0;sinceLast=0;ring.fill(0);resampler.reset();publish();
   };
   created.onmessage=event=>{
    if(worker!==created)return;
@@ -100,22 +155,21 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
  function pushPCM(samples,inputRate){
   if(state!=="ready"||!worker||!samples||!Number.isFinite(inputRate)
     ||inputRate<8000||inputRate>192000||samples.length<128)return;
-  // Take the latest float time-domain analyser window and downsample to
-  // 16kHz; no audio or transcript leaves the browser. A rolling window is
-  // copied only at a bounded 0.49s hop to avoid pressure on the UI thread.
-  const stride=inputRate/TARGET_RATE;
-  for(let i=0;i<samples.length;i+=stride){
-   const value=Number(samples[Math.floor(i)]);
-   ring[writeAt]=Number.isFinite(value)?Math.max(-1,Math.min(1,value)):0;
+  // AudioWorklet delivers contiguous source-rate PCM. Reusing a
+  // fractional offset per chunk used to duplicate/drop samples at 44.1/48k.
+  // This streaming low-pass resampler keeps fractional phase across chunks.
+  if(resampler.getInputRate()&&resampler.getInputRate()!==inputRate)clearAudio();
+  resampler.push(samples,inputRate,value=>{
+   ring[writeAt]=value;
    writeAt=(writeAt+1)%WINDOW_SAMPLES;
    filled=Math.min(WINDOW_SAMPLES,filled+1);sinceLast++;
-  }
+  });
   // Do not keep the queue stuck forever when WASM inference hangs.
   if(busy&&clock()-pendingAt>MAX_INFERENCE_MS){
    const failed=worker;worker=null;try{failed?.terminate();}catch{}
    state="error";statusMessage="El clasificador no respondió a tiempo";
    last=null;filled=0;sinceLast=0;ring.fill(0);busy=false;
-   pendingId=0;pendingAt=0;publish();return;
+   pendingId=0;pendingAt=0;resampler.reset();publish();return;
   }
   if(filled<WINDOW_SAMPLES||sinceLast<STEP_SAMPLES||busy)return;
   const frame=new Float32Array(WINDOW_SAMPLES);
@@ -125,11 +179,12 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
   catch(error){
    busy=false;state="error";statusMessage=String(error);
    const failed=worker;worker=null;try{failed?.terminate();}catch{}
-   ring.fill(0);filled=0;last=null;pendingId=0;pendingAt=0;publish();
+   ring.fill(0);filled=0;last=null;pendingId=0;pendingAt=0;
+   resampler.reset();publish();
   }
  }
  return {enable,disable,clearAudio,pushPCM,getStatus,calibrated:false,version};
 }
-root.ROBOTITO_SOUND_MODEL={create,mapCategories,WINDOW_SAMPLES,TARGET_RATE};
+root.ROBOTITO_SOUND_MODEL={create,createResampler,mapCategories,WINDOW_SAMPLES,TARGET_RATE};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_SOUND_MODEL;
 })(typeof window!=="undefined"?window:globalThis);
