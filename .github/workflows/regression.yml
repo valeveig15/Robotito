@@ -34,6 +34,10 @@ jobs:
         # Run external integration first for quick, actionable diagnostics;
         # every PR still must pass the full regression suite below.
         run: npm run test:audio:real
+      - name: Run real continuous sound-evaluation CLI
+        # Generated synthetic WAV, no real/private audio files or claims
+        # of recognition accuracy. Exercises the full evaluation command.
+        run: npm run test:audio:timeline:real
       - name: Run core and browser regressions
         run: npm run test:ci
       - name: Deep reproducible stress matrix (scheduled or manual)
