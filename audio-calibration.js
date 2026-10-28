@@ -2,6 +2,7 @@
 // Eval metrics are per labelled clip, NOT a measured continuous-listening
 // false-alarm rate. No automated approval of human-event reactions.
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
+const {normalizeSourceGroup,normalizeEvaluationSplit}=require("./audio-source-groups.js");
 const ALL=["clap","laugh","cry","cough","sneeze","music","voice","impact","noise","silence","unknown"];
 const HUMAN=["clap","laugh","cry","cough","sneeze"];
 const GATES={clap:{threshold:.96,margin:.20},laugh:{threshold:.89,margin:.14},
@@ -104,7 +105,7 @@ function summarize(rows){
 function evaluate(observations){
  if(!Array.isArray(observations)||!observations.length)
   throw Error("A nonempty labelled dataset is required");
- const seen=new Set(),all=[],byEnv=new Map(),byDevice=new Map();
+ const seen=new Set(),all=[],byEnv=new Map(),byDevice=new Map(),bySplit=new Map();
  let evaluatedWindowClips=0,conflictingClips=0,singleShortClips=0;
  for(const obs of observations){
   if(!obs||typeof obs.id!=="string"||!obs.id.trim()||seen.has(obs.id))
@@ -128,6 +129,8 @@ function evaluate(observations){
    if(temporal.reason==="single-short-clip")singleShortClips++;
   }
   const deviceClass=normalizeDeviceClass(obs.deviceClass);
+  const group=normalizeSourceGroup(obs.sourceGroup);
+  const evaluationSplit=normalizeEvaluationSplit(obs.evaluationSplit,group);
   const row={label:obs.label,
    predicted:temporal?temporal.predicted:classify(obs.scores),
    durationSeconds:obs.durationSeconds};
@@ -136,11 +139,15 @@ function evaluate(observations){
   envRows.push(row);byEnv.set(obs.environment,envRows);
   const deviceRows=byDevice.get(deviceClass)||[];
   deviceRows.push(row);byDevice.set(deviceClass,deviceRows);
+  const splitRows=bySplit.get(evaluationSplit)||[];
+  splitRows.push(row);bySplit.set(evaluationSplit,splitRows);
  }
  const summary=summarize(all);
  const environmentMetrics=Object.fromEntries([...byEnv].map(([name,rows])=>
   [name,summarize(rows)]));
  const deviceMetrics=Object.fromEntries([...byDevice].map(([name,rows])=>
+  [name,summarize(rows)]));
+ const splitMetrics=Object.fromEntries([...bySplit].map(([name,rows])=>
   [name,summarize(rows)]));
  return {schemaVersion:2,source:"Provided labelled clips and model scores",
   metricScope:"clip-level, one prediction per labelled file; NOT continuous alarm episodes",
@@ -150,7 +157,7 @@ function evaluate(observations){
   confusion:summary.confusion,metrics:summary.metrics,
   negativeHours:summary.backgroundOnlyHours,
   negativeExposureByTarget:summary.negativeExposureByTarget,
-  environmentMetrics,deviceMetrics,
+  environmentMetrics,deviceMetrics,splitMetrics,
   temporalEvaluation:{clips:evaluatedWindowClips,conflictingClips,
    singleWindowHumanCandidates:singleShortClips,
    method:"ordered independent window decisions; two adjacent same-class windows for multi-window human events"},
