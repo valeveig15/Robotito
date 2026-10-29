@@ -247,4 +247,11 @@ for(const language of ["fr","it","de"]){
    "Missing translated enrollment step "+language+"/"+phrase);
  }
 }
+// Standard spoken status replies must work offline in all six languages.
+for(const phrase of ["Todavía no sé quién sos. Registrá tu cara y tu voz y después sí me voy a acordar.","Sí. Muchísima. Ya estoy enojado de hambre.","Sí, tengo bastante hambre.","Un poco. Todavía aguanto.","No mucho. Estoy bastante lleno.","Sí. De hecho, me estaba quedando dormido.","Sí, estoy bastante cansado.","Un poco, pero todavía estoy bien.","No. Tengo bastante energía.","Ahora mismo no veo ninguna mano. Mostrámelas bien frente a la cámara.","Veo manos, pero ningún dedo levantado.","Todavía no tengo recuerdos claros tuyos.","Escucho una voz, pero no la reconozco con suficiente seguridad.","No siento temperatura como una persona. Pero puedo hacerte compañía.","Estoy acá, pero bastante pendiente de que tengo hambre.","Estoy atento a lo que pasa y esperando que me hables.","Todavía no te conozco lo suficiente.","Tuve un problema al buscar en las transcripciones. Probá de nuevo.","Hoy todavía no escuché ninguna clase, así que no tengo nada de clase aprendido de hoy.","Hoy escuché una clase, pero todavía no tengo suficiente contenido claro para resumirla.","Abrí la pestaña Clase: ahí te dejé lo que pude recuperar.","Eso no me gustó.","Listo. Eso también lo guardo.","No necesitás Goodreads. Desmarcá Solo de mi biblioteca y te recomiendo opciones nuevas."])
+ for(const lang of langs){
+  const result=i18n.fixedReply(phrase,lang);
+  ok(typeof result==="string"&&result.length>4,
+   "Fixed offline response absent "+lang+"/"+phrase);
+ }
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
