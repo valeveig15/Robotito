@@ -86,7 +86,7 @@ function attachControls({isReady=()=>true}={}){
  });
  exportBtn.addEventListener("click",()=>{
   const report=trial.report();if(!report)return;
-  const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)+"\\n"],
+  const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)+"\n"],
    {type:"application/json"}));
   const link=doc.createElement("a");
   link.href=url;link.download="robotito-avatar-reaction-trial.json";
