@@ -1189,13 +1189,15 @@ function recognizeVoicePerson(print,faceName=null){
   const best=scores[0],second=scores[1];
   if(!best)return null;
 
-  const agreesWithFace=faceName&&best.name===faceName;
-  const threshold=agreesWithFace?.735:(best.profileCount>=3?.785:.82);
-  const margin=agreesWithFace?.012:.035;
-
+  // A face candidate is not a second, independently verified voice sample.
+  // Never lower voice confidence or competitor margins because the camera
+  // suggests the same label: relatives and replay attacks can look/sound alike.
+  const threshold=best.profileCount>=3?.80:.84;
+  const margin=.065;
   if(best.score<threshold)return null;
-  if(best.profileCount>=3&&best.consistency<2&&!agreesWithFace)return null;
-  if(second&&best.score-second.score<margin&&!agreesWithFace)return null;
+  if(best.profileCount>=3&&best.consistency<2)return null;
+  if(second&&best.score-second.score<margin)return null;
+  // Face agreement is informative only after voice evidence passes on its own.
   return best;
 }
 
@@ -4545,11 +4547,15 @@ async function captureFaceEnrollment(){
     let got=0;
     const deadline=Date.now()+7500;
     while(got<stage.count&&Date.now()<deadline){
+      if(!state.started||document.hidden||$("#personEnrollmentConsent")?.checked!==true)
+        return null;
       const dets=await faceapi
         .detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.55}))
         .withFaceLandmarks()
         .withFaceDescriptors();
 
+      if(!state.started||document.hidden||$("#personEnrollmentConsent")?.checked!==true)
+        return null;
       if(dets.length!==1){
         const msg=dets.length>1
           ?enrollText("Necesito una sola cara en cámara.","I need exactly one face in the camera.","Preciso de apenas um rosto na câmera.")
@@ -4746,6 +4752,35 @@ async function captureEnrollmentVoice(){
   }
 }
 
+// Fail closed on a profile collision. A matching name is not biometric
+// evidence, and a new label must never be attached to someone else's face.
+function enrollmentIdentityCheck(samples,name){
+  if(!Array.isArray(samples)||samples.length<9)return {ok:false,reason:"insufficient"};
+  const target=String(name||"").trim().toLocaleLowerCase();
+  if(!target)return {ok:false,reason:"invalid-name"};
+  const existing=state.people.find(p=>String(p.name||"").trim().toLocaleLowerCase()===target);
+  const comparisons=[];
+  for(const person of state.people){
+    const stored=Array.isArray(person.descriptors)?person.descriptors.filter(d=>d?.length===samples[0]?.length):[];
+    if(!stored.length)continue;
+    const distances=samples.map(sample=>Math.min(...stored.map(d=>descriptorDistance(sample,d))));
+    if(distances.some(d=>!Number.isFinite(d)))return {ok:false,reason:"invalid-descriptor"};
+    const near=distances.filter(d=>d<=.48).length;
+    const veryClose=distances.filter(d=>d<=.34).length;
+    comparisons.push({name:person.name,near,veryClose,distances});
+  }
+  // An apparently similar face under a *different* name needs an independent
+  // human review. Never silently merge, copy or overwrite either profile.
+  if(comparisons.some(c=>c.name.toLocaleLowerCase()!==target&&(c.near>=2||c.veryClose>=1)))
+    return {ok:false,reason:"other-profile"};
+  if(existing){
+    const own=comparisons.find(c=>c.name.toLocaleLowerCase()===target);
+    if(!own||own.near<Math.max(6,Math.ceil(samples.length*.70)))
+      return {ok:false,reason:"unverified-existing"};
+  }
+  return {ok:true,existing:existing||null};
+}
+
 async function enrollPerson(){
   const name=$("#personName").value.trim();
   const birthdayRaw=$("#personBirthday").value.trim();
@@ -4754,6 +4789,8 @@ async function enrollPerson(){
   const btn=$("#enrollBtn");
 
   if(!name)return toast("Escribí el nombre.");
+  if($("#personEnrollmentConsent")?.checked!==true)
+    return toast(window.ROBOTITO_I18N?.t?.("p08ConsentRequired",responseLanguage())||"Confirmá el consentimiento de la persona.");
   if(birthdayRaw&&!birthday)return toast("Usá el cumpleaños como DD/MM/AAAA.");
   if(!state.started)return toast("Primero activá cámara y micrófono.");
   if(state.enrollmentActive)return;
@@ -4776,9 +4813,30 @@ async function enrollPerson(){
       return;
     }
 
+    const identity=enrollmentIdentityCheck(samples,name);
+    if(!identity.ok){
+      setEnrollProgress(0,window.ROBOTITO_I18N?.t?.(
+        identity.reason==="other-profile"?"p08Collision":"p08ExistingUnverified",responseLanguage())
+        ||"No pude confirmar que estas muestras correspondan a la persona elegida.");
+      return;
+    }
+    // Revocation during a long camera capture must discard all unsaved samples.
+    if($("#personEnrollmentConsent")?.checked!==true||!state.started)return;
     const voiceCapture=await captureEnrollmentVoice();
+    if($("#personEnrollmentConsent")?.checked!==true||!state.started)return;
     const voicePrints=voiceCapture?.prints||[];
-    const existing=state.people.find(p=>p.name.toLowerCase()===name.toLowerCase());
+    const existing=identity.existing;
+    // When refreshing a known person's voice, verify the newly collected
+    // speech against their prior samples before attaching it to their identity.
+    if(existing?.voicePrints?.length&&voicePrints.length){
+      const oldMean=averageVoiceVectors(existing.voicePrints);
+      const newMean=averageVoiceVectors(voicePrints);
+      if(!oldMean||!newMean||cosineSimilarity(oldMean,newMean)<.80){
+        setEnrollProgress(0,window.ROBOTITO_I18N?.t?.("p08VoiceMismatch",responseLanguage())
+          ||"La voz nueva no coincide suficientemente con la registrada.");
+        return;
+      }
+    }
 
     if(existing){
       existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-36);
@@ -4844,6 +4902,7 @@ async function enrollPerson(){
     ));
   }finally{
     btn.disabled=false;
+    if($("#personEnrollmentConsent"))$("#personEnrollmentConsent").checked=false;
   }
 }
 
