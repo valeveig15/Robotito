@@ -4091,15 +4091,22 @@ async function detectLoop(){
     const dets=await faceapi.detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.45}))
       .withFaceLandmarks().withFaceDescriptors();
     state.lastDetections=dets;
-    if(dets.length){
+    if(dets.length===1){
       state.lastSeenAt=Date.now();
-      $("#seenLabel").textContent=dets.length===1?"1 persona":dets.length+" personas";
+      $("#seenLabel").textContent="1 persona";
       followFace(dets[0].detection.box);
       recognize(dets[0]);
       detectEating(dets[0]);
     }else{
-      $("#seenLabel").textContent="a nadie";
-      if(Date.now()-state.lastFaceConfirmedAt>2600)state.currentPerson=null;
+      $("#seenLabel").textContent=dets.length?dets.length+" personas":"a nadie";
+      if(dets.length>1){
+        // A crowded frame cannot authorize a person's private context.
+        state.currentPerson=null;
+        state.faceMatchHistory=[];
+        state.lastFaceConfirmedAt=0;
+      }else if(Date.now()-state.lastFaceConfirmedAt>2600){
+        state.currentPerson=null;
+      }
       resetEyes();
     }
   }catch(e){console.warn("vision",e);}
@@ -4259,7 +4266,8 @@ function recognize(det){
   }
 
   const best=state.faceMatcher.findBestMatch(det.descriptor);
-  const known=best.label!=="unknown" && Number.isFinite(best.distance);
+  const known=best.label!=="unknown" && Number.isFinite(best.distance)
+    && best.distance>=0 && best.distance<=.50;
 
   state.faceMatchHistory.push({
     label:known?best.label:"unknown",
@@ -4269,8 +4277,14 @@ function recognize(det){
   state.faceMatchHistory=state.faceMatchHistory.filter(x=>now-x.t<5000).slice(-7);
 
   if(!known){
-    if(now-state.lastFaceConfirmedAt>2600)state.currentPerson=null;
+    // An unknown visible face must not inherit another person's private context.
+    state.currentPerson=null;
     return;
+  }
+
+  if(state.currentPerson!==null && state.currentPerson!==best.label){
+    // Do not keep an old identity while a different face gathers consensus.
+    state.currentPerson=null;
   }
 
   // Once a person is confirmed, a good matching frame keeps that identity stable.

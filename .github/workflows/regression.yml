@@ -48,8 +48,8 @@ jobs:
         run: npm run test:audio:reactions:browser
       - name: Run core and browser regressions
         run: npm run test:ci
-      - name: Deep reproducible stress matrix (scheduled or manual)
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      - name: Deep reproducible stress matrix (PR, scheduled or manual)
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         run: |
           ROBOTITO_PROP_SCALE=3 npm run test:properties:matrix
           ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios
