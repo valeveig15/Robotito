@@ -274,7 +274,7 @@ function voiceMatchesLanguage(voice,targetLang=responseLanguage()){
 }
 function populateVoiceSelect(){
   const select=$("#voiceSelect");
-  if(!select||!("speechSynthesis" in window))return;
+  if(!select||!window.speechSynthesis?.getVoices)return;
   const target=responseLanguage();
   const voices=speechSynthesis.getVoices().filter(v=>voiceMatchesLanguage(v,target));
   const previous=state.voiceURI;
@@ -404,7 +404,7 @@ function speakResponse(text,forcedLang=null){
   // Class Mode and requested quiet periods are intentionally silent: Robotito
   // keeps listening, learning and showing text without speaking aloud.
   if(state.classMode||isSpeechMuted())return false;
-  if(!state.voiceEnabled||!("speechSynthesis" in window))return false;
+  if(!state.voiceEnabled||!window.speechSynthesis?.getVoices)return false;
   const clean=cleanSpeechText(text);
   if(!clean)return false;
   const lang=forcedLang||responseLanguage();
@@ -5632,7 +5632,7 @@ async function init(){
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
   if($("#voiceStyle"))$("#voiceStyle").value=state.voiceStyle;
   populateVoiceSelect();
-  if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=populateVoiceSelect;
+  if(window.speechSynthesis?.getVoices)window.speechSynthesis.onvoiceschanged=populateVoiceSelect;
   clockTick();
   await initDeviceBattery();
   updateMeters();
