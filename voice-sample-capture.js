@@ -38,10 +38,11 @@ function create({requestStream=()=>root.navigator.mediaDevices.getUserMedia({aud
     if(mine===generation&&getConsent()&&e.data?.size)parts.push(e.data);
    };
    obj.onstop=()=>{
-    release(grant);if(stream===grant)stream=null;if(recorder===obj)recorder=null;clear();
-    if(mine!==generation||disposed||!getConsent()){if(phase!=="saving")phase="idle";return;}
-    // Some MediaRecorder implementations emit stop twice; accept only one completion.
+    // Ignore events from an old recorder before touching the current session.
+    if(mine!==generation||recorder!==obj)return;
     if(phase!=="stopping"&&phase!=="recording")return;
+    release(grant);stream=null;recorder=null;clear();
+    if(disposed||!getConsent()){phase="idle";return;}
     phase="saving";inform("saving");
     pending=(async()=>{
      try{
