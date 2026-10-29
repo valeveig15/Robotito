@@ -11,7 +11,7 @@ Actualizado: 29 de octubre de 2026.
 - Pruebas añadidas al recorrido de Chromium para verificar la interfaz, plantillas y precedencia de cambios temporales de idioma.
 - Diez estilos de síntesis mediante los motores instalados del sistema (no son diez voces humanas garantizadas ni clonación).
 - La voz elegida debe corresponder al idioma; si el navegador solo ofrece voces extranjeras, la respuesta permanece escrita.
-- Cambios explícitos de idioma por selector, texto o voz; protección contra órdenes negadas y citas; modos persistente, sesión y una respuesta.
+- Cambios explícitos de idioma por selector, texto o voz; protección contra órdenes negadas y citas; modos persistente, sesión y una respuesta. Cualquier cambio manual, permanente o de sesión cancela un idioma pendiente de una sola respuesta.
 - El reconocimiento móvil descarta resultados pendientes cuando se cambia de idioma, pausa o detiene la escucha.
 - Traducción de frases locales comunes y motor Translator/LanguageModel en el navegador si está disponible. No se envía contenido a servicios externos de traducción sin autorización.
 - Grabación voluntaria de voz con consentimiento explícito, cancelación de permisos retrasados, retirada del consentimiento, cierre de micrófonos y borrado local de muestras.
@@ -20,9 +20,9 @@ Actualizado: 29 de octubre de 2026.
 - Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.460 comprobaciones aisladas**.
 - Captura privada de muestras y cancelación por consentimiento: **16 comprobaciones aisladas**.
 - ASR y cambios de sesión: **8 comprobaciones aisladas**.
-- Cambios de idioma persistentes, por sesión y por una respuesta: **24 comprobaciones aisladas**.
+- Cambios de idioma persistentes, por sesión y por una respuesta: **27 comprobaciones aisladas**.
 - Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
-- **Total de estas ejecuciones:** **76.221 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
+- **Total de estas ejecuciones:** **76.224 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
 
 No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
 
