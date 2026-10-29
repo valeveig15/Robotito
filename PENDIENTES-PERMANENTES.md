@@ -24,7 +24,7 @@ Actualizado: 29 de octubre de 2026.
 5. **Punto 4: seis idiomas y traducción dinámica.**
    - Completar todas las respuestas dinámicas, clases, tareas, libros, clima, cumpleaños, estados de ánimo y mensajes de error en español, inglés, portugués, francés, italiano y alemán.
    - Probar ASR, TTS, cambio por selector/texto/voz y las modalidades persistente, sesión y una sola respuesta en navegadores reales.
-   - **Aplicado 29/10:** inicio de los seis idiomas; avisos iniciales de micrófono/cámara y bienvenida localizados; impedir usar una voz de otro idioma. Pruebas aisladas P04: 160 comprobaciones satisfactorias. La suite completa de CI todavía requiere validación.
+   - **Aplicado 29/10:** inicio de los seis idiomas; avisos iniciales de micrófono/cámara y bienvenida localizados; impedir usar una voz de otro idioma. Pruebas aisladas P04: 175 comprobaciones satisfactorias; negativas, discurso citado y selector de voces incluidos. La suite completa de CI todavía requiere validación.
 6. **Voces, muestras y consentimiento.**
    - Mantener diez estilos de voz como preajustes de síntesis; no presentarlos como diez actores garantizados ni como clonación.
    - Verificar disponibilidad, ajustes y reproducción real por sistema operativo; eliminar muestras voluntarias correctamente y revisar consentimiento para audios de terceros.
