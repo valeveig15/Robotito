@@ -25,6 +25,12 @@ eq(voice.selectVoice([voices[0]],"fr"),null,"No cross-language voice fallback");
 const noFrench=voice.configureUtterance({}, {language:"fr",voices:[voices[0]]});
 eq(noFrench.voice,undefined,"Do not select Spanish voice for French utterance");
 eq(noFrench.lang,"fr-FR","Keep explicit French locale when unavailable");
+// Region-specific inputs should keep their language even without installed voices.
+for(const [regional,expected] of [["fr-CA","fr-FR"],["pt-PT","pt-BR"],["de-AT","de-DE"],["en_GB","en-US"],["it-CH","it-IT"]]){
+ const utter=voice.configureUtterance({}, {language:regional,voices:[]});
+ eq(utter.lang,expected,"Regional locale language preserved: "+regional);
+}
+
 const alt=[{lang:"pt-PT",voiceURI:"pt-1",name:"Plain"},
  {lang:"pt-BR",voiceURI:"pt-2",name:"Neural Voice"}];
 eq(voice.selectVoice(alt,"pt","pt-1")?.voiceURI,"pt-1","Preserve matching user preference");
