@@ -105,4 +105,11 @@ ok(dropdown.innerHTML.includes(i18n.t("voiceUnavailable","fr")),
 pickerVoices=[...voices];pickerTarget="de";
 picker();
 eq(dropdown.value,"local-de","German refreshes available voices");
+// Language commands must not obey negation or reported speech.
+for(const [utterance,target] of [["Spreche bitte Deutsch","de"],["Sprich Deutsch","de"],["Parla italiano","it"],["Fale português","pt"],["Speak French","fr"],["No quiero español, quiero hablar inglés","en"]]){
+ eq(i18n.parseCommand(utterance)?.language,target,"Explicit language change "+utterance);
+}
+for(const utterance of ["Don't speak French","Please don't switch to German","Não fale português","Ne parlez pas français","Non parlare italiano","Bitte nicht auf Deutsch antworten","No me hables en francés","My teacher said speak French","La profesora dijo habla en inglés"]){
+ eq(i18n.parseCommand(utterance),null,"Do not change language on negated/reported command "+utterance);
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
