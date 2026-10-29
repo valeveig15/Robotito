@@ -536,6 +536,10 @@ function localizedSpeechFallback(target){
   return "Te entendí, pero no pude preparar esa respuesta en español. Probá de nuevo.";
 }
 async function localizeGeneratedSpeech(text,target=responseLanguage()){
+  // Frequent app responses remain correctly translated when the optional
+  // on-device model is missing, without sending personal content elsewhere.
+  const fixed=window.ROBOTITO_I18N?.fixedReply?.(text,target);
+  if(fixed)return fixed;
   const detected=detectGeneratedSpeechLanguage(text);
   if(detected===target||isLanguageNeutralSpeech(text))return String(text||"");
   const source=detected==="und"?"es":detected;
