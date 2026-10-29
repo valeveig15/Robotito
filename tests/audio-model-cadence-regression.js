@@ -136,6 +136,26 @@ const outOfOrder=(()=>{
  return events;
 })();
 verify(outOfOrder.length===0,"An out-of-order model timestamp cannot count as new evidence");
+// A gap of silence invalidates the partial human-event run and its latch.
+const silenceGap=(()=>{
+ let value=null;
+ const detected=[],detector=audio.create({classifier:{calibrated:true,
+  version:"synthetic-test",predict:()=>value},onEvent:x=>detected.push(x)});
+ const sounding={...sample},silent={...sample,rms:.001};
+ const tick=(at,id,quiet=false)=>{
+  value={frameId:id,observedAt:at,scores:{sneeze:.999}};
+  detector.process(quiet?silent:sounding,{now:at});
+ };
+ tick(10000,"a");tick(10500,"b");tick(10550,"quiet",true);
+ tick(11000,"c");
+ const prematurelyEmitted=detected.length;
+ tick(11500,"d");tick(12000,"e");
+ return {prematurelyEmitted,detected};
+})();
+verify(silenceGap.prematurelyEmitted===0,
+ "Two detections before silence cannot be combined with the next fresh detection");
+verify(silenceGap.detected.filter(x=>x.kind==="sneeze").length===1,
+ "Three independent post-silence windows can still confirm a new event");
 const untagged=(()=>{
  const events=[],detector=audio.create({classifier:{
   calibrated:true,version:"synthetic-synchronous-legacy",
