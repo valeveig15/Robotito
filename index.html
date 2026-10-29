@@ -488,7 +488,7 @@
           </div>
 
           <div class="speaker-override">
-            <span class="muted">Robotito intenta reconocer la voz automáticamente. Si se equivoca, podés corregir quién habló en cada línea o marcar de antemano quién va a hablar.</span>
+            <span class="muted" data-i18n="uiClassSpeakerHint">Robotito intenta reconocer la voz automáticamente. Si se equivoca, podés corregir quién habló en cada línea o marcar de antemano quién va a hablar.</span>
             <div class="speaker-training-actions">
               <button id="nextMeBtn" type="button" class="tiny-btn">Próxima frase: yo</button>
               <button id="nextTeacherBtn" type="button" class="tiny-btn">Próxima frase: profesor/a</button>
@@ -504,7 +504,7 @@
 
           <div class="live-class-box">
             <div class="section-head"><h3>Transcripción en vivo</h3><span id="classDuration">00:00</span></div>
-            <div id="classTranscript" class="class-transcript"><p class="muted">Todavía no empezó ninguna clase.</p></div>
+            <div id="classTranscript" class="class-transcript"><p class="muted" data-i18n="uiClassEmptyText">Todavía no empezó ninguna clase.</p></div>
           </div>
         </div>
 
@@ -559,7 +559,7 @@
           <div id="classRecordingsList" class="class-recordings-list">
             <p data-i18n="uiClassFinishHint" class="muted">Cuando termines una clase, el audio aparecerá acá.</p>
           </div>
-          <p class="muted">Las grabaciones quedan solo en este dispositivo/navegador. Podés descargarlas para conservar una copia o borrarlas cuando ya no las necesites.</p>
+          <p class="muted" data-i18n="uiClassConsentHint">Las grabaciones quedan solo en este dispositivo/navegador. Podés descargarlas para conservar una copia o borrarlas cuando ya no las necesites.</p>
         </div>
 
         <div class="card">
@@ -567,14 +567,14 @@
             <h2 data-i18n="uiLearned">Lo que aprendió</h2>
             <button id="summarizeClassBtn" type="button" class="ghost" data-i18n="uiRefreshSummary">Actualizar resumen</button>
           </div>
-          <div id="classSummary" class="study-output"><p class="muted">Al terminar o durante una clase, Robotito puede extraer los puntos más importantes.</p></div>
+          <div id="classSummary" class="study-output"><p class="muted" data-i18n="uiClassSummaryHelp">Al terminar o durante una clase, Robotito puede extraer los puntos más importantes.</p></div>
         </div>
 
         <div class="card video-material-card">
           <div class="section-head">
             <div>
               <h2 data-i18n="uiVideoTitle">Video de YouTube</h2>
-              <p class="muted">Robotito puede incorporar un video sin descargarlo: usando su transcripción o escuchando, con tu permiso, el audio de una pestaña compartida.</p>
+              <p class="muted" data-i18n="uiVideoIntro">Robotito puede incorporar un video sin descargarlo: usando su transcripción o escuchando, con tu permiso, el audio de una pestaña compartida.</p>
             </div>
             <span class="status-badge">video</span>
           </div>
@@ -611,7 +611,7 @@
             <textarea id="youtubeTranscript" rows="7" placeholder="Pegá aquí la transcripción o los subtítulos…"></textarea>
           </label>
           <button id="saveYoutubeTranscriptBtn" type="button" class="primary full">Guardar transcripción como material</button>
-          <p class="muted video-privacy-note">Al usar «Escuchar pestaña», el navegador te pedirá elegir qué pestaña compartir. Seleccioná la de YouTube y activá «Compartir audio». La transcripción se realiza localmente y queda en este navegador.</p>
+          <p class="muted video-privacy-note" data-i18n="uiVideoSharePrivacy">Al usar «Escuchar pestaña», el navegador te pedirá elegir qué pestaña compartir. Seleccioná la de YouTube y activá «Compartir audio». La transcripción se realiza localmente y queda en este navegador.</p>
         </div>
 
         <div class="card">
@@ -621,7 +621,7 @@
             Cargar material
             <input id="academicFiles" type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.srt,.vtt,text/plain,text/markdown,text/csv,application/json,application/pdf,text/vtt,application/x-subrip" />
           </label>
-          <div id="academicFilesList" class="study-output"><p class="muted">Todavía no cargaste material.</p></div>
+          <div id="academicFilesList" class="study-output"><p class="muted" data-i18n="uiAcademicNoFiles">Todavía no cargaste material.</p></div>
         </div>
 
         <div class="card">
@@ -636,7 +636,7 @@
 
         <div class="card">
           <h2 data-i18n="uiVisualMath">Matemática visual</h2>
-          <p class="muted">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
+          <p class="muted" data-i18n="uiMathHelp">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
           <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0"></textarea>
           <button id="solveMathBtn" type="button" class="primary full">Resolver y representar</button>
           <div id="mathExplanation" class="study-output"></div>
@@ -645,7 +645,7 @@
 
         <div class="card">
           <h2>¿Qué objeto es?</h2>
-          <p class="muted">Mostrá un objeto a cámara y preguntá “¿qué es esto?” o usá el botón.</p>
+          <p class="muted" data-i18n="uiObjectHelp">Mostrá un objeto a cámara y preguntá “¿qué es esto?” o usá el botón.</p>
           <button id="detectObjectBtn" type="button" class="primary full" data-i18n="uiRecognizeObject">Reconocer objeto</button>
           <div id="objectResult" class="study-output"></div>
         </div>
@@ -654,7 +654,7 @@
       <section class="tabpage" id="tab-tasks">
         <div class="card">
           <h2 data-i18n="uiTasksSheet">Tu hoja de tareas</h2>
-          <p class="muted">Pegá el enlace de Google Sheets. Robotito intentará leer una hoja publicada/compartida para lectura. Tus datos quedan guardados en este navegador.</p>
+          <p class="muted" data-i18n="uiTaskSheetHelp">Pegá el enlace de Google Sheets. Robotito intentará leer una hoja publicada/compartida para lectura. Tus datos quedan guardados en este navegador.</p>
           <label>Enlace de Google Sheet
             <input id="tasksSheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." />
           </label>
@@ -670,7 +670,7 @@
             <h2 data-i18n="uiPendingTasks">Pendientes</h2>
             <button id="refreshTasksBtn" type="button" class="ghost" data-i18n="uiRefresh">Actualizar</button>
           </div>
-          <div id="tasksList" class="tasks-list"><p class="muted">Conectá tu hoja para ver tareas.</p></div>
+          <div id="tasksList" class="tasks-list"><p class="muted" data-i18n="uiNoTasksHelp">Conectá tu hoja para ver tareas.</p></div>
           <p data-i18n="uiTaskReminderHelp" class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
         </div>
       </section>
@@ -696,7 +696,7 @@
           <button id="enrollBtn" type="button" class="primary full" data-i18n="uiEnroll">Registrar cara y voz</button>
           <p id="enrollStatus" class="mini-status"></p>
           <div class="enroll-progress" aria-hidden="true"><div id="enrollProgressBar"></div></div>
-          <p class="muted">El registro tarda un poco a propósito: Robotito toma varias muestras del rostro desde distintos ángulos y, para la voz, espera hasta que realmente empieces a hablar. Solo cuentan los segundos en los que detecta voz.</p>
+          <p class="muted" data-i18n="uiEnrollHelp">El registro tarda un poco a propósito: Robotito toma varias muestras del rostro desde distintos ángulos y, para la voz, espera hasta que realmente empieces a hablar. Solo cuentan los segundos en los que detecta voz.</p>
         </div>
         <div class="card">
           <div class="section-head">
@@ -715,9 +715,9 @@
             Importar CSV
             <input id="goodreadsFile" type="file" accept=".csv,text/csv" />
           </label>
-          <button id="goodreadsHelpBtn" type="button" class="ghost full help-button">❔ No sé cómo pasarle mis datos de Goodreads</button>
+          <button id="goodreadsHelpBtn" type="button" class="ghost full help-button" data-i18n="uiGoodreadsButton">❔ No sé cómo pasarle mis datos de Goodreads</button>
           <div id="goodreadsHelp" class="help-panel hidden">
-            <h3>Cómo pasarle tu Goodreads a Robotito</h3>
+            <h3 data-i18n="uiGoodreadsHow">Cómo pasarle tu Goodreads a Robotito</h3>
             <ol>
               <li>Abrí Goodreads desde una computadora.</li>
               <li>Entrá a <strong>My Books</strong>.</li>
@@ -727,13 +727,13 @@
               <li>Volvé acá y tocá <strong>Importar CSV</strong> para elegir ese archivo.</li>
             </ol>
             <a class="goodreads-link" href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer">Abrir Import / Export de Goodreads ↗</a>
-            <p class="muted">Robotito usa ese CSV para saber qué leíste, qué tenés pendiente, tus estanterías, autores y calificaciones. El archivo se procesa en tu navegador.</p>
+            <p class="muted" data-i18n="uiGoodreadsData">Robotito usa ese CSV para saber qué leíste, qué tenés pendiente, tus estanterías, autores y calificaciones. El archivo se procesa en tu navegador.</p>
           </div>
           <p data-i18n="uiNoLibrary" id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
         </div>
         <div class="card">
           <h2 data-i18n="uiReadingChoice">¿Qué querés leer?</h2>
-          <p class="muted">Describilo con tus palabras. Podés contarle el género, el tono, los temas, la extensión, la edad del lector, un libro parecido y también qué cosas querés evitar.</p>
+          <p class="muted" data-i18n="uiBookDescriptionHelp">Describilo con tus palabras. Podés contarle el género, el tono, los temas, la extensión, la edad del lector, un libro parecido y también qué cosas querés evitar.</p>
           <label><span data-i18n="uiDescription">Descripción</span>
             <textarea id="bookPrompt" rows="4" placeholder="Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante."></textarea>
           </label>
