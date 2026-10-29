@@ -109,6 +109,19 @@ async function putBlob(id,blob,{owner="local",type="binary",recordId=null}={}){
  tx.objectStore("blobs").put({id:String(id),blob,owner,type,recordId,updatedAt:Date.now()});
  await finished;return String(id);
 }
+// Consent metadata and sampled audio share one atomic IndexedDB transaction.
+async function putRecordWithBlob(input,blob,{type="binary"}={}){
+ if(!(blob instanceof Blob))throw new TypeError("Blob required");
+ const row=normalizeRecord(input);
+ if(!row.blobId)throw new TypeError("Record requires blobId");
+ return serial("record:"+row.id,async()=>{
+  const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
+  tx.objectStore("blobs").put({id:row.blobId,blob,owner:row.owner,type,
+   recordId:row.id,updatedAt:Date.now()});
+  tx.objectStore("records").put(row);
+  await finished;return row;
+ });
+}
 async function getBlob(id){
  const db=await openDb(),row=await request(db.transaction("blobs","readonly").objectStore("blobs").get(String(id)));
  return row?.blob||null;
@@ -219,6 +232,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,putBlob,getBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,putBlob,putRecordWithBlob,getBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
