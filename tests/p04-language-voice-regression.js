@@ -202,4 +202,12 @@ eq(i18n.message("unknownKey","fr",{count:2}),null,"No invented dynamic keys");
 ok(source.includes('sayDynamic("pendingTaskSummary"'),"Pending-task flow uses locale template");
 ok(source.includes('sayDynamic("classesToday"'),"Class counting uses locale template");
 ok(source.includes('sayDynamic("taskReminder"'),"Timed task reminder uses locale template");
+for(const lang of langs){
+ for(const key of ["timeNow","yourBirthday","personBirthday","classListening","classLearning","rememberLast"]){
+  const value=i18n.message(key,lang,{time:"15:30",date:"30/10/2026",person:"Ana",subject:"Biología",memory:"x"});
+  ok(typeof value==="string"&&value.length>=5&&!value.includes("{"),"Locale dynamic "+key+"/"+lang);
+ }
+}
+ok(source.includes("const locale=languageLocale(lang)"),"Clock formats six languages");
+ok(source.includes('sayDynamic("personBirthday"'),"Birthday localized directly");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
