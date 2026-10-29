@@ -221,8 +221,10 @@
       const voiceThreshold=Math.max(.009,Math.min(.032,noiseFloor*2.35+0.0025));
       const voice=rms>voiceThreshold;
 
-      if(!speaking){
-        // Keep about 350–450 ms of audio so the first syllable is not cut off.
+      if(!speaking&&!voice){
+        // The pre-roll contains only frames before speech starts. Previously
+        // the first voiced frame entered pre-roll AND segment, duplicating
+        // ~85 ms at 48 kHz and potentially distorting the first syllable.
         preRoll.push(data);
         while(preRoll.length>5)preRoll.shift();
       }
@@ -230,7 +232,7 @@
         if(!speaking){
           speaking=true;
           segmentStart=now;
-          segmentStartEpoch=Date.now()-Math.round(preRoll.length*4096/ac.sampleRate*1000);
+          segmentStartEpoch=Date.now()-Math.round((preRoll.length+1)*4096/ac.sampleRate*1000);
           segment=preRoll.slice();
           preRoll=[];
           voiceFrames=0;
