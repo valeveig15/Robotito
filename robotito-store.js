@@ -126,6 +126,12 @@ async function getBlob(id){
  const db=await openDb(),row=await request(db.transaction("blobs","readonly").objectStore("blobs").get(String(id)));
  return row?.blob||null;
 }
+// Removes legacy blobs even if a previous interrupted save left no record.
+async function deleteBlob(id){
+ const db=await openDb(),tx=db.transaction("blobs","readwrite"),finished=complete(tx);
+ tx.objectStore("blobs").delete(String(id));
+ await finished;return true;
+}
 async function deleteRecord(id){
  return serial("record:"+id,async()=>{
   const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
@@ -232,6 +238,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,putBlob,putRecordWithBlob,getBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
