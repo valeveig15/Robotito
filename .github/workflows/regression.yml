@@ -44,6 +44,8 @@ jobs:
       - name: Verify manual microphone field diagnostic with synthetic hardware
         # Headless fake microphone only; never claims physical hardware passed.
         run: npm run test:audio:device
+      - name: Verify actual avatar reaction trial in Chromium without human audio
+        run: npm run test:audio:reactions:browser
       - name: Run core and browser regressions
         run: npm run test:ci
       - name: Deep reproducible stress matrix (scheduled or manual)

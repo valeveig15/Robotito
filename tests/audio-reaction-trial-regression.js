@@ -1,0 +1,71 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {create}=require("../audio-reaction-trial.js");
+let now=1000;
+const trial=create({clock:()=>now});
+assert.deepEqual(trial.status(),{active:false,canExport:false});
+assert.equal(trial.observeEvent("sneeze",{action:"bless"}),false,
+ "No observations are recorded before consent");
+assert.equal(trial.observeDance(true),false,"No dance is counted before opt-in");
+assert.equal(trial.report(),null,"No report exists before a voluntary trial");
+assert.equal(trial.start(),true);
+assert.equal(trial.start(),false,"Concurrent trials are forbidden");
+trial.observeEvent("clap",{action:"clap"});
+trial.observeEvent("sneeze");
+trial.observeEvent("laugh",{suppressed:true});
+trial.observeEvent("cough",{action:"notice"});
+trial.observeEvent("impact");
+trial.observeEvent("not-a-real-kind",{action:"bless"});
+trial.observeDance(false);trial.observeDance(true);trial.observeDance(true);
+trial.observeDance(false);trial.observeDance(true);
+now+=2450;
+assert.equal(trial.stop(),true);
+assert.equal(trial.stop(),false);
+const report=trial.report();
+assert.equal(report.kind,"robotito-p03-local-avatar-reaction-trial");
+assert.equal(report.durationSeconds,2.5);
+assert.equal(report.detectedEventsByKind.clap,1);
+assert.equal(report.detectedEventsByKind.laugh,1);
+assert.equal(report.detectedEventsByKind.cough,1);
+assert.equal(report.detectedEventsByKind.sneeze,1);
+assert.equal(report.detectedEventsByKind.impact,1);
+assert.equal(report.detectedEventsByKind.music,0);
+assert.equal(report.avatarActionsByType.clap,1);
+assert.equal(report.avatarActionsByType.notice,1);
+assert.equal(report.avatarActionsByType.bless,0);
+assert.equal(report.preventedByContext,1);
+assert.equal(report.notAppliedAfterDetection,2);
+assert.equal(report.danceStarts,2);
+assert.equal(report.danceStops,1);
+assert.equal(report.noAudioRecordedByThisTool,true);
+assert.equal(report.noAudioExportedByThisTool,true);
+assert.equal(report.independentModelCalibrationVerified,false);
+assert.equal(report.physicalMicrophoneIndependentlyVerified,false);
+assert.equal(report.actualHumanSoundAccuracyEstablished,false);
+const dump=JSON.stringify(report);
+for(const privateKey of ["deviceId","audioSha256","timeStamp","userAgent","pcm","transcript",
+ "name","startTime","recordingPath"])
+ assert.equal(dump.includes('"'+privateKey+'"'),false,
+  "Field study counts cannot leak "+privateKey);
+assert.deepEqual(trial.status(),{active:false,canExport:true});
+report.avatarActionsByType.clap=999;
+assert.equal(trial.report().avatarActionsByType.clap,1,
+ "Callers cannot mutate saved field statistics by editing a snapshot");
+trial.observeEvent("sneeze",{action:"bless"});
+assert.equal(trial.report().detectedEventsByKind.sneeze,1,
+ "Stopped trial cannot continue observing audio callbacks");
+now+=100;
+assert.equal(trial.start(),true);
+assert.equal(trial.report(),null,"New consent cannot inherit prior measurements");
+trial.observeEvent("sneeze",{action:"bless"});
+now+=500;
+trial.stop();
+assert.equal(trial.report().avatarActionsByType.bless,1);
+assert.equal(trial.report().detectedEventsByKind.clap,0);
+trial.clear();
+assert.deepEqual(trial.status(),{active:false,canExport:false});
+assert.equal(trial.report(),null);
+assert.equal(trial.observeEvent("sneeze",{action:"bless"}),false);
+const invalid=create({clock:()=>Number.NaN});
+assert.equal(invalid.start(),false,"Invalid timer cannot produce misleading durations");
+console.log("Robotito opt-in, no-audio avatar field-counts regression passed");
