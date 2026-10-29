@@ -2088,6 +2088,8 @@ function finishStartupAvatar(id){
 
 function setLanguageMode(mode){
   if(!window.ROBOTITO_I18N?.supported?.(mode))return;
+  // A direct selector change also supersedes any queued one-reply language.
+  state.nextResponseLanguage=null;
   state.languageMode=mode;
   document.documentElement.lang=mode;
   state.lastDetectedLanguage=mode;
