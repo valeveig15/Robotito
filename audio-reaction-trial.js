@@ -58,6 +58,52 @@ function create({clock=()=>typeof performance!=="undefined"?performance.now():Da
  function status(){return {active,canExport:!active&&!!summary};}
  return {start,stop,clear,observeEvent,observeDance,report,status};
 }
-root.ROBOTITO_AUDIO_REACTION_TRIAL={create};
+function attachControls({isReady=()=>true}={}){
+ const trial=create(),doc=root.document;
+ if(!doc)return trial;
+ const get=id=>doc.getElementById(id);
+ const startBtn=get("reactionTrialStart"),stopBtn=get("reactionTrialStop"),
+  exportBtn=get("reactionTrialExport"),clearBtn=get("reactionTrialClear"),
+  label=get("reactionTrialStatus");
+ if(!startBtn||!stopBtn||!exportBtn||!clearBtn||!label)return trial;
+ const update=(message)=>{
+  const status=trial.status();
+  startBtn.disabled=status.active;
+  stopBtn.disabled=!status.active;
+  exportBtn.disabled=!status.canExport;
+  label.textContent=message;
+ };
+ startBtn.addEventListener("click",()=>{
+  if(!isReady()){update("Iniciá Robotito y autorizá su micrófono antes de registrar reacciones.");return;}
+  if(trial.start())update("Registro local activo. No guarda sonidos ni palabras.");
+ });
+ stopBtn.addEventListener("click",()=>{
+  trial.stop();
+  update("Registro detenido. Podés descargar solo los recuentos o borrarlos.");
+ });
+ clearBtn.addEventListener("click",()=>{
+  trial.clear();update("Registro descartado. No queda ningún informe.");
+ });
+ exportBtn.addEventListener("click",()=>{
+  const report=trial.report();if(!report)return;
+  const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)+"\\n"],
+   {type:"application/json"}));
+  const link=doc.createElement("a");
+  link.href=url;link.download="robotito-avatar-reaction-trial.json";
+  doc.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+  update("Informe local descargado, sin grabaciones ni identificadores.");
+ });
+ const privacyDiscard=()=>{
+  trial.clear();update("Pestaña oculta o abandonada: registro descartado.");
+ };
+ doc.addEventListener("visibilitychange",()=>{
+  if(doc.hidden)privacyDiscard();
+ });
+ root.addEventListener("pagehide",privacyDiscard);
+ update("Registro apagado. Solo se inicia con tu autorización.");
+ return trial;
+}
+root.ROBOTITO_AUDIO_REACTION_TRIAL={create,attachControls};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_AUDIO_REACTION_TRIAL;
 })(typeof window!=="undefined"?window:globalThis);
