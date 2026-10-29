@@ -176,4 +176,10 @@ for(const original of ["Ya puedo hablar de nuevo.","Todavía no importaste tu bi
 eq(i18n.fixedReply("Unknown private class sentence","de"),null,
  "Do not invent unknown translations");
 ok(source.includes('fixedReply?.(text,target)'),"Known responses used before language model");
+for(const key of ["voiceThirdParty","voiceThirdPartyName","voiceConsent","voiceLanguageHelp"]){
+ ok(html.includes('data-i18n="'+key+'"'),"Translated consent label "+key);
+ for(const code of langs)ok(i18n.t(key,code).length>10,"Translated consent "+key+"/"+code);
+}
+ok(html.includes('id="voiceSampleConsent" type="checkbox"'),"Consent input preserved");
+ok(html.includes('id="voiceSampleName"'),"Name field preserved");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
