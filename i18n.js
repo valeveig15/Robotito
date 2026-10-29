@@ -842,6 +842,49 @@ Object.assign(LABELS,{
   "de": "Nacht"
  }
 });
+// P06: distinguish browser voice inventory from tone/rate voice styles.
+Object.assign(LABELS,{
+ "voiceBrowserCount": {
+  "es": "Voces disponibles en el navegador para este idioma: {count}",
+  "en": "Browser voices available for this language: {count}",
+  "pt": "Vozes disponíveis no navegador para este idioma: {count}",
+  "fr": "Voix proposées par le navigateur pour cette langue : {count}",
+  "it": "Voci disponibili nel browser per questa lingua: {count}",
+  "de": "Für diese Sprache im Browser verfügbare Stimmen: {count}"
+ },
+ "voiceBrowserLocal": {
+  "es": "en dispositivo",
+  "en": "on device",
+  "pt": "no dispositivo",
+  "fr": "sur l'appareil",
+  "it": "sul dispositivo",
+  "de": "auf dem Gerät"
+ },
+ "voiceBrowserRemote": {
+  "es": "no local",
+  "en": "non-local",
+  "pt": "não local",
+  "fr": "non locale",
+  "it": "non locale",
+  "de": "nicht lokal"
+ },
+ "voicePresetExplanation": {
+  "es": "Los diez estilos son ajustes de tono, velocidad y volumen sobre la voz del navegador. No son diez voces nuevas ni una clonación.",
+  "en": "The ten styles adjust pitch, speed and volume of a browser voice. They are not ten new voices or voice cloning.",
+  "pt": "Os dez estilos ajustam tom, velocidade e volume de uma voz do navegador. Não são dez vozes novas nem clonagem.",
+  "fr": "Les dix styles modifient la hauteur, la vitesse et le volume d'une voix du navigateur. Ce ne sont pas dix voix nouvelles ni du clonage.",
+  "it": "I dieci stili regolano tono, velocità e volume di una voce del browser. Non sono dieci nuove voci né una clonazione.",
+  "de": "Die zehn Stile ändern Tonhöhe, Tempo und Lautstärke einer Browserstimme. Sie sind keine zehn neuen Stimmen und kein Stimmenklonen."
+ },
+ "voiceRemotePrivacy": {
+  "es": "Algunas voces no locales podrían procesar el texto fuera del dispositivo. Evitá probarlas con datos privados.",
+  "en": "Some non-local voices may process text off-device. Avoid testing them with private information.",
+  "pt": "Algumas vozes não locais podem processar texto fora do dispositivo. Evite testá-las com dados privados.",
+  "fr": "Certaines voix non locales peuvent traiter le texte hors de l'appareil. Évite les données privées.",
+  "it": "Alcune voci non locali potrebbero elaborare il testo fuori dal dispositivo. Evita dati privati.",
+  "de": "Einige nicht lokale Stimmen können Text außerhalb des Geräts verarbeiten. Vermeide private Daten."
+ }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
