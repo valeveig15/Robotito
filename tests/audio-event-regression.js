@@ -357,4 +357,14 @@ eq(dancePolicy.updateMusic(stableMusic,{now:danceAt+30}),false,
  "Music evidence must restart after interruption");
 danceAt+=1800;
 eq(dancePolicy.updateMusic(stableMusic),false,"Long audio gap invalidates dance evidence");
+// Malformed classifier payloads must never manufacture human-event evidence.
+for(const invalid of ["1",true,null,NaN,Infinity]){
+ const invalidModel={version:"synthetic-malformed-only",calibrated:true,
+  predict:()=>({scores:{sneeze:invalid,noise:0}})};
+ const malformedDetector=audio.create({classifier:invalidModel});
+ const malformedFrames=feed(malformedDetector,
+  Array.from({length:15},()=>sample({rms:.18,flat:.25,harmonic:.7})),{start:500000});
+ ok(!onlyEvents(malformedFrames).some(x=>x.kind==="sneeze"),
+  "Invalid classifier value must not cause a false sneeze: "+String(invalid));
+}
 console.log("Robotito acoustic event regression:",checks,"assertions; seed:",seed);
