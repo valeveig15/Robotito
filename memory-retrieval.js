@@ -3,7 +3,7 @@
 (function(root){
 "use strict";
 const choices=[
- {type:"conversations",terms:/\b(?:que dije|que dijiste|que hablamos|que conversamos|lo que dijimos|what did i say|what did we talk|said yesterday|conversacion|conversation|falamos|falei)\b/i},
+ {type:"conversations",terms:/\b(?:que dije|que dijiste|que hablamos|que conversamos|lo que dijimos|que hablamos la ultima vez|what did i say|what did we talk|what we discussed yesterday|what we talked about yesterday|said yesterday|conversacion|conversation|falamos|falei)\b/i},
  {type:"recommendations",terms:/\b(?:libro|libros|book|books|livro|livros|livre|buch)\b/i},
  {type:"tasks",terms:/\b(?:tarea|tareas|task|tasks|tarefa|deberes|devoirs|compiti|aufgaben)\b/i},
  {type:"classes",terms:/\b(?:clase|class|lecture|aula|cours|lezione|unterricht)\b/i},
@@ -14,7 +14,7 @@ const choices=[
 function fold(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 function intent(raw){
  const q=fold(raw);
- const retrieve=/\b(?:record(?:ame|as|a)|acord(?:as|ate)|me recomendaste|recomendaste|recomendou|remember|remind|show me|mostrame|muestrame|busca|buscar|recall|what did|que dije|que te dije|ultima vez|last time)\b/.test(q);
+ const retrieve=/\b(?:record(?:ame|as|a)|acord(?:as|ate)|me recomendaste|recomendaste|recomendou|remember|remind|show me|mostrame|muestrame|busca|buscar|recall|what did|que dije|que te dije|ultima vez|last time|lo de ayer|lo de anteayer|lo de la semana pasada|what we discussed yesterday|what we talked about yesterday|o de ontem|o de anteontem|ce qu.on a dit hier|quello di ieri|das von gestern)\b/.test(q);
  if(!retrieve||/\b(?:que significa|significado|definime|definition of)\b/.test(q))return null;
  const type=choices.find(choice=>choice.terms.test(q))?.type||"memories";
  return {type,search:q};
@@ -27,10 +27,14 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
  if(time?.start!==null&&time?.start!==undefined){options.after=time.start;options.before=time.end;}
  options.limit=100;
  const rows=(await store.queryRecords(options)).filter(row=>{
+  // Defense in depth: never trust a storage adapter to isolate people by itself.
+  if(!row||row.owner!==owner||row.type!==found.type)return false;
   // The active question is often recorded by autoRemember before retrieval.
   // Exclude it so Robotito cannot "remember" the question as its own answer.
   const utterance=fold(row.data?.text||"").trim();
-  return !utterance||utterance!==fold(raw).trim();
+  // A previously recorded recall request is not evidence of an event.
+  // Exclude it even when the same question is now asked in another language.
+  return !utterance||(utterance!==fold(raw).trim()&&!intent(utterance));
  });
  let selected=rows;
  const words=found.search.replace(/[^\p{L}\p{N}\s]/gu," ").split(/\s+/).filter(x=>x.length>=6&&!/record|recomend|clase|libro|recuerd|tarea|semana|pasada|before|about|after/.test(x));
