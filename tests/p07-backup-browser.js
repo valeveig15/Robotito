@@ -81,7 +81,9 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   assert.equal(result.restored,true);
   // The UI does not let an import begin without first preparing a backup.
   // This regression tests P07, not the separately tested onboarding gate.
-  await page.evaluate(()=>{document.getElementById("languageGate").style.display="none";});
+  // Startup init can re-open the gate asynchronously; isolate this P07 test
+  // with an overriding stylesheet instead of a racy one-time style mutation.
+  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
   await page.locator('[data-tab="memory"]').click();
   await page.locator("details.memory-backup summary").click();
   assert.equal(await page.locator("#chooseMemoryBackup").isDisabled(),true);
