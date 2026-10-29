@@ -112,4 +112,11 @@ for(const [utterance,target] of [["Spreche bitte Deutsch","de"],["Sprich Deutsch
 for(const utterance of ["Don't speak French","Please don't switch to German","Não fale português","Ne parlez pas français","Non parlare italiano","Bitte nicht auf Deutsch antworten","No me hables en francés","My teacher said speak French","La profesora dijo habla en inglés"]){
  eq(i18n.parseCommand(utterance),null,"Do not change language on negated/reported command "+utterance);
 }
+// Translation must never silently call a remote service.
+ok(!source.includes("api.mymemory.translated.net"),"No remote unconsented translator");
+ok(source.includes("window.Translator.create"),"Browser on-device translation fallback");
+for(const code of langs){
+ ok(source.includes('de:"danke"')&&source.includes('fr:"merci"')&&source.includes('it:"grazie"'),
+  "Six-language local short-phrase dictionary present for "+code);
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
