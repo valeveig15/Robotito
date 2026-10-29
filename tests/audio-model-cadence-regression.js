@@ -123,6 +123,19 @@ const replayed=(()=>{
  return events;
 })();
 verify(replayed.length===0,"Alternating reused frame IDs cannot count as independent sound evidence");
+// Unique frame IDs cannot turn an older observation into fresh evidence.
+const outOfOrder=(()=>{
+ let prediction=null;const events=[];
+ const detector=audio.create({classifier:{calibrated:true,version:"synthetic-test",
+  predict:()=>prediction},onEvent:e=>events.push(e)});
+ for(const [at,id,observedAt] of [[10000,"a",10000],[10500,"b",10500],
+  [11000,"c",10480]]){
+  prediction={frameId:id,observedAt,scores:{sneeze:.999}};
+  detector.process(sample,{now:at});
+ }
+ return events;
+})();
+verify(outOfOrder.length===0,"An out-of-order model timestamp cannot count as new evidence");
 const untagged=(()=>{
  const events=[],detector=audio.create({classifier:{
   calibrated:true,version:"synthetic-synchronous-legacy",
