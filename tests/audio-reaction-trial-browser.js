@@ -31,6 +31,9 @@ const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.
    if(gate){gate.hidden=true;gate.classList.add("hidden");gate.style.display="none";}
    document.querySelector(".reaction-trial-panel").open=true;
   });
+  // App startup may re-open its language wizard asynchronously. This test
+  // focuses on an already-onboarded user's explicit field-trial controls.
+  await page.addStyleTag({content:"#languageGate{display:none!important;pointer-events:none!important;}"});
   assert.equal(await page.locator("#reactionTrialExport").isDisabled(),true,
    "No report exists on page load");
   assert.equal(await page.evaluate(()=>reactionTrial.status().active),false,
