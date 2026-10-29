@@ -64,4 +64,15 @@ ok(html.includes('data-i18n="pitch"')&&!html.includes(">Gravedad <input"),
 ok(html.includes('data-i18n="speed"'),"Speed control localized");
 ok(html.includes('data-start-language="de"'),"German remains in initial language choices");
 ok(html.includes('data-i18n="highfive"'),"Chocar los cinco remains in the interface");
+// Startup and microphone status messages must exist in all six languages.
+for(const key of ["asrUnsupported","asrActivating","startupPermissions","startupRequestingMedia","startupMobileHint","startupListening","startupSpeechFailed","startupMediaActive","startupAwake","startupMediaFailed","startupAllowMedia"]){
+ const outputs=langs.map(lang=>i18n.t(key,lang));
+ outputs.forEach((value,index)=>ok(value.length>5&&value!==key,
+  "Missing startup translation "+key+"/"+langs[index]));
+ ok(new Set(outputs).size===6,"Startup messages must be individually localized: "+key);
+}
+ok(source.includes('startupText("startupAwake")'),"Welcome is localized");
+ok(source.includes('startupText("startupMediaFailed")'),"Camera failure is localized");
+ok(source.includes('startupText("startupMobileHint")'),"Mobile hint is localized");
+ok(source.includes('t?.("asrUnsupported",state.languageMode)'),"Unsupported speech is localized");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
