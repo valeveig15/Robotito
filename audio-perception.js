@@ -43,7 +43,7 @@ function featureFrame(feature,at){
 }
 function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  let frames=[],lastFrame=0,lastEvent=Object.create(null),transients=[],onset=null;
- let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null,lastIndependentModelAt=null,modelCandidate=null,seenObservations=new Set();
+ let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null,lastIndependentModelAt=null,modelCandidate=null,seenObservations=new Set(),lastObservedTimestamp=null;
  const modelAvailable=classifier?.calibrated===true
   &&typeof classifier?.version==="string"&&classifier.version.trim().length>0
   &&typeof classifier.predict==="function";
@@ -61,7 +61,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   frames=[];transients=[];onset=null;musicEvidence=0;modelEvidence=Object.create(null);
   modelLatched=Object.create(null);modelMisses=Object.create(null);
   lastModelObservation=null;lastIndependentModelAt=null;modelCandidate=null;
-  seenObservations.clear();
+  seenObservations.clear();lastObservedTimestamp=null;
   lastKind="unknown";lastFrame=0;
  }
  function classifierEvents(feature,at,active){
@@ -83,10 +83,12 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
      ||(Object.hasOwn(scores,"frameId")&&(typeof id!=="string"&&typeof id!=="number")))
     return [];
    const key=Object.hasOwn(scores,"frameId")?"id:"+String(id):"time:"+observed;
-   if(seenObservations.has(key))return [];
+   if(seenObservations.has(key)||
+      (Object.hasOwn(scores,"observedAt")&&lastObservedTimestamp!==null&&observed<=lastObservedTimestamp))return [];
    seenObservations.add(key);
    if(seenObservations.size>128)seenObservations.delete(seenObservations.values().next().value);
    lastModelObservation=key;
+   if(Object.hasOwn(scores,"observedAt"))lastObservedTimestamp=observed;
    // A model may assign a new frameId to identical PCM in a fast callback.
    // Merely changing that ID cannot manufacture independent evidence.
    if(lastIndependentModelAt!==null&&
