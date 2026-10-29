@@ -4547,11 +4547,15 @@ async function captureFaceEnrollment(){
     let got=0;
     const deadline=Date.now()+7500;
     while(got<stage.count&&Date.now()<deadline){
+      if(!state.started||document.hidden||$("#personEnrollmentConsent")?.checked!==true)
+        return null;
       const dets=await faceapi
         .detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.55}))
         .withFaceLandmarks()
         .withFaceDescriptors();
 
+      if(!state.started||document.hidden||$("#personEnrollmentConsent")?.checked!==true)
+        return null;
       if(dets.length!==1){
         const msg=dets.length>1
           ?enrollText("Necesito una sola cara en cámara.","I need exactly one face in the camera.","Preciso de apenas um rosto na câmera.")
