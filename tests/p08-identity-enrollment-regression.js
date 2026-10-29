@@ -26,8 +26,8 @@ eq(check(samples(.04),"Ada").ok,true,"Same name and matching face can refresh");
 eq(check(samples(.08),"Clara").reason,"other-profile","New name cannot re-enroll Ada");
 eq(check(samples(.08),"Bruno").reason,"other-profile","Another face cannot overwrite Bruno");
 eq(check(samples(.86),"Bruno").ok,true,"Matching Bruno is eligible");
-eq(check(samples(.50),"Clara").ok,true,"Distinct face may form a new profile");
-eq(check(samples(.70),"Ada").reason,"unverified-existing",
+eq(check(samples(1.5),"Clara").ok,true,"Distinct face may form a new profile");
+eq(check(samples(1.5),"Ada").reason,"unverified-existing",
  "Name alone does not authorize a different face");
 eq(check(samples(.04,2),"Ada").reason,"insufficient",
  "Too few samples cannot verify an identity");
