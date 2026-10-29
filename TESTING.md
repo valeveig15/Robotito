@@ -231,3 +231,8 @@ La selección inicial admite los seis idiomas `es/en/pt/fr/it/de` y ya no bloque
 ## Punto 4 — módulos de voz e idioma, octubre 2026
 
 `npm run test:p04` ejecuta la regresión de localización/voces (1.004 aserciones), consentimiento de muestras (16) y aislamiento de transcripciones al cambiar idioma/pausar (8). Se integra en `npm test`. Cubre los seis idiomas, 50 nombres de avatar en francés/italiano/alemán, diez estilos de voz, etiquetas y mensajes prioritarios, selección de voz por locale, órdenes positivas/negadas, cambios temporales y la prohibición de traducción remota sin autorización. Las muestras de voz usan captura cancelable y no clonan voces. Las traducciones de respuestas no cubiertas exigen motor local compatible o avisan que no pudieron prepararse. Las aserciones aisladas no constituyen validación de voces reales ni garantía de idiomas completos en cada dispositivo.
+
+
+### Punto 4 — ampliación de regresiones en seis idiomas
+
+Se agregaron plantillas dinámicas locales para avisos de tareas y 20 minutos, recuentos de personas/manos/dedos, clases, biblioteca, comida, fechas, cumpleaños y recuerdos. La detección de idioma de la voz ya no interpreta automáticamente `è/à` como francés; un conjunto de 96 frases generadas verificó la corrección, y una regresión permanente la protege. El registro de cara/voz tiene 24 instrucciones en francés, italiano y alemán. El comando `test:p04` incluye la prueba de precedencia persistente/sesión/una respuesta. La prueba de Chromium existente comprueba etiquetas/plantillas en seis idiomas y cambios temporales de idioma, pero no se ha ejecutado en esta sesión. Resultado aislado P04: 1.508 comprobaciones; suite anterior: 74.713; total: 76.221.
