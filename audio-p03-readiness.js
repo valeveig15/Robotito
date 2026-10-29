@@ -77,6 +77,20 @@ function auditedCounts({clips,sessions,groupAudit},fieldReports=[]){
       x.annotations.some(a=>a.kind===kind)),
     ...positiveClips.filter(x=>(x.evaluationSplit||"unspecified")===split)]
     .map(x=>x.sourceGroup).filter(Boolean)).size]));
+  const positiveRows=[...completeSessions.filter(x=>x.annotations.some(a=>a.kind===kind)),...positiveClips];
+  const sourceGroupsBy=(rows,key,values)=>Object.fromEntries(values.map(v=>[v,
+   new Set(rows.filter(x=>(x[key]||"unspecified")===v)
+    .map(x=>x.sourceGroup).filter(Boolean)).size]));
+  const positiveSourceGroupsByEnvironment=sourceGroupsBy(positiveRows,"environment",
+   [...ENVIRONMENTS,"unspecified"]);
+  const positiveSourceGroupsByDevice=sourceGroupsBy(positiveRows,"deviceClass",DEVICES);
+  const pureNegativeRows=negativeSessions.filter(x=>x.sourceGroup&&pureNegativeGroups.has(x.sourceGroup));
+  const pureNegativeSourceGroupsByEnvironment=sourceGroupsBy(pureNegativeRows,"environment",
+   [...ENVIRONMENTS,"unspecified"]);
+  const environmentClassesWithEvidence=Object.entries(positiveSourceGroupsByEnvironment)
+   .filter(([,count])=>count>0).length;
+  const deviceClassesWithEvidence=Object.entries(positiveSourceGroupsByDevice)
+   .filter(([device,count])=>device!=="unspecified"&&count>0).length;
   perKind[kind]={
    annotatedEvents:positives.length,
    draftAnnotatedEvents:sessions.filter(x=>x.annotationReview!=="complete")
@@ -86,11 +100,18 @@ function auditedCounts({clips,sessions,groupAudit},fieldReports=[]){
    declaredDistinctPositiveSourceGroups:presentGroupKeys.size,
    declaredDistinctPureNegativeSourceGroups:pureNegativeGroups.size,
    positiveSourceGroupsBySplit,
+   positiveSourceGroupsByEnvironment,
+   positiveSourceGroupsByDevice,
+   pureNegativeSourceGroupsByEnvironment,
+   // These describe declared sample diversity, not model accuracy or consent quality.
+   environmentClassesWithEvidence,deviceClassesWithEvidence,
    prospectiveCalibrationGaps:[
     ...(positiveSourceGroupsBySplit.development===0?["no-development-positive-source"]:[]),
     ...(positiveSourceGroupsBySplit.validation===0?["no-validation-positive-source"]:[]),
     ...(positiveSourceGroupsBySplit.test===0?["no-independent-test-positive-source"]:[]),
-    ...(pureNegativeGroups.size===0?["no-declared-pure-negative-source"]:[])
+    ...(pureNegativeGroups.size===0?["no-declared-pure-negative-source"]:[]),
+    ...(environmentClassesWithEvidence<2?["insufficient-declared-environment-diversity"]:[]),
+    ...(deviceClassesWithEvidence<2?["insufficient-declared-device-diversity"]:[])
    ]
   };
  }
