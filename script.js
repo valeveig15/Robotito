@@ -920,10 +920,8 @@ function primeMobileSpeechFromGesture(){
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
-    setListenState(state.languageMode==="en"?"not supported":"no compatible","problem");
-    $("#transcript").textContent=state.languageMode==="en"
-      ?"This mobile browser does not provide the Web Speech recognition service."
-      :"Este navegador móvil no ofrece el servicio Web Speech de reconocimiento.";
+    setListenState(window.ROBOTITO_I18N?.t?.("asrUnsupported",state.languageMode)||"Reconocimiento no disponible","problem");
+    $("#transcript").textContent=window.ROBOTITO_I18N?.t?.("asrUnsupported",state.languageMode)||"Reconocimiento no disponible";
     return Promise.resolve(false);
   }
   state.recognition=r;
@@ -934,7 +932,7 @@ function primeMobileSpeechFromGesture(){
     r.addEventListener("error",()=>finish(false),{once:true});
     setTimeout(()=>finish(false),7000);
     try{
-      setListenState(state.languageMode==="en"?"activating microphone…":"activando micrófono…");
+      setListenState(window.ROBOTITO_I18N?.t?.("asrActivating",state.languageMode)||"Activando micrófono…");
       r.start();
     }catch(e){
       console.warn("initial speech start",e);
@@ -951,6 +949,7 @@ async function startSenses(){
     return;
   }
 
+  const startupText=key=>window.ROBOTITO_I18N?.t?.(key,state.languageMode)||key;
   const mobile=isMobileSpeech();
   state.started=true;
 
@@ -964,9 +963,7 @@ async function startSenses(){
     }catch(e){console.warn("local ASR prime",e);}
   }
 
-  $("#systemStatus").textContent=mobile
-    ?(state.languageMode==="en"?"Requesting camera and microphone…":"Pidiendo cámara y micrófono…")
-    :"Pidiendo permisos…";
+  $("#systemStatus").textContent=startupText(mobile?"startupRequestingMedia":"startupPermissions");
 
   try{
     state.stream=await navigator.mediaDevices.getUserMedia({
@@ -985,9 +982,7 @@ async function startSenses(){
       state.recognitionWanted=false;
       
       $("#mobileSpeechHint")?.classList.remove("hidden");
-      $("#mobileSpeechHint").textContent=state.languageMode==="en"
-        ?"Robotito uses continuous local speech recognition on mobile. The first load may take a little longer while the speech model is prepared."
-        :"En celular Robotito usa reconocimiento local continuo. La primera vez puede demorar un poco mientras prepara el modelo de voz.";
+      $("#mobileSpeechHint").textContent=startupText("startupMobileHint");
 
       if(!window.RobotitoLocalASR){
         throw new Error("Local mobile speech engine unavailable");
@@ -1003,21 +998,17 @@ async function startSenses(){
         },
         statusCallback:(text,kind)=>setListenState(text,kind)
       }).then(()=>{
-        $("#systemStatus").textContent=state.languageMode==="en"
-          ?"Camera and microphone active. Continuous local listening is on."
-          :"Cámara y micrófono activos. Escucha local continua encendida.";
+        $("#systemStatus").textContent=startupText("startupListening");
       }).catch(err=>{
         console.warn("local ASR",err);
-        $("#systemStatus").textContent=state.languageMode==="en"
-          ?"Camera active, but local speech recognition failed."
-          :"Cámara activa, pero falló el reconocimiento local.";
+        $("#systemStatus").textContent=startupText("startupSpeechFailed");
         // Desktop-style Web Speech remains a last automatic fallback if available.
         state.recognitionWanted=true;
         startListeningCycle(false);
       });
     }else{
       setupSpeechRecognition(true);
-      $("#systemStatus").textContent="Cámara y micrófono activos.";
+      $("#systemStatus").textContent=startupText("startupMediaActive");
     }
 
     $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("active",state.languageMode)||"Sentidos activos";
@@ -1029,7 +1020,7 @@ async function startSenses(){
       detectLoop();
     }).catch(err=>console.warn("face models",err));
 
-    say(state.languageMode==="en"?"I'm awake.":"Ya estoy despierto.");
+    say(startupText("startupAwake"),3200,state.languageMode);
   }catch(err){
     console.error(err);
     state.stream?.getTracks?.().forEach(t=>t.stop());
@@ -1037,12 +1028,8 @@ async function startSenses(){
     try{window.RobotitoLocalASR?.stop();}catch{}
     state.started=false;
     discardRecognition();
-    $("#systemStatus").textContent=state.languageMode==="en"
-      ?"I couldn't activate camera and microphone."
-      :"No pude activar cámara y micrófono.";
-    toast(state.languageMode==="en"
-      ?"Allow camera and microphone for this site."
-      :"Permití cámara y micrófono para este sitio.");
+    $("#systemStatus").textContent=startupText("startupMediaFailed");
+    toast(startupText("startupAllowMedia"));
   }
 }
 
