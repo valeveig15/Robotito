@@ -12,6 +12,7 @@ const NAMES={
  de:["aleman","alemán","german","allemand","tedesco","deutsch"]
 };
 const LABELS={
+ voiceDeviceCheck:{es:"Comprobar voces y micrófono (sin guardar audio)",en:"Test voices and microphone (no audio saved)",pt:"Testar vozes e microfone (sem salvar áudio)",fr:"Tester les voix et le microphone (sans enregistrer d’audio)",it:"Verifica voci e microfono (senza salvare audio)",de:"Stimmen und Mikrofon testen (ohne Audio zu speichern)"},
  asrListening:{"es":"escuchando","en":"listening","pt":"escutando","fr":"écoute en cours","it":"in ascolto","de":"hört zu"},
  asrHeard:{"es":"te escucho","en":"I hear you","pt":"estou ouvindo","fr":"je t’entends","it":"ti sento","de":"ich höre dich"},
  asrMicBlocked:{"es":"micrófono bloqueado","en":"microphone blocked","pt":"microfone bloqueado","fr":"microphone bloqué","it":"microfono bloccato","de":"Mikrofon gesperrt"},
