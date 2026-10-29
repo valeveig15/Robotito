@@ -2115,6 +2115,9 @@ function handleLanguageCommand(text){
     sayInLanguage(confirmation,parsed.language);
     state.nextResponseLanguage=parsed.language;
   }else{
+    // A new session-wide or persistent command supersedes any earlier
+    // queued one-reply override, even if no ordinary reply occurred between.
+    state.nextResponseLanguage=null;
     setLanguageMode.sessionOnly=parsed.scope==="session";
     setLanguageMode(parsed.language);
     setLanguageMode.sessionOnly=false;
