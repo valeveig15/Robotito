@@ -186,4 +186,20 @@ for(const key of ["uiAskIntro","uiAskExamples","uiClassTopicHelp","uiClassSavedH
  for(const code of langs)ok(i18n.t(key,code).length>4,"Missing module copy "+key+"/"+code);
 for(const key of ["uiAskIntro","uiAskExamples","uiClassTopicHelp","uiClassSavedHelp","uiNoClasses","uiClassEditorHelp","uiClassAudioHelp","uiClassEmptyAudio","uiClassFinishHint","uiClassMaterialHelp","uiTaskReminderHelp","uiPeoplePrivacy","uiBooksHelp","uiMemoryHelp","uiSystemOff","uiLocalPrivacy","uiNoTaskSheet","uiNoLibrary"])
  ok(html.includes('data-i18n="'+key+'"'),"Visible academic/help copy localized "+key);
+// Numeric and named responses must be translated without external models.
+for(const code of langs){
+ const args={count:2,first:"A+B",subjects:"Biología",hours:"2.5"};
+ for(const key of ["pendingTaskSummary","taskReminder","peopleSeen","handsSeen","fingersSeen","classesToday","booksRead","booksToRead","mealMinutes","mealHours"]){
+  const value=i18n.message(key,code,args);
+  ok(typeof value==="string"&&value.length>=12,"Dynamic response "+key+"/"+code);
+  ok(!value.includes("{count}")&&!value.includes("{first}")&&!value.includes("{subjects}")&&!value.includes("{hours}"),
+   "All dynamic placeholders expanded "+key+"/"+code);
+ }
+ eq(i18n.message("peopleSeen",code,{count:1}).includes("1"),true,"Single person "+code);
+ eq(i18n.message("pendingTaskSummary",code,{count:2,first:"History"}).includes("History"),true,"Task content "+code);
+}
+eq(i18n.message("unknownKey","fr",{count:2}),null,"No invented dynamic keys");
+ok(source.includes('sayDynamic("pendingTaskSummary"'),"Pending-task flow uses locale template");
+ok(source.includes('sayDynamic("classesToday"'),"Class counting uses locale template");
+ok(source.includes('sayDynamic("taskReminder"'),"Timed task reminder uses locale template");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
