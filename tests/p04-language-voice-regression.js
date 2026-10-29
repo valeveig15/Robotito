@@ -277,4 +277,9 @@ for(const lang of langs)for(const key of ["asrListening","asrHeard","asrMicBlock
 }
 for(const key of ["asrListening","asrHeard","asrMicBlocked","asrMicHelp","asrRecoverMic","asrRecover","asrReconnect","asrStarting","asrBrowserHelp"])
  ok(source.includes('asrMessage("'+key+'")'),"Browser ASR status wiring "+key);
+// Intent negation cannot accidentally activate an unwanted language.
+for(const [command,target] of [["No quiero hablar en inglés",null],["No quiero cambiar a alemán",null],["No deseo hablar en italiano",null],["Je ne veux pas parler français",null],["Je ne souhaite pas parler allemand",null],["No pienso cambiar al portugués",null],["No quiero hablar en inglés, quiero italiano","it"],["No quiero hablar en francés, pero hablame en italiano","it"],["No quiero español, quiero hablar inglés","en"]]){
+ const parsed=i18n.parseCommand(command);
+ eq(parsed?.language||null,target,"Refused-language command "+command);
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
