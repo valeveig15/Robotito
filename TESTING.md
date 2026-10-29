@@ -248,3 +248,5 @@ Se añadieron claves de traducción para estados de `SpeechRecognition` / `webki
 ### Privacidad de voces: transacción atómica
 
 `ROBOTITO_STORE.putRecordWithBlob` guarda metadatos de consentimiento y audio en una sola transacción de IndexedDB. `ROBOTITO_VOICE_SYSTEM.deleteProfile` elimina tanto el registro como el blob conocido, cubriendo el caso histórico de blobs huérfanos. Las pruebas aisladas `tests/p04-voice-atomic-storage-regression.js` se integran en `npm run test:p04` (19 aserciones); `tests/browser-regression.js` comprueba este ciclo contra IndexedDB real en Chromium, pendiente de ejecución de CI verificada. Se regeneraron las versiones de caché de `robotito-store.js`, `voice-system.js`, `script.js` e `i18n.js`.
+
+- **P04:** recuperación ante promesa rechazada de traducción; prueba de contrato en `tests/p04-localization-race-regression.js`.
