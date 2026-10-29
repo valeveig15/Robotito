@@ -72,9 +72,9 @@ function stopMicrophone(){
  $("micStatus").textContent="Micrófono apagado. No se guardó audio.";
 }
 function currentVoice(){
- if(!("speechSynthesis" in window))return {compatible:[],chosen:null};
+ if(!window.speechSynthesis?.getVoices)return {compatible:[],chosen:null};
  const code=$("lang").value;
- const compatible=speechSynthesis.getVoices().filter(v=>
+ const compatible=window.speechSynthesis.getVoices().filter(v=>
   typeof v.lang==="string"&&v.lang.toLowerCase().split(/[-_]/)[0]===code);
  return {compatible,chosen:compatible.find(v=>/natural|neural/i.test(v.name))||compatible[0]||null};
 }
@@ -132,9 +132,9 @@ async function startMicrophone(){
   if(epoch===requestEpoch){stopMicrophone();$("micStatus").textContent="No se pudo activar: "+String(e.message||e);}
  }
 }
-$("lang").addEventListener("change",()=>{speechSynthesis?.cancel?.();updateVoices();});
+$("lang").addEventListener("change",()=>{window.speechSynthesis?.cancel?.();updateVoices();});
 $("speak").addEventListener("click",speak);
-$("speechStop").addEventListener("click",()=>{speechSynthesis?.cancel?.();$("speechStatus").textContent="Síntesis detenida.";});
+$("speechStop").addEventListener("click",()=>{window.speechSynthesis?.cancel?.();$("speechStatus").textContent="Síntesis detenida.";});
 $("micStart").addEventListener("click",startMicrophone);
 $("micStop").addEventListener("click",stopMicrophone);
 window.addEventListener("pagehide",stopMicrophone);
