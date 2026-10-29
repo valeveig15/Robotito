@@ -24,11 +24,11 @@ Actualizado: 29 de octubre de 2026.
 5. **Punto 4: seis idiomas y traducción dinámica.**
    - Completar todas las respuestas dinámicas, clases, tareas, libros, clima, cumpleaños, estados de ánimo y mensajes de error en español, inglés, portugués, francés, italiano y alemán.
    - Probar ASR, TTS, cambio por selector/texto/voz y las modalidades persistente, sesión y una sola respuesta en navegadores reales.
-   - **Aplicado 29/10:** inicio de los seis idiomas; avisos iniciales de micrófono/cámara y bienvenida localizados; impedir usar una voz de otro idioma. Pruebas aisladas P04: 175 comprobaciones satisfactorias; negativas, discurso citado y selector de voces incluidos. La suite completa de CI todavía requiere validación.
+   - **Aplicado 29/10:** inicio de los seis idiomas; avisos iniciales de micrófono/cámara y bienvenida localizados; impedir usar una voz de otro idioma. Pruebas específicas P04: 1.004 comprobaciones de lógica y localización, además de las regresiones de consentimiento (16) y cambios de sesión ASR (8). Integradas selecciones de los seis idiomas, 50 avatares, diez estilos, traducción privada y grupos prioritarios de mensajes. Parte de las respuestas dinámicas depende de modelos locales disponibles; la suite de CI y las pruebas de voz físicas todavía requieren validación.
 6. **Voces, muestras y consentimiento.**
    - Mantener diez estilos de voz como preajustes de síntesis; no presentarlos como diez actores garantizados ni como clonación.
    - Verificar disponibilidad, ajustes y reproducción real por sistema operativo; eliminar muestras voluntarias correctamente y revisar consentimiento para audios de terceros.
-   - **Aplicado 29/10:** sustituido el rótulo «Gravedad» por «Tono»; controles conservados y traducibles.
+   - **Aplicado 29/10:** sustituido «Gravedad» por «Tono»; grabación cancelable con consentimiento revocable y borrado local de muestras, con controles de autorización traducidos a seis idiomas.
 
 ## Reglas de integración
 
@@ -37,3 +37,7 @@ Actualizado: 29 de octubre de 2026.
 - Proteger los puntos 1 y 2 al continuar con los puntos 3, 4 y siguientes.
 - **Nunca eliminar «¡Chocar los cinco!»**, ni el gesto ni sus pruebas.
 - Conservar la lista completa en los informes siguientes y agregar subpendientes sin sustituir los bloques históricos.
+
+## Estado del punto 4
+
+Ver [P04-STATUS.md](P04-STATUS.md). No se debe considerar terminada la validación física ni la localización exhaustiva de todos los mensajes dinámicos hasta que existan pruebas reales y auditoría completa de cadenas. Conservar el bloqueo de despliegue como pendiente, aunque comience el siguiente trabajo de ingeniería.
