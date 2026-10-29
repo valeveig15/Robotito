@@ -1808,11 +1808,12 @@ function capabilitiesAnswer(){
 function avatarById(id){
   return ROBOTITO_AVATARS.find(item=>item.id===id) || ROBOTITO_AVATARS[0];
 }
+const AVATAR_ADDITIONAL_NAMES={"panda":{"fr":"Panda","it":"Panda","de":"Panda"},"brown-bear":{"fr":"Ours brun","it":"Orso bruno","de":"Braunbär"},"polar-bear":{"fr":"Ours polaire","it":"Orso polare","de":"Eisbär"},"dog":{"fr":"Chien","it":"Cane","de":"Hund"},"monkey":{"fr":"Singe","it":"Scimmia","de":"Affe"},"cat":{"fr":"Chat","it":"Gatto","de":"Katze"},"red-panda":{"fr":"Panda roux","it":"Panda rosso","de":"Roter Panda"},"iguana":{"fr":"Iguane","it":"Iguana","de":"Leguan"},"chameleon":{"fr":"Caméléon","it":"Camaleonte","de":"Chamäleon"},"armadillo":{"fr":"Tatou","it":"Armadillo","de":"Gürteltier"},"penguin":{"fr":"Manchot","it":"Pinguino","de":"Pinguin"},"elephant":{"fr":"Éléphant","it":"Elefante","de":"Elefant"},"turtle":{"fr":"Tortue","it":"Tartaruga","de":"Schildkröte"},"squirrel":{"fr":"Écureuil","it":"Scoiattolo","de":"Eichhörnchen"},"mouse":{"fr":"Souris","it":"Topo","de":"Maus"},"hamster":{"fr":"Hamster","it":"Criceto","de":"Hamster"},"rabbit":{"fr":"Lapin","it":"Coniglio","de":"Kaninchen"},"lion":{"fr":"Lion","it":"Leone","de":"Löwe"},"tiger":{"fr":"Tigre","it":"Tigre","de":"Tiger"},"panther":{"fr":"Panthère","it":"Pantera","de":"Panther"},"fox":{"fr":"Renard","it":"Volpe","de":"Fuchs"},"koala":{"fr":"Koala","it":"Koala","de":"Koala"},"pig":{"fr":"Cochon","it":"Maiale","de":"Schwein"},"cow":{"fr":"Vache","it":"Mucca","de":"Kuh"},"frog":{"fr":"Grenouille","it":"Rana","de":"Frosch"},"owl":{"fr":"Hibou","it":"Gufo","de":"Eule"},"wolf":{"fr":"Loup","it":"Lupo","de":"Wolf"},"horse":{"fr":"Cheval","it":"Cavallo","de":"Pferd"},"unicorn":{"fr":"Licorne","it":"Unicorno","de":"Einhorn"},"dinosaur":{"fr":"Dinosaure","it":"Dinosauro","de":"Dinosaurier"},"crocodile":{"fr":"Crocodile","it":"Coccodrillo","de":"Krokodil"},"dolphin":{"fr":"Dauphin","it":"Delfino","de":"Delfin"},"zebra":{"fr":"Zèbre","it":"Zebra","de":"Zebra"},"deer":{"fr":"Cerf","it":"Cervo","de":"Hirsch"},"hippopotamus":{"fr":"Hippopotame","it":"Ippopotamo","de":"Nilpferd"},"giraffe":{"fr":"Girafe","it":"Giraffa","de":"Giraffe"},"kangaroo":{"fr":"Kangourou","it":"Canguro","de":"Känguru"},"gorilla":{"fr":"Gorille","it":"Gorilla","de":"Gorilla"},"sheep":{"fr":"Mouton","it":"Pecora","de":"Schaf"},"goat":{"fr":"Chèvre","it":"Capra","de":"Ziege"},"peacock":{"fr":"Paon","it":"Pavone","de":"Pfau"},"swan":{"fr":"Cygne","it":"Cigno","de":"Schwan"},"flamingo":{"fr":"Flamant rose","it":"Fenicottero","de":"Flamingo"},"skunk":{"fr":"Mouffette","it":"Puzzola","de":"Stinktier"},"raccoon":{"fr":"Raton laveur","it":"Procione","de":"Waschbär"},"otter":{"fr":"Loutre","it":"Lontra","de":"Otter"},"sloth":{"fr":"Paresseux","it":"Bradipo","de":"Faultier"},"beaver":{"fr":"Castor","it":"Castoro","de":"Biber"},"hedgehog":{"fr":"Hérisson","it":"Riccio","de":"Igel"},"robot":{"fr":"Robot","it":"Robot","de":"Roboter"}};
 function avatarLanguage(){
-  return ["es","en","pt"].includes(state.languageMode)?state.languageMode:"es";
+  return window.ROBOTITO_I18N?.supported?.(state.languageMode)?state.languageMode:"es";
 }
 function avatarName(avatar,lang=avatarLanguage()){
-  return avatar?.[lang] || avatar?.es || "Panda";
+  return avatar?.[lang]||AVATAR_ADDITIONAL_NAMES[avatar?.id]?.[lang]||avatar?.es||"Panda";
 }
 const AVATAR_ICON_SVGS={
   "red-panda":'<svg class="avatar-illustration custom-avatar-emoji emoji-red-panda" viewBox="0 0 72 72" aria-hidden="true"><defs><linearGradient id="rp3Fur" x1="20" y1="11" x2="52" y2="62"><stop stop-color="#f8954f"/><stop offset="1" stop-color="#d6543b"/></linearGradient><filter id="rp3Soft" x="-15%" y="-15%" width="130%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#8f473d" flood-opacity=".2"/></filter></defs><g filter="url(#rp3Soft)"><path d="M17 25 13.5 10c-.4-1.8 1.6-3.1 3.1-2l12.8 9.3M55 25l3.5-15c.4-1.8-1.6-3.1-3.1-2l-12.8 9.3" fill="#8d493f"/><path d="m18 16-1.2-4.4 6.8 5.2m30.4-.8 1.2-4.4-6.8 5.2" fill="none" stroke="#f8b08d" stroke-width="4" stroke-linecap="round"/><path d="M10.5 36C10.5 19.4 20.8 10 36 10s25.5 9.4 25.5 26c0 17-10.8 27.5-25.5 27.5S10.5 53 10.5 36Z" fill="url(#rp3Fur)"/><path d="M13.7 33.3c1.7-7.8 6.6-13.1 13.8-15.2l6.1 8.1-8.9 19.2c-6.4-.8-10.7-5.6-11-12.1Zm44.6 0c-1.7-7.8-6.6-13.1-13.8-15.2l-6.1 8.1 8.9 19.2c6.4-.8 10.7-5.6 11-12.1Z" fill="#fff0d8"/><ellipse cx="26.5" cy="33.5" rx="8.1" ry="8.8" fill="#704039"/><ellipse cx="45.5" cy="33.5" rx="8.1" ry="8.8" fill="#704039"/><ellipse cx="27" cy="34" rx="3.1" ry="3.8" fill="#282126"/><ellipse cx="45" cy="34" rx="3.1" ry="3.8" fill="#282126"/><circle cx="25.9" cy="32.7" r="1.2" fill="#fff"/><circle cx="43.9" cy="32.7" r="1.2" fill="#fff"/><path d="M23.8 44.3c3-4.3 7.3-6.4 12.2-6.4s9.2 2.1 12.2 6.4c-.7 10.8-5.3 16.6-12.2 16.6s-11.5-5.8-12.2-16.6Z" fill="#fff7e8"/><path d="M31.4 45.4c2.5-1.9 6.7-1.9 9.2 0-.5 3.4-2.1 5-4.6 5s-4.1-1.6-4.6-5Z" fill="#49302f"/><path d="M29.2 52.3c1.8 3 4 4.3 6.8 4.3s5-1.3 6.8-4.3" fill="none" stroke="#9b4b43" stroke-width="2.3" stroke-linecap="round"/><ellipse cx="24" cy="17.2" rx="7.4" ry="2.8" fill="#fff" opacity=".18" transform="rotate(-24 24 17.2)"/></g></svg>',
@@ -2018,7 +2019,7 @@ function renderAvatarChoices(){
   const container=$("#avatarChoices");
   if(!container)return;
   const lang=avatarLanguage();
-  container.setAttribute("aria-label",lang==="en"?"Available avatars":lang==="pt"?"Avatares disponíveis":"Avatares disponibles");
+  container.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.("avatarAvailable",lang)||"Avatares disponibles");
   container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
     const selected=avatar.id===state.avatar;
     const profile=speciesProfile(avatar.id);
@@ -2045,12 +2046,9 @@ function showStartupStep(step){
   $("#languageGate")?.setAttribute("aria-labelledby",isAvatar?"avatarStepTitle":"languageGateTitle");
   if(isAvatar){
     const lang=avatarLanguage();
-    $("#avatarStepTitle").textContent=lang==="en"?"Choose Robotito's avatar":lang==="pt"?"Escolha o avatar do Robotito":"Elegí el avatar de Robotito";
-    $("#avatarStepDescription").textContent=lang==="en"
-      ?"Choose the friend you want to see. Your choice will be saved on this device."
-      :lang==="pt"?"Escolha o amigo que você quer ver. Sua escolha ficará salva neste dispositivo."
-      :"Elegí el amigo que querés ver. La elección quedará guardada en este dispositivo.";
-    $("#backToLanguage").textContent=lang==="en"?"Back to language":lang==="pt"?"Voltar ao idioma":"Volver al idioma";
+    $("#avatarStepTitle").textContent=window.ROBOTITO_I18N?.t?.("avatarStepTitle",lang);
+    $("#avatarStepDescription").textContent=window.ROBOTITO_I18N?.t?.("avatarStepDescription",lang);
+    $("#backToLanguage").textContent=window.ROBOTITO_I18N?.t?.("avatarBack",lang);
     renderAvatarChoices();
     setTimeout(()=>$("#avatarChoices .selected, #avatarChoices .avatar-choice")?.focus(),0);
   }
@@ -2067,9 +2065,8 @@ function finishStartupAvatar(id){
   const mode=avatarLanguage();
   $("#startBtn").disabled=false;
   $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("start",mode)||"Despertar sentidos";
-  $("#statusText").textContent=mode==="en"
-    ?"Robotito is ready to wake up."
-    :mode==="pt"?"Robotito está pronto para despertar.":speciesIntroduction(id);
+  $("#statusText").textContent=mode==="es"?speciesIntroduction(id):
+    window.ROBOTITO_I18N?.t?.("avatarReady",mode);
   applyDayNightMode(new Date());
   flushPendingBatteryAlert();
 }
