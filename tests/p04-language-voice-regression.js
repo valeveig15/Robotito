@@ -125,4 +125,7 @@ for(const key of ["voiceSampleRequesting","voiceSampleRecording","voiceSampleSav
 ok(source.includes("ROBOTITO_VOICE_SAMPLE_CAPTURE"),"Private capture controller integrated");
 ok(html.includes("voice-sample-capture.js"),"Private capture loaded before UI script");
 ok(source.includes("voiceSamples?.cancel()"),"Consent and navigation can cancel recording");
+ok(!source.includes("api.mymemory.translated.net"),"No unconsented translation service");
+ok(source.includes("session.destroy?.();"),"LLM session teardown");
+ok(source.includes("normalizeText(out)!==normalizeText(clean)"),"Echo rejection");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
