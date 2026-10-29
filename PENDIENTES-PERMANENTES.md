@@ -41,3 +41,5 @@ Actualizado: 29 de octubre de 2026.
 ## Estado del punto 4
 
 Ver [P04-STATUS.md](P04-STATUS.md). No se debe considerar terminada la validación física ni la localización exhaustiva de todos los mensajes dinámicos hasta que existan pruebas reales y auditoría completa de cadenas. Conservar el bloqueo de despliegue como pendiente, aunque comience el siguiente trabajo de ingeniería.
+
+- **P04 (29/10):** recuperación ante rechazo de traducción local implementada; pendiente la comprobación en Chromium real.
