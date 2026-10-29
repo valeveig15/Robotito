@@ -2152,10 +2152,14 @@ async function translateShortPhrase(phrase,source,target){
   try{
     if(window.LanguageModel?.create){
       const session=await window.LanguageModel.create({temperature:0,topK:1});
-      const prompt=`Translate this short phrase from ${languageLabel(source)} to ${languageLabel(target)}. Return ONLY the translation, no quotes or explanation:\n${clean}`;
-      const out=String(await session.prompt(prompt)||"").trim();
-      session.destroy?.();
-      if(out){translationCache.set(key,out);return out;}
+      let out="";
+      try{
+        const prompt=`Translate this short phrase from ${languageLabel(source)} to ${languageLabel(target)}. Return ONLY the translation, no quotes or explanation:\n${clean}`;
+        out=String(await session.prompt(prompt)||"").trim();
+      }finally{session.destroy?.();}
+      if(out&&normalizeText(out)!==normalizeText(clean)){
+        translationCache.set(key,out);return out;
+      }
     }
   }catch(e){console.warn("browser translation",e);}
   // Never send classroom notes, memories or phrases to third-party
