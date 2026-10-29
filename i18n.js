@@ -807,6 +807,41 @@ Object.assign(LABELS,{
   "de": "Erzählerisch"
  }
 });
+// Point 05: dynamic day/night labels must not overwrite localization.
+Object.assign(LABELS,{
+ "uiWorldDayAria": {
+  "es": "Mundo diurno de Robotito",
+  "en": "Robotito's daytime world",
+  "pt": "Mundo diurno do Robotito",
+  "fr": "Monde de Robotito de jour",
+  "it": "Mondo diurno di Robotito",
+  "de": "Robotitos Welt bei Tag"
+ },
+ "uiWorldNightAria": {
+  "es": "Mundo nocturno de Robotito",
+  "en": "Robotito's nighttime world",
+  "pt": "Mundo noturno do Robotito",
+  "fr": "Monde nocturne de Robotito",
+  "it": "Mondo notturno di Robotito",
+  "de": "Robotitos Welt bei Nacht"
+ },
+ "uiDayLabel": {
+  "es": "día",
+  "en": "day",
+  "pt": "dia",
+  "fr": "jour",
+  "it": "giorno",
+  "de": "Tag"
+ },
+ "uiNightLabel": {
+  "es": "noche",
+  "en": "night",
+  "pt": "noite",
+  "fr": "nuit",
+  "it": "notte",
+  "de": "Nacht"
+ }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
