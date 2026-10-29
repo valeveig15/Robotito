@@ -58,7 +58,13 @@ function create({requestStream=()=>root.navigator.mediaDevices.getUserMedia({aud
    obj.start();phase="recording";inform("recording");
    timer=schedule(()=>{if(mine===generation)stop();},3000);
    return true;
-  }catch(e){release(grant);if(mine===generation){phase="idle";inform("error");}return false;}
+  }catch(e){
+   release(grant);
+   if(mine===generation){
+    clear();stream=null;recorder=null;phase="idle";inform("error");
+   }
+   return false;
+  }
  }
  async function removeSample(){cancel();if(pending)await pending;await remove();inform("deleted");}
  function dispose(){disposed=true;cancel();}
