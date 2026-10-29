@@ -4,7 +4,7 @@
 (function(){
   let ctx=null, source=null, processor=null, streamRef=null;
   let transcriber=null, modelPromise=null, active=false, paused=false;
-  let language="es", onText=()=>{}, onStatus=()=>{};
+  let language="es", languageRevision=0, onText=()=>{}, onStatus=()=>{};
   let speaking=false, segment=[], preRoll=[], segmentStart=0, segmentStartEpoch=0, lastVoiceAt=0, voiceFrames=0;
   let noiseFloor=.0075, lastTranscript="", lastTranscriptAt=0;
   let queue=Promise.resolve();
@@ -129,16 +129,17 @@
 
   function enqueueTranscription(raw,meta=null){
     if(!raw||raw.length<1000)return;
+    const rev=languageRevision,requestedLanguage=language;
     const sr=ctx?.sampleRate||48000;
     const audio=enhanceAudio(resample(raw,sr,16000));
     queue=queue.then(async()=>{
-      if(!active||paused)return;
+      if(!active||paused||rev!==languageRevision)return;
       const model=await loadModel();
-      if(!active||paused)return;
+      if(!active||paused||rev!==languageRevision)return;
       status(statusText("Entendiendo…","Understanding…","Entendendo…"),"processing");
       const opts={
         task:"transcribe",
-        language:({es:"spanish",en:"english",pt:"portuguese",fr:"french",it:"italian",de:"german"})[language]||"spanish",
+        language:({es:"spanish",en:"english",pt:"portuguese",fr:"french",it:"italian",de:"german"})[requestedLanguage]||"spanish",
         chunk_length_s:20,
         stride_length_s:3,
         num_beams:4,
@@ -146,6 +147,7 @@
         condition_on_prev_tokens:false
       };
       const result=await model(audio,opts);
+      if(!active||paused||rev!==languageRevision)return;
       const text=String(result?.text||"").trim()
         .replace(/^\[[^\]]+\]\s*/,"")
         .replace(/^\([^\)]+\)\s*/,"")
@@ -158,10 +160,10 @@
         lastTranscriptAt=Date.now();
         onText(text,meta||null);
       }
-      if(active&&!paused)status(statusText("escuchando","listening","escutando"),"listening");
+      if(active&&!paused&&rev===languageRevision)status(statusText("escuchando","listening","escutando"),"listening");
     }).catch(err=>{
       console.warn("local ASR transcription",err);
-      if(active)status(statusText("Escuchando — reintentando","Listening — retrying","Escutando — tentando novamente"),"problem");
+      if(active&&rev===languageRevision)status(statusText("Escuchando — reintentando","Listening — retrying","Escutando — tentando novamente"),"problem");
     });
   }
 
@@ -178,6 +180,7 @@
   }
 
   async function start({stream,lang="es",onTranscript,statusCallback}){
+    ++languageRevision;
     language=normalizeLang(lang);
     onText=typeof onTranscript==="function"?onTranscript:()=>{};
     onStatus=typeof statusCallback==="function"?statusCallback:()=>{};
@@ -251,6 +254,7 @@
   function pause(value=true){
     paused=!!value;
     if(paused){
+      ++languageRevision;queue=Promise.resolve();
       resetSegment();
       status(statusText("pausado","paused","pausado"));
     }else if(active){
@@ -259,10 +263,14 @@
   }
 
   function setLanguage(lang){
-    language=normalizeLang(lang);
+    const next=normalizeLang(lang);
+    if(next===language)return;
+    language=next;++languageRevision;queue=Promise.resolve();resetSegment();
+    lastTranscript="";lastTranscriptAt=0;
   }
 
   async function stop(){
+    ++languageRevision;queue=Promise.resolve();
     active=false;paused=false;resetSegment();
     if(processor){processor.onaudioprocess=null;try{processor.disconnect();}catch{};processor=null;}
     if(source){try{source.disconnect();}catch{};source=null;}
