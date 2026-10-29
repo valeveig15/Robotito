@@ -10,7 +10,7 @@
     "test:universal": "node tests/universal-system-regression.js",
     "test:generative": "ROBOTITO_TEST_SEED=17 npm run test:universal && ROBOTITO_TEST_SEED=42 npm run test:universal && ROBOTITO_TEST_SEED=99 npm run test:universal",
     "test:ci": "npm test && npm run test:browser && npm run test:p04:browser && npm run test:browser:matrix",
-    "test:p04": "node tests/p04-language-voice-regression.js && node tests/voice-sample-capture-regression.js && node tests/p04-asr-session-regression.js && node tests/p04-language-scopes-regression.js && node tests/p04-phrase-commands-regression.js && node tests/p04-localization-race-regression.js && node tests/p04-device-check-regression.js && node tests/p04-tts-handler-regression.js",
+    "test:p04": "node tests/p04-language-voice-regression.js && node tests/voice-sample-capture-regression.js && node tests/p04-asr-session-regression.js && node tests/p04-language-scopes-regression.js && node tests/p04-phrase-commands-regression.js && node tests/p04-localization-race-regression.js && node tests/p04-device-check-regression.js && node tests/p04-tts-handler-regression.js && node tests/p04-browser-asr-status-regression.js",
     "test:memory": "node tests/memory-query-regression.js",
     "test:semantic": "node tests/semantic-composition-regression.js",
     "test:kit": "node tests/generative-kit-regression.js",
@@ -39,7 +39,8 @@
     "test:p04:phrases": "node tests/p04-phrase-commands-regression.js",
     "test:p04:device": "node tests/p04-device-check-regression.js",
     "test:p04:browser": "node tests/p04-device-check-browser.js",
-    "test:p04:tts": "node tests/p04-tts-handler-regression.js"
+    "test:p04:tts": "node tests/p04-tts-handler-regression.js",
+    "test:p04:asr:browser": "node tests/p04-browser-asr-status-regression.js"
   },
   "devDependencies": {
     "playwright": "1.56.1"
