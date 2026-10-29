@@ -2135,7 +2135,7 @@ function setLanguageMode(mode){
   if(!setLanguageMode.sessionOnly)localStorage.setItem("robotito.languageMode.v1",mode);
   if($("#languageMode"))$("#languageMode").value=mode;
   window.ROBOTITO_I18N?.apply?.(mode);
-  updateAvatarAria();
+  if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
   if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
