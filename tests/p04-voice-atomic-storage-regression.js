@@ -26,7 +26,8 @@ let count=0;const eq=(a,b,m)=>{assert.deepEqual(a,b,m);count++;};
  }
  const actions=[],root={ROBOTITO_STORE:{
   putRecordWithBlob:(row,audio,options)=>{actions.push({row,audio,options});return Promise.resolve(row);},
-  deleteRecord:id=>{actions.push({deleted:id});return Promise.resolve(true);}
+  deleteRecord:id=>{actions.push({deleted:id});return Promise.resolve(true);},
+  deleteBlob:id=>{actions.push({deletedBlob:id});return Promise.resolve(true);}
  }};
  const mod={exports:{}};
  new Function("window","module","Blob",voiceSource)(root,mod,Blob);
@@ -36,9 +37,10 @@ let count=0;const eq=(a,b,m)=>{assert.deepEqual(a,b,m);count++;};
  eq(actions[0].options.type,"audio","Correct blob type");
  await mod.exports.deleteProfile();
  eq(actions[1].deleted,"voice-profile-local","Deletion cascades through linked record");
+ eq(actions[2].deletedBlob,"voice-sample-local","Remove old orphaned voice blob too");
  let denied=false;try{await mod.exports.saveProfileFromRecording(blob,
   {subject:"other",explicitConsent:false,consentLabel:"Other"});}catch{denied=true;}
  eq(denied,true,"Third-party consent required");
- eq(actions.length,2,"Denied recording never writes");
+ eq(actions.length,3,"Denied recording never writes");
  console.log("P04 atomic voice storage:",count,"checks");
 })().catch(e=>{console.error(e);process.exitCode=1;});
