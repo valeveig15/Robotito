@@ -10,7 +10,7 @@
     "test:universal": "node tests/universal-system-regression.js",
     "test:generative": "ROBOTITO_TEST_SEED=17 npm run test:universal && ROBOTITO_TEST_SEED=42 npm run test:universal && ROBOTITO_TEST_SEED=99 npm run test:universal",
     "test:ci": "npm test && npm run test:browser && npm run test:browser:matrix",
-    "test:p04": "node tests/p04-language-voice-regression.js",
+    "test:p04": "node tests/p04-language-voice-regression.js && node tests/voice-sample-capture-regression.js",
     "test:memory": "node tests/memory-query-regression.js",
     "test:semantic": "node tests/semantic-composition-regression.js",
     "test:kit": "node tests/generative-kit-regression.js",
@@ -32,7 +32,8 @@
     "test:audio:studio": "node tests/audio-corpus-studio-browser.js",
     "test:audio:device": "node tests/audio-device-check-browser.js",
     "test:audio:reactions:browser": "node tests/audio-reaction-trial-browser.js",
-    "test:audio:matrix": "ROBOTITO_TEST_SEED=17 npm run test:audio && ROBOTITO_TEST_SEED=42 npm run test:audio && ROBOTITO_TEST_SEED=99 npm run test:audio"
+    "test:audio:matrix": "ROBOTITO_TEST_SEED=17 npm run test:audio && ROBOTITO_TEST_SEED=42 npm run test:audio && ROBOTITO_TEST_SEED=99 npm run test:audio",
+    "test:voice:privacy": "node tests/voice-sample-capture-regression.js"
   },
   "devDependencies": {
     "playwright": "1.56.1"
