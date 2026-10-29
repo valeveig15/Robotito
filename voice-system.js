@@ -44,11 +44,10 @@ async function saveProfileFromRecording(blob,{owner="local",subject="self",expli
  if(subject!=="self"&&!explicitConsent)throw new Error("Explicit consent required for another person's recording");
  if(subject!=="self"&&!String(consentLabel).trim())throw new Error("Document the consenting person's name");
  const db=root.ROBOTITO_STORE;
- if(!db?.putBlob||!db?.putRecord)throw new Error("IndexedDB is unavailable");
- await db.putBlob(BLOB_ID,blob,{owner,recordId:SAMPLE_ID,type:"audio"});
- return db.putRecord({id:SAMPLE_ID,type:"preferences",owner,source:"voice-opt-in",blobId:BLOB_ID,
+ if(!db?.putRecordWithBlob)throw new Error("Atomic voice storage is unavailable");
+ return db.putRecordWithBlob({id:SAMPLE_ID,type:"preferences",owner,source:"voice-opt-in",blobId:BLOB_ID,
   data:{subject,consentRecorded:subject==="self"||Boolean(explicitConsent),consentLabel:subject==="self"?"self":String(consentLabel),
-   createdAt:new Date().toISOString(),synthesized:true,cloned:false}});
+   createdAt:new Date().toISOString(),synthesized:true,cloned:false}},blob,{type:"audio"});
 }
 async function deleteProfile(){
  const db=root.ROBOTITO_STORE;
