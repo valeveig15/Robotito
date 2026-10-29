@@ -242,6 +242,13 @@ function cleanSpeechText(text){
 function responseLanguage(){
   return state.nextResponseLanguage||state.languageMode||"es";
 }
+function sayDynamic(key,data={},ms=3000){
+ const lang=responseLanguage();
+ const translated=window.ROBOTITO_I18N?.message?.(key,lang,data);
+ if(!translated)return false;
+ sayInLanguage(translated,lang,ms);
+ return true;
+}
 function languageLocale(lang){
   return window.ROBOTITO_I18N?.locale?.(lang)||"es-UY";
 }
@@ -2600,7 +2607,7 @@ function answerEasyQuestion(rawText){
     const fresh=Date.now()-state.lastHandSeenAt<2500;
     if(!fresh||state.visibleHands===0)say("Ahora mismo no veo ninguna mano. Mostrámelas bien frente a la cámara.");
     else if(state.visibleFingers===0)say("Veo manos, pero ningún dedo levantado.");
-    else say(`Veo ${state.visibleFingers} ${state.visibleFingers===1?"dedo":"dedos"} levantados.`);
+    else sayDynamic("fingersSeen",{count:state.visibleFingers});
     return true;
   }
 
@@ -2674,7 +2681,7 @@ function answerEasyQuestion(rawText){
   )){
     const tasks=pendingTasks();
     if(!tasks.length)say("No veo tareas pendientes en la hoja conectada.");
-    else say(`Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. La primera es: ${tasks[0].task}.`,5200);
+    else sayDynamic("pendingTaskSummary",{count:tasks.length,first:tasks[0].task},5200);
     return true;
   }
 
@@ -2717,7 +2724,7 @@ function answerEasyQuestion(rawText){
   )){
     const n=state.lastDetections.length;
     if(!n)say("Ahora mismo no veo a nadie.");
-    else say(`Veo ${n} ${n===1?"persona":"personas"}.`);
+    else sayDynamic("peopleSeen",{count:n});
     return true;
   }
 
@@ -2726,7 +2733,7 @@ function answerEasyQuestion(rawText){
     [["mano","manos"],["ves","hay","cuantas","muestro"]]
   )){
     if(!state.visibleHands)say("Ahora mismo no veo ninguna mano.");
-    else say(`Veo ${state.visibleHands} ${state.visibleHands===1?"mano":"manos"}.`);
+    else sayDynamic("handsSeen",{count:state.visibleHands});
     return true;
   }
 
@@ -2814,7 +2821,7 @@ function answerEasyQuestion(rawText){
   )){
     const subjects=[...new Set(todayClassLines().map(l=>l.subject||"Clase"))];
     if(!subjects.length)say("Hoy todavía no escuché ninguna clase.");
-    else say(`Hoy tengo registradas ${subjects.length} ${subjects.length===1?"clase":"clases"}: ${subjects.join(", ")}.`);
+    else sayDynamic("classesToday",{count:subjects.length,subjects:subjects.join(", ")});
     return true;
   }
 
@@ -2867,7 +2874,7 @@ function answerEasyQuestion(rawText){
     if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
     else {
       const n=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").length;
-      say(`En el archivo de Goodreads veo ${n} libros leídos.`);
+      sayDynamic("booksRead",{count:n});
     }
     return true;
   }
@@ -2879,7 +2886,7 @@ function answerEasyQuestion(rawText){
     if(!state.library.length)say("Todavía no importaste tu biblioteca de Goodreads.");
     else {
       const n=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="to-read").length;
-      say(`Tenés ${n} libros marcados para leer.`);
+      sayDynamic("booksToRead",{count:n});
     }
     return true;
   }
@@ -2921,8 +2928,8 @@ function answerEasyQuestion(rawText){
     if(!last)say("No tengo registrada una comida todavía.");
     else {
       const mins=Math.floor((Date.now()-last)/60000);
-      if(mins<60)say(`Comí hace aproximadamente ${mins} minutos.`);
-      else say(`Comí hace aproximadamente ${(mins/60).toFixed(1)} horas.`);
+      if(mins<60)sayDynamic("mealMinutes",{count:mins});
+      else sayDynamic("mealHours",{hours:(mins/60).toFixed(1)});
     }
     return true;
   }
@@ -3731,7 +3738,7 @@ function taskReminderTick(){
   state.lastTaskReminderAt=Date.now();
   const first=tasks[0];
   setMood("focused","Robotito te recuerda que tenés cosas pendientes.");
-  say(`Ey, llevamos más de 20 minutos juntos. Tenés ${tasks.length} ${tasks.length===1?"tarea pendiente":"tareas pendientes"}. Una es: ${first.task}`,6000);
+  sayDynamic("taskReminder",{count:tasks.length,first:first.task},6000);
 }
 
 function isTodayTimestamp(ts){
