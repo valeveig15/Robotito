@@ -49,6 +49,18 @@ try{
  assert.equal(result.perHumanEvent.sneeze.positiveSourceGroupsBySplit.test,1);
  assert.equal(result.perHumanEvent.sneeze.declaredDistinctPureNegativeSourceGroups,1,
   "Only independently declared fully reviewed pure-negative group counts as negative");
+ assert.equal(result.perHumanEvent.sneeze.positiveSourceGroupsByEnvironment.quiet,2,
+  "Two independent recording groups in one environment are not two environments");
+ assert.equal(result.perHumanEvent.sneeze.environmentClassesWithEvidence,1);
+ assert.equal(result.perHumanEvent.sneeze.deviceClassesWithEvidence,1);
+ assert.equal(result.perHumanEvent.sneeze.positiveSourceGroupsByDevice.usb,2);
+ assert.equal(result.perHumanEvent.sneeze.pureNegativeSourceGroupsByEnvironment.quiet,1);
+ assert.ok(result.perHumanEvent.sneeze.prospectiveCalibrationGaps.includes(
+  "insufficient-declared-environment-diversity"));
+ assert.ok(result.perHumanEvent.sneeze.prospectiveCalibrationGaps.includes(
+  "insufficient-declared-device-diversity"));
+ assert.equal(result.evidenceStatus.p03VerifiedComplete,false,
+  "Source diversity counters must never grant automatic human-event approval");
  assert.equal(result.perHumanEvent.cough.annotatedEvents,0,
   "Draft labels are not accepted as reviewed positive evidence");
  assert.equal(result.perHumanEvent.cough.draftAnnotatedEvents,1);
