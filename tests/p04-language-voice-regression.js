@@ -210,4 +210,22 @@ for(const lang of langs){
 }
 ok(source.includes("const locale=languageLocale(lang)"),"Clock formats six languages");
 ok(source.includes('sayDynamic("personBirthday"'),"Birthday localized directly");
+// Localized speech must not be blocked by the wrong-language safety check.
+const langDetectStart=source.indexOf("const SPEECH_LANGUAGE_HINTS=");
+const langDetectEnd=source.indexOf("function speechNeedsLocalization(",langDetectStart);
+ok(langDetectStart>=0&&langDetectEnd>langDetectStart,"Language detector present");
+const speechLanguage=new Function("cleanSpeechText","normalizeText",
+  source.slice(langDetectStart,langDetectEnd)+"return detectGeneratedSpeechLanguage;")(
+   phrase=>String(phrase||""),
+   phrase=>String(phrase||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""));
+const dynamicVoiceKeys=["pendingTaskSummary","taskReminder","peopleSeen","handsSeen",
+ "fingersSeen","classesToday","booksRead","booksToRead","mealMinutes","mealHours",
+ "timeNow","yourBirthday","personBirthday","classListening","classLearning","rememberLast"];
+for(const lang of langs)for(const key of dynamicVoiceKeys){
+ const phrase=i18n.message(key,lang,{count:3,first:"Estudio",subjects:"Biología",
+  hours:"3.5",time:"15:30",date:"30/10/2026",person:"Ana",subject:"Física",memory:"recordatorio"});
+ const detected=speechLanguage(phrase);
+ ok(detected==="und"||detected===lang,
+  "False voice-language mismatch for "+lang+"/"+key+": "+detected);
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
