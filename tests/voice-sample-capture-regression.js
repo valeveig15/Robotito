@@ -94,5 +94,24 @@ function fixture({deferPermission=false,deferSave=false}={}){
   eq(writes,1,"Duplicate stop never saves twice");
   eq(duplicate.getStatus().phase,"idle","Duplicate stop finishes cleanly");
  }
+ // An obsolete recorder must not clear the timer or state of the next session.
+ {
+  let scheduled=0,cancelled=0,writes=0;
+  const recorders=[];
+  const stale=create({getConsent:()=>true,
+   requestStream:async()=>({getTracks:()=>[{stop(){}}]}),
+   recorderFactory:()=>{const r={state:"recording",mimeType:"audio/webm",start(){},stop(){this.state="inactive";this.onstop();}};recorders.push(r);return r;},
+   save:async()=>{writes++;},schedule:()=>++scheduled,cancelSchedule:()=>{cancelled++;}});
+  eq(await stale.start(),true,"First session starts");
+  const oldRecorder=recorders[0];
+  stale.cancel();
+  eq(await stale.start(),true,"New session starts after cancellation");
+  const cancelledBefore=cancelled;
+  oldRecorder.onstop();
+  eq(stale.getStatus().phase,"recording","Old callback does not reset new session");
+  eq(cancelled,cancelledBefore,"Old callback does not cancel new timer");
+  eq(writes,0,"Old callback does not save stale sample");
+  stale.cancel();
+ }
  console.log("Voice sample lifecycle:",checked,"assertions");
 })().catch(e=>{console.error(e);process.exitCode=1});
