@@ -75,4 +75,34 @@ ok(source.includes('startupText("startupAwake")'),"Welcome is localized");
 ok(source.includes('startupText("startupMediaFailed")'),"Camera failure is localized");
 ok(source.includes('startupText("startupMobileHint")'),"Mobile hint is localized");
 ok(source.includes('t?.("asrUnsupported",state.languageMode)'),"Unsupported speech is localized");
+// Exercise the real voice dropdown using synthetic installed voices.
+const populateBegin=source.indexOf("function populateVoiceSelect(){");
+const populateEnd=source.indexOf("function isMobileSpeech(){",populateBegin);
+ok(populateBegin>=0&&populateEnd>populateBegin,"Locate real voice dropdown");
+const dropdown={disabled:false,innerHTML:"",value:""};
+const pickerState={voiceURI:"local-es"};
+const pickerStorage={setItem:()=>{}};
+let pickerVoices=[...voices],pickerTarget="fr";
+const pickerSynthesis={getVoices:()=>pickerVoices};
+const picker=new Function("$","window","speechSynthesis","state","responseLanguage",
+ "voiceMatchesLanguage","chooseDefaultVoice","escapeHtml","localStorage",
+ source.slice(populateBegin,populateEnd)+"return populateVoiceSelect;")(
+ ()=>dropdown,{ROBOTITO_I18N:i18n,speechSynthesis:pickerSynthesis},
+ pickerSynthesis,pickerState,()=>pickerTarget,
+ (v,lang)=>!!v&&new RegExp("^"+lang+"([-_]|$)","i").test(v.lang),
+ choose,x=>String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;"),pickerStorage);
+picker();
+eq(pickerState.voiceURI,"local-fr","Old Spanish voice rejected for French dropdown");
+eq(dropdown.value,"local-fr","French voice visibly selected");
+ok(!dropdown.innerHTML.includes("local-es"),"French dropdown excludes Spanish voices");
+eq(dropdown.disabled,false,"French voice can be chosen");
+pickerVoices=[voices[0]];
+picker();
+eq(pickerState.voiceURI,"","Missing French voice clears active selection");
+eq(dropdown.disabled,true,"No foreign voice can be selected");
+ok(dropdown.innerHTML.includes(i18n.t("voiceUnavailable","fr")),
+ "Missing voice offers localized explanation");
+pickerVoices=[...voices];pickerTarget="de";
+picker();
+eq(dropdown.value,"local-de","German refreshes available voices");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
