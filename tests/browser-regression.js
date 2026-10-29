@@ -56,6 +56,19 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
         throw new Error("French dialogue switching failed");
       await window.ROBOTITO_CHAT.send("Volvé al español");
       if(document.documentElement.lang!=="es")throw new Error("Spanish restoration failed");
+      const saved=localStorage.getItem("robotito.languageMode.v1");
+      await window.ROBOTITO_CHAT.send("Hablame en francés solo esta vez");
+      if(document.documentElement.lang!=="es"||
+         localStorage.getItem("robotito.languageMode.v1")!==saved)
+        throw new Error("A one-turn French request must not alter the base language");
+      await window.ROBOTITO_CHAT.send("Speak German this session");
+      if(document.documentElement.lang!=="de"||
+         localStorage.getItem("robotito.languageMode.v1")!==saved)
+        throw new Error("Session German request must not overwrite stored language");
+      await window.ROBOTITO_CHAT.send("Volvé al español");
+      if(document.documentElement.lang!=="es"||
+         localStorage.getItem("robotito.languageMode.v1")!=="es")
+        throw new Error("Persistent Spanish request must clear the temporary session locale");
       return true;
     });
     if(!languageIntegration)throw new Error("Language integration unavailable");
