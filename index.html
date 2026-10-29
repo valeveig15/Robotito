@@ -18,7 +18,7 @@
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="i18n.js?v=20261029-p04-release10"></script>
+  <script defer src="i18n.js?v=20261029-p05-ui1"></script>
   <script defer src="voice-system.js?v=20261029-p04-atomic1"></script>
   <script defer src="voice-sample-capture.js?v=20261029-p04-release3"></script>
   <script defer src="audio-perception.js?v=20261028-real-yamnet-cadence1"></script>
@@ -56,8 +56,8 @@
     <div id="startupMascot" class="language-panda" aria-hidden="true">🐼</div>
 
     <section id="languageStep" class="startup-step" aria-labelledby="languageGateTitle">
-      <h2 id="languageGateTitle">¿Qué idioma preferís?<br><span>Which language do you prefer? · Qual idioma você prefere?</span></h2>
-      <p>Elegí el idioma en el que querés hablar con Robotito.<br><span>Choose the language you want to use with Robotito. · Escolha o idioma para falar com o Robotito.</span></p>
+      <h2 id="languageGateTitle"><span class="startup-language-line" lang="es">¿Qué idioma preferís?</span><span class="startup-language-line" lang="en">Which language do you prefer?</span><span class="startup-language-line" lang="pt">Qual idioma você prefere?</span></h2>
+      <p class="startup-language-help"><span class="startup-language-line" lang="es">Elegí el idioma en el que querés hablar con Robotito.</span><span class="startup-language-line" lang="en">Choose the language you want to use with Robotito.</span><span class="startup-language-line" lang="pt">Escolha o idioma para falar com o Robotito.</span></p>
       <div class="language-gate-actions">
         <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
         <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
@@ -80,34 +80,34 @@
 <details class="question-help-panel">
   <summary>
     <span aria-hidden="true">💬</span>
-    Preguntas y sugerencias
+    <span data-i18n="uiHelpSummary">Preguntas y sugerencias</span>
   </summary>
   <div class="question-help-content">
     <h2 data-i18n="uiAskIntro">¿Qué podés preguntarle?</h2>
     <p data-i18n="uiAskExamples" class="muted">Estos son algunos ejemplos de lo que Robotito puede contestar por ahora:</p>
     <ul class="question-example-list">
-      <li>¿Cómo te llamás?</li>
-      <li>¿Cómo me llamo?</li>
-      <li>¿Cómo estás?</li>
-      <li>¿Tenés hambre?</li>
-      <li>¿Qué día es? ¿Qué hora es?</li>
-      <li>¿Cuántos dedos ves?</li>
-      <li>¿Qué objeto es esto?</li>
-      <li>¿Cuál es el animal más grande del mundo?</li>
-      <li>¿Quién es el presidente de Uruguay?</li>
-      <li>¿Quién era presidente de Argentina en 2010?</li>
-      <li>¿Cuánto es la raíz cuadrada de 144?</li>
-      <li>Recomendame un libro de misterio.</li>
-      <li>¿Qué recordás de mí?</li>
-      <li>¿Qué explicó la profesora sobre este tema?</li>
-      <li>Explicame paso a paso el ejercicio 4 de Física.</li>
+      <li data-i18n="uiAskQ1">¿Cómo te llamás?</li>
+      <li data-i18n="uiAskQ2">¿Cómo me llamo?</li>
+      <li data-i18n="uiAskQ3">¿Cómo estás?</li>
+      <li data-i18n="uiAskQ4">¿Tenés hambre?</li>
+      <li data-i18n="uiAskQ5">¿Qué día es? ¿Qué hora es?</li>
+      <li data-i18n="uiAskQ6">¿Cuántos dedos ves?</li>
+      <li data-i18n="uiAskQ7">¿Qué objeto es esto?</li>
+      <li data-i18n="uiAskQ8">¿Cuál es el animal más grande del mundo?</li>
+      <li data-i18n="uiAskQ9">¿Quién es el presidente de Uruguay?</li>
+      <li data-i18n="uiAskQ10">¿Quién era presidente de Argentina en 2010?</li>
+      <li data-i18n="uiAskQ11">¿Cuánto es la raíz cuadrada de 144?</li>
+      <li data-i18n="uiAskQ12">Recomendame un libro de misterio.</li>
+      <li data-i18n="uiAskQ13">¿Qué recordás de mí?</li>
+      <li data-i18n="uiAskQ14">¿Qué explicó la profesora sobre este tema?</li>
+      <li data-i18n="uiAskQ15">Explicame paso a paso el ejercicio 4 de Física.</li>
     </ul>
     <div class="question-help-contact">
-      <strong>¿Falta alguna pregunta o función?</strong>
-      <p>También podés avisarme si algo no funciona bien o contarme qué te gustaría que Robotito hiciera o tuviera.</p>
-      <a class="whatsapp-help-button" href="https://wa.me/59896731690?text=Hola%2C%20estoy%20probando%20Robotito%20y%20quer%C3%ADa%20contarte%20una%20sugerencia%20o%20un%20problema%3A%20" target="_blank" rel="noopener noreferrer" aria-label="Enviar una sugerencia sobre Robotito por WhatsApp al 096 731 690">
+      <strong data-i18n="uiHelpContactTitle">¿Falta alguna pregunta o función?</strong>
+      <p data-i18n="uiHelpContactText">También podés avisarme si algo no funciona bien o contarme qué te gustaría que Robotito hiciera o tuviera.</p>
+      <a class="whatsapp-help-button" href="https://wa.me/59896731690?text=Hola%2C%20estoy%20probando%20Robotito%20y%20quer%C3%ADa%20contarte%20una%20sugerencia%20o%20un%20problema%3A%20" target="_blank" rel="noopener noreferrer" aria-label="Enviar una sugerencia sobre Robotito por WhatsApp al 096 731 690" data-i18n-aria-label="uiHelpContactAria">
         <span aria-hidden="true">💚</span>
-        Escribime por WhatsApp
+        <span data-i18n="uiHelpContactButton">Escribime por WhatsApp</span>
       </a>
       <span class="whatsapp-number">096 731 690</span>
     </div>
@@ -127,7 +127,7 @@
   </header>
 
   <main class="layout">
-    <section class="world" id="world" aria-label="Mundo de Robotito">
+    <section class="world" id="world" aria-label="Mundo de Robotito" data-i18n-aria-label="uiWorldAria">
       <div class="world-scene">
       <video id="camera" autoplay muted playsinline></video>
       <canvas id="visionCanvas"></canvas>
@@ -344,7 +344,7 @@
         <form id="robotitoTextForm" class="robotito-text-form">
           <label for="robotitoTextInput" data-i18n="typedChat">Escribile a Robotito</label>
           <div class="robotito-text-form-row">
-            <input id="robotitoTextInput" type="text" autocomplete="off"
+            <input id="robotitoTextInput" data-i18n-placeholder="uiInputPrompt" type="text" autocomplete="off"
               placeholder="Escribí una pregunta, un pedido o un cambio de idioma…" maxlength="1200" />
             <button id="robotitoTextSend" type="submit" data-i18n="send">Enviar</button>
           </div>
@@ -353,8 +353,8 @@
     </section>
 
     <div id="layoutResizer" class="layout-resizer" role="separator" aria-orientation="vertical"
-      aria-label="Ajustar el ancho entre Robotito y el panel" tabindex="0"
-      title="Arrastrá para cambiar el ancho. Doble clic para restablecer.">
+      aria-label="Ajustar el ancho entre Robotito y el panel" data-i18n-aria-label="uiResizeAria" tabindex="0"
+      title="Arrastrá para cambiar el ancho. Doble clic para restablecer." data-i18n-title="uiResizeTitle">
       <span class="layout-resizer-grip" aria-hidden="true">‹›</span>
     </div>
 
@@ -475,10 +475,10 @@
           </div>
 
           <label><span data-i18n="uiSubject">Materia</span>
-            <input id="classSubject" type="text" placeholder="Ej. Física" />
+            <input id="classSubject" data-i18n-placeholder="uiClassSubjectExample" type="text" placeholder="Ej. Física" />
           </label>
           <label><span data-i18n="uiClassTopic">Tema de esta clase</span>
-            <input id="classTopic" type="text" placeholder="Ej. Impulso y cantidad de movimiento" />
+            <input id="classTopic" data-i18n-placeholder="uiClassTopicExample" type="text" placeholder="Ej. Impulso y cantidad de movimiento" />
           </label>
           <p data-i18n="uiClassTopicHelp" class="muted">Si dejás el tema vacío, Robotito intenta identificarlo al terminar la clase usando la transcripción.</p>
 
@@ -532,10 +532,10 @@
             <p data-i18n="uiClassEditorHelp" class="muted">Podés corregir cómo quedó agendada sin perder la transcripción, el resumen ni la grabación.</p>
             <input id="editClassSessionId" type="hidden" />
             <label><span data-i18n="uiSubject">Materia</span>
-              <input id="editClassSubject" type="text" required placeholder="Ej. Física" />
+              <input id="editClassSubject" data-i18n-placeholder="uiClassSubjectExample" type="text" required placeholder="Ej. Física" />
             </label>
             <label><span data-i18n="uiTopic">Tema</span>
-              <input id="editClassTopic" type="text" required placeholder="Ej. Choques elásticos" />
+              <input id="editClassTopic" data-i18n-placeholder="uiClassTopicEditExample" type="text" required placeholder="Ej. Choques elásticos" />
             </label>
             <label><span data-i18n="uiDateTime">Fecha y hora</span>
               <input id="editClassDateTime" type="datetime-local" required />
@@ -583,7 +583,7 @@
             <input id="youtubeUrl" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" />
           </label>
           <label><span data-i18n="uiVideoName">Título del video</span>
-            <input id="youtubeVideoTitle" type="text" placeholder="Se completa automáticamente cuando es posible" />
+            <input id="youtubeVideoTitle" data-i18n-placeholder="uiVideoTitleAuto" type="text" placeholder="Se completa automáticamente cuando es posible" />
           </label>
 
           <div class="button-grid two">
@@ -608,7 +608,7 @@
             </ol>
           </details>
           <label>Transcripción del video
-            <textarea id="youtubeTranscript" rows="7" placeholder="Pegá aquí la transcripción o los subtítulos…"></textarea>
+            <textarea id="youtubeTranscript" data-i18n-placeholder="uiVideoTranscriptPrompt" rows="7" placeholder="Pegá aquí la transcripción o los subtítulos…"></textarea>
           </label>
           <button id="saveYoutubeTranscriptBtn" type="button" class="primary full">Guardar transcripción como material</button>
           <p class="muted video-privacy-note" data-i18n="uiVideoSharePrivacy">Al usar «Escuchar pestaña», el navegador te pedirá elegir qué pestaña compartir. Seleccioná la de YouTube y activá «Compartir audio». La transcripción se realiza localmente y queda en este navegador.</p>
@@ -626,7 +626,7 @@
 
         <div class="card">
           <h2 data-i18n="uiAskClasses">Preguntarle sobre clases</h2>
-          <textarea id="classQuestion" rows="3" placeholder="Ej. Explicame paso a paso el ejercicio 4 de Impulso de Física"></textarea>
+          <textarea id="classQuestion" data-i18n-placeholder="uiClassQuestionExample" rows="3" placeholder="Ej. Explicame paso a paso el ejercicio 4 de Impulso de Física"></textarea>
           <div class="button-grid two">
             <button id="askClassBtn" type="button" class="primary" data-i18n="uiAsk">Preguntar</button>
             <button id="flashcardsBtn" type="button" data-i18n="uiFlashcards">Tarjetas de estudio</button>
@@ -680,10 +680,10 @@
           <h2 data-i18n="uiRegisterPerson">Registrar una persona</h2>
           <p data-i18n="uiPeoplePrivacy" class="muted">Las caras y cumpleaños quedan guardados solamente en este navegador.</p>
           <label><span data-i18n="uiName">Nombre</span>
-            <input id="personName" type="text" placeholder="Ej. Antonia" autocomplete="off" />
+            <input id="personName" data-i18n-placeholder="uiPersonNameExample" type="text" placeholder="Ej. Antonia" autocomplete="off" />
           </label>
           <label><span data-i18n="uiBirthday">Cumpleaños</span>
-            <input id="personBirthday" type="text" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" />
+            <input id="personBirthday" data-i18n-placeholder="uiBirthdayPlaceholder" type="text" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" />
           </label>
           <label>En clase esta persona es
             <select id="personRole">
@@ -735,7 +735,7 @@
           <h2 data-i18n="uiReadingChoice">¿Qué querés leer?</h2>
           <p class="muted" data-i18n="uiBookDescriptionHelp">Describilo con tus palabras. Podés contarle el género, el tono, los temas, la extensión, la edad del lector, un libro parecido y también qué cosas querés evitar.</p>
           <label><span data-i18n="uiDescription">Descripción</span>
-            <textarea id="bookPrompt" rows="4" placeholder="Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante."></textarea>
+            <textarea id="bookPrompt" data-i18n-placeholder="uiBookPromptExample" rows="4" placeholder="Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante."></textarea>
           </label>
           <div class="book-options">
             <label class="check"><input id="onlyOwned" type="checkbox" /> Solo de mi biblioteca</label>
@@ -755,7 +755,7 @@
         </div>
         <div class="card">
           <h2 data-i18n="uiAddMemory">Agregar un recuerdo manual</h2>
-          <textarea id="memoryInput" rows="3" placeholder="Ej. Mi color favorito es el verde"></textarea>
+          <textarea id="memoryInput" data-i18n-placeholder="uiMemoryExample" rows="3" placeholder="Ej. Mi color favorito es el verde"></textarea>
           <button id="rememberBtn" type="button" class="primary full" data-i18n="uiSaveMemory">Guardar recuerdo</button>
         </div>
         <div class="card">
