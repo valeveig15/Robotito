@@ -5339,35 +5339,35 @@ function bindUI(){
     state.voiceStyle=e.target.value;
     localStorage.setItem("robotito.voiceStyle.v1",state.voiceStyle);
   });
+  const voiceSamples=window.ROBOTITO_VOICE_SAMPLE_CAPTURE?.create?.({
+    getConsent:()=>$("#voiceSampleConsent")?.checked===true,
+    save:(blob,details)=>window.ROBOTITO_VOICE_SYSTEM.saveProfileFromRecording(blob,details),
+    remove:()=>window.ROBOTITO_VOICE_SYSTEM.deleteProfile(),
+    onStatus:status=>{
+      const label=$("#voiceSampleStatus");
+      if(label)label.textContent=window.ROBOTITO_I18N?.t?.("voiceSample"+status[0].toUpperCase()+status.slice(1),responseLanguage())||status;
+    }
+  });
+  // Permission may arrive after the user changed their mind: cancel and close
+  // the track, even before MediaRecorder starts. Never retain canceled PCM.
+  $("#voiceSampleConsent")?.addEventListener("change",e=>{if(!e.target.checked)voiceSamples?.cancel();});
+  $("#voiceSampleThirdParty")?.addEventListener("change",()=>voiceSamples?.cancel());
+  $("#voiceSampleName")?.addEventListener("input",()=>voiceSamples?.cancel());
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)voiceSamples?.cancel();});
+  window.addEventListener("pagehide",()=>voiceSamples?.dispose());
   $("#deleteVoiceSample")?.addEventListener("click",async()=>{
-    const msg=$("#voiceSampleStatus");
-    try{await window.ROBOTITO_VOICE_SYSTEM?.deleteProfile?.();if(msg)msg.textContent="Muestra eliminada.";}
-    catch(e){if(msg)msg.textContent=e.message;}
+    try{await voiceSamples?.removeSample();}catch(e){console.warn("sample delete",e);}
   });
   $("#recordVoiceSample")?.addEventListener("click",async()=>{
-    const msg=$("#voiceSampleStatus");
     const third=$("#voiceSampleThirdParty")?.checked;
-    const consent=$("#voiceSampleConsent")?.checked;
-    const name=$("#voiceSampleName")?.value.trim();
-    if(third&&(!consent||!name)){if(msg)msg.textContent="Para grabar a otra persona, indicá su nombre y confirmá su consentimiento explícito.";return;}
-    if(!consent){if(msg)msg.textContent="Confirmá el consentimiento antes de grabar.";return;}
-    let stream;
-    try{
-      stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      const recorder=new MediaRecorder(stream),parts=[];
-      recorder.ondataavailable=e=>{if(e.data?.size)parts.push(e.data);};
-      recorder.onstop=async()=>{
-        stream.getTracks().forEach(t=>t.stop());
-        try{
-          await window.ROBOTITO_VOICE_SYSTEM.saveProfileFromRecording(new Blob(parts,{type:recorder.mimeType||"audio/webm"}),
-            {subject:third?"other":"self",explicitConsent:consent,consentLabel:third?name:"self"});
-          if(msg)msg.textContent="Muestra guardada de forma local. La voz es sintética: no se clona ni imita a la persona.";
-        }catch(e){if(msg)msg.textContent=e.message;}
-      };
-      recorder.start();
-      if(msg)msg.textContent="Grabando 3 segundos…";
-      setTimeout(()=>{if(recorder.state==="recording")recorder.stop();},3000);
-    }catch(e){stream?.getTracks?.().forEach(t=>t.stop());if(msg)msg.textContent="No pude grabar la muestra: "+e.message;}
+    const consent=$("#voiceSampleConsent")?.checked===true;
+    const name=$("#voiceSampleName")?.value.trim()||"";
+    if(!consent||(third&&!name)){
+      const label=$("#voiceSampleStatus");
+      if(label)label.textContent=window.ROBOTITO_I18N?.t?.(third?"voiceSampleNeedsName":"voiceSampleNeedsConsent",responseLanguage())||"Confirmá el consentimiento.";
+      return;
+    }
+    await voiceSamples?.start({subject:third?"other":"self",explicitConsent:consent,consentLabel:third?name:"self"});
   });
   $("#testVoiceBtn")?.addEventListener("click",()=>{
     const lang=responseLanguage();
