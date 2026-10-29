@@ -228,4 +228,9 @@ for(const lang of langs)for(const key of dynamicVoiceKeys){
  ok(detected==="und"||detected===lang,
   "False voice-language mismatch for "+lang+"/"+key+": "+detected);
 }
+for(const key of ["uiClassSpeakerHint","uiClassConsentHint","uiVideoIntro","uiVideoSharePrivacy","uiAcademicNoFiles","uiMathHelp","uiObjectHelp","uiTaskSheetHelp","uiNoTasksHelp","uiEnrollHelp","uiGoodreadsButton","uiGoodreadsHow","uiGoodreadsData","uiBookDescriptionHelp","uiClassEmptyText","uiClassSummaryHelp"]){
+ for(const lang of langs)ok(i18n.t(key,lang).length>5,"Locale instructional text "+lang+"/"+key);
+}
+for(const key of ["uiClassSpeakerHint","uiClassConsentHint","uiVideoIntro","uiVideoSharePrivacy","uiAcademicNoFiles","uiMathHelp","uiObjectHelp","uiTaskSheetHelp","uiNoTasksHelp","uiEnrollHelp","uiGoodreadsButton","uiGoodreadsHow","uiGoodreadsData","uiBookDescriptionHelp","uiClassEmptyText","uiClassSummaryHelp"])
+ ok(html.includes('data-i18n="'+key+'"'),"Translated DOM instructions "+key);
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
