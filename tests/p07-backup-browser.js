@@ -80,6 +80,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   });
   assert.equal(result.restored,true);
   // The UI does not let an import begin without first preparing a backup.
+  await page.locator("details.memory-backup summary").click();
   assert.equal(await page.locator("#chooseMemoryBackup").isDisabled(),true);
   let download;
   try{
