@@ -258,4 +258,8 @@ for(const phrase of ["Soy una mascota virtual. No estoy vivo como una persona, p
  for(const code of langs)ok(i18n.fixedReply(phrase,code)?.length>9,
    "Missing offline translation for "+code+"/"+phrase);
 }
+for(const english of ["I'm sleepy, almost asleep.","I'm okay, but I'm pretty hungry.","I'm doing very well. I'm happy.","I'm a little sad right now.","I'm doing well. Pretty calm.","I'm Robotito, a virtual panda. I'm not alive like a person, but I can see, listen, remember, learn from classes, and react.","I can recognize faces and voices, remember things, listen to classes, summarize them, help you study, count fingers, recognize some objects, recommend books, check tasks, and answer many everyday questions."]){
+ const spanish=i18n.fixedReply(english,"es");
+ ok(spanish&&spanish!==english,"English-source answer must translate into Spanish");
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
