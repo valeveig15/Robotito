@@ -37,7 +37,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   });
   await page.locator("#micStart").click();
   await page.waitForFunction(()=>/No se pudo activar/.test(
-   document.getElementById("micStatus").textContent),{timeout:3000});
+   document.getElementById("micStatus").textContent),null,{timeout:3000});
   assert.equal(pageErrors.length,0,"No JavaScript errors: "+pageErrors.join(" | "));
   console.log("Robotito P04 diagnostic Chromium: 6 locales; voice and mic controls; permission denial passed");
  }finally{
