@@ -27,6 +27,8 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
  if(time?.start!==null&&time?.start!==undefined){options.after=time.start;options.before=time.end;}
  options.limit=100;
  const rows=(await store.queryRecords(options)).filter(row=>{
+  // Defense in depth: never trust a storage adapter to isolate people by itself.
+  if(!row||row.owner!==owner||row.type!==found.type)return false;
   // The active question is often recorded by autoRemember before retrieval.
   // Exclude it so Robotito cannot "remember" the question as its own answer.
   const utterance=fold(row.data?.text||"").trim();
