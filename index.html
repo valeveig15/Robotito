@@ -390,7 +390,7 @@
 
         <div class="card small">
           <div class="section-head">
-            <h3>Última cosa que entendí</h3>
+            <h3 data-i18n="uiUnderstood">Última cosa que entendí</h3>
             <span id="listenState" class="listen-state">apagado</span>
           </div>
           <p id="transcript">—</p>
@@ -446,13 +446,13 @@
           </label>
           <button id="testVoiceBtn" type="button" class="ghost full" data-i18n="testVoice">Probar voz</button>
           <details class="voice-sample-options">
-            <summary>Muestra voluntaria de voz (sin clonación)</summary>
+            <summary data-i18n="uiVoiceSampleTitle">Muestra voluntaria de voz (sin clonación)</summary>
             <p class="muted" data-i18n="synthesised">Voz sintetizada; no es una grabación de una persona real.</p>
             <label><input id="voiceSampleThirdParty" type="checkbox" /> La voz pertenece a otra persona</label>
             <label>Nombre de esa persona <input id="voiceSampleName" type="text" autocomplete="off" /></label>
             <label><input id="voiceSampleConsent" type="checkbox" /> Tengo consentimiento explícito para registrar esta muestra de audio.</label>
-            <button id="recordVoiceSample" type="button" class="ghost">Grabar muestra (3 segundos)</button>
-            <button id="deleteVoiceSample" type="button" class="ghost">Eliminar muestra</button>
+            <button id="recordVoiceSample" type="button" class="ghost" data-i18n="uiRecordSample">Grabar muestra (3 segundos)</button>
+            <button id="deleteVoiceSample" type="button" class="ghost" data-i18n="uiDeleteSample">Eliminar muestra</button>
             <p id="voiceSampleStatus" role="status" class="muted"></p>
           </details>
           <p class="muted">Podés cambiar el idioma por voz, texto o selector. La síntesis y el reconocimiento dependen de los idiomas disponibles en el navegador.</p>
@@ -468,7 +468,7 @@
         <div class="card class-card">
           <div class="section-head">
             <div>
-              <h2>Modo clase</h2>
+              <h2 data-i18n="uiClassMode">Modo clase</h2>
               <p class="muted">Robotito intenta distinguir voces registradas, profesora, compañeros y tu voz. Si se equivoca, podés corregir cada frase después y esa corrección ayuda a mejorar su reconocimiento.</p>
             </div>
             <span id="classBadge" class="status-badge">apagado</span>
@@ -483,8 +483,8 @@
           <p class="muted">Si dejás el tema vacío, Robotito intenta identificarlo al terminar la clase usando la transcripción.</p>
 
           <div class="button-grid two">
-            <button id="startClassBtn" type="button" class="primary">▶ Empezar clase</button>
-            <button id="stopClassBtn" type="button">■ Terminar clase</button>
+            <button id="startClassBtn" type="button" class="primary" data-i18n="uiStartClass">▶ Empezar clase</button>
+            <button id="stopClassBtn" type="button" data-i18n="uiStopClass">■ Terminar clase</button>
           </div>
 
           <div class="speaker-override">
@@ -511,7 +511,7 @@
         <div class="card">
           <div class="section-head">
             <div>
-              <h2>Clases guardadas</h2>
+              <h2 data-i18n="uiSavedClasses">Clases guardadas</h2>
               <p class="muted">Organizadas primero por materia y después por tema.</p>
             </div>
           </div>
@@ -525,7 +525,7 @@
             <div class="class-editor-head">
               <div>
                 <span class="class-editor-kicker">CORREGIR CLASE GUARDADA</span>
-                <h2 id="classSessionEditorTitle">Editar datos de la clase</h2>
+                <h2 id="classSessionEditorTitle" data-i18n="uiClassEdit">Editar datos de la clase</h2>
               </div>
               <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar">×</button>
             </div>
@@ -541,8 +541,8 @@
               <input id="editClassDateTime" type="datetime-local" required />
             </label>
             <div class="class-editor-actions">
-              <button id="cancelClassSessionEdit" type="button">Cancelar</button>
-              <button id="saveClassSessionEdit" class="primary" type="submit">Guardar cambios</button>
+              <button id="cancelClassSessionEdit" type="button" data-i18n="uiCancel">Cancelar</button>
+              <button id="saveClassSessionEdit" class="primary" type="submit" data-i18n="uiSaveChanges">Guardar cambios</button>
             </div>
           </form>
         </dialog>
@@ -550,7 +550,7 @@
         <div class="card">
           <div class="section-head">
             <div>
-              <h2>Grabaciones de clase</h2>
+              <h2 data-i18n="uiClassRecordings">Grabaciones de clase</h2>
               <p class="muted">El audio se guarda en este navegador para que puedas volver a escuchar la clase completa.</p>
             </div>
             <span id="classRecordingLive" class="recording-live">sin grabar</span>
@@ -564,8 +564,8 @@
 
         <div class="card">
           <div class="section-head">
-            <h2>Lo que aprendió</h2>
-            <button id="summarizeClassBtn" type="button" class="ghost">Actualizar resumen</button>
+            <h2 data-i18n="uiLearned">Lo que aprendió</h2>
+            <button id="summarizeClassBtn" type="button" class="ghost" data-i18n="uiRefreshSummary">Actualizar resumen</button>
           </div>
           <div id="classSummary" class="study-output"><p class="muted">Al terminar o durante una clase, Robotito puede extraer los puntos más importantes.</p></div>
         </div>
@@ -573,7 +573,7 @@
         <div class="card video-material-card">
           <div class="section-head">
             <div>
-              <h2>Video de YouTube</h2>
+              <h2 data-i18n="uiVideoTitle">Video de YouTube</h2>
               <p class="muted">Robotito puede incorporar un video sin descargarlo: usando su transcripción o escuchando, con tu permiso, el audio de una pestaña compartida.</p>
             </div>
             <span class="status-badge">video</span>
@@ -588,12 +588,12 @@
 
           <div class="button-grid two">
             <button id="prepareYoutubeBtn" type="button">Comprobar enlace</button>
-            <button id="openYoutubeBtn" type="button">Abrir en YouTube</button>
+            <button id="openYoutubeBtn" type="button" data-i18n="uiYoutubeOpen">Abrir en YouTube</button>
           </div>
 
           <div class="video-capture-actions">
             <button id="startYoutubeCaptureBtn" type="button" class="primary">🎧 Escuchar pestaña con audio</button>
-            <button id="stopYoutubeCaptureBtn" type="button" class="ghost" disabled>■ Terminar video</button>
+            <button id="stopYoutubeCaptureBtn" type="button" class="ghost" disabled data-i18n="uiVideoStop">■ Terminar video</button>
           </div>
           <p id="youtubeCaptureStatus" class="video-capture-status muted">Pegá un enlace para comenzar.</p>
           <video id="youtubeCapturePreview" class="youtube-capture-preview" muted autoplay playsinline hidden></video>
@@ -615,7 +615,7 @@
         </div>
 
         <div class="card">
-          <h2>Cargar material académico</h2>
+          <h2 data-i18n="uiUploadMaterials">Cargar material académico</h2>
           <p class="muted">Podés cargar apuntes o material de apoyo en TXT, Markdown, CSV, JSON, PDF, SRT o VTT. Robotito lo suma a lo que sabe de la materia.</p>
           <label class="file-label">
             Cargar material
@@ -625,17 +625,17 @@
         </div>
 
         <div class="card">
-          <h2>Preguntarle sobre clases</h2>
+          <h2 data-i18n="uiAskClasses">Preguntarle sobre clases</h2>
           <textarea id="classQuestion" rows="3" placeholder="Ej. Explicame paso a paso el ejercicio 4 de Impulso de Física"></textarea>
           <div class="button-grid two">
-            <button id="askClassBtn" type="button" class="primary">Preguntar</button>
-            <button id="flashcardsBtn" type="button">Tarjetas de estudio</button>
+            <button id="askClassBtn" type="button" class="primary" data-i18n="uiAsk">Preguntar</button>
+            <button id="flashcardsBtn" type="button" data-i18n="uiFlashcards">Tarjetas de estudio</button>
           </div>
           <div id="classAnswer" class="study-output"></div>
         </div>
 
         <div class="card">
-          <h2>Matemática visual</h2>
+          <h2 data-i18n="uiVisualMath">Matemática visual</h2>
           <p class="muted">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
           <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0"></textarea>
           <button id="solveMathBtn" type="button" class="primary full">Resolver y representar</button>
@@ -646,14 +646,14 @@
         <div class="card">
           <h2>¿Qué objeto es?</h2>
           <p class="muted">Mostrá un objeto a cámara y preguntá “¿qué es esto?” o usá el botón.</p>
-          <button id="detectObjectBtn" type="button" class="primary full">Reconocer objeto</button>
+          <button id="detectObjectBtn" type="button" class="primary full" data-i18n="uiRecognizeObject">Reconocer objeto</button>
           <div id="objectResult" class="study-output"></div>
         </div>
       </section>
 
       <section class="tabpage" id="tab-tasks">
         <div class="card">
-          <h2>Tu hoja de tareas</h2>
+          <h2 data-i18n="uiTasksSheet">Tu hoja de tareas</h2>
           <p class="muted">Pegá el enlace de Google Sheets. Robotito intentará leer una hoja publicada/compartida para lectura. Tus datos quedan guardados en este navegador.</p>
           <label>Enlace de Google Sheet
             <input id="tasksSheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." />
@@ -661,14 +661,14 @@
           <label>GID de la pestaña (opcional)
             <input id="tasksSheetGid" type="text" placeholder="0" />
           </label>
-          <button id="connectTasksBtn" type="button" class="primary full">Conectar tareas</button>
+          <button id="connectTasksBtn" type="button" class="primary full" data-i18n="uiConnectTasks">Conectar tareas</button>
           <p id="tasksConnectionStatus" class="mini-status">Sin hoja conectada.</p>
         </div>
 
         <div class="card">
           <div class="section-head">
-            <h2>Pendientes</h2>
-            <button id="refreshTasksBtn" type="button" class="ghost">Actualizar</button>
+            <h2 data-i18n="uiPendingTasks">Pendientes</h2>
+            <button id="refreshTasksBtn" type="button" class="ghost" data-i18n="uiRefresh">Actualizar</button>
           </div>
           <div id="tasksList" class="tasks-list"><p class="muted">Conectá tu hoja para ver tareas.</p></div>
           <p class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
@@ -677,7 +677,7 @@
 
       <section class="tabpage" id="tab-people">
         <div class="card">
-          <h2>Registrar una persona</h2>
+          <h2 data-i18n="uiRegisterPerson">Registrar una persona</h2>
           <p class="muted">Las caras y cumpleaños quedan guardados solamente en este navegador.</p>
           <label>Nombre
             <input id="personName" type="text" placeholder="Ej. Antonia" autocomplete="off" />
@@ -693,15 +693,15 @@
               <option value="classmate">Compañero/a</option>
             </select>
           </label>
-          <button id="enrollBtn" type="button" class="primary full">Registrar cara y voz</button>
+          <button id="enrollBtn" type="button" class="primary full" data-i18n="uiEnroll">Registrar cara y voz</button>
           <p id="enrollStatus" class="mini-status"></p>
           <div class="enroll-progress" aria-hidden="true"><div id="enrollProgressBar"></div></div>
           <p class="muted">El registro tarda un poco a propósito: Robotito toma varias muestras del rostro desde distintos ángulos y, para la voz, espera hasta que realmente empieces a hablar. Solo cuentan los segundos en los que detecta voz.</p>
         </div>
         <div class="card">
           <div class="section-head">
-            <h2>Personas que recuerda</h2>
-            <button id="refreshPeopleBtn" type="button" class="ghost">Actualizar</button>
+            <h2 data-i18n="uiPeopleRemembered">Personas que recuerda</h2>
+            <button id="refreshPeopleBtn" type="button" class="ghost" data-i18n="uiRefresh">Actualizar</button>
           </div>
           <div id="peopleList" class="people-list"></div>
         </div>
@@ -709,7 +709,7 @@
 
       <section class="tabpage" id="tab-books">
         <div class="card">
-          <h2>Tu biblioteca (opcional)</h2>
+          <h2 data-i18n="uiMyBooks">Tu biblioteca (opcional)</h2>
           <p class="muted"><strong>No necesitás Goodreads para recibir recomendaciones.</strong> Si querés, podés importar el CSV únicamente para que Robotito conozca tus lecturas, evite repetirlas y también busque entre tus pendientes.</p>
           <label class="file-label">
             Importar CSV
@@ -732,7 +732,7 @@
           <p id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
         </div>
         <div class="card">
-          <h2>¿Qué querés leer?</h2>
+          <h2 data-i18n="uiReadingChoice">¿Qué querés leer?</h2>
           <p class="muted">Describilo con tus palabras. Podés contarle el género, el tono, los temas, la extensión, la edad del lector, un libro parecido y también qué cosas querés evitar.</p>
           <label>Descripción
             <textarea id="bookPrompt" rows="4" placeholder="Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante."></textarea>
@@ -741,7 +741,7 @@
             <label class="check"><input id="onlyOwned" type="checkbox" /> Solo de mi biblioteca</label>
             <label class="check"><input id="excludeRead" type="checkbox" checked /> Evitar leídos</label>
           </div>
-          <button id="recommendBtn" type="button" class="primary full">Buscar recomendaciones</button>
+          <button id="recommendBtn" type="button" class="primary full" data-i18n="uiBookRecommendations">Buscar recomendaciones</button>
           <p class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
         </div>
         <div id="bookResults" class="book-results"></div>
@@ -749,19 +749,19 @@
 
       <section class="tabpage" id="tab-memory">
         <div class="card memory-info">
-          <h2>Memoria automática</h2>
+          <h2 data-i18n="uiAutoMemory">Memoria automática</h2>
           <p>Robotito guarda por su cuenta las frases que logra entender y, en modo clase, conserva las explicaciones como material de estudio.</p>
           <p class="muted">En Modo clase guarda la transcripción y, si el navegador lo permite, también el audio completo de cada sesión. Todo queda organizado localmente por materia y tema.</p>
         </div>
         <div class="card">
-          <h2>Agregar un recuerdo manual</h2>
+          <h2 data-i18n="uiAddMemory">Agregar un recuerdo manual</h2>
           <textarea id="memoryInput" rows="3" placeholder="Ej. Mi color favorito es el verde"></textarea>
-          <button id="rememberBtn" type="button" class="primary full">Guardar recuerdo</button>
+          <button id="rememberBtn" type="button" class="primary full" data-i18n="uiSaveMemory">Guardar recuerdo</button>
         </div>
         <div class="card">
           <div class="section-head">
-            <h2>Recuerdos</h2>
-            <button id="clearMemoryBtn" type="button" class="ghost danger">Borrar recuerdos</button>
+            <h2 data-i18n="uiMemories">Recuerdos</h2>
+            <button id="clearMemoryBtn" type="button" class="ghost danger" data-i18n="uiDeleteMemory">Borrar recuerdos</button>
           </div>
           <div id="memoryList" class="memory-list"></div>
         </div>
