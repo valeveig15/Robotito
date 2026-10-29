@@ -27,6 +27,12 @@ eq(evaluateContinuous([{...a,id:"touch-only",suppressions:[
  {startSeconds:3,endSeconds:3.5}]}]).overall.metrics.sneeze.annotatedEvents,1,
  "A suppression starting at the exact end of a human event is valid");
 eq(report.overall.metrics.sneeze.tp,1,"Real annotated sound is matched");
+eq(report.overall.eventConfusion.sneeze.sneeze,1,
+ "Temporal confusion correctly attributes a true sneeze alert");
+eq(report.overall.referenceDetectorLatencySeconds.sneeze.count,1,
+ "Reference detector latency tracks only genuinely matched labels");
+eq(report.overall.referenceDetectorLatencySeconds.sneeze.p50,.75,
+ "Latency is measured from annotated onset to the second confirmation window");
 eq(report.overall.metrics.sneeze.fp,0,"One sustained sound does not repeat inside cooldown");
 eq(report.overall.metrics.sneeze.fn,0,"Covered ground truth not missed");
 eq(report.overall.metrics.sneeze.evaluableEvents,1,
@@ -41,6 +47,8 @@ eq(oneFrameResult.evaluableEvents,0,
 eq(oneFrameResult.unevaluableEvents,1,
  "Unevaluable annotation is explicitly counted");
 eq(oneFrameResult.fn,0,"Insufficient coverage must not fabricate missed detections");
+eq(evaluateContinuous([oneFrame]).overall.eventConfusion.sneeze.missed,0,
+ "Unevaluable labels cannot be silently counted as missed ground truth");
 const wrongWithCoverage={...oneFrame,id:"wrong-with-coverage",
  frames:[frame(2.25,"noise"),frame(2.75,"noise")],
  annotations:[{kind:"sneeze",startSeconds:2.15,endSeconds:2.8}]};
@@ -48,6 +56,8 @@ const withCoverage=evaluateContinuous([wrongWithCoverage]).overall.metrics.sneez
 eq(withCoverage.evaluableEvents,1,
  "Two consecutive nonhuman windows permit a valid false-negative assessment");
 eq(withCoverage.fn,1,"A covered sound with no correct evidence is a real reference miss");
+eq(evaluateContinuous([wrongWithCoverage]).overall.eventConfusion.sneeze.missed,1,
+ "Covered but undetected events enter the temporal confusion missed column");
 // The tail planner sometimes creates a second frame closer than the normal
 // hop. A near-duplicate cannot be an extra detection or evaluable ground truth.
 const nearDuplicate={...oneFrame,id:"near-duplicate",durationSeconds:3,
@@ -107,6 +117,23 @@ const b={...a,id:"wrong",annotations:[],suppressions:[],
  frames:times.map(t=>frame(t,[1.25,1.75].includes(t)?"sneeze":"noise"))};
 const wrong=evaluateContinuous([b]);
 eq(wrong.overall.metrics.sneeze.fp,1,"Two matching false windows form one false alert");
+eq(wrong.overall.eventConfusion.background.sneeze,1,
+ "False sneeze alarms with no human annotations count as background confusion");
+eq(wrong.overall.referenceDetectorLatencySeconds.sneeze.count,0,
+ "Unmatched alarms never contribute fabricated reaction latencies");
+const confused={...wrongWithCoverage,id:"cough-confused-with-sneeze",
+ frames:[frame(2.25,"cough"),frame(2.75,"cough")]};
+const confusedReport=evaluateContinuous([confused]);
+eq(confusedReport.overall.eventConfusion.sneeze.cough,1,
+ "Cough predicted during a true sneeze is exposed as cross-event confusion");
+eq(confusedReport.overall.eventConfusion.sneeze.missed,0,
+ "One wrong-class alert must not be double-counted as a missed event in confusion");
+eq(confusedReport.overall.eventConfusion.background.cough,0,
+ "Misclassified human alert must not also count as background in event confusion");
+eq(confusedReport.overall.metrics.sneeze.fn,1,
+ "Existing per-kind recall still sees the sneeze as undetected");
+eq(confusedReport.overall.metrics.cough.fp,1,
+ "Existing per-kind false-alert statistic still counts wrong-class cough");
 eq(wrong.overall.metrics.sneeze.falseAlertsPerNegativeHour>0,true,
  "Measured reference false alerts use observed negative hours");
 eq(wrong.overall.metrics.sneeze.falseAlertsPerNegativeHourUpper95>
@@ -137,6 +164,10 @@ eq(combined.byEnvironment.street.sessionCount,1,"Second environment retained");
 eq(combined.byDevice.phone.sessionCount,1,"Phone timeline receives its own observation denominator");
 eq(combined.bySplit.test.metrics.sneeze.fp,1,
  "Continuous reference false episodes use only their declared test split");
+eq(combined.bySplit.test.eventConfusion.background.sneeze,1,
+ "Temporal confusion is split by independent test cohort, not combined with development");
+eq(combined.byDevice.phone.eventConfusion.background.sneeze,1,
+ "Device-specific temporal confusion retains its cohort");
 eq(combined.bySplit.unspecified.sessionCount,1,
  "Legacy timeline sessions stay explicitly unassigned");
 eq(combined.sourceGroupAudit.sourceGroups,1,
