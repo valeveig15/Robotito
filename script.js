@@ -1187,7 +1187,7 @@ function recognizeVoicePerson(print,faceName=null){
   }
   scores.sort((a,b)=>b.score-a.score);
   const best=scores[0],second=scores[1];
-  if(!best)return null;
+  if(!best||best.profileCount<3)return null;
 
   // A face candidate is not a second, independently verified voice sample.
   // Never lower voice confidence or competitor margins because the camera
