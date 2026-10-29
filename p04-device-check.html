@@ -10,6 +10,8 @@ body{max-width:780px;margin:24px auto;padding:0 18px;line-height:1.5}
 section{border:1px solid #9a9a9a60;border-radius:16px;padding:16px;margin:16px 0}
 button,select{font:inherit;border:1px solid #888;border-radius:9px;padding:10px;margin:4px}
 button{cursor:pointer}button:disabled{opacity:.5;cursor:default}
+#cameraPreview{width:100%;max-height:360px;background:#161616;border-radius:12px;object-fit:contain}
+#asrTranscript{min-height:2.5rem;padding:10px;border:1px dashed #8888;border-radius:8px;overflow-wrap:anywhere}
 output{display:block;margin:10px 0;white-space:pre-wrap}
 #meter{width:100%;height:15px;border-radius:12px;overflow:hidden;background:#aaa5}
 #meterFill{height:100%;width:0%;background:#25a78c;transition:width .08s}
@@ -18,7 +20,7 @@ small{display:block;opacity:.8}
 </head>
 <body>
 <h1>Robotito — diagnóstico del punto 4</h1>
-<p>Esta página sirve para hacer una comprobación <strong>manual</strong> de las voces instaladas, la salida de audio y el micrófono. <strong>No graba, no almacena y no envía audio a servidores.</strong> No demuestra que el reconocimiento de palabras funcione: esa prueba debe hacerse en Robotito.</p>
+<p>Comprobá en este dispositivo las voces del sistema, el nivel del micrófono, la vista previa de cámara y el reconocimiento de palabras ofrecido por el navegador. <strong>Esta página no graba ni almacena imágenes, audio o transcripciones, ni los envía desde su propio código.</strong> El reconocimiento de palabras del navegador puede utilizar servicios externos de su proveedor; activalo solo si estás de acuerdo. El reconocimiento de identidad facial se comprueba en la aplicación principal, no en este diagnóstico.</p>
 <section>
 <h2>1. Elegí un idioma</h2>
 <label for="lang">Idioma de prueba</label>
@@ -43,8 +45,27 @@ small{display:block;opacity:.8}
 <small>El medidor mide volumen, no reconoce palabras, identidad ni sonidos específicos. Para verificar ASR en francés/italiano/alemán usá la aplicación principal y el idioma elegido.</small>
 </section>
 <section>
-<h2>3. Criterios de aceptación en dispositivo físico</h2>
-<p>Comprobá en los seis idiomas: voz audible y pronunciación correcta, ausencia de voz cruzada, inicio/cancelación del permiso de micrófono, suspensión/reanudación, y una orden por voz en Robotito. Registrá manualmente navegador, sistema y resultados, sin adjuntar grabaciones privadas.</p>
+<h2>3. Comprobar cámara física</h2>
+<p>La cámara requiere tu permiso. La imagen se muestra únicamente en este dispositivo: no se captura, analiza, guarda ni envía. Se apaga si detenés la prueba, ocultás la pestaña o salís de esta página.</p>
+<button id="cameraStart" type="button">Activar cámara</button>
+<button id="cameraStop" type="button">Apagar cámara</button>
+<video id="cameraPreview" autoplay muted playsinline aria-label="Vista previa local de la cámara"></video>
+<output id="cameraStatus" aria-live="polite">Cámara apagada.</output>
+<small>Esta vista previa solo prueba acceso a la cámara, permisos e interrupciones. Para comprobar la identidad de una persona, entrá a <a href="./">Robotito</a>, con consentimiento de quienes participen.</small>
+</section>
+<section>
+<h2>4. Comprobar reconocimiento de palabras (ASR)</h2>
+<p>Elegí arriba uno de los seis idiomas y pronunciá una frase breve. La transcripción es temporal y desaparece al detener el reconocimiento. <strong>Según el navegador, el audio puede procesarse en servicios externos del proveedor.</strong> No lo uses con información sensible.</p>
+<button id="asrStart" type="button">Reconocer una frase</button>
+<button id="asrStop" type="button">Detener reconocimiento</button>
+<output id="asrStatus" aria-live="polite">Reconocimiento sin iniciar.</output>
+<output id="asrTranscript" aria-live="polite" aria-label="Texto reconocido"></output>
+<small>El resultado no certifica automáticamente precisión ni identidad de la voz: escuchá, compará con lo que dijiste y anotá manualmente si fue correcto.</small>
+</section>
+<section>
+<h2>5. Criterios de aceptación en dispositivo físico</h2>
+<p>Comprobá en los seis idiomas: voz audible y pronunciación correcta, ausencia de voz cruzada, permisos de cámara y micrófono, reconocimiento de una frase, suspensión/reanudación y una orden por voz en Robotito. Probá también una cara conocida, desconocida y dos caras simultáneas en la aplicación principal; no se debe revelar información de otra persona.</p>
+<p>Usá el <a href="./P04-HARDWARE-VALIDATION.md">protocolo H01–H16</a> y registrá manualmente modelo del equipo, navegador, versión, resultado PASS/FAIL/BLOCKED/NOT RUN, sin adjuntar grabaciones ni datos biométricos. Esta página no adjudica aprobaciones por sí sola.</p>
 <p><a href="./">Volver a Robotito</a> · <a href="./P04-STATUS.md">Estado técnico del punto 4</a></p>
 </section>
 <script>
@@ -60,6 +81,7 @@ const languages={
  de:{locale:"de-DE",text:"Hallo, ich teste meine Stimme auf Deutsch."}
 };
 let microphone=null,audioContext=null,analyser=null,frame=null,requestEpoch=0;
+let cameraStream=null,cameraEpoch=0,activeRecognition=null,recognitionEpoch=0;
 function stopTracks(stream){try{stream?.getTracks?.().forEach(track=>track.stop());}catch{}}
 function stopMicrophone(){
  ++requestEpoch;
@@ -132,13 +154,94 @@ async function startMicrophone(){
   if(epoch===requestEpoch){stopMicrophone();$("micStatus").textContent="No se pudo activar: "+String(e.message||e);}
  }
 }
-$("lang").addEventListener("change",()=>{window.speechSynthesis?.cancel?.();updateVoices();});
+function stopCamera(){
+ ++cameraEpoch;
+ stopTracks(cameraStream);cameraStream=null;
+ $("cameraPreview").srcObject=null;
+ $("cameraStatus").textContent="Cámara apagada. No se guardaron imágenes.";
+}
+async function startCamera(){
+ stopCamera();
+ const epoch=++cameraEpoch;
+ $("cameraStatus").textContent="Solicitando permiso de cámara…";
+ let granted=null;
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw Error("getUserMedia no disponible");
+  granted=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:"user"}});
+  if(epoch!==cameraEpoch){stopTracks(granted);return;}
+  const track=granted.getVideoTracks?.()[0];
+  if(!track||track.readyState==="ended")throw Error("No se encontró una pista de cámara activa");
+  cameraStream=granted;
+  $("cameraPreview").srcObject=granted;
+  track.addEventListener?.("ended",()=>{
+   if(epoch===cameraEpoch){stopCamera();$("cameraStatus").textContent="La cámara se desconectó o terminó. Podés reintentar."; }
+  },{once:true});
+  try{await $("cameraPreview").play();}catch(e){
+   if(epoch===cameraEpoch)$("cameraStatus").textContent="Cámara autorizada, pero el video no se pudo reproducir: "+String(e.message||e);
+   return;
+  }
+  if(epoch!==cameraEpoch)return;
+  $("cameraStatus").textContent="Cámara activa. Vista previa local, sin guardar imágenes.";
+ }catch(e){
+  stopTracks(granted);
+  if(epoch===cameraEpoch){stopCamera();$("cameraStatus").textContent="No se pudo activar la cámara: "+String(e.message||e);}
+ }
+}
+function stopASR(){
+ ++recognitionEpoch;
+ const prior=activeRecognition;activeRecognition=null;
+ try{prior?.abort?.();}catch{}
+ $("asrTranscript").textContent="";
+ $("asrStatus").textContent="Reconocimiento detenido. Transcripción borrada.";
+}
+function startASR(){
+ stopASR();
+ const epoch=++recognitionEpoch;
+ const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Recognition){
+  $("asrStatus").textContent="Este navegador no ofrece SpeechRecognition. Probá Robotito con otro navegador compatible.";
+  return;
+ }
+ try{
+  const rec=new Recognition();
+  activeRecognition=rec;
+  rec.lang=languages[$("lang").value].locale;
+  rec.continuous=false;rec.interimResults=true;
+  rec.onstart=()=>{if(epoch===recognitionEpoch)$("asrStatus").textContent="Escuchando ("+rec.lang+"). Decí una frase breve.";};
+  rec.onresult=e=>{
+   if(epoch!==recognitionEpoch)return;
+   const results=Array.from(e.results||[]);
+   $("asrTranscript").textContent=results.map(r=>r[0]?.transcript||"").join(" ").trim();
+   $("asrStatus").textContent=results.some(r=>!r.isFinal)
+    ?"Reconociendo frase…":"Transcripción recibida. Comparala con lo que dijiste.";
+  };
+  rec.onerror=e=>{
+   if(epoch===recognitionEpoch)$("asrStatus").textContent="Error de reconocimiento: "+String(e.error||"desconocido");
+  };
+  rec.onend=()=>{
+   if(epoch===recognitionEpoch){
+    activeRecognition=null;
+    if(!$("asrStatus").textContent.startsWith("Error"))
+     $("asrStatus").textContent="Reconocimiento finalizado. Para repetir, pulsá Reconocer una frase.";
+   }
+  };
+  rec.start();
+ }catch(e){
+  if(epoch===recognitionEpoch){activeRecognition=null;$("asrStatus").textContent="No se pudo iniciar el reconocimiento: "+String(e.message||e);}
+ }
+}
+
+$("lang").addEventListener("change",()=>{window.speechSynthesis?.cancel?.();stopASR();updateVoices();});
 $("speak").addEventListener("click",speak);
 $("speechStop").addEventListener("click",()=>{window.speechSynthesis?.cancel?.();$("speechStatus").textContent="Síntesis detenida.";});
 $("micStart").addEventListener("click",startMicrophone);
 $("micStop").addEventListener("click",stopMicrophone);
-window.addEventListener("pagehide",stopMicrophone);
-document.addEventListener("visibilitychange",()=>{if(document.hidden)stopMicrophone();});
+$("cameraStart").addEventListener("click",startCamera);
+$("cameraStop").addEventListener("click",stopCamera);
+$("asrStart").addEventListener("click",startASR);
+$("asrStop").addEventListener("click",stopASR);
+window.addEventListener("pagehide",()=>{stopMicrophone();stopCamera();stopASR();});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){stopMicrophone();stopCamera();stopASR();}});
 if(window.speechSynthesis){speechSynthesis.addEventListener?.("voiceschanged",updateVoices);}
 updateVoices();
 })();
