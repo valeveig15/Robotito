@@ -9,6 +9,12 @@ const avg=(rows,key)=>rows.length?rows.reduce((s,x)=>s+(Number(x[key])||0),0)/ro
 const variance=(rows,key)=>rows.length>1?rows.reduce((s,x)=>s+(x[key]-avg(rows,key))**2,0)/rows.length:0;
 const ACOUSTIC_EVENTS=Object.freeze(["voice","music","clap","impact","laugh","cry","cough","sneeze","silence","noise","unknown"]);
 const MODEL_EVENTS=Object.freeze(["clap","laugh","cry","cough","sneeze"]);
+// A true YAMNet result arrives every ~487.5 ms, NOT every ~50 ms feature
+// tick. Tagged predictions must be independently spaced yet continuous.
+// Untagged synchronous custom classifiers retain their legacy short cadence.
+const MODEL_OBSERVATION_CADENCE=Object.freeze({
+ taggedMinGapMs:300,taggedMaxGapMs:1300,untaggedMaxGapMs:140
+});
 const MODEL_GATE={
  clap:{threshold:.96,margin:.20,frames:2,minDuration:90,maxDuration:1600,cooldown:1900},
  laugh:{threshold:.89,margin:.14,frames:7,minDuration:330,maxDuration:7000,cooldown:6500},
@@ -37,7 +43,7 @@ function featureFrame(feature,at){
 }
 function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  let frames=[],lastFrame=0,lastEvent=Object.create(null),transients=[],onset=null;
- let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null,modelCandidate=null;
+ let musicEvidence=0,lastKind="silence",noiseFloor=.008,modelEvidence=Object.create(null),modelLatched=Object.create(null),modelMisses=Object.create(null),lastModelObservation=null,lastIndependentModelAt=null,modelCandidate=null;
  const modelAvailable=classifier?.calibrated===true
   &&typeof classifier?.version==="string"&&classifier.version.trim().length>0
   &&typeof classifier.predict==="function";
@@ -53,7 +59,8 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function clearEvidence(){
   frames=[];transients=[];onset=null;musicEvidence=0;modelEvidence=Object.create(null);
-  modelLatched=Object.create(null);modelMisses=Object.create(null);lastModelObservation=null;modelCandidate=null;
+  modelLatched=Object.create(null);modelMisses=Object.create(null);
+  lastModelObservation=null;lastIndependentModelAt=null;modelCandidate=null;
   lastKind="unknown";lastFrame=0;
  }
  function classifierEvents(feature,at,active){
@@ -68,7 +75,8 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   // A cached asynchronous model may expose an observation timestamp/frame ID.
   // Repeated or stale predictions are NOT independent evidence: without this
   // gate one single sneeze prediction could produce a false "¡Salud!".
-  if(Object.hasOwn(scores,"observedAt")||Object.hasOwn(scores,"frameId")){
+  const tagged=Object.hasOwn(scores,"observedAt")||Object.hasOwn(scores,"frameId");
+  if(tagged){
    const observed=Number(scores.observedAt),id=scores.frameId;
    if((Object.hasOwn(scores,"observedAt")&&(!Number.isFinite(observed)||observed>at+80||at-observed>240))
      ||(Object.hasOwn(scores,"frameId")&&(typeof id!=="string"&&typeof id!=="number")))
@@ -76,6 +84,11 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    const key=Object.hasOwn(scores,"frameId")?"id:"+String(id):"time:"+observed;
    if(lastModelObservation===key)return [];
    lastModelObservation=key;
+   // A model may assign a new frameId to identical PCM in a fast callback.
+   // Merely changing that ID cannot manufacture independent evidence.
+   if(lastIndependentModelAt!==null&&
+      at-lastIndependentModelAt<MODEL_OBSERVATION_CADENCE.taggedMinGapMs)return [];
+   lastIndependentModelAt=at;
   }
   const rawScores=scores.scores&&typeof scores.scores==="object"?scores.scores:scores;
   // Model outputs may also include non-reactive alternatives. They MUST
@@ -106,7 +119,12 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    }
    modelMisses[kind]=0;
    if(modelLatched[kind])continue;
-   if(!evidence||at-evidence.lastAt>140){evidence={since:at,count:0,score:0,lastAt:at};}
+   const maxGap=tagged?MODEL_OBSERVATION_CADENCE.taggedMaxGapMs:
+    MODEL_OBSERVATION_CADENCE.untaggedMaxGapMs;
+   if(!evidence||evidence.tagged!==tagged||at<evidence.lastAt||
+      at-evidence.lastAt>maxGap){
+    evidence={since:at,count:0,score:0,lastAt:at,tagged};
+   }
    evidence.count++;evidence.lastAt=at;evidence.score+=values[kind];
    modelEvidence[kind]=evidence;
    const duration=at-evidence.since+45;
@@ -220,6 +238,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  function reset(){clearEvidence();lastEvent=Object.create(null);lastKind="silence";}
  return {process,reset,getStatus:()=>({musicEvidence,noiseFloor,lastKind,modelAvailable})};
 }
-root.ROBOTITO_AUDIO_PERCEPTION={create,rhythmic,ACOUSTIC_EVENTS,MODEL_EVENTS,MODEL_GATE};
+root.ROBOTITO_AUDIO_PERCEPTION={create,rhythmic,ACOUSTIC_EVENTS,MODEL_EVENTS,
+ MODEL_GATE,MODEL_OBSERVATION_CADENCE};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_AUDIO_PERCEPTION;
 })(typeof window!=="undefined"?window:globalThis);
