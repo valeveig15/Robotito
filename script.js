@@ -1189,13 +1189,15 @@ function recognizeVoicePerson(print,faceName=null){
   const best=scores[0],second=scores[1];
   if(!best)return null;
 
-  const agreesWithFace=faceName&&best.name===faceName;
-  const threshold=agreesWithFace?.735:(best.profileCount>=3?.785:.82);
-  const margin=agreesWithFace?.012:.035;
-
+  // A face candidate is not a second, independently verified voice sample.
+  // Never lower voice confidence or competitor margins because the camera
+  // suggests the same label: relatives and replay attacks can look/sound alike.
+  const threshold=best.profileCount>=3?.80:.84;
+  const margin=.065;
   if(best.score<threshold)return null;
-  if(best.profileCount>=3&&best.consistency<2&&!agreesWithFace)return null;
-  if(second&&best.score-second.score<margin&&!agreesWithFace)return null;
+  if(best.profileCount>=3&&best.consistency<2)return null;
+  if(second&&best.score-second.score<margin)return null;
+  // Face agreement is informative only after voice evidence passes on its own.
   return best;
 }
 
