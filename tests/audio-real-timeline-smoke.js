@@ -186,6 +186,34 @@ try{
  assert.equal(report.continuousEvaluation.byEnvironment["synthetic-tone"].sessionCount,1);
  assert.ok(output.includes("Saved non-calibrating evaluation report"),
   "The real CLI must finish successfully");
+ // The real Chromium decoder can also inspect a combined dataset assembled
+ // from separate studio-style manifests; not merely a JSON-only unit mock.
+ const secondDir=path.join(temp,"take-two");
+ fs.mkdirSync(secondDir);
+ const secondBytes=Buffer.from(originalAudio);
+ secondBytes[50]^=1; // distinct valid WAV PCM with same headers and duration
+ fs.writeFileSync(path.join(secondDir,"other.wav"),secondBytes);
+ const second=seal({id:"synthetic-02",path:"other.wav",
+  environment:"synthetic-tone",rights:"owned",
+  sourceGroup:"synthetic-source-2",evaluationSplit:"development",
+  annotationReview:"complete",audioSha256:createHash("sha256")
+   .update(secondBytes).digest("hex"),annotations:[],suppressions:[]});
+ const secondManifest=path.join(secondDir,"manifest-2.json");
+ fs.writeFileSync(secondManifest,JSON.stringify({sessions:[second]}));
+ const combinedPath=path.join(temp,"combined-corpus.json");
+ const assembledOutput=execFileSync(process.execPath,[
+  "scripts/assemble-audio-corpus.js",combinedPath,manifestPath,secondManifest],{
+   cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
+  });
+ assert.match(assembledOutput,/Local audio corpus assembled/);
+ const combinedPreflight=execFileSync(process.execPath,[
+  "scripts/validate-audio-dataset.js",combinedPath],{
+   cwd:path.resolve(__dirname,".."),timeout:30000,encoding:"utf8"
+  });
+ assert.match(combinedPreflight,/"decodedFilesVerified": 2/,
+  "Combined two-session corpus must decode both original WAV files in Chromium");
+ assert.match(combinedPreflight,/"sourceGroups": 2/,
+  "Independent declared source groups remain distinct in the combined manifest");
  console.log("Genuine end-to-end continuous YAMNet evaluation with suppressed-window isolation passed");
 }finally{
  fs.rmSync(temp,{recursive:true,force:true});
