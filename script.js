@@ -172,6 +172,12 @@ const state = {
   greetingHistory: load(KEYS.greetings, {})
 };
 
+// Voluntary, ephemeral counts of avatar actions. Off until the user opts in;
+// a hidden/closed tab discards all aggregate evidence.
+const reactionTrial=window.ROBOTITO_AUDIO_REACTION_TRIAL?.attachControls?.({
+  isReady:()=>state.started&&!!state.audioContext
+});
+
 const robot = $("#robotito");
 const camera = $("#camera");
 
@@ -1342,13 +1348,16 @@ function setupAudio(stream){
       classifier:window.ROBOTITO_AUDIO_EVENT_MODEL||null,
       onEvent:event=>{
         const now=Date.now();
-        const reaction=reactionPolicy?.decide?.(event,{
-          now,suppressed:state.classMode||state.sleeping||state.speaking||
-            document.hidden||!microphoneGate?.isLive()
-        });
-        if(!reaction)return;
+        const suppressed=state.classMode||state.sleeping||state.speaking||
+          document.hidden||!microphoneGate?.isLive();
+        const reaction=reactionPolicy?.decide?.(event,{now,suppressed});
+        if(!reaction){
+          reactionTrial?.observeEvent(event.kind,{suppressed});
+          return;
+        }
         if(reaction.action==="clap"){
           robot.classList.add("clapping");
+          reactionTrial?.observeEvent(event.kind,{action:"clap"});
           setTimeout(()=>robot.classList.remove("clapping"),1100);
           return;
         }
@@ -1370,11 +1379,15 @@ function setupAudio(stream){
           sayInLanguage(window.ROBOTITO_I18N?.t?.("soundComfort",lang)||"¿Está todo bien?",lang);
         }else if(reaction.action==="bless"){
           // Share cooldown with the separate speech-recognition sneeze path.
-          if(now-(handleSocialSpeech.lastBlessAt||0)<5000)return;
+          if(now-(handleSocialSpeech.lastBlessAt||0)<5000){
+            reactionTrial?.observeEvent(event.kind);
+            return;
+          }
           handleSocialSpeech.lastBlessAt=now;
           const lang=responseLanguage();
           sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",lang)||"¡Salud!",lang);
         }
+        reactionTrial?.observeEvent(event.kind,{action:reaction.action});
       }
     });
     let lastTick=0,prevSpectrum=null;
@@ -1438,6 +1451,7 @@ function setupAudio(stream){
           document.hidden||!microphoneGate?.isLive()
       });
       robot.classList.toggle("dancing",dance);
+      reactionTrial?.observeDance(robot.classList.contains("dancing"));
       prevSpectrum=freq.slice();
     };
     requestAnimationFrame(tick);
