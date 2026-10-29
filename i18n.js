@@ -896,6 +896,105 @@ Object.assign(LABELS,{
   "de": "Diese Funktion speichert eine echte Aufnahme nur mit Einwilligung. Sie dient weder zum Stimmenklonen noch zum Erzeugen einer neuen Sprechstimme."
  }
 });
+// P07: privacy and explicit confirmation for local IndexedDB recovery.
+Object.assign(LABELS,{
+ "p07BackupTitle": {
+  "es": "Respaldo y recuperación de memoria local",
+  "en": "Local memory backup and recovery",
+  "pt": "Backup e recuperação da memória local",
+  "fr": "Sauvegarde et restauration de la mémoire locale",
+  "it": "Backup e ripristino della memoria locale",
+  "de": "Lokale Speicher-Sicherung und Wiederherstellung"
+ },
+ "p07BackupWarning": {
+  "es": "El archivo JSON puede incluir recuerdos privados, rostros, audios y transcripciones. No está cifrado: guardalo en un lugar privado y no lo compartas.",
+  "en": "The JSON file may contain private memories, faces, audio and transcripts. It is not encrypted: keep it private and do not share it.",
+  "pt": "O arquivo JSON pode incluir lembranças privadas, rostos, áudios e transcrições. Não é criptografado: guarde-o em local privado.",
+  "fr": "Le fichier JSON peut contenir des souvenirs privés, des visages, des audios et des transcriptions. Il n'est pas chiffré : ne le partage pas.",
+  "it": "Il file JSON può contenere ricordi privati, volti, audio e trascrizioni. Non è cifrato: conservalo in modo privato.",
+  "de": "Die JSON-Datei kann private Erinnerungen, Gesichter, Audio und Transkripte enthalten. Sie ist nicht verschlüsselt: privat aufbewahren."
+ },
+ "p07BackupScope": {
+  "es": "La copia contiene los datos de IndexedDB de este navegador, de todas las personas y sesiones guardadas. No incluye archivos ni preferencias fuera de IndexedDB.",
+  "en": "The backup contains this browser's IndexedDB data from all saved people and sessions. It excludes files and preferences outside IndexedDB.",
+  "pt": "A cópia contém dados do IndexedDB deste navegador, de todas as pessoas e sessões salvas. Não inclui dados fora do IndexedDB.",
+  "fr": "La copie contient les données IndexedDB de ce navigateur pour toutes les personnes et sessions enregistrées, pas les données hors IndexedDB.",
+  "it": "La copia contiene i dati IndexedDB di questo browser di tutte le persone e sessioni salvate, non i dati esterni a IndexedDB.",
+  "de": "Die Sicherung enthält die IndexedDB-Daten dieses Browsers aller gespeicherten Personen und Sitzungen, nicht die Daten außerhalb von IndexedDB."
+ },
+ "p07BackupDownload": {
+  "es": "Descargar copia de seguridad",
+  "en": "Download backup",
+  "pt": "Baixar cópia de segurança",
+  "fr": "Télécharger la sauvegarde",
+  "it": "Scarica il backup",
+  "de": "Sicherung herunterladen"
+ },
+ "p07BackupRestore": {
+  "es": "Restaurar una copia",
+  "en": "Restore a backup",
+  "pt": "Restaurar uma cópia",
+  "fr": "Restaurer une sauvegarde",
+  "it": "Ripristina un backup",
+  "de": "Sicherung wiederherstellen"
+ },
+ "p07BackupFileAria": {
+  "es": "Archivo local de respaldo Robotito",
+  "en": "Local Robotito backup file",
+  "pt": "Arquivo local de backup do Robotito",
+  "fr": "Fichier local de sauvegarde Robotito",
+  "it": "File locale di backup Robotito",
+  "de": "Lokale Robotito-Sicherungsdatei"
+ },
+ "p07BackupReady": {
+  "es": "Copia preparada. Confirmá que se descargó y guardó antes de restaurar otra.",
+  "en": "Backup prepared. Check that the file was downloaded and saved before restoring another.",
+  "pt": "Cópia preparada. Confirme que foi baixada e guardada antes de restaurar outra.",
+  "fr": "Sauvegarde préparée. Vérifie que le fichier a bien été enregistré avant toute restauration.",
+  "it": "Backup preparato. Verifica di averlo salvato prima di ripristinarne un altro.",
+  "de": "Sicherung erstellt. Prüfe vor der Wiederherstellung, ob sie gespeichert wurde."
+ },
+ "p07BackupFailed": {
+  "es": "No se pudo preparar la copia completa. No se generó un archivo parcial.",
+  "en": "Could not prepare a complete backup. No partial file was created.",
+  "pt": "Não foi possível preparar a cópia completa. Nenhum arquivo parcial foi criado.",
+  "fr": "Impossible de préparer une sauvegarde complète. Aucun fichier partiel créé.",
+  "it": "Impossibile preparare un backup completo. Nessun file parziale creato.",
+  "de": "Keine vollständige Sicherung möglich. Keine Teil-Datei erstellt."
+ },
+ "p07RestoreFailed": {
+  "es": "La restauración falló o se canceló. No se confirmó ningún cambio.",
+  "en": "Restore failed or was canceled. No change was confirmed.",
+  "pt": "A restauração falhou ou foi cancelada. Nenhuma alteração foi confirmada.",
+  "fr": "La restauration a échoué ou a été annulée. Aucun changement confirmé.",
+  "it": "Il ripristino è fallito o è stato annullato. Nessuna modifica confermata.",
+  "de": "Wiederherstellung fehlgeschlagen oder abgebrochen. Keine Änderung bestätigt."
+ },
+ "p07RestoreConfirm": {
+  "es": "Esta acción REEMPLAZARÁ todos los datos locales de IndexedDB, incluidas las personas guardadas. Verificá que descargaste una copia previa. ¿Continuar?",
+  "en": "This will REPLACE all local IndexedDB data, including saved people. Confirm you downloaded a backup first. Continue?",
+  "pt": "Isto SUBSTITUIRÁ todos os dados locais do IndexedDB, incluindo pessoas salvas. Confirme que fez o backup. Continuar?",
+  "fr": "Ceci REMPLACERA toutes les données IndexedDB locales, y compris les personnes enregistrées. Vérifie ta sauvegarde. Continuer ?",
+  "it": "Questa operazione SOSTITUIRÀ tutti i dati IndexedDB locali, comprese le persone salvate. Verifica il backup. Continuare?",
+  "de": "Alle lokalen IndexedDB-Daten einschließlich gespeicherter Personen werden ERSETZT. Prüfe zuerst deine Sicherung. Fortfahren?"
+ },
+ "p07RestoreType": {
+  "es": "Escribí RESTAURAR exactamente para confirmar el reemplazo.",
+  "en": "Type RESTAURAR exactly to confirm replacement.",
+  "pt": "Digite RESTAURAR para confirmar a substituição.",
+  "fr": "Tape RESTAURAR exactement pour confirmer.",
+  "it": "Scrivi RESTAURAR esattamente per confermare.",
+  "de": "Gib RESTAURAR ein, um das Ersetzen zu bestätigen."
+ },
+ "p07RestoreDone": {
+  "es": "Restauración completa. Se recargará Robotito para leer los datos recuperados.",
+  "en": "Restore complete. Robotito will reload to read recovered data.",
+  "pt": "Restauração concluída. O Robotito será recarregado.",
+  "fr": "Restauration terminée. Robotito va recharger les données.",
+  "it": "Ripristino completato. Robotito ricaricherà i dati.",
+  "de": "Wiederherstellung abgeschlossen. Robotito lädt die Daten neu."
+ }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
