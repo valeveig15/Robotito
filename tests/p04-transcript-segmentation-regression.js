@@ -52,7 +52,7 @@ const cancel=new Function("state","clearTimeout",
  cancelSource+"\ndiscardRecognition();return {pendingRecognitionText,pendingRecognitionMeta};")(
  {recognition:{abort(){canceled=true;},onend:null,onerror:null,onresult:null}},
  x=>eq(x,42,"Debounce timer canceled on session replacement"));
-const result=cancel();
+const result=cancel;
 eq(result.pendingRecognitionText,"","Old words cannot remain pending");
 eq(result.pendingRecognitionMeta,null,"Old audio metadata is erased");
 eq(canceled,true,"Prior ASR instance aborted");
