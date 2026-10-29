@@ -1582,6 +1582,9 @@ function chooseSpeechAlternative(result){
     .sort((a,b)=>b.score-a.score)[0]?.alternative||result[0];
 }
 
+function asrMessage(key){
+ return window.ROBOTITO_I18N?.t?.(key,state.languageMode)||key;
+}
 function createSpeechRecognition(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR)return null;
@@ -1596,12 +1599,12 @@ function createSpeechRecognition(){
   r.onstart=()=>{
     state.lastSpeechStartAt=Date.now();
     state.speechRetryCount=0;
-    setListenState(state.languageMode==="en"?"listening":"escuchando","listening");
+    setListenState(asrMessage("asrListening"),"listening");
     
   };
 
-  r.onspeechstart=()=>setListenState(state.languageMode==="en"?"I hear you":"te escucho","listening");
-  r.onspeechend=()=>{if(isMobileSpeech())setListenState(state.languageMode==="en"?"listening":"escuchando","listening");};
+  r.onspeechstart=()=>setListenState(asrMessage("asrHeard"),"listening");
+  r.onspeechend=()=>{if(isMobileSpeech())setListenState(asrMessage("asrListening"),"listening");};
 
   r.onresult=ev=>{
     let finalText="";
@@ -1621,22 +1624,20 @@ function createSpeechRecognition(){
     console.warn("speech",e.error);
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){
       state.speechBlocked=true;
-      setListenState(state.languageMode==="en"?"microphone blocked":"micrófono bloqueado","problem");
+      setListenState(asrMessage("asrMicBlocked"),"problem");
       
       
-      $("#transcript").textContent=state.languageMode==="en"
-        ?"Microphone permission is blocked. Enable microphone permission for this site and retry."
-        :"El permiso del micrófono está bloqueado. Habilitá el micrófono para este sitio y reintentá.";
+      $("#transcript").textContent=asrMessage("asrMicHelp");
       return;
     }
     if(e.error==="audio-capture"){
       state.speechRetryCount++;
-      setListenState(state.languageMode==="en"?"recovering microphone":"recuperando micrófono","problem");
+      setListenState(asrMessage("asrRecoverMic"),"problem");
       return;
     }
     if(e.error!=="aborted"&&e.error!=="no-speech"){
       state.speechRetryCount++;
-      setListenState(state.languageMode==="en"?"recovering…":"recuperando…","problem");
+      setListenState(asrMessage("asrRecover"),"problem");
     }
   };
 
@@ -1644,7 +1645,7 @@ function createSpeechRecognition(){
     if(state.recognition===r)state.recognition=null;
     if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
     state.speechRetryCount=Math.min(8,state.speechRetryCount+1);
-    setListenState(state.languageMode==="en"?"reconnecting…":"reconectando…");
+    setListenState(asrMessage("asrReconnect"));
     clearTimeout(state.speechRestartTimer);
     const delay=Math.min(2200,220+state.speechRetryCount*180);
     state.speechRestartTimer=setTimeout(()=>startListeningCycle(false),delay);
@@ -1657,19 +1658,19 @@ function startListeningCycle(userGesture=false){
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
-    setListenState("no compatible","problem");
-    $("#transcript").textContent="Este navegador no ofrece reconocimiento de voz. En iPhone probá Safari; en Android probá Chrome.";
+    setListenState(asrMessage("asrNoCompatible"),"problem");
+    $("#transcript").textContent=asrMessage("asrBrowserHelp");
     return;
   }
   state.recognition=r;
   try{
-    setListenState(state.languageMode==="en"?"starting…":"iniciando…");
+    setListenState(asrMessage("asrStarting"));
     r.start();
   }catch(e){
     console.warn("speech start",e);
     state.recognition=null;
     state.speechRetryCount++;
-    setListenState(state.languageMode==="en"?"recovering…":"recuperando…","problem");
+    setListenState(asrMessage("asrRecover"),"problem");
     if(state.started&&!state.speechBlocked&&state.recognitionWanted){
       clearTimeout(state.speechRestartTimer);
       // Keep recovering instead of silently giving up after four failures.
