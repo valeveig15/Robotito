@@ -25,6 +25,7 @@ eq(state.nextResponseLanguage,"fr","One-turn reply language queued");
 eq(env.get("robotito.languageMode.v1"),"es","One-turn does not persist");
 eq(log.at(-1).lang,"fr","Confirmation uses requested language");
 eq(methods.handleLanguageCommand("Speak German this session"),true,"Session command");
+eq(state.nextResponseLanguage,null,"Session change clears stale one-turn override");
 eq(state.languageMode,"de","Session language active");
 eq(env.get("robotito.languageMode.v1"),"es","Session does not change saved language");
 eq(document.documentElement.lang,"de","Session UI uses German");
@@ -36,9 +37,11 @@ eq(methods.handleLanguageCommand("Don't speak French"),false,"Negated command re
 eq(state.languageMode,"it","Negation does not change language");
 eq(env.get("robotito.languageMode.v1"),"it","Negation does not persist");
 const spoken=state.nextResponseLanguage||state.languageMode;
-eq(spoken,"fr","Pending one-turn override still available");
-state.nextResponseLanguage=null; // App consumes this in say(), tested by source contract.
-eq(state.languageMode,"it","One-turn reply restores persistent language");
+eq(spoken,"it","A superseding command leaves no stale one-turn override");
+eq(state.languageMode,"it","Persistent language remains in effect");
+eq(methods.handleLanguageCommand("Sprich Deutsch nur dieses Mal"),true,"German one-turn setting");
+eq(state.languageMode,"it","German one-turn does not change persistent language");
+eq(state.nextResponseLanguage,"de","German one-turn applies only to next response");
 assert.ok(source.includes("if(state.nextResponseLanguage&&!spokenLang)state.nextResponseLanguage=null;"));
 checks++;
 console.log("Robotito P04 persistent/session/one-turn scope:",checks,"checks");
