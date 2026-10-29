@@ -128,4 +128,17 @@ ok(source.includes("voiceSamples?.cancel()"),"Consent and navigation can cancel 
 ok(!source.includes("api.mymemory.translated.net"),"No unconsented translation service");
 ok(source.includes("session.destroy?.();"),"LLM session teardown");
 ok(source.includes("normalizeText(out)!==normalizeText(clean)"),"Echo rejection");
+// Every available avatar must have a label in each of the six languages.
+const nameSource=source.slice(source.indexOf("const AVATAR_ADDITIONAL_NAMES="),
+ source.indexOf("function avatarLanguage()"));
+ok(nameSource.includes("AVATAR_ADDITIONAL_NAMES"),"Extra avatar names exist");
+const translatedNames=new Function(nameSource+"return AVATAR_ADDITIONAL_NAMES;")();
+eq(Object.keys(translatedNames).length,50,"All 50 avatars translated in new languages");
+for(const [id,translated] of Object.entries(translatedNames))
+ for(const language of ["fr","it","de"])ok(translated[language]?.length>1,
+  "Missing "+language+" name for "+id);
+for(const key of ["avatarAvailable","avatarStepTitle","avatarStepDescription","avatarBack","avatarReady"])
+ for(const language of langs)ok(i18n.t(key,language)!==key,"Missing "+key+"/"+language);
+ok(source.includes('t?.("avatarReady",mode)'),"Startup ready state localized");
+ok(source.includes('t?.("avatarStepTitle",lang)'),"Avatar screen localized");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
