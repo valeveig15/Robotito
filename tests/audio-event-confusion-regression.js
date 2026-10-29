@@ -10,7 +10,9 @@ assert.equal(r.matrix.sneeze.sneeze,1,"Exact matches have priority over cross-cl
 assert.equal(r.matrix.cough.cough,0,"No unstated extra correct predictions");
 assert.equal(r.matrix.cough.missed,1,"Used alerts cannot match a second label");
 assert.equal(r.matrix.background.cough,1,"Remaining wrong alert is counted as background when exact label stays unconfirmed");
-assert.deepEqual(r.latencies.sneeze,[.45]);
+assert.equal(r.latencies.sneeze.length,1);
+assert.ok(Math.abs(r.latencies.sneeze[0]-.45)<1e-10,
+ "Reference alert latency tolerates binary floating-point representation");
 r=eventConfusion([sneeze],[wrong],[],.75);
 assert.equal(r.matrix.sneeze.cough,1,"Unmatched cough alert is attributed to true sneeze");
 assert.equal(r.matrix.background.cough,0,"One alert cannot count twice");
