@@ -516,9 +516,11 @@ function isLanguageNeutralSpeech(text){
   return !cleaned || /^[A-ZÁÉÍÓÚÑ][A-Za-zÁÉÍÓÚáéíóúÑñÜü'-]{0,24}$/.test(cleaned);
 }
 function speechNeedsLocalization(text,target=responseLanguage(),forcedLang=null){
-  if(forcedLang)return false;
   const source=detectGeneratedSpeechLanguage(text);
   if(source===target)return false;
+  // Even explicit-language replies must not present clearly Spanish prose
+  // as French/German/etc. Neutral names and short unknown phrases are kept.
+  if(forcedLang)return source!=="und"&&!isLanguageNeutralSpeech(text);
   // Most legacy/generated app copy is Spanish. If English or Portuguese is
   // selected, an uncertain sentence must be translated rather than spoken
   // with the wrong accent. Numbers, formulas and proper names are neutral.
@@ -578,7 +580,7 @@ function say(text, ms=3000, spokenLang=null){
   const token=++state.speechBubbleToken;
 
   if(speechNeedsLocalization(text,target,spokenLang)){
-    b.textContent=target==="en"?"Preparing the answer in English…":target==="pt"?"Preparando a resposta em português…":"Preparando la respuesta en español…";
+    b.textContent=window.ROBOTITO_I18N?.t?.("prepareLocalized",target)||"Preparando la respuesta…";
     b.classList.remove("hidden");
     void localizeGeneratedSpeech(text,target).then(localized=>{
       commitSpeechMessage(localized,ms,target,token);
@@ -2177,7 +2179,7 @@ async function translateShortPhrase(phrase,source,target){
 }
 async function handleSayInLanguageCommand(rawText){
   const text=normalizeText(rawText);
-  const aliases="(?:espanol|español|castellano|spanish|espanhol|ingles|english|ingl[eê]s|portugues|portugu[eê]s|portuguese)";
+  const aliases="(?:espanol|español|castellano|spanish|espanhol|ingles|english|ingl[eê]s|portugues|portugu[eê]s|portuguese|frances|francais|french|italiano|italian|aleman|deutsch|german)";
   const patterns=[
     new RegExp("^(?:decime|dime|deci|di|pronuncia|repeti|repite)\\s+(.+?)\\s+en\\s+("+aliases+")$"),
     new RegExp("^(?:como se dice)\\s+(.+?)\\s+en\\s+("+aliases+")$"),
