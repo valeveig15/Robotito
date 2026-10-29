@@ -19,7 +19,8 @@ try{
  ["5-101007-A-21.wav","5","sneezing"],
  ["1-101005-A-0.wav","1","dog"]
  ];
- for(const [name]of records)fs.writeFileSync(path.join(root,"audio",name),Buffer.alloc(10));
+ for(const [name]of records)fs.writeFileSync(path.join(root,"audio",name),
+  Buffer.from("distinct synthetic fixture for "+name));
  const csv=["filename,fold,target,category,esc10,src_file,take",...records.map(([filename,fold,category])=>
   [filename,fold,0,category,"False","original","A"].join(","))].join("\n");
  fs.writeFileSync(path.join(root,"meta","esc50.csv"),csv);
