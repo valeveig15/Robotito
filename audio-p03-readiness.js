@@ -22,7 +22,7 @@ function checkedFieldReport(report){
  if(report.schemaVersion!==1||report.kind!=="robotito-p03-local-microphone-check"||
     !DEVICES.includes(report.deviceClass)||!ENVIRONMENTS.includes(report.environment)||
     !FIELD_STATUS.has(report.status)||
-    ![null].concat([]).includes(report.permissionElapsedMs)&&!unsigned(report.permissionElapsedMs)||
+    (report.permissionElapsedMs!==null&&!unsigned(report.permissionElapsedMs))||
     !unsigned(report.captureSeconds)||!Number.isSafeInteger(report.sampledFrames)||
     report.sampledFrames<0||!Number.isSafeInteger(report.framesWithRelativeLevel)||
     report.framesWithRelativeLevel<0||report.framesWithRelativeLevel>report.sampledFrames||
