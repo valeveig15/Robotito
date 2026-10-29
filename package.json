@@ -5,6 +5,8 @@
     "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:generative",
     "test:core": "node tests/core-regression.js",
     "test:browser": "node tests/browser-regression.js",
+    "test:browser:performance": "node tests/browser-performance-smoke.js",
+    "test:p04:physical": "node tests/p04-physical-device-smoke.js",
     "test:all": "npm run test:ci",
     "test:planner": "node tests/semantic-planner-regression.js",
     "test:universal": "node tests/universal-system-regression.js",
