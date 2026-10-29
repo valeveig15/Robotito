@@ -12,7 +12,7 @@ function create({requestStream=()=>root.navigator.mediaDevices.getUserMedia({aud
  const stop=()=>{
   if(phase!=="recording"||!recorder)return false;
   phase="stopping";clear();
-  try{recorder.stop();}catch{release(stream);stream=null;recorder=null;phase="idle";inform("error");return false;}
+  try{recorder.stop();}catch{++generation;release(stream);stream=null;recorder=null;phase="idle";inform("error");return false;}
   return true;
  };
  const cancel=()=>{
