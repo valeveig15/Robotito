@@ -27,6 +27,12 @@ function runtime(code,voices){
   (x,min,max)=>Math.max(min,Math.min(max,x)),()=>{});
  return {state,speak,played,statuses};
 }
+// The property may exist while the browser has no speech engine.
+const unsupportedState={classMode:false,voiceEnabled:true,speaking:false};
+const unsupported=new Function("state","window","isSpeechMuted",
+ source.slice(start,end)+"return speakResponse;")(
+ unsupportedState,{speechSynthesis:undefined},()=>false);
+eq(unsupported("Hello"),false,"Missing speech engine must not crash");
 const codes=["es","en","pt","fr","it","de"];
 const locales={es:"es-UY",en:"en-US",pt:"pt-BR",fr:"fr-FR",it:"it-IT",de:"de-DE"};
 for(const code of codes){
