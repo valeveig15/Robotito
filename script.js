@@ -283,8 +283,8 @@ function populateVoiceSelect(){
   const previous=preferred||state.voiceURI;
   const availability=$("#voiceAvailability");
   if(availability)availability.textContent=voices.length
-    ?window.ROBOTITO_I18N?.message?.("voiceBrowserCount",target,{count:voices.length})
-      ||String(voices.length)+" browser voices"
+    ?window.ROBOTITO_I18N?.t?.("voiceBrowserCount",target)
+      ?.replace("{count}",String(voices.length))||String(voices.length)+" browser voices"
     :window.ROBOTITO_I18N?.t?.("voiceUnavailable",target)||"No compatible voice";
   if(!voices.length){
     const label=window.ROBOTITO_I18N?.t?.("voiceUnavailable",target)||"No compatible voice";
