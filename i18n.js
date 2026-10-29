@@ -885,6 +885,17 @@ Object.assign(LABELS,{
   "de": "Einige nicht lokale Stimmen können Text außerhalb des Geräts verarbeiten. Vermeide private Daten."
  }
 });
+// P06: a consented microphone sample is a real recording, not synthesized output.
+Object.assign(LABELS,{
+ "voiceSampleExplanation": {
+  "es": "Esta opción guarda una grabación real solo con consentimiento. No la usa para clonar la voz ni crear una voz nueva para las respuestas.",
+  "en": "This saves a real recording only with consent. It is not used to clone a voice or create a new speaking voice.",
+  "pt": "Esta opção guarda uma gravação real somente com consentimento. Ela não é usada para clonar uma voz nem criar uma nova voz para respostas.",
+  "fr": "Cette option enregistre une véritable voix uniquement avec consentement. Elle ne sert ni à cloner une voix ni à créer une nouvelle voix pour les réponses.",
+  "it": "Questa opzione salva una registrazione reale solo con consenso. Non viene usata per clonare la voce né per creare una nuova voce per le risposte.",
+  "de": "Diese Funktion speichert eine echte Aufnahme nur mit Einwilligung. Sie dient weder zum Stimmenklonen noch zum Erzeugen einer neuen Sprechstimme."
+ }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
