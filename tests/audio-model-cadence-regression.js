@@ -156,6 +156,22 @@ verify(silenceGap.prematurelyEmitted===0,
  "Two detections before silence cannot be combined with the next fresh detection");
 verify(silenceGap.detected.filter(x=>x.kind==="sneeze").length===1,
  "Three independent post-silence windows can still confirm a new event");
+// A finished episode must not permanently latch the classifier after silence.
+const separateEpisodes=(()=>{
+ let candidate={sneeze:.999},at=10000;
+ const heard=[],detector=audio.create({classifier:{calibrated:true,
+  version:"synthetic-episodes",predict:()=>candidate},onEvent:e=>heard.push(e)});
+ const sound={...sample},quiet={...sample,rms:.001};
+ function process(frame){detector.process(frame,{now:at});at+=50;}
+ for(let i=0;i<5;i++)process(sound);
+ candidate={silence:.999};
+ for(let i=0;i<124;i++)process(quiet);
+ candidate={sneeze:.999};
+ for(let i=0;i<5;i++)process(sound);
+ return heard.filter(e=>e.kind==="sneeze").length;
+})();
+verify(separateEpisodes===2,
+ "Distinct post-cooldown episodes must not be blocked by an old model latch");
 const untagged=(()=>{
  const events=[],detector=audio.create({classifier:{
   calibrated:true,version:"synthetic-synchronous-legacy",
