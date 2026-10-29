@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Robotito — diagnóstico de idiomas y voces (P04)</title>
+<style>
+:root{color-scheme:light dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+body{max-width:780px;margin:24px auto;padding:0 18px;line-height:1.5}
+section{border:1px solid #9a9a9a60;border-radius:16px;padding:16px;margin:16px 0}
+button,select{font:inherit;border:1px solid #888;border-radius:9px;padding:10px;margin:4px}
+button{cursor:pointer}button:disabled{opacity:.5;cursor:default}
+output{display:block;margin:10px 0;white-space:pre-wrap}
+#meter{width:100%;height:15px;border-radius:12px;overflow:hidden;background:#aaa5}
+#meterFill{height:100%;width:0%;background:#25a78c;transition:width .08s}
+small{display:block;opacity:.8}
+</style>
+</head>
+<body>
+<h1>Robotito — diagnóstico del punto 4</h1>
+<p>Esta página sirve para hacer una comprobación <strong>manual</strong> de las voces instaladas, la salida de audio y el micrófono. <strong>No graba, no almacena y no envía audio a servidores.</strong> No demuestra que el reconocimiento de palabras funcione: esa prueba debe hacerse en Robotito.</p>
+<section>
+<h2>1. Elegí un idioma</h2>
+<label for="lang">Idioma de prueba</label>
+<select id="lang">
+<option value="es">Español</option><option value="en">English</option>
+<option value="pt">Português</option><option value="fr">Français</option>
+<option value="it">Italiano</option><option value="de">Deutsch</option>
+</select>
+<output id="voiceList" aria-live="polite">Consultando las voces del sistema…</output>
+<button id="speak" type="button">Escuchar prueba de voz</button>
+<button id="speechStop" type="button">Detener voz</button>
+<output id="speechStatus" aria-live="polite">Todavía no se probó la voz.</output>
+<small>Si el navegador no tiene una voz para el idioma seleccionado, no la reemplazamos por una voz de otro idioma. Una voz anunciada por el sistema no garantiza que se oiga correctamente: escuchá y evaluá el resultado.</small>
+</section>
+<section>
+<h2>2. Comprobar micrófono</h2>
+<p>Al pulsar «Activar micrófono», el navegador solicitará permiso. Solo analizamos el nivel de audio en vivo. El micrófono se apaga al detener la prueba, ocultar o cerrar la página. No se guarda contenido.</p>
+<button id="micStart" type="button">Activar micrófono</button>
+<button id="micStop" type="button">Apagar micrófono</button>
+<div id="meter" role="progressbar" aria-label="Nivel de micrófono" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="meterFill"></div></div>
+<output id="micStatus" aria-live="polite">Micrófono apagado.</output>
+<small>El medidor mide volumen, no reconoce palabras, identidad ni sonidos específicos. Para verificar ASR en francés/italiano/alemán usá la aplicación principal y el idioma elegido.</small>
+</section>
+<section>
+<h2>3. Criterios de aceptación en dispositivo físico</h2>
+<p>Comprobá en los seis idiomas: voz audible y pronunciación correcta, ausencia de voz cruzada, inicio/cancelación del permiso de micrófono, suspensión/reanudación, y una orden por voz en Robotito. Registrá manualmente navegador, sistema y resultados, sin adjuntar grabaciones privadas.</p>
+<p><a href="./">Volver a Robotito</a> · <a href="./P04-STATUS.md">Estado técnico del punto 4</a></p>
+</section>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const languages={
+ es:{locale:"es-UY",text:"Hola, estoy probando mi voz en español."},
+ en:{locale:"en-US",text:"Hello, I'm testing my voice in English."},
+ pt:{locale:"pt-BR",text:"Olá, estou testando minha voz em português."},
+ fr:{locale:"fr-FR",text:"Bonjour, je teste ma voix en français."},
+ it:{locale:"it-IT",text:"Ciao, sto provando la mia voce in italiano."},
+ de:{locale:"de-DE",text:"Hallo, ich teste meine Stimme auf Deutsch."}
+};
+let microphone=null,audioContext=null,analyser=null,frame=null,requestEpoch=0;
+function stopTracks(stream){try{stream?.getTracks?.().forEach(track=>track.stop());}catch{}}
+function stopMicrophone(){
+ ++requestEpoch;
+ if(frame!==null){cancelAnimationFrame(frame);frame=null;}
+ stopTracks(microphone);microphone=null;
+ if(audioContext){audioContext.close().catch(()=>{});audioContext=null;}
+ analyser=null;
+ $("meterFill").style.width="0%";
+ $("meter").setAttribute("aria-valuenow","0");
+ $("micStatus").textContent="Micrófono apagado. No se guardó audio.";
+}
+function currentVoice(){
+ if(!("speechSynthesis" in window))return {compatible:[],chosen:null};
+ const code=$("lang").value;
+ const compatible=speechSynthesis.getVoices().filter(v=>
+  typeof v.lang==="string"&&v.lang.toLowerCase().split(/[-_]/)[0]===code);
+ return {compatible,chosen:compatible.find(v=>/natural|neural/i.test(v.name))||compatible[0]||null};
+}
+function updateVoices(){
+ const {compatible,chosen}=currentVoice();
+ $("voiceList").textContent=compatible.length
+  ?compatible.length+" voz/voces compatibles: "+compatible.map(v=>v.name+" ("+v.lang+")").join(", ")
+  :"No hay voces compatibles anunciadas para este idioma.";
+ $("speak").disabled=!chosen;
+}
+function speak(){
+ if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return;
+ const voice=currentVoice().chosen,code=$("lang").value;
+ if(!voice){$("speechStatus").textContent="No hay voz compatible. No se utilizará otra lengua.";return;}
+ speechSynthesis.cancel();
+ const utterance=new SpeechSynthesisUtterance(languages[code].text);
+ utterance.lang=languages[code].locale;utterance.voice=voice;
+ utterance.onstart=()=>{$("speechStatus").textContent="Reproduciendo: "+voice.name+" ("+voice.lang+")";};
+ utterance.onend=()=>{$("speechStatus").textContent="La síntesis terminó. Confirmá si realmente la escuchaste correctamente.";};
+ utterance.onerror=e=>{$("speechStatus").textContent="Error de síntesis: "+String(e.error||"desconocido");};
+ try{speechSynthesis.speak(utterance);}catch(e){$("speechStatus").textContent="No se pudo iniciar la voz: "+e.message;}
+}
+async function startMicrophone(){
+ stopMicrophone();
+ const epoch=++requestEpoch;
+ $("micStatus").textContent="Solicitando acceso al micrófono…";
+ let granted=null;
+ try{
+  if(!navigator.mediaDevices?.getUserMedia)throw Error("getUserMedia no disponible");
+  granted=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  if(epoch!==requestEpoch){stopTracks(granted);return;}
+  const Audio=window.AudioContext||window.webkitAudioContext;
+  if(!Audio)throw Error("AudioContext no disponible");
+  audioContext=new Audio();await audioContext.resume();
+  if(epoch!==requestEpoch){stopTracks(granted);return;}
+  microphone=granted;
+  analyser=audioContext.createAnalyser();analyser.fftSize=1024;
+  const source=audioContext.createMediaStreamSource(granted);
+  source.connect(analyser); // Never connect the microphone to audio output.
+  const buffer=new Uint8Array(analyser.fftSize);
+  $("micStatus").textContent="Micrófono activo. El nivel se calcula solo en memoria.";
+  const draw=()=>{
+   if(epoch!==requestEpoch||!analyser)return;
+   analyser.getByteTimeDomainData(buffer);
+   let sum=0;for(const point of buffer){const x=(point-128)/128;sum+=x*x;}
+   const rms=Math.sqrt(sum/buffer.length);
+   const level=Math.max(0,Math.min(100,Math.round(rms*330)));
+   $("meterFill").style.width=level+"%";
+   $("meter").setAttribute("aria-valuenow",String(level));
+   frame=requestAnimationFrame(draw);
+  };
+  draw();
+ }catch(e){
+  stopTracks(granted);
+  if(epoch===requestEpoch){stopMicrophone();$("micStatus").textContent="No se pudo activar: "+String(e.message||e);}
+ }
+}
+$("lang").addEventListener("change",()=>{speechSynthesis?.cancel?.();updateVoices();});
+$("speak").addEventListener("click",speak);
+$("speechStop").addEventListener("click",()=>{speechSynthesis?.cancel?.();$("speechStatus").textContent="Síntesis detenida.";});
+$("micStart").addEventListener("click",startMicrophone);
+$("micStop").addEventListener("click",stopMicrophone);
+window.addEventListener("pagehide",stopMicrophone);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopMicrophone();});
+if(window.speechSynthesis){speechSynthesis.addEventListener?.("voiceschanged",updateVoices);}
+updateVoices();
+})();
+</script>
+</body>
+</html>
