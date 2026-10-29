@@ -193,7 +193,7 @@ assert.throws(()=>evaluateContinuous([
 eq(combined.byDevice.unspecified.sessionCount,1,"Legacy sessions never impersonate measured phones");
 eq(combined.bySplit.test.metrics.sneeze.precision,0,
  "Precision uses only its own test split, not combined development");
-eq(combined.byDevice.phone.metrics.sneeze.fp,
+eq(combined.byDevice.phone.metrics.sneeze.fp,1,
  "False episodes stay tied to the device cohort that generated them");
 eq(combined.sessions[1].deviceClass,"phone","Session output carries only a coarse device category");
 for(const bad of [
