@@ -1,7 +1,7 @@
 "use strict";
 // OFFLINE sound-event evaluation. This is NOT Robotito's deployed reaction
 // policy: no synthetic score or unreviewed report enables human reactions.
-const {classify,HUMAN}=require("./audio-calibration.js");
+const {classify,HUMAN,wilsonUpper95}=require("./audio-calibration.js");
 const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
@@ -63,6 +63,14 @@ function poissonUpper95(events){
   if(cdf(mid)>.05)lo=mid;else hi=mid;
  }
  return (lo+hi)/2;
+}
+function detectionMetrics(tp,fp,fn){
+ const predicted=tp+fp,eligible=tp+fn;
+ return {precision:predicted?tp/predicted:null,
+  recall:eligible?tp/eligible:null,
+  precisionErrorUpper95:predicted?wilsonUpper95(fp,predicted):null,
+  missRateUpper95:eligible?wilsonUpper95(fn,eligible):null,
+  precisionDenominator:predicted,recallDenominator:eligible};
 }
 function rateMetrics(fp,negativeSeconds){
  const negativeHours=negativeSeconds/3600;
@@ -189,7 +197,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    metrics[kind]={tp,fp,fn:eligibleLabels.length-tp,annotatedEvents:labels.length,
     evaluableEvents:eligibleLabels.length,
     unevaluableEvents:labels.length-eligibleLabels.length,negativeSeconds,
-    ...rateMetrics(fp,negativeSeconds)};
+    ...rateMetrics(fp,negativeSeconds),
+    ...detectionMetrics(tp,fp,eligibleLabels.length-tp)};
   }
   const diagnostic=eventConfusion(evaluableGroundTruth,alerts,correctMatches,matchToleranceSeconds);
   latencyBySession.set(session.id,diagnostic.latencies);
@@ -209,6 +218,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   for(const kind of HUMAN)summary.metrics[kind]={
    tp:0,fp:0,fn:0,annotatedEvents:0,evaluableEvents:0,unevaluableEvents:0,
    negativeSeconds:0,negativeHours:0,
+   precision:null,recall:null,precisionErrorUpper95:null,missRateUpper95:null,
+   precisionDenominator:0,recallDenominator:0,
    falseAlertsPerNegativeHour:null,falseAlertsPerNegativeHourUpper95:null};
   for(const item of items){
    summary.observedSeconds+=item.observedSeconds;
@@ -222,7 +233,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   }
   for(const kind of HUMAN){
    const m=summary.metrics[kind];
-   Object.assign(m,rateMetrics(m.fp,m.negativeSeconds));
+   Object.assign(m,rateMetrics(m.fp,m.negativeSeconds),
+    detectionMetrics(m.tp,m.fp,m.fn));
    summary.referenceDetectorLatencySeconds[kind]=summarizeLatency(
     items.flatMap(item=>latencyBySession.get(item.id)[kind]));
   }
@@ -246,4 +258,4 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   sourceGroupAudit:groupAudit,sessions:results,
   approvalBlocker:"Real annotated continuous recordings, consent, independent threshold validation and deployed-reaction testing required"};
 }
-module.exports={evaluateContinuous,union,subtract,intersection,poissonUpper95,rateMetrics};
+module.exports={evaluateContinuous,union,subtract,intersection,poissonUpper95,rateMetrics,detectionMetrics};
