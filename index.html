@@ -22,6 +22,7 @@
   <script defer src="voice-system.js?v=20261024-context2"></script>
   <script defer src="audio-perception.js?v=20261028-real-yamnet-cadence1"></script>
   <script defer src="audio-reactions.js?v=20261028-human-gate1"></script>
+  <script defer src="audio-reaction-trial.js?v=20261028-avatar-field1"></script>
   <script defer src="audio-sound-model.js?v=20261028-competition1"></script>
   <script defer src="audio-script-fallback.js?v=20261028-legacy-pcm1"></script>
   <script defer src="audio-microphone-gate.js?v=20261028-track-guard1"></script>
@@ -405,6 +406,17 @@
             <span data-i18n="audioModelOptIn">Activar clasificación avanzada de sonidos (modelo descargado)</span></label>
           <p class="muted" data-i18n="audioModelPrivacy">Opcional: descarga YAMNet y MediaPipe de terceros, que pueden recopilar métricas de uso. El audio se clasifica en tu dispositivo; no se envían grabaciones al servidor.</p>
           <p id="audioModelStatus" role="status" class="muted" data-i18n="audioModelOff">Clasificador avanzado desactivado.</p>
+          <details class="reaction-trial-panel">
+            <summary>Prueba voluntaria de reacciones del avatar</summary>
+            <p class="muted">Registrá solo cantidades de sonidos detectados, acciones ejecutadas y bailes. No se guardan grabaciones, transcripciones, horas exactas ni datos del micrófono. La medición comienza únicamente cuando la activás; se descarta al ocultar o abandonar la página. Las cifras no prueban por sí solas precisión ni latencia desde el comienzo del sonido.</p>
+            <div class="reaction-trial-controls">
+              <button type="button" id="reactionTrialStart">Iniciar registro local</button>
+              <button type="button" id="reactionTrialStop" disabled>Detener</button>
+              <button type="button" id="reactionTrialExport" disabled>Descargar recuentos</button>
+              <button type="button" id="reactionTrialClear">Descartar</button>
+            </div>
+            <p id="reactionTrialStatus" class="muted" role="status" aria-live="polite">Registro apagado.</p>
+          </details>
           <label>Idioma / Language / Idioma
             <select id="languageMode">
               <option value="es">Español</option>
