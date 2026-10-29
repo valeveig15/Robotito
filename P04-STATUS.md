@@ -2,6 +2,20 @@
 
 Actualizado: 29 de octubre de 2026.
 
+## Verificación posterior con CI (29/10/2026)
+
+Las advertencias históricas de esta página que dicen que todavía no se había ejecutado CI se refieren a la fecha de esos incrementos, **no al estado actual**. GitHub Actions confirmó:
+
+- [CI final en `main` tras PR #91](https://github.com/valeveig15/Robotito/actions/runs/40895269669): **success**, `npm run test:ci` con regresiones de núcleo y navegador, audio, idiomas/voz y privacidad.
+- [CI de PR #91](https://github.com/valeveig15/Robotito/actions/runs/40894995211): **success**, incluyendo matriz profunda de estrés con las semillas configuradas.
+- La regresión de selección facial añadió 31 comprobaciones (una cara, varias, desconocidos, baja confianza, cambio de identidad, pestaña oculta); la batería de navegador informó 555/555 pruebas aprobadas y cuatro tamaños de pantalla.
+
+**Instrumento físico:** [`p04-device-check.html`](p04-device-check.html) incluye vista previa de cámara, medidor de micrófono, voces del sistema y transcripción ASR manual por idioma. [`P04-HARDWARE-VALIDATION.md`](P04-HARDWARE-VALIDATION.md) define H01–H16 para pruebas en equipos físicos, con consentimiento y resultados PASS/FAIL/BLOCKED/NOT RUN. Los tests automatizados usan dispositivos simulados y **no sustituyen** un micrófono o cámara reales.
+
+**Pendiente de aceptación final:** resultados de H01–H16 ejecutados en dispositivos físicos representativos, además de completar cadenas dinámicas históricas aún no localizadas. No declarar el punto 4 al 100 % solo por una CI verde.
+
+
+
 ## Implementado y enviado a GitHub
 - Arranque y mensajes de cámara/micrófono en español, inglés, portugués, francés, italiano y alemán.
 - Selector de 50 avatares con nombres en seis idiomas; conservación de «¡Chocar los cinco!».

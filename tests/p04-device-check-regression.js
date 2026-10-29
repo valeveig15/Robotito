@@ -8,7 +8,8 @@ let checked=0;
 function ok(value,message){assert.ok(value,message);checked++;}
 for(const code of ["es","en","pt","fr","it","de"])
  ok(html.includes('value="'+code+'"'),"Missing target language "+code);
-for(const id of ["speak","speechStop","micStart","micStop","voiceList","micStatus","meterFill"])
+for(const id of ["speak","speechStop","micStart","micStop","voiceList","micStatus","meterFill",
+ "cameraStart","cameraStop","cameraPreview","cameraStatus","asrStart","asrStop","asrStatus","asrTranscript"])
  ok(html.includes('id="'+id+'"'),"Missing manual test control "+id);
 ok(embedded.includes("getUserMedia({audio:true,video:false})"),"Explicit mic permission");
 ok(embedded.includes("stopTracks(microphone)"),"Stops live tracks");
@@ -16,6 +17,20 @@ ok(embedded.includes("stopTracks(granted)"),"Stops late-granted tracks");
 ok(embedded.includes("requestEpoch"),"Rejects stale mic permissions");
 ok(embedded.includes("pagehide"),"Shutdown on navigation");
 ok(embedded.includes("visibilitychange"),"Shutdown when hidden");
+ok(embedded.includes('getUserMedia({audio:false,video:{facingMode:"user"}})'),
+ "Explicit video-only permission request");
+ok(embedded.includes("stopTracks(cameraStream)"),"Camera tracks are closed");
+ok(embedded.includes("stopTracks(granted)"),"Late video grant is released");
+ok(embedded.includes("cameraEpoch"),"Camera requests are invalidated on cancel");
+ok(embedded.includes("window.SpeechRecognition||window.webkitSpeechRecognition"),
+ "Uses actual native browser ASR if available");
+ok(embedded.includes("rec.lang=languages[$(\"lang\").value].locale"),
+ "ASR respects selected language");
+ok(embedded.includes("activeRecognition=null"),"ASR lifecycle clears its engine");
+ok(embedded.includes('$("asrTranscript").textContent=""'),
+ "Stopping ASR erases transient transcription");
+ok(!/\b(toDataURL|toBlob|ImageCapture|MediaRecorder)\b/.test(embedded),
+ "No image/audio capture or recording APIs in manual diagnostic");
 ok(embedded.includes("speechSynthesis.getVoices()"),"Voice matching");
 ok(embedded.includes('===code'),"No cross-language voice substitution");
 ok(!/\b(fetch|XMLHttpRequest|WebSocket|MediaRecorder|localStorage|indexedDB)\b/.test(embedded),
@@ -26,7 +41,9 @@ console.log("P04 manual device diagnostic contract:",checked,"checks");
 async function fakeBrowser(voices=null,lateMic=false){
  const elements={};
  for(const id of ["lang","voiceList","speak","speechStop","speechStatus",
-  "micStart","micStop","meter","meterFill","micStatus"]){
+  "micStart","micStop","meter","meterFill","micStatus",
+  "cameraStart","cameraStop","cameraPreview","cameraStatus",
+  "asrStart","asrStop","asrStatus","asrTranscript"]){
    elements[id]={value:id==="lang"?"es":"",style:{},textContent:"",
     disabled:false,handlers:{},addEventListener(k,fn){this.handlers[k]=fn;},
     setAttribute(){}};
