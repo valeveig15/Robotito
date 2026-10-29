@@ -435,10 +435,14 @@ function speakResponse(text,forcedLang=null){
   }
   // Until a compatible system voice is actually enumerated, keep the reply as text.
   const voices=speechSynthesis.getVoices();
-  const selected=voices.find(v=>v.voiceURI===state.voiceURI);
+  // A one-answer language override uses the voice explicitly selected for
+  // that language, without altering the main UI voice or its saved setting.
+  const preferredVoiceURI=window.ROBOTITO_VOICE_SYSTEM?.preferredVoiceForLanguage?.(
+    key=>window.localStorage?.getItem?.(key),lang)||state.voiceURI;
+  const selected=voices.find(v=>v.voiceURI===preferredVoiceURI);
   const selectedMatches=voiceMatchesLanguage(selected,lang);
   const chosen=selectedMatches?selected:
-    window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,state.voiceURI)||chooseDefaultVoice(voices,lang);
+    window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,preferredVoiceURI)||chooseDefaultVoice(voices,lang);
   if(!chosen)return false;
   speechSynthesis.cancel();
   state.recentVoicePrints=[];
