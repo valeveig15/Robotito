@@ -254,4 +254,8 @@ for(const phrase of ["Todavía no sé quién sos. Registrá tu cara y tu voz y d
   ok(typeof result==="string"&&result.length>4,
    "Fixed offline response absent "+lang+"/"+phrase);
  }
+for(const phrase of ["Soy una mascota virtual. No estoy vivo como una persona, pero puedo verte, escucharte, recordar cosas y reaccionar.","Sí. Especialmente porque puedo ayudarte a elegir qué leer.","Sí. Si detecto música, hasta intento bailar.","Me gusta aprender cosas con vos, sobre todo cuando después puedo ayudarte a estudiarlas.","Todavía no te conozco lo suficiente como para decirlo.","I'm sleepy, almost asleep.","I'm okay, but I'm pretty hungry.","I'm doing very well. I'm happy.","I'm a little sad right now.","I'm doing well. Pretty calm.","I'm Robotito, a virtual panda. I'm not alive like a person, but I can see, listen, remember, learn from classes, and react.","I can recognize faces and voices, remember things, listen to classes, summarize them, help you study, count fingers, recognize some objects, recommend books, check tasks, and answer many everyday questions."]){
+ for(const code of langs)ok(i18n.fixedReply(phrase,code)?.length>9,
+   "Missing offline translation for "+code+"/"+phrase);
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
