@@ -162,4 +162,8 @@ eq(i18n.parseCommand("Parla italiano per questa sessione")?.scope,"session",
 ok(source.includes('t?.("prepareLocalized",target)'),"Six-language translation progress");
 ok(!source.includes("if(forcedLang)return false;"),"Forced language cannot bypass strong mismatch");
 ok(source.includes("francais|french|italiano|italian|aleman|deutsch|german"),"Six-language say command vocabulary");
+ok(source.includes('window.addEventListener("pagehide",()=>voiceSamples?.cancel());'),
+ "BFCache return must permit a new voice sample recording");
+for(const version of ["i18n.js?v=20261029-p04-finish2","script.js?v=20261029-p04-finish2","speech-fallback.js?v=20261029-p04-finish2","voice-sample-capture.js?v=20261029-p04-finish2"])
+ ok(html.includes(version),"Assets load updated P04 implementation "+version);
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
