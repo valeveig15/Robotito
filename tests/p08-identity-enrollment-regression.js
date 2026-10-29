@@ -55,6 +55,8 @@ eq(recognize([0,1],"Ada")?.name,"Bruno",
 eq(recognize([1,0],null)?.name,"Ada",
  "Known voice remains usable with no face evidence");
 eq(recognize(null,"Ada"),null,"No signal means no identity");
+state.people=[{name:"Legacy",voicePrints:[[1,0]]}];
+eq(recognize([1,0],"Legacy"),null,"One legacy voice sample cannot grant identity even with a face");
 ok(html.includes('id="personEnrollmentConsent" type="checkbox"'),
  "Enrollment requires explicit subject consent checkbox");
 ok(src.includes('$("#personEnrollmentConsent")?.checked!==true'),
