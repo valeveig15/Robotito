@@ -2216,7 +2216,10 @@ async function handleSayInLanguageCommand(rawText){
     const cute={
       es:["Hoy es un buen día para un abrazo panda.","Tu panda virtual cree que merecés algo lindo hoy.","El bambú mejora cuando hay buena compañía."],
       en:["Today is a good day for a panda hug.","Your virtual panda thinks you deserve something nice today.","Bamboo is better with good company."],
-      pt:["Hoje é um bom dia para um abraço de panda.","Seu panda virtual acha que você merece algo bonito hoje.","Bambu fica melhor com boa companhia."]
+      pt:["Hoje é um bom dia para um abraço de panda.","Seu panda virtual acha que você merece algo bonito hoje.","Bambu fica melhor com boa companhia."],
+      fr:["Aujourd’hui est une belle journée pour un câlin de panda.","Ton panda virtuel pense que tu mérites une belle surprise.","Le bambou est meilleur en bonne compagnie."],
+      it:["Oggi è una bella giornata per un abbraccio da panda.","Il tuo panda virtuale pensa che tu meriti qualcosa di bello.","Il bambù è più buono in compagnia."],
+      de:["Heute ist ein guter Tag für eine Panda-Umarmung.","Dein virtueller Panda findet, dass du etwas Schönes verdient hast.","Bambus schmeckt in guter Gesellschaft besser."]
     };
     sayInLanguage(sample(cute[target]),target,5000);
     return true;
