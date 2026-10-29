@@ -90,7 +90,7 @@ async function saveProfileFromRecording(blob,{owner="local",subject="self",expli
  if(!db?.putRecordWithBlob)throw new Error("Atomic voice storage is unavailable");
  return db.putRecordWithBlob({id:SAMPLE_ID,type:"preferences",owner,source:"voice-opt-in",blobId:BLOB_ID,
   data:{subject,consentRecorded:subject==="self"||Boolean(explicitConsent),consentLabel:subject==="self"?"self":String(consentLabel),
-   createdAt:new Date().toISOString(),synthesized:true,cloned:false}},blob,{type:"audio"});
+   createdAt:new Date().toISOString(),recordedFromMicrophone:true,synthesized:false,cloned:false}},blob,{type:"audio"});
 }
 async function deleteProfile(){
  const db=root.ROBOTITO_STORE;
