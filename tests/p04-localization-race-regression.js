@@ -49,6 +49,8 @@ function setup(){
  eq(b.commits.length,0,"First response superseded");
  b.requests[1]("new");await Promise.resolve();
  eq(b.commits.at(-1)?.text,"new","Newest response wins");
+ // A rejected local translator must have a localized fallback path.
+ eq(source.includes('.catch(error=>{'),true,"Translation rejection handler exists");
  const c=setup();c.say("Pending text");
  c.setLang("xx");
  eq(c.state.languageMode,"es","Invalid language rejected");
