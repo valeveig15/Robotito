@@ -2112,17 +2112,17 @@ function handleLanguageCommand(text){
 }
 
 const QUICK_TRANSLATIONS=[
-  {es:"hola",en:"hello",pt:"olá"},
-  {es:"buenos dias",en:"good morning",pt:"bom dia"},
-  {es:"buenas tardes",en:"good afternoon",pt:"boa tarde"},
-  {es:"buenas noches",en:"good night",pt:"boa noite"},
-  {es:"gracias",en:"thank you",pt:"obrigado"},
-  {es:"por favor",en:"please",pt:"por favor"},
+  {es:"hola",en:"hello",pt:"olá",fr:"bonjour",it:"ciao",de:"hallo"},
+  {es:"buenos dias",en:"good morning",pt:"bom dia",fr:"bonjour",it:"buongiorno",de:"guten morgen"},
+  {es:"buenas tardes",en:"good afternoon",pt:"boa tarde",fr:"bon après-midi",it:"buon pomeriggio",de:"guten tag"},
+  {es:"buenas noches",en:"good night",pt:"boa noite",fr:"bonne nuit",it:"buona notte",de:"gute nacht"},
+  {es:"gracias",en:"thank you",pt:"obrigado",fr:"merci",it:"grazie",de:"danke"},
+  {es:"por favor",en:"please",pt:"por favor",fr:"s’il vous plaît",it:"per favore",de:"bitte"},
   {es:"te quiero",en:"i love you",pt:"eu te amo"},
   {es:"te extrano",en:"i miss you",pt:"sinto sua falta"},
   {es:"como estas",en:"how are you",pt:"como você está"},
   {es:"me llamo",en:"my name is",pt:"meu nome é"},
-  {es:"hasta luego",en:"see you later",pt:"até logo"},
+  {es:"hasta luego",en:"see you later",pt:"até logo",fr:"à bientôt",it:"a presto",de:"bis bald"},
   {es:"que tengas un lindo dia",en:"have a nice day",pt:"tenha um bom dia"},
   {es:"sos muy linda",en:"you are very pretty",pt:"você é muito bonita"},
   {es:"sos mi persona favorita",en:"you are my favorite person",pt:"você é minha pessoa favorita"}
@@ -2158,13 +2158,20 @@ async function translateShortPhrase(phrase,source,target){
       if(out){translationCache.set(key,out);return out;}
     }
   }catch(e){console.warn("browser translation",e);}
+  // Never send classroom notes, memories or phrases to third-party
+  // translation services without a separate, informed opt-in.
+  // The browser Translator API runs on-device where supported.
   try{
-    const url="https://api.mymemory.translated.net/get?q="+encodeURIComponent(clean)+"&langpair="+encodeURIComponent(source+"|"+target);
-    const res=await fetch(url);
-    const data=await res.json();
-    const out=String(data?.responseData?.translatedText||"").trim();
-    if(out){translationCache.set(key,out);return out;}
-  }catch(e){console.warn("translation",e);}
+    if(typeof window.Translator?.create==="function"){
+      const translator=await window.Translator.create({sourceLanguage:source,targetLanguage:target});
+      try{
+        const out=String(await translator.translate(clean)||"").trim();
+        if(out&&normalizeText(out)!==normalizeText(clean)){
+          translationCache.set(key,out);return out;
+        }
+      }finally{translator.destroy?.();}
+    }
+  }catch(e){console.warn("local translator",e);}
   return null;
 }
 async function handleSayInLanguageCommand(rawText){
