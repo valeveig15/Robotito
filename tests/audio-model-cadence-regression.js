@@ -110,6 +110,19 @@ const stale=(()=>{
  return events;
 })();
 verify(stale.length===0,"Predictions older than the freshness window cannot emit");
+// Replaying an earlier model observation between new IDs is not a new PCM window.
+const replayed=(()=>{
+ let prediction=null;const events=[];
+ const detector=audio.create({classifier:{calibrated:true,version:"synthetic-test",
+  predict:()=>prediction},onEvent:e=>events.push(e)});
+ for(const [at,id,observedAt] of [[10000,"a",10000],[10500,"b",10500],
+  [11000,"a",11000],[11500,"b",11500]]){
+  prediction={frameId:id,observedAt,scores:{sneeze:.999}};
+  detector.process(sample,{now:at});
+ }
+ return events;
+})();
+verify(replayed.length===0,"Alternating reused frame IDs cannot count as independent sound evidence");
 const untagged=(()=>{
  const events=[],detector=audio.create({classifier:{
   calibrated:true,version:"synthetic-synchronous-legacy",
