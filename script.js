@@ -309,6 +309,11 @@ function discardRecognition(){
     try{state.recognition.onend=null;state.recognition.onerror=null;state.recognition.onresult=null;state.recognition.abort();}catch{}
   }
   state.recognition=null;
+  // Cancel unfinished fragments when switching language or stopping a session.
+  // A late debounce timer must never execute a command from an old session.
+  if(typeof recognitionCommitTimer!=="undefined")clearTimeout(recognitionCommitTimer);
+  pendingRecognitionText="";
+  pendingRecognitionMeta=null;
 }
 function restartRecognitionAfterSpeech(){
   if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
@@ -1609,18 +1614,31 @@ function createSpeechRecognition(){
   r.onspeechstart=()=>setListenState(asrMessage("asrHeard"),"listening");
   r.onspeechend=()=>{if(isMobileSpeech())setListenState(asrMessage("asrListening"),"listening");};
 
+  const emittedFinals=new Map();
   r.onresult=ev=>{
+    if(state.recognition!==r||!state.started||state.speechBlocked)return;
     let finalText="";
     let interim="";
-    for(let i=ev.resultIndex;i<ev.results.length;i++){
+    const now=Date.now();
+    for(let i=Math.max(0,ev.resultIndex||0);i<ev.results.length;i++){
       const result=ev.results[i];
       const best=chooseSpeechAlternative(result);
       const text=(best?.transcript||"").trim();
-      if(result.isFinal)finalText+=(finalText?" ":"")+text;
-      else interim+=(interim?" ":"")+text;
+      if(!text)continue;
+      if(result.isFinal){
+        // Some native ASR engines resend unchanged final indexes. Replaying
+        // them can execute the same command twice, even after debouncing.
+        const normalized=normalizeText(text);
+        const last=emittedFinals.get(i);
+        if(last&&last.text===normalized&&now-last.at<4000)continue;
+        emittedFinals.set(i,{text:normalized,at:now});
+        finalText=mergeRecognitionChunks(finalText,text);
+      }else{
+        interim+=(interim?" ":"")+text;
+      }
     }
     if(interim)$("#transcript").textContent=interim+" …";
-    if(finalText){ r._hadFinal=true; queueRecognitionChunk(finalText); }
+    if(finalText){r._hadFinal=true;queueRecognitionChunk(finalText);}
   };
 
   r.onerror=e=>{
@@ -1645,7 +1663,12 @@ function createSpeechRecognition(){
   };
 
   r.onend=()=>{
-    if(state.recognition===r)state.recognition=null;
+    // Stale recognizers must not restart listening or commit old commands.
+    if(state.recognition!==r)return;
+    // Commit the final words on a natural end instead of waiting for the
+    // debounce timer. This also prevents a restart from dropping them.
+    if(r._hadFinal)flushRecognitionChunks();
+    state.recognition=null;
     if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
     state.speechRetryCount=Math.min(8,state.speechRetryCount+1);
     setListenState(asrMessage("asrReconnect"));
