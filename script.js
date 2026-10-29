@@ -4090,6 +4090,8 @@ async function detectLoop(){
   try{
     const dets=await faceapi.detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.45}))
       .withFaceLandmarks().withFaceDescriptors();
+    // A slow camera/model response must not act after the session was stopped.
+    if(!state.started||document.hidden)return;
     state.lastDetections=dets;
     if(dets.length===1){
       state.lastSeenAt=Date.now();
@@ -4258,6 +4260,20 @@ function greetingFor(p){
   return chosen;
 }
 
+function competingFaceTooClose(descriptor,matchedLabel,matchedDistance){
+  if(!descriptor||!Number.isFinite(matchedDistance))return false;
+  // If a different registered person is nearly as similar, a face alone
+  // must NOT assign private memories even if the FaceMatcher chose a label.
+  for(const person of state.people){
+    if(person.name===matchedLabel||!Array.isArray(person.descriptors))continue;
+    for(const stored of person.descriptors){
+      const distance=descriptorDistance(descriptor,stored);
+      if(Number.isFinite(distance)&&distance<=.50&&
+        distance-matchedDistance<.07)return true;
+    }
+  }
+  return false;
+}
 function recognize(det){
   const now=Date.now();
   if(!state.faceMatcher){
@@ -4267,7 +4283,8 @@ function recognize(det){
 
   const best=state.faceMatcher.findBestMatch(det.descriptor);
   const known=best.label!=="unknown" && Number.isFinite(best.distance)
-    && best.distance>=0 && best.distance<=.50;
+    && best.distance>=0 && best.distance<=.50
+    && !competingFaceTooClose(det.descriptor,best.label,best.distance);
 
   state.faceMatchHistory.push({
     label:known?best.label:"unknown",
@@ -4279,6 +4296,7 @@ function recognize(det){
   if(!known){
     // An unknown visible face must not inherit another person's private context.
     state.currentPerson=null;
+    state.faceMatchHistory=[];
     return;
   }
 

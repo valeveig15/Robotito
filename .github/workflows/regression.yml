@@ -46,6 +46,11 @@ jobs:
         run: npm run test:audio:device
       - name: Verify actual avatar reaction trial in Chromium without human audio
         run: npm run test:audio:reactions:browser
+      - name: Semantic adversarial coverage by language and seeded batch
+        run: |
+          ROBOTITO_AUDIT_SEED=17 ROBOTITO_AUDIT_BATCH=0 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
+          ROBOTITO_AUDIT_SEED=42 ROBOTITO_AUDIT_BATCH=1 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
+          ROBOTITO_AUDIT_SEED=99 ROBOTITO_AUDIT_BATCH=2 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
       - name: Run core and browser regressions
         run: npm run test:ci
       - name: Deep reproducible stress matrix (PR, scheduled or manual)
