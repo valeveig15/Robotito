@@ -80,5 +80,19 @@ function fixture({deferPermission=false,deferSave=false}={}){
   eq(stopped,1,"Synchronous stop releases the track");
   eq(fast.getStatus().phase,"idle","Synchronous save settles cleanly");
  }
+ // A duplicate MediaRecorder stop event must never write the sample twice.
+ {
+  let writes=0;
+  const rec={state:"recording",mimeType:"audio/webm",start(){},stop(){this.state="inactive";this.onstop();this.onstop();}};
+  const duplicate=create({getConsent:()=>true,
+   requestStream:async()=>({getTracks:()=>[{stop(){}}]}),recorderFactory:()=>rec,
+   save:async()=>{writes++;}});
+  eq(await duplicate.start(),true,"Start duplicate-event recorder");
+  rec.ondataavailable({data:new Blob([new Uint8Array(150)])});
+  eq(duplicate.stop(),true,"Stop duplicate-event recorder");
+  await tick();
+  eq(writes,1,"Duplicate stop never saves twice");
+  eq(duplicate.getStatus().phase,"idle","Duplicate stop finishes cleanly");
+ }
  console.log("Voice sample lifecycle:",checked,"assertions");
 })().catch(e=>{console.error(e);process.exitCode=1});
