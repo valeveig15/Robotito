@@ -271,4 +271,10 @@ ok(source.includes("!window.speechSynthesis?.getVoices"),
  "No available Web Speech engine must fail safely");
 ok(source.includes("window.speechSynthesis.onvoiceschanged=populateVoiceSelect"),
  "Voice enumeration refresh waits for available engine");
+for(const lang of langs)for(const key of ["asrListening","asrHeard","asrMicBlocked","asrMicHelp","asrRecoverMic","asrRecover","asrReconnect","asrStarting","asrNoCompatible","asrBrowserHelp"]){
+ const translated=i18n.t(key,lang);
+ ok(translated.length>4,"Missing "+lang+"/"+key);
+}
+for(const key of ["asrListening","asrHeard","asrMicBlocked","asrMicHelp","asrRecoverMic","asrRecover","asrReconnect","asrStarting","asrBrowserHelp"])
+ ok(source.includes('asrMessage("'+key+'")'),"Browser ASR status wiring "+key);
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
