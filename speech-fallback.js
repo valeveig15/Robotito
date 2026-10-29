@@ -55,7 +55,18 @@
   }
 
   function normalizeLang(lang){return ["es","en","pt","fr","it","de"].includes(lang)?lang:"es";}
-  function statusText(es,en,pt){return language==="en"?en:language==="pt"?pt:es;}
+  const EXTRA_STATUS={"Preparando escucha local…":{"fr":"Préparation de la reconnaissance locale…","it":"Preparazione del riconoscimento locale…","de":"Lokale Spracherkennung wird vorbereitet…"},"No pude cargar el reconocimiento local":{"fr":"Impossible de charger la reconnaissance locale","it":"Impossibile caricare il riconoscimento locale","de":"Lokale Spracherkennung konnte nicht geladen werden"},"Entendiendo…":{"fr":"Compréhension en cours…","it":"Elaborazione in corso…","de":"Wird verstanden…"},"escuchando":{"fr":"écoute en cours","it":"ascolto in corso","de":"hört zu"},"Escuchando — reintentando":{"fr":"Écoute — nouvelle tentative","it":"Ascolto — nuovo tentativo","de":"Zuhören — neuer Versuch"},"Preparando escucha continua…":{"fr":"Préparation de l’écoute continue…","it":"Preparazione dell’ascolto continuo…","de":"Kontinuierliches Zuhören wird vorbereitet…"},"pausado":{"fr":"en pause","it":"in pausa","de":"pausiert"}};
+  function statusText(es,en,pt){
+    if(language==="en")return en;
+    if(language==="pt")return pt;
+    if(language==="es")return es;
+    const progress=String(es).match(/^Preparando escucha… ([0-9]+)%$/);
+    if(progress){
+      const prefix={fr:"Préparation de l’écoute… ",it:"Preparazione dell’ascolto… ",de:"Zuhören wird vorbereitet… "}[language];
+      return prefix?prefix+progress[1]+"%":es;
+    }
+    return EXTRA_STATUS[es]?.[language]||es;
+  }
 
   function prime(lang="es",statusCb){
     language=normalizeLang(lang);
@@ -258,5 +269,8 @@
     streamRef=null;
   }
 
-  window.RobotitoLocalASR={prime,start,pause,setLanguage,stop,get active(){return active;}};
+  window.RobotitoLocalASR={prime,start,pause,setLanguage,stop,
+ statusPreview:(lang,es,en,pt)=>{const old=language;language=normalizeLang(lang);
+  try{return statusText(es,en,pt);}finally{language=old;}},
+ get active(){return active;}};
 })();
