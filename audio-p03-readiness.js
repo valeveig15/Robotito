@@ -64,21 +64,23 @@ function auditedCounts({clips,sessions,groupAudit},fieldReports=[]){
   (x.deviceClass||"unspecified")===d).length]));
  const perKind={};
  for(const kind of HUMAN){
-  const positives=sessions.flatMap(x=>x.annotations.filter(a=>a.kind===kind)
+  const positives=completeSessions.flatMap(x=>x.annotations.filter(a=>a.kind===kind)
    .map(a=>({split:x.evaluationSplit||"unspecified",group:x.sourceGroup,device:x.deviceClass})));
   const positiveClips=clips.filter(x=>x.label===kind);
-  const presentGroupKeys=new Set([...sessions.filter(x=>x.annotations.some(a=>a.kind===kind)),
+  const presentGroupKeys=new Set([...completeSessions.filter(x=>x.annotations.some(a=>a.kind===kind)),
    ...positiveClips].map(x=>x.sourceGroup).filter(Boolean));
   const negativeSessions=completeSessions.filter(x=>!x.annotations.some(a=>a.kind===kind));
   const pureNegativeGroups=new Set(negativeSessions.map(x=>x.sourceGroup)
    .filter(g=>g&&!presentGroupKeys.has(g)));
   const positiveSourceGroupsBySplit=Object.fromEntries(SPLITS.map(split=>[split,
-   new Set([...sessions.filter(x=>(x.evaluationSplit||"unspecified")===split&&
+   new Set([...completeSessions.filter(x=>(x.evaluationSplit||"unspecified")===split&&
       x.annotations.some(a=>a.kind===kind)),
     ...positiveClips.filter(x=>(x.evaluationSplit||"unspecified")===split)]
     .map(x=>x.sourceGroup).filter(Boolean)).size]));
   perKind[kind]={
    annotatedEvents:positives.length,
+   draftAnnotatedEvents:sessions.filter(x=>x.annotationReview!=="complete")
+    .reduce((n,x)=>n+x.annotations.filter(a=>a.kind===kind).length,0),
    positiveClips:positiveClips.length,
    reviewedNegativeSessions:negativeSessions.length,
    declaredDistinctPositiveSourceGroups:presentGroupKeys.size,
