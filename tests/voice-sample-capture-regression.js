@@ -34,5 +34,19 @@ function fixture({deferPermission=false,deferSave=false}={}){
  t.finish();await tick();eq(t.deleted(),1,"Late save removed");eq(t.c.getStatus().phase,"idle");
  t=fixture();t.set(true);await t.c.start();t.recorders[0].emit();await t.c.removeSample();await tick();
  eq(t.saved(),0);eq(t.deleted(),1);t.c.dispose();eq(await t.c.start(),false);
+ // Capture engines can throw synchronously when start() is blocked by the browser.
+ {
+  let calls=0,stops=0;
+  const recorder={state:"inactive",start(){throw Error("Recorder unavailable");},stop(){}};
+  const failing=create({getConsent:()=>true,
+   requestStream:async()=>({getTracks:()=>[{stop(){stops++;}}]}),
+   recorderFactory:()=>{calls++;return recorder;}});
+  eq(await failing.start(),false,"A rejected recorder start fails safely");
+  eq(stops,1,"Recorder startup failure releases microphone track");
+  eq(failing.getStatus().phase,"idle","Recorder startup failure resets phase");
+  eq(await failing.start(),false,"Recorder can be retried after failure");
+  eq(calls,2,"Retry creates a new recorder");
+  eq(stops,2,"Retry failure also releases microphone");
+ }
  console.log("Voice sample lifecycle:",checked,"assertions");
 })().catch(e=>{console.error(e);process.exitCode=1});
