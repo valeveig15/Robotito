@@ -42,6 +42,10 @@ eq(state.languageMode,"it","Persistent language remains in effect");
 eq(methods.handleLanguageCommand("Sprich Deutsch nur dieses Mal"),true,"German one-turn setting");
 eq(state.languageMode,"it","German one-turn does not change persistent language");
 eq(state.nextResponseLanguage,"de","German one-turn applies only to next response");
+methods.setLanguageMode("pt"); // Simulates manually choosing Portuguese.
+eq(state.nextResponseLanguage,null,"Manual selector clears previous one-turn language");
+eq(state.languageMode,"pt","Manual selector changes current language");
+eq(env.get("robotito.languageMode.v1"),"pt","Manual selection persists the chosen language");
 assert.ok(source.includes("if(state.nextResponseLanguage&&!spokenLang)state.nextResponseLanguage=null;"));
 checks++;
 console.log("Robotito P04 persistent/session/one-turn scope:",checks,"checks");
