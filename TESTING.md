@@ -219,3 +219,10 @@ Predictions are synchronous and numerical in [0, 1]. A worker-based async classi
 A model-confirmed event must sustain its score and beat competing class probabilities by a margin. A latch groups continuously high predictions, plus per-kind cooldowns, so a long sneeze label cannot repeatedly trigger “¡Salud!”. Reactions are suppressed during Robotito's own synthesized speech, Modo Clase, sleep and hidden tabs. Acoustic applause requires at least five temporally grouped broadband transients; the feature-only detector cannot reliably distinguish every clap from every manufactured impact.
 
 Tests: `tests/audio-event-regression.js` runs deterministic synthetic voice/music/noise/impact/clap sequences; calibrated **fake model** predictions exercise the event gates, cooldown, latching and suppression. Browser tests verify modules loaded, no reactions without model proof and 48 localized sound labels. These are **synthetic and simulated tests**, not a measured real-world detection accuracy. Diverse recordings, real microphones and field calibration remain mandatory before claiming reliable detection of all requested classes.
+
+
+## Punto 4 — inicio y coherencia de las voces (2026-10-29)
+
+La selección inicial admite los seis idiomas `es/en/pt/fr/it/de` y ya no bloquea francés, italiano ni alemán. La lista de voces solo presenta voces instaladas que coinciden con el idioma activo. Si el navegador informa voces pero ninguna coincide, Robotito muestra su respuesta por escrito y no selecciona otra lengua para pronunciarla. Si el navegador todavía no enumeró voces, continúa usando el locale de Web Speech sin afirmar la disponibilidad de una voz concreta.
+
+`npm run test:p04` cubre selección de voz por idioma, preferencias de voz, parámetros finitos de síntesis, disponibilidad de idiomas al iniciar, rótulos localizados y conservación de «Chocar los cinco». Se incluye en `npm test`. **Las 10 voces son estilos de tono/velocidad sobre voces del sistema, no actores de voz distintos ni clonación.** La completitud de traducción dinámica, pruebas reales de síntesis/ASR y disponibilidad de voces de cada sistema operativo siguen pendientes.
