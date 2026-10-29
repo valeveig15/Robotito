@@ -1561,6 +1561,14 @@ function processSpeechResult(text,speechMeta=null){
     :recentVoicePrint();
   const voiceMatch=recognizeVoicePerson(print,state.currentPerson);
   state.currentVoicePerson=voiceMatch?.name||null;
+  if(!voiceMatch){
+    // Seeing one face does not prove that this person uttered the phrase.
+    // An off-camera speaker or an unclear voice must not inherit that face's
+    // private memories, birthday or reply context.
+    state.currentPerson=null;
+    state.faceMatchHistory=[];
+    state.lastFaceConfirmedAt=0;
+  }
   autoRemember(text);
   // During a class, classroom speech is material to learn — never a command for Robotito.
   if(state.classMode){
@@ -4161,8 +4169,13 @@ async function detectLoop(){
 function buildMatcher(){
   const labeled=[];
   for(const p of state.people){
-    if(Array.isArray(p.descriptors)&&p.descriptors.length){
-      labeled.push(new faceapi.LabeledFaceDescriptors(p.name,p.descriptors.map(d=>new Float32Array(d))));
+    // A legacy single-image profile cannot authorize access to another
+    // person's memories. Enforce multiple finite, full-length face samples.
+    const samples=Array.isArray(p.descriptors)?p.descriptors.filter(
+      d=>d&&d.length===128&&Array.from(d).every(Number.isFinite)):[];
+    if(samples.length>=3&&typeof p.name==="string"&&p.name.trim()){
+      labeled.push(new faceapi.LabeledFaceDescriptors(p.name,
+        samples.map(d=>new Float32Array(d))));
     }
   }
   state.faceMatcher=labeled.length?new faceapi.FaceMatcher(labeled,.50):null;
