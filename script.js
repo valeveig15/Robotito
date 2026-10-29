@@ -275,9 +275,17 @@ function voiceMatchesLanguage(voice,targetLang=responseLanguage()){
 function populateVoiceSelect(){
   const select=$("#voiceSelect");
   if(!select||!window.speechSynthesis?.getVoices)return;
-  const target=responseLanguage();
+  // A one-answer language override does not replace the user's UI voice.
+  const target=state.languageMode||responseLanguage();
   const voices=speechSynthesis.getVoices().filter(v=>voiceMatchesLanguage(v,target));
-  const previous=state.voiceURI;
+  const preferred=window.ROBOTITO_VOICE_SYSTEM?.preferredVoiceForLanguage?.(
+    key=>localStorage.getItem(key),target);
+  const previous=preferred||state.voiceURI;
+  const availability=$("#voiceAvailability");
+  if(availability)availability.textContent=voices.length
+    ?window.ROBOTITO_I18N?.t?.("voiceBrowserCount",target)
+      ?.replace("{count}",String(voices.length))||String(voices.length)+" browser voices"
+    :window.ROBOTITO_I18N?.t?.("voiceUnavailable",target)||"No compatible voice";
   if(!voices.length){
     const label=window.ROBOTITO_I18N?.t?.("voiceUnavailable",target)||"No compatible voice";
     select.innerHTML='<option value="">'+escapeHtml(label)+'</option>';
@@ -286,7 +294,11 @@ function populateVoiceSelect(){
     return;
   }
   select.disabled=false;
-  select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
+  const localLabel=window.ROBOTITO_I18N?.t?.("voiceBrowserLocal",target)||"local";
+  const remoteLabel=window.ROBOTITO_I18N?.t?.("voiceBrowserRemote",target)||"non-local";
+  select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'
+    +escapeHtml(v.name+" — "+v.lang+(v.localService===true?" · "+localLabel:
+      v.localService===false?" · "+remoteLabel:""))+'</option>').join("");
   const chosen=voices.find(v=>v.voiceURI===previous)||chooseDefaultVoice(voices,target);
   if(chosen){
     state.voiceURI=chosen.voiceURI;
@@ -5427,6 +5439,12 @@ function bindUI(){
   $("#voiceSelect")?.addEventListener("change",e=>{
     state.voiceURI=e.target.value;
     localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
+    // Explicit choices survive language switches without forcing a voice from
+    // another language. Auto-selected fallbacks are never saved as preferences.
+    window.ROBOTITO_VOICE_SYSTEM?.savePreferredVoice?.(
+      key=>localStorage.getItem(key),
+      (key,value)=>localStorage.setItem(key,value),
+      state.languageMode||"es",state.voiceURI);
   });
   $("#voicePitch")?.addEventListener("input",e=>{
     state.voicePitch=Number(e.target.value);

@@ -15,6 +15,46 @@ const STYLES={
 };
 const LABELS={natural:"Natural",deep:"Grave",high:"Aguda",cute:"Tierna",energetic:"Energética",funny:"Graciosa",robotic:"Robótica",strange:"Extraña",calm:"Calmada",narrator:"Narradora"};
 const SAMPLE_ID="voice-profile-local", BLOB_ID="voice-sample-local";
+const VOICE_PREF_KEY="robotito.voiceURIsByLang.v1";
+const LANGUAGE_CODES=["es","en","pt","fr","it","de"];
+function voiceLanguage(language){
+ const code=String(language||"").toLowerCase().split(/[-_]/)[0];
+ return LANGUAGE_CODES.includes(code)?code:null;
+}
+// Persist actual browser voice identifiers *separately* from the ten synthetic
+// tone/rate profiles. Never treat an unavailable URI as an installed voice.
+function readVoicePreferences(read){
+ let raw;
+ try{raw=read(VOICE_PREF_KEY);}catch{return {};}
+ if(typeof raw!=="string"||raw.length>12000)return {};
+ try{
+  const decoded=JSON.parse(raw);
+  if(!decoded||typeof decoded!=="object"||Array.isArray(decoded))return {};
+  const safe=Object.create(null);
+  for(const code of LANGUAGE_CODES){
+   const value=Object.prototype.hasOwnProperty.call(decoded,code)?decoded[code]:null;
+   if(typeof value==="string"&&value.length>0&&value.length<=512)safe[code]=value;
+  }
+  return safe;
+ }catch{return {};}
+}
+function preferredVoiceForLanguage(read,language){
+ const code=voiceLanguage(language);
+ return code?readVoicePreferences(read)[code]||null:null;
+}
+function savePreferredVoice(read,write,language,uri){
+ const code=voiceLanguage(language);
+ if(!code||typeof uri!=="string"||!uri||uri.length>512)return false;
+ const prefs=readVoicePreferences(read);
+ prefs[code]=uri;
+ try{write(VOICE_PREF_KEY,JSON.stringify(prefs));return true;}catch{return false;}
+}
+function compatibleVoiceCatalog(voices,language){
+ const code=voiceLanguage(language);
+ if(!code)return [];
+ return Array.from(voices||[]).filter(v=>v&&typeof v.lang==="string"&&
+  v.lang.toLowerCase().split(/[-_]/)[0]===code&&typeof v.voiceURI==="string");
+}
 function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
 function settings(style,basePitch=1,baseRate=1){
  const s=STYLES[style]||STYLES.natural;
@@ -25,8 +65,7 @@ function settings(style,basePitch=1,baseRate=1){
 function selectVoice(voices,language,preferredURI){
  // Do not pronounce one language using an unrelated system voice.
  const requested=String(language||"es").toLowerCase().split(/[-_]/)[0];
- const pool=Array.from(voices||[]).filter(v=>v&&typeof v.lang==="string"&&
-  v.lang.toLowerCase().split(/[-_]/)[0]===requested);
+ const pool=compatibleVoiceCatalog(voices,requested);
  const requestedLocale=String(language||"es").toLowerCase().replace(/_/g,"-");
  return pool.find(v=>v.voiceURI===preferredURI)
   ||pool.find(v=>v.lang.toLowerCase().replace(/_/g,"-")===requestedLocale&&/natural|neural/i.test(v.name||""))
@@ -66,6 +105,7 @@ function syntheticNotice(language="es"){
  return root.ROBOTITO_I18N?.t("synthesised",language)||"Voz sintetizada, no clonación.";
 }
 root.ROBOTITO_VOICE_SYSTEM={styles:STYLES,labels:LABELS,settings,selectVoice,configureUtterance,
+ compatibleVoiceCatalog,readVoicePreferences,preferredVoiceForLanguage,savePreferredVoice,
  saveProfileFromRecording,deleteProfile,syntheticNotice};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_VOICE_SYSTEM;
 })(typeof window!=="undefined"?window:globalThis);
