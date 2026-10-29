@@ -575,7 +575,7 @@ function commitSpeechMessage(text,ms,lang,token){
   const replyOwner=state.currentVoicePerson||state.currentPerson||"local";
   robotitoReplyByOwner.set(replyOwner,{text,language:lang||state.languageMode||"es"});
   if(robotitoReplyByOwner.size>24)robotitoReplyByOwner.delete(robotitoReplyByOwner.keys().next().value);
-  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:state.currentPerson||"local",
+  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:replyOwner,
     source:"assistant",timestamp:Date.now(),language:lang||state.languageMode||"es",
     data:{role:"assistant",text}}).catch(e=>console.warn("reply memory",e));
   const b=$("#speechBubble");
@@ -1702,7 +1702,7 @@ function autoRemember(text){
   const savedAt=Date.now();
   state.memories.push({person,text:clean,at:savedAt,source:"auto"});
   save(KEYS.memories,state.memories);
-  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
+  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentVoicePerson||state.currentPerson||"local",
     source:"speech",timestamp:savedAt,language:state.languageMode||"es",data:{person,text:clean,source:"auto"}})
     .catch(e=>console.warn("typed memory",e));
   renderMemories();
