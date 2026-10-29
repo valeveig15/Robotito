@@ -34,7 +34,8 @@ function selectVoice(voices,language,preferredURI){
 function configureUtterance(utter,{style="natural",language="es",voices=[],voiceURI,basePitch=1,baseRate=1}={}){
  const p=settings(style,basePitch,baseRate);
  const voice=selectVoice(voices,language,voiceURI);
- utter.lang=voice?.lang||({es:"es-UY",en:"en-US",pt:"pt-BR",fr:"fr-FR",it:"it-IT",de:"de-DE"}[language]||"es-UY");
+ const base=String(language||"es").toLowerCase().split(/[-_]/)[0];
+ utter.lang=voice?.lang||({es:"es-UY",en:"en-US",pt:"pt-BR",fr:"fr-FR",it:"it-IT",de:"de-DE"}[base]||"es-UY");
  if(voice)utter.voice=voice;
  utter.pitch=p.pitch;utter.rate=p.rate;utter.volume=p.volume;
  return utter;
