@@ -51,8 +51,12 @@ async function saveProfileFromRecording(blob,{owner="local",subject="self",expli
 }
 async function deleteProfile(){
  const db=root.ROBOTITO_STORE;
- if(!db?.deleteRecord)throw new Error("Storage not available");
- return db.deleteRecord(SAMPLE_ID);
+ if(!db?.deleteRecord||!db?.deleteBlob)throw new Error("Storage not available");
+ await db.deleteRecord(SAMPLE_ID);
+ // Earlier versions could leave an orphan if saving the metadata failed.
+ // Remove the known sample blob even when no profile record exists.
+ await db.deleteBlob(BLOB_ID);
+ return true;
 }
 function syntheticNotice(language="es"){
  return root.ROBOTITO_I18N?.t("synthesised",language)||"Voz sintetizada, no clonación.";
