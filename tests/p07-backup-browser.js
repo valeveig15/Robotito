@@ -80,6 +80,8 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   });
   assert.equal(result.restored,true);
   // The UI does not let an import begin without first preparing a backup.
+  // This regression tests P07, not the separately tested onboarding gate.
+  await page.evaluate(()=>{document.getElementById("languageGate").style.display="none";});
   await page.locator('[data-tab="memory"]').click();
   await page.locator("details.memory-backup summary").click();
   assert.equal(await page.locator("#chooseMemoryBackup").isDisabled(),true);
