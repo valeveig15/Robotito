@@ -35,6 +35,16 @@ const alt=[{lang:"pt-PT",voiceURI:"pt-1",name:"Plain"},
  {lang:"pt-BR",voiceURI:"pt-2",name:"Neural Voice"}];
 eq(voice.selectVoice(alt,"pt","pt-1")?.voiceURI,"pt-1","Preserve matching user preference");
 eq(voice.selectVoice(alt,"pt","local-es")?.voiceURI,"pt-2","Prefer natural compatible voice");
+const regionalVoices=[{lang:"fr-FR",voiceURI:"fr-natural",name:"Neural France"},
+ {lang:"fr-CA",voiceURI:"fr-canada",name:"Canada"},
+ {lang:"fr-CA",voiceURI:"fr-canada-natural",name:"Neural Canada"}];
+eq(voice.selectVoice(regionalVoices,"fr-CA")?.voiceURI,"fr-canada-natural",
+ "Prefer neural voice in matching regional locale");
+eq(voice.selectVoice(regionalVoices,"fr-CA","fr-canada")?.voiceURI,"fr-canada",
+ "User preferred voice wins over automatic regional selection");
+eq(voice.selectVoice(regionalVoices,"fr-BE")?.voiceURI,"fr-natural",
+ "Fallback keeps same base language when exact region unavailable");
+
 for(const style of Object.keys(voice.styles)){
  const values=voice.settings(style,NaN,Infinity);
  ok(Number.isFinite(values.pitch)&&Number.isFinite(values.rate),
