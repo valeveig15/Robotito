@@ -3,7 +3,7 @@
 (function(root){
 "use strict";
 const choices=[
- {type:"conversations",terms:/\b(?:que dije|que dijiste|que hablamos|que conversamos|lo que dijimos|what did i say|what did we talk|said yesterday|conversacion|conversation|falamos|falei)\b/i},
+ {type:"conversations",terms:/\b(?:que dije|que dijiste|que hablamos|que conversamos|lo que dijimos|que hablamos la ultima vez|what did i say|what did we talk|what we discussed yesterday|what we talked about yesterday|said yesterday|conversacion|conversation|falamos|falei)\b/i},
  {type:"recommendations",terms:/\b(?:libro|libros|book|books|livro|livros|livre|buch)\b/i},
  {type:"tasks",terms:/\b(?:tarea|tareas|task|tasks|tarefa|deberes|devoirs|compiti|aufgaben)\b/i},
  {type:"classes",terms:/\b(?:clase|class|lecture|aula|cours|lezione|unterricht)\b/i},
@@ -14,7 +14,7 @@ const choices=[
 function fold(s){return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 function intent(raw){
  const q=fold(raw);
- const retrieve=/\b(?:record(?:ame|as|a)|acord(?:as|ate)|me recomendaste|recomendaste|recomendou|remember|remind|show me|mostrame|muestrame|busca|buscar|recall|what did|que dije|que te dije|ultima vez|last time)\b/.test(q);
+ const retrieve=/\b(?:record(?:ame|as|a)|acord(?:as|ate)|me recomendaste|recomendaste|recomendou|remember|remind|show me|mostrame|muestrame|busca|buscar|recall|what did|que dije|que te dije|ultima vez|last time|lo de ayer|lo de anteayer|lo de la semana pasada|what we discussed yesterday|what we talked about yesterday|o de ontem|o de anteontem|ce qu.on a dit hier|quello di ieri|das von gestern)\b/.test(q);
  if(!retrieve||/\b(?:que significa|significado|definime|definition of)\b/.test(q))return null;
  const type=choices.find(choice=>choice.terms.test(q))?.type||"memories";
  return {type,search:q};
