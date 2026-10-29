@@ -8,11 +8,11 @@ const counts=keys=>Object.fromEntries(keys.map(k=>[k,0]));
 function create({clock=()=>typeof performance!=="undefined"?performance.now():Date.now()}={}){
  let active=false,from=0,lastDance=false,summary=null;
  let detected=counts(EVENT_KINDS),applied=counts(ACTIONS),
-  preventedByContext=0,rejectedByPolicy=0,danceStarts=0,danceStops=0;
+  preventedByContext=0,notAppliedAfterDetection=0,danceStarts=0,danceStops=0;
  function clear(){
   active=false;summary=null;lastDance=false;from=0;
   detected=counts(EVENT_KINDS);applied=counts(ACTIONS);
-  preventedByContext=0;rejectedByPolicy=0;danceStarts=0;danceStops=0;
+  preventedByContext=0;notAppliedAfterDetection=0;danceStarts=0;danceStops=0;
  }
  function start(){
   if(active)return false;
@@ -25,7 +25,7 @@ function create({clock=()=>typeof performance!=="undefined"?performance.now():Da
   detected[kind]++;
   if(suppressed)preventedByContext++;
   else if(ACTIONS.includes(action))applied[action]++;
-  else rejectedByPolicy++;
+  else notAppliedAfterDetection++;
   return true;
  }
  function observeDance(actualDancing){
@@ -44,7 +44,7 @@ function create({clock=()=>typeof performance!=="undefined"?performance.now():Da
     Math.round((now-from)/100)/10:null,
    detectedEventsByKind:{...detected},
    avatarActionsByType:{...applied},
-   preventedByContext,rejectedByPolicy,danceStarts,danceStops,
+   preventedByContext,notAppliedAfterDetection,danceStarts,danceStops,
    noAudioRecordedByThisTool:true,noAudioExportedByThisTool:true,
    independentModelCalibrationVerified:false,
    physicalMicrophoneIndependentlyVerified:false,
