@@ -119,4 +119,10 @@ for(const code of langs){
  ok(source.includes('de:"danke"')&&source.includes('fr:"merci"')&&source.includes('it:"grazie"'),
   "Six-language local short-phrase dictionary present for "+code);
 }
+for(const key of ["voiceSampleRequesting","voiceSampleRecording","voiceSampleSaving","voiceSampleSaved","voiceSampleDiscarded","voiceSampleDeleted","voiceSampleError","voiceSampleNeedsName","voiceSampleNeedsConsent"]){
+ for(const lang of langs)ok(i18n.t(key,lang).length>8,"Voice sample message "+key+"/"+lang);
+}
+ok(source.includes("ROBOTITO_VOICE_SAMPLE_CAPTURE"),"Private capture controller integrated");
+ok(html.includes("voice-sample-capture.js"),"Private capture loaded before UI script");
+ok(source.includes("voiceSamples?.cancel()"),"Consent and navigation can cancel recording");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
