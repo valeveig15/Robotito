@@ -68,11 +68,11 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
   lastFaceConfirmedAt:0,faceMatchHistory:[],people:[
    {name:"Ada",lastGreetingAt:0},{name:"Bruno",lastGreetingAt:0}]};
  const recognize=new Function("state","Date","save","KEYS","say","greetingFor",
-  "temporaryRobotClass","bondCategory","animateAffection","checkBirthday",
+  "temporaryRobotClass","bondCategory","animateAffection","checkBirthday","competingFaceTooClose",
   source.slice(recognizeStart,recognizeEnd)+"\nreturn recognize;")(
    faceState,{now:()=>time},()=>{calls.save++;},{people:"people"},
    ()=>{calls.greet++;},p=>p.name,()=>{},()=>"",()=>{calls.affection++;},
-   ()=>{calls.birthday++;});
+   ()=>{calls.birthday++;},()=>false);
  recognize({descriptor:new Float32Array([.5])});
  eq(faceState.currentPerson,null,"One matching frame does not grant identity");
  match={label:"Ada",distance:.41};recognize({descriptor:new Float32Array([.5])});
