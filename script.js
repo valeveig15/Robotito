@@ -2616,7 +2616,7 @@ function answerEasyQuestion(rawText){
     [["dia","fecha"],["que","cual","hoy"]]
   )){
     const d=new Date();
-    say(d.toLocaleDateString("es-UY",{weekday:"long",day:"numeric",month:"long",year:"numeric"}));
+    sayInLanguage(d.toLocaleDateString(languageLocale(responseLanguage()),{weekday:"long",day:"numeric",month:"long",year:"numeric"}),responseLanguage());
     return true;
   }
 
@@ -2625,7 +2625,7 @@ function answerEasyQuestion(rawText){
     [["hora"],["que","tenes","tienes","decime","dime","decis","dices"]]
   )){
     const d=new Date();
-    say(`Son las ${d.toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"})}.`);
+    sayDynamic("timeNow",{time:d.toLocaleTimeString(languageLocale(responseLanguage()),{hour:"2-digit",minute:"2-digit"})});
     return true;
   }
 
@@ -2636,7 +2636,7 @@ function answerEasyQuestion(rawText){
     const person=known||"persona no reconocida";
     const mine=state.memories.filter(m=>m.person===person).slice(-5);
     if(!mine.length)say("Todavía no tengo recuerdos claros tuyos.");
-    else say(`Lo último que recuerdo es: “${mine[mine.length-1].text}”`);
+    else sayDynamic("rememberLast",{memory:mine[mine.length-1].text});
     return true;
   }
 
@@ -2760,7 +2760,7 @@ function answerEasyQuestion(rawText){
     [["cumplo","cumpleanos","cumple"],["cuando","sabes"]]
   )){
     const p=state.people.find(x=>x.name===known);
-    if(p?.birthday)say(`Tu cumpleaños es el ${formatBirthday(p.birthday)}.`);
+    if(p?.birthday)sayDynamic("yourBirthday",{date:formatBirthday(p.birthday)});
     else say("No tengo tu cumpleaños registrado.");
     return true;
   }
@@ -2795,7 +2795,7 @@ function answerEasyQuestion(rawText){
     ["que estas haciendo","que haces ahora","que haces","en que andas","que estas haciendo ahora"],
     [["que"],["haces","haciendo","andas"]]
   )){
-    if(state.classMode)say(`Estoy escuchando y aprendiendo la clase de ${state.classSubject||"esta materia"}.`);
+    if(state.classMode)sayDynamic("classLearning",{subject:state.classSubject||"esta materia"});
     else if(state.nightSleep||state.sleeping)say("Estoy durmiendo.");
     else if(robot.classList.contains("dancing"))say("Estoy bailando porque detecté música.");
     else if(state.hunger>=75)say("Estoy acá, pero bastante pendiente de que tengo hambre.");
@@ -2807,7 +2807,7 @@ function answerEasyQuestion(rawText){
     ["que materia es","que materia estamos viendo","que clase estas escuchando","que clase es","que estas estudiando"],
     [["materia","clase","estudiando"],["que"]]
   )){
-    if(state.classMode)say(`Estoy escuchando ${state.classSubject||"una clase sin nombre"}.`);
+    if(state.classMode)sayDynamic("classListening",{subject:state.classSubject||"una clase sin nombre"});
     else {
       const last=[...state.classLines].sort((a,b)=>b.at-a.at)[0];
       say(last?`La última materia que tengo registrada es ${last.subject||"una clase sin nombre"}.`:"Todavía no escuché ninguna clase.");
@@ -2862,7 +2862,7 @@ function answerEasyQuestion(rawText){
     [["cumple","cumpleanos"],["cuando","sabes"]]
   )){
     const target=state.people.find(p=>text.includes(normalizeText(p.name)));
-    if(target?.birthday)say(`${target.name} cumple el ${formatBirthday(target.birthday)}.`);
+    if(target?.birthday)sayDynamic("personBirthday",{person:target.name,date:formatBirthday(target.birthday)});
     else say("No encontré ese cumpleaños entre las personas registradas.");
     return true;
   }
@@ -5280,7 +5280,7 @@ function clockTick(){
   const d=new Date();
   applyDayNightMode(d);
   const lang=responseLanguage();
-  const locale=lang==="en"?"en-US":lang==="pt"?"pt-BR":"es-UY";
+  const locale=languageLocale(lang);
   $("#clock").textContent=d.toLocaleTimeString(locale,{hour:"2-digit",minute:"2-digit"});
   $("#dateInfo").textContent=d.toLocaleDateString(locale,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
 }
