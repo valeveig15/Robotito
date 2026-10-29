@@ -166,6 +166,7 @@ const state = {
   lastTaskReminderAt: 0,
   lastSaid: "",
   speechBubbleToken: 0,
+  pendingSpeechLocalization: false,
   people: load(KEYS.people, []),
   memories: load(KEYS.memories, []),
   library: load(KEYS.goodreads, []),
@@ -568,6 +569,7 @@ async function localizeGeneratedSpeech(text,target=responseLanguage()){
 }
 function commitSpeechMessage(text,ms,lang,token){
   if(token!==state.speechBubbleToken)return;
+  state.pendingSpeechLocalization=false;
   state.lastSaid=text;
   // Local ephemeral reply state is scoped to the active conversational owner.
   const replyOwner=state.currentVoicePerson||state.currentPerson||"local";
@@ -593,6 +595,7 @@ function say(text, ms=3000, spokenLang=null){
   const token=++state.speechBubbleToken;
 
   if(speechNeedsLocalization(text,target,spokenLang)){
+    state.pendingSpeechLocalization=true;
     b.textContent=window.ROBOTITO_I18N?.t?.("prepareLocalized",target)||"Preparando la respuesta…";
     b.classList.remove("hidden");
     void localizeGeneratedSpeech(text,target).then(localized=>{
@@ -601,6 +604,7 @@ function say(text, ms=3000, spokenLang=null){
     return;
   }
 
+  state.pendingSpeechLocalization=false;
   commitSpeechMessage(String(text||""),ms,target,token);
 }
 function sayInLanguage(text,lang,ms=3500){
@@ -2088,6 +2092,13 @@ function finishStartupAvatar(id){
 
 function setLanguageMode(mode){
   if(!window.ROBOTITO_I18N?.supported?.(mode))return;
+  // A new language invalidates a pending translation of the previous locale.
+  // Its eventual promise completion must not revive the old speech bubble.
+  if(mode!==state.languageMode&&state.pendingSpeechLocalization){
+    ++state.speechBubbleToken;
+    state.pendingSpeechLocalization=false;
+    $("#speechBubble")?.classList.add("hidden");
+  }
   // A direct selector change also supersedes any queued one-reply language.
   state.nextResponseLanguage=null;
   state.languageMode=mode;
