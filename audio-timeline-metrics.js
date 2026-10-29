@@ -6,6 +6,7 @@ const {normalizeDeviceClass}=require("./audio-device-metadata.js");
 const {normalizeSourceGroup,normalizeEvaluationSplit,sourceAudit}=require("./audio-source-groups.js");
 const {assertNoMaskedEvents}=require("./audio-annotation-integrity.js");
 const {requireCompleteAnnotationReview}=require("./audio-annotation-review.js");
+const {ROWS,COLUMNS,blankMatrix,eventConfusion,summarizeLatency}=require("./audio-event-confusion.js");
 const COOLDOWN={clap:1.9,laugh:8,cry:18,cough:9.5,sneeze:5.2};
 const finite=n=>Number.isFinite(n)&&n>=0;
 const seconds=spans=>spans.reduce((sum,[a,b])=>sum+b-a,0);
@@ -78,7 +79,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
  if(!finite(hopSeconds)||hopSeconds<=0||hopSeconds>5||
     !finite(matchToleranceSeconds)||matchToleranceSeconds>5)
   throw Error("Invalid acoustic timeline cadence");
- const ids=new Set(),results=[];
+ const ids=new Set(),results=[],latencyBySession=new Map();
  for(const session of sessions){
   if(!session||typeof session.id!=="string"||!session.id.trim()||ids.has(session.id))
    throw Error("Each continuous session requires a unique ID");
@@ -152,7 +153,7 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
    }
    lastTime=t;
   }
-  const metrics={};
+  const metrics={},evaluableGroundTruth=[],correctMatches=[];
   for(const kind of HUMAN){
    const labels=truth.filter(x=>x.kind===kind);
    // Two temporally consecutive, genuinely analysed windows must intersect
@@ -172,13 +173,17 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
     });
    };
    const eligibleLabels=labels.filter(x=>hasEvidenceCoverage(x.interval));
+   evaluableGroundTruth.push(...eligibleLabels);
    const matched=new Set();
    let tp=0,fp=0;
    for(const alert of alerts.filter(x=>x.kind===kind)){
     const hit=eligibleLabels.findIndex((x,i)=>!matched.has(i)&&
      alert.atSeconds>=x.interval[0]-matchToleranceSeconds&&
      alert.atSeconds<=x.interval[1]+matchToleranceSeconds);
-    if(hit<0)fp++;else{matched.add(hit);tp++;}
+    if(hit<0)fp++;else{
+     matched.add(hit);tp++;
+     correctMatches.push({event:eligibleLabels[hit],alert});
+    }
    }
    const negativeSeconds=seconds(subtract(active,union(labels.map(x=>x.interval))));
    metrics[kind]={tp,fp,fn:eligibleLabels.length-tp,annotatedEvents:labels.length,
@@ -186,21 +191,29 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
     unevaluableEvents:labels.length-eligibleLabels.length,negativeSeconds,
     ...rateMetrics(fp,negativeSeconds)};
   }
+  const diagnostic=eventConfusion(evaluableGroundTruth,alerts,correctMatches,matchToleranceSeconds);
+  latencyBySession.set(session.id,diagnostic.latencies);
   results.push({id:session.id,environment:session.environment,deviceClass,evaluationSplit,
    annotationReview:"complete",
    durationSeconds:session.durationSeconds,observedSeconds,
    missingOrSuppressedSeconds:Math.max(0,session.durationSeconds-observedSeconds),
    classifiedFrames:scored.length,
-   skippedFrames:session.frames.length-scored.length,alerts,metrics});
+   skippedFrames:session.frames.length-scored.length,alerts,metrics,
+   eventConfusion:diagnostic.matrix,
+   referenceDetectorLatencySeconds:Object.fromEntries(HUMAN.map(kind=>
+    [kind,summarizeLatency(diagnostic.latencies[kind])]))});
  }
  const aggregate=items=>{
-  const summary={sessionCount:items.length,observedSeconds:0,metrics:{}};
+  const summary={sessionCount:items.length,observedSeconds:0,metrics:{},
+   eventConfusion:blankMatrix(),referenceDetectorLatencySeconds:{}};
   for(const kind of HUMAN)summary.metrics[kind]={
    tp:0,fp:0,fn:0,annotatedEvents:0,evaluableEvents:0,unevaluableEvents:0,
    negativeSeconds:0,negativeHours:0,
    falseAlertsPerNegativeHour:null,falseAlertsPerNegativeHourUpper95:null};
   for(const item of items){
    summary.observedSeconds+=item.observedSeconds;
+   for(const row of ROWS)for(const col of COLUMNS)
+    summary.eventConfusion[row][col]+=item.eventConfusion[row][col];
    for(const kind of HUMAN){
     const dest=summary.metrics[kind],src=item.metrics[kind];
     for(const field of ["tp","fp","fn","annotatedEvents","evaluableEvents",
@@ -210,6 +223,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
   for(const kind of HUMAN){
    const m=summary.metrics[kind];
    Object.assign(m,rateMetrics(m.fp,m.negativeSeconds));
+   summary.referenceDetectorLatencySeconds[kind]=summarizeLatency(
+    items.flatMap(item=>latencyBySession.get(item.id)[kind]));
   }
   return summary;
  };
@@ -222,6 +237,8 @@ function evaluateContinuous(sessions,{hopSeconds=.4875,matchToleranceSeconds=.75
  return {schemaVersion:1,calibrated:false,automaticHumanReactionsApproved:false,
   metricScope:"Offline reference event detector on annotated observed intervals; NOT deployed Robotito alerts",
   uncertainty:"One-sided 95% Poisson event-rate bound assumes independent stationary false episodes; zero observed alarms never proves zero risk",
+  eventConfusionScope:"One-to-one reference alerts against evaluable human labels only; same-class matches take precedence, then cross-class, unmatched alerts become background, unevaluable labels excluded",
+  latencyScope:"Seconds from annotated event onset to offline reference detector alert; negative may mean early relative to annotation; NOT physical mic or deployed avatar reaction latency",
   assumptions:{hopSeconds,matchToleranceSeconds,adjacentFramesRequired:2,
    recallDenominator:"annotated events with at least two consecutive analysed overlapping windows",
    cooldownSeconds:COOLDOWN,unobservedTimeExcluded:true},

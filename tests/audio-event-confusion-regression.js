@@ -1,0 +1,31 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {eventConfusion,blankMatrix,summarizeLatency}=require("../audio-event-confusion.js");
+const sneeze={kind:"sneeze",interval:[1,2]};
+const cough={kind:"cough",interval:[1.2,1.6]};
+const hit={kind:"sneeze",atSeconds:1.45};
+const wrong={kind:"cough",atSeconds:1.5};
+let r=eventConfusion([sneeze,cough],[wrong,hit],[{event:sneeze,alert:hit}],.75);
+assert.equal(r.matrix.sneeze.sneeze,1,"Exact matches have priority over cross-class attribution");
+assert.equal(r.matrix.cough.cough,0,"No unstated extra correct predictions");
+assert.equal(r.matrix.cough.missed,1,"Used alerts cannot match a second label");
+assert.equal(r.matrix.background.cough,1,"Remaining wrong alert is counted as background when exact label stays unconfirmed");
+assert.equal(r.latencies.sneeze.length,1);
+assert.ok(Math.abs(r.latencies.sneeze[0]-.45)<1e-10,
+ "Reference alert latency tolerates binary floating-point representation");
+r=eventConfusion([sneeze],[wrong],[],.75);
+assert.equal(r.matrix.sneeze.cough,1,"Unmatched cough alert is attributed to true sneeze");
+assert.equal(r.matrix.background.cough,0,"One alert cannot count twice");
+assert.equal(r.matrix.sneeze.missed,0,"Attributed wrong class is not also missed");
+const irrelevant={kind:"laugh",atSeconds:5};
+r=eventConfusion([sneeze],[irrelevant],[],.5);
+assert.equal(r.matrix.sneeze.missed,1,"Unmatched evaluable label is missed");
+assert.equal(r.matrix.background.laugh,1,"Unrelated alert belongs to background");
+assert.equal(summarizeLatency([]).p95,null,"No matching events gives unknown latency");
+assert.deepEqual(summarizeLatency([3,1,2,4]),{count:4,min:1,p50:2,p95:4,max:4});
+assert.throws(()=>eventConfusion([sneeze],[hit],[{event:sneeze,alert:hit},
+ {event:sneeze,alert:hit}],.75),/Invalid same-class/);
+const empty=blankMatrix();
+assert.equal(empty.background.sneeze,0);
+assert.equal(empty.sneeze.missed,0);
+console.log("Temporal event confusion and reference latency regressions passed");
