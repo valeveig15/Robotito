@@ -26,14 +26,19 @@ Actualizado: 29 de octubre de 2026.
 - Diagnóstico manual de voces y micrófono, comprobado con mocks: **30 comprobaciones aisladas**.
 - Manejador real de síntesis probado con voces sintéticas del sistema: **68 comprobaciones aisladas**.
 - Reconocimiento de voz nativo del navegador (eventos de escucha, errores, reconexión y permisos en seis idiomas): **85 comprobaciones aisladas**.
+- Almacenamiento atómico de muestras privadas y borrado de blobs antiguos: **19 comprobaciones aisladas**.
 - Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
-- **Total de estas ejecuciones:** **76.750 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
+- **Total de estas ejecuciones:** **76.769 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
 
 No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
 
 ## Ampliación de localización ASR nativa
 
 Se localizó el ciclo real de reconocimiento de voz proporcionado por `SpeechRecognition` / `webkitSpeechRecognition` para español, inglés, portugués, francés, italiano y alemán: escuchando, voz detectada, micrófono bloqueado, ayuda de permisos, recuperación de micrófono, recuperación general, reconexión, inicio y navegador sin soporte. Se probó el manejador de eventos directamente con un reconocimiento simulado y se validó que usa `recognitionLanguage()` según el idioma. También se bloquearon órdenes negativas como «No quiero hablar en inglés» y «Je ne veux pas parler français», sin anular correcciones posteriores explícitas como «No quiero inglés, quiero italiano».
+
+## Integridad del almacenamiento de muestras de voz
+
+Se reemplazó la escritura en dos pasos por `ROBOTITO_STORE.putRecordWithBlob`, que usa una única transacción `readwrite` sobre `records` y `blobs`; si una operación falla, IndexedDB revierte ambas. El botón de eliminación borra el registro vinculado y también el identificador de blob conocido, incluso si alguna versión anterior dejó audio sin metadatos. La regresión `tests/p04-voice-atomic-storage-regression.js` verifica las llamadas y el consentimiento mediante simulaciones. Se añadió a `tests/browser-regression.js` una comprobación del ciclo real de IndexedDB en Chromium, aún pendiente de ejecución verificada.
 
 ## Diagnóstico manual de dispositivos
 
