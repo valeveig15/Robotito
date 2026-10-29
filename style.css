@@ -3048,3 +3048,16 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .reaction-trial-controls{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
 .reaction-trial-controls button{font-size:.86rem;min-height:36px;padding:8px 10px;border-radius:8px}
 .reaction-trial-controls button:disabled{opacity:.55;cursor:not-allowed}
+
+/* P05: each language at startup gets its own short, readable row. */
+.language-gate-card .startup-language-line{
+  display:block;
+  margin:2px 0;
+  line-height:1.24;
+}
+.language-gate-card h2 .startup-language-line:first-child{
+  font-size:1em;
+  color:var(--text);
+}
+.language-gate-card h2 .startup-language-line:not(:first-child){font-size:.68em;}
+.language-gate-card p .startup-language-line{font-size:.92em;}
