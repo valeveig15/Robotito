@@ -66,7 +66,15 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
  }
  function classifierEvents(feature,at,active){
   modelCandidate=null;
-  if(!modelAvailable||!active)return [];
+  if(!modelAvailable)return [];
+  if(!active){
+   // Silence breaks the positive run. A future cough/sneeze must supply fresh
+   // observations rather than borrow pre-silence classifier evidence.
+   modelEvidence=Object.create(null);
+   modelLatched=Object.create(null);
+   modelMisses=Object.create(null);
+   return [];
+  }
   // This is a synchronous, local, separately calibrated classifier contract.
   // An asynchronous model is expected to cache its most recent prediction.
   let scores;
