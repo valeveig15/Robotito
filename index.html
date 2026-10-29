@@ -83,8 +83,8 @@
     Preguntas y sugerencias
   </summary>
   <div class="question-help-content">
-    <h2>¿Qué podés preguntarle?</h2>
-    <p class="muted">Estos son algunos ejemplos de lo que Robotito puede contestar por ahora:</p>
+    <h2 data-i18n="uiAskIntro">¿Qué podés preguntarle?</h2>
+    <p data-i18n="uiAskExamples" class="muted">Estos son algunos ejemplos de lo que Robotito puede contestar por ahora:</p>
     <ul class="question-example-list">
       <li>¿Cómo te llamás?</li>
       <li>¿Cómo me llamo?</li>
@@ -480,7 +480,7 @@
           <label><span data-i18n="uiClassTopic">Tema de esta clase</span>
             <input id="classTopic" type="text" placeholder="Ej. Impulso y cantidad de movimiento" />
           </label>
-          <p class="muted">Si dejás el tema vacío, Robotito intenta identificarlo al terminar la clase usando la transcripción.</p>
+          <p data-i18n="uiClassTopicHelp" class="muted">Si dejás el tema vacío, Robotito intenta identificarlo al terminar la clase usando la transcripción.</p>
 
           <div class="button-grid two">
             <button id="startClassBtn" type="button" class="primary" data-i18n="uiStartClass">▶ Empezar clase</button>
@@ -512,11 +512,11 @@
           <div class="section-head">
             <div>
               <h2 data-i18n="uiSavedClasses">Clases guardadas</h2>
-              <p class="muted">Organizadas primero por materia y después por tema.</p>
+              <p data-i18n="uiClassSavedHelp" class="muted">Organizadas primero por materia y después por tema.</p>
             </div>
           </div>
           <div id="classLibrary" class="class-library">
-            <p class="muted">Todavía no hay clases organizadas.</p>
+            <p data-i18n="uiNoClasses" class="muted">Todavía no hay clases organizadas.</p>
           </div>
         </div>
 
@@ -529,7 +529,7 @@
               </div>
               <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar">×</button>
             </div>
-            <p class="muted">Podés corregir cómo quedó agendada sin perder la transcripción, el resumen ni la grabación.</p>
+            <p data-i18n="uiClassEditorHelp" class="muted">Podés corregir cómo quedó agendada sin perder la transcripción, el resumen ni la grabación.</p>
             <input id="editClassSessionId" type="hidden" />
             <label><span data-i18n="uiSubject">Materia</span>
               <input id="editClassSubject" type="text" required placeholder="Ej. Física" />
@@ -551,13 +551,13 @@
           <div class="section-head">
             <div>
               <h2 data-i18n="uiClassRecordings">Grabaciones de clase</h2>
-              <p class="muted">El audio se guarda en este navegador para que puedas volver a escuchar la clase completa.</p>
+              <p data-i18n="uiClassAudioHelp" class="muted">El audio se guarda en este navegador para que puedas volver a escuchar la clase completa.</p>
             </div>
             <span id="classRecordingLive" class="recording-live">sin grabar</span>
           </div>
-          <p id="classRecordingStatus" class="muted">Todavía no hay grabaciones guardadas en este dispositivo.</p>
+          <p data-i18n="uiClassEmptyAudio" id="classRecordingStatus" class="muted">Todavía no hay grabaciones guardadas en este dispositivo.</p>
           <div id="classRecordingsList" class="class-recordings-list">
-            <p class="muted">Cuando termines una clase, el audio aparecerá acá.</p>
+            <p data-i18n="uiClassFinishHint" class="muted">Cuando termines una clase, el audio aparecerá acá.</p>
           </div>
           <p class="muted">Las grabaciones quedan solo en este dispositivo/navegador. Podés descargarlas para conservar una copia o borrarlas cuando ya no las necesites.</p>
         </div>
@@ -616,7 +616,7 @@
 
         <div class="card">
           <h2 data-i18n="uiUploadMaterials">Cargar material académico</h2>
-          <p class="muted">Podés cargar apuntes o material de apoyo en TXT, Markdown, CSV, JSON, PDF, SRT o VTT. Robotito lo suma a lo que sabe de la materia.</p>
+          <p data-i18n="uiClassMaterialHelp" class="muted">Podés cargar apuntes o material de apoyo en TXT, Markdown, CSV, JSON, PDF, SRT o VTT. Robotito lo suma a lo que sabe de la materia.</p>
           <label class="file-label">
             Cargar material
             <input id="academicFiles" type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.srt,.vtt,text/plain,text/markdown,text/csv,application/json,application/pdf,text/vtt,application/x-subrip" />
@@ -662,7 +662,7 @@
             <input id="tasksSheetGid" type="text" placeholder="0" />
           </label>
           <button id="connectTasksBtn" type="button" class="primary full" data-i18n="uiConnectTasks">Conectar tareas</button>
-          <p id="tasksConnectionStatus" class="mini-status">Sin hoja conectada.</p>
+          <p data-i18n="uiNoTaskSheet" id="tasksConnectionStatus" class="mini-status">Sin hoja conectada.</p>
         </div>
 
         <div class="card">
@@ -671,14 +671,14 @@
             <button id="refreshTasksBtn" type="button" class="ghost" data-i18n="uiRefresh">Actualizar</button>
           </div>
           <div id="tasksList" class="tasks-list"><p class="muted">Conectá tu hoja para ver tareas.</p></div>
-          <p class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
+          <p data-i18n="uiTaskReminderHelp" class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
         </div>
       </section>
 
       <section class="tabpage" id="tab-people">
         <div class="card">
           <h2 data-i18n="uiRegisterPerson">Registrar una persona</h2>
-          <p class="muted">Las caras y cumpleaños quedan guardados solamente en este navegador.</p>
+          <p data-i18n="uiPeoplePrivacy" class="muted">Las caras y cumpleaños quedan guardados solamente en este navegador.</p>
           <label><span data-i18n="uiName">Nombre</span>
             <input id="personName" type="text" placeholder="Ej. Antonia" autocomplete="off" />
           </label>
@@ -729,7 +729,7 @@
             <a class="goodreads-link" href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer">Abrir Import / Export de Goodreads ↗</a>
             <p class="muted">Robotito usa ese CSV para saber qué leíste, qué tenés pendiente, tus estanterías, autores y calificaciones. El archivo se procesa en tu navegador.</p>
           </div>
-          <p id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
+          <p data-i18n="uiNoLibrary" id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
         </div>
         <div class="card">
           <h2 data-i18n="uiReadingChoice">¿Qué querés leer?</h2>
@@ -742,7 +742,7 @@
             <label class="check"><input id="excludeRead" type="checkbox" checked /> Evitar leídos</label>
           </div>
           <button id="recommendBtn" type="button" class="primary full" data-i18n="uiBookRecommendations">Buscar recomendaciones</button>
-          <p class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
+          <p data-i18n="uiBooksHelp" class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
         </div>
         <div id="bookResults" class="book-results"></div>
       </section>
@@ -750,7 +750,7 @@
       <section class="tabpage" id="tab-memory">
         <div class="card memory-info">
           <h2 data-i18n="uiAutoMemory">Memoria automática</h2>
-          <p>Robotito guarda por su cuenta las frases que logra entender y, en modo clase, conserva las explicaciones como material de estudio.</p>
+          <p data-i18n="uiMemoryHelp">Robotito guarda por su cuenta las frases que logra entender y, en modo clase, conserva las explicaciones como material de estudio.</p>
           <p class="muted">En Modo clase guarda la transcripción y, si el navegador lo permite, también el audio completo de cada sesión. Todo queda organizado localmente por materia y tema.</p>
         </div>
         <div class="card">
@@ -770,8 +770,8 @@
   </main>
 
   <footer class="footer">
-    <span id="systemStatus">Cámara y micrófono apagados.</span>
-    <span>Caras, clases y recuerdos se guardan localmente.</span>
+    <span data-i18n="uiSystemOff" id="systemStatus">Cámara y micrófono apagados.</span>
+    <span data-i18n="uiLocalPrivacy">Caras, clases y recuerdos se guardan localmente.</span>
   </footer>
 </div>
 
