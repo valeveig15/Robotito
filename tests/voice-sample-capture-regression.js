@@ -64,5 +64,21 @@ function fixture({deferPermission=false,deferSave=false}={}){
   recorder.onstop();await tick();
   eq(writes,0,"Late stop callback cannot save invalidated audio");
  }
+ // A recorder may emit onstop during start in unusual browser implementations.
+ {
+  let scheduled=0,stopped=0;
+  const instant={state:"inactive",mimeType:"audio/webm",
+   start(){this.ondataavailable({data:new Blob([new Uint8Array(150)])});this.onstop();},
+   stop(){}};
+  const fast=create({getConsent:()=>true,
+   requestStream:async()=>({getTracks:()=>[{stop(){stopped++;}}]}),
+   recorderFactory:()=>instant,
+   save:async()=>{},schedule:()=>{scheduled++;return 1;}});
+  eq(await fast.start(),true,"Synchronous stop during start is accepted");
+  await tick();
+  eq(scheduled,0,"No stale auto-stop scheduled after synchronous stop");
+  eq(stopped,1,"Synchronous stop releases the track");
+  eq(fast.getStatus().phase,"idle","Synchronous save settles cleanly");
+ }
  console.log("Voice sample lifecycle:",checked,"assertions");
 })().catch(e=>{console.error(e);process.exitCode=1});
