@@ -51,6 +51,8 @@ jobs:
           ROBOTITO_AUDIT_SEED=17 ROBOTITO_AUDIT_BATCH=0 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
           ROBOTITO_AUDIT_SEED=42 ROBOTITO_AUDIT_BATCH=1 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
           ROBOTITO_AUDIT_SEED=99 ROBOTITO_AUDIT_BATCH=2 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
+      - name: Report startup performance on responsive CI browser
+        run: npm run test:browser:performance
       - name: Run core and browser regressions
         run: npm run test:ci
       - name: Deep reproducible stress matrix (PR, scheduled or manual)
