@@ -81,10 +81,13 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   assert.equal(result.restored,true);
   // The UI does not let an import begin without first preparing a backup.
   assert.equal(await page.locator("#chooseMemoryBackup").isDisabled(),true);
-  const [download]=await Promise.all([
-    page.waitForEvent("download",{timeout:15000}),
-    page.locator("#downloadMemoryBackup").click()
-  ]);
+  let download;
+  try{
+    [download]=await Promise.all([page.waitForEvent("download",{timeout:8000}),page.locator("#downloadMemoryBackup").click()]);
+  }catch(error){
+    const status=await page.locator("#memoryBackupStatus").textContent();
+    throw Error("Backup status: "+status+" / "+error.message);
+  }
   assert.match(download.suggestedFilename(),/^robotito-indexeddb-\d{4}-\d{2}-\d{2}\.json$/);
   await page.waitForFunction(()=>!document.getElementById("chooseMemoryBackup").disabled);
   const saved=await download.path();
