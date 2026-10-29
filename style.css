@@ -3041,3 +3041,10 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-text-form-row input{flex:1;min-width:0;min-height:42px;padding:8px 12px;border:1px solid #b5a7b8;border-radius:10px;font:inherit}
 .robotito-text-form-row button{flex-shrink:0;min-height:42px;border-radius:10px;padding:8px 14px}
 @media(max-width:440px){.robotito-text-form-row{flex-direction:column}.robotito-text-form-row button{width:100%}}
+
+/* P03 opt-in field counters; no microphone data or chat content shown. */
+.reaction-trial-panel{margin:12px 0;padding:10px 12px;border:1px solid #bdcada;border-radius:12px;background:rgba(255,255,255,.72)}
+.reaction-trial-panel summary{cursor:pointer;font-weight:700}
+.reaction-trial-controls{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.reaction-trial-controls button{font-size:.86rem;min-height:36px;padding:8px 10px;border-radius:8px}
+.reaction-trial-controls button:disabled{opacity:.55;cursor:not-allowed}
