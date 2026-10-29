@@ -28,5 +28,14 @@ globalThis.ROBOTITO_STORE={queryRecords:async({type,owner,after,before})=>record
  const general=await memory.search("Recordame mis recuerdos de ayer",{owner:"vale",language:"es",now});
  assert.equal(general.type,"memories");
  assert.ok(general.text.includes("pizza"));
- console.log("Structured memory privacy regression: 10 assertions passed");
+ const prior=globalThis.ROBOTITO_STORE;
+ globalThis.ROBOTITO_STORE={queryRecords:async()=>[records[2],records[0]]};
+ const guarded=await memory.search("¿Qué dije ayer sobre impulso?",{owner:"vale",language:"es",now});
+ assert.equal(guarded.rows.length,1,"Only matching owner's data must be returned");
+ assert.equal(guarded.rows[0].owner,"vale","Output owner isolation");
+ globalThis.ROBOTITO_STORE={queryRecords:async()=>[records[2]]};
+ const empty=await memory.search("¿Qué dije ayer sobre impulso?",{owner:"vale",language:"es",now});
+ assert.equal(empty.rows.length,0,"Do not answer from another person's memories");
+ globalThis.ROBOTITO_STORE=prior;
+ console.log("Structured memory privacy regression: 13 assertions passed");
 })().catch(error=>{console.error(error);process.exitCode=1;});
