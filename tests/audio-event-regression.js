@@ -180,16 +180,16 @@ detector=audio.create({classifier:cachedModel,clock:()=>0});
 const staleFrames=feed(detector,Array.from({length:25},()=>sample({rms:.2,flat:.28,harmonic:.6})),{start:160000});
 eq(onlyEvents(staleFrames).filter(x=>x.kind==="sneeze").length,0,
  "One model inference replayed 25 times never becomes a sneeze");
-cachedFrame=2;cachedTime=161250;
-const fresh1=detector.process(sample({rms:.2,flat:.28}),{now:161250});
+cachedFrame=2;cachedTime=163000;
+const fresh1=detector.process(sample({rms:.2,flat:.28}),{now:163000});
 eq(fresh1.events.filter(x=>x.kind==="sneeze").length,0,"One fresh frame alone is insufficient");
-cachedFrame=3;cachedTime=161300;
-const fresh2=detector.process(sample({rms:.2,flat:.28}),{now:161300});
+cachedFrame=3;cachedTime=163500;
+const fresh2=detector.process(sample({rms:.2,flat:.28}),{now:163500});
 eq(fresh2.events.filter(x=>x.kind==="sneeze").length,0,"Two independent frames still insufficient");
-cachedFrame=4;cachedTime=161350;
-const fresh3=detector.process(sample({rms:.2,flat:.28}),{now:161350});
+cachedFrame=4;cachedTime=164000;
+const fresh3=detector.process(sample({rms:.2,flat:.28}),{now:164000});
 eq(fresh3.events.filter(x=>x.kind==="sneeze").length,1,
- "Three recent, independent model observations allow a reaction");
+ "Three independently spaced YAMNet-model observations allow a reaction");
 detector.reset();
 cachedFrame=6;cachedTime=170000;
 const late=feed(detector,Array.from({length:15},()=>sample({rms:.2})),{start:171000});
