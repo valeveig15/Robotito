@@ -151,4 +151,15 @@ for(const key of ["uiSubject","uiClassTopic","uiTopic","uiDateTime","uiVideoURL"
 ok(html.includes('id="classSubject"'),"Class subject input preserved");
 ok(html.includes('id="personBirthday"'),"Birthday field preserved");
 ok(html.includes('id="youtubeUrl"')||html.includes('id="youtubeLink"')||html.includes('id="youtubeVideoUrl"')||html.includes('id="youtubeUrlInput"'),"YouTube input remains on screen");
+for(const language of langs)ok(i18n.t("prepareLocalized",language).length>8,
+  "Localized translation status "+language);
+eq(i18n.parseCommand("Sprich Deutsch nur dieses Mal")?.scope,"once",
+  "German one-turn language setting");
+eq(i18n.parseCommand("Parla italiano solo questa volta")?.scope,"once",
+  "Italian one-turn language setting");
+eq(i18n.parseCommand("Parla italiano per questa sessione")?.scope,"session",
+  "Italian session setting");
+ok(source.includes('t?.("prepareLocalized",target)'),"Six-language translation progress");
+ok(!source.includes("if(forcedLang)return false;"),"Forced language cannot bypass strong mismatch");
+ok(source.includes("francais|french|italiano|italian|aleman|deutsch|german"),"Six-language say command vocabulary");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
