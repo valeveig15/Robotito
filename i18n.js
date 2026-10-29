@@ -12,6 +12,7 @@ const NAMES={
  de:["aleman","alemán","german","allemand","tedesco","deutsch"]
 };
 const LABELS={
+ prepareLocalized:{es:"Preparando la respuesta…",en:"Preparing the answer…",pt:"Preparando a resposta…",fr:"Préparation de la réponse…",it:"Preparazione della risposta…",de:"Antwort wird vorbereitet…"},
  uiUnderstood:{"es":"Última cosa que entendí","en":"Last thing understood","pt":"Última coisa entendida","fr":"Dernière chose comprise","it":"Ultima cosa capita","de":"Zuletzt verstanden"},
  uiClassMode:{"es":"Modo clase","en":"Class mode","pt":"Modo aula","fr":"Mode cours","it":"Modalità lezione","de":"Unterrichtsmodus"},
  uiSubject:{"es":"Materia","en":"Subject","pt":"Matéria","fr":"Matière","it":"Materia","de":"Fach"},
@@ -168,8 +169,8 @@ function parseCommand(raw){
  if(!lang)return null;
  // An incidental language mention in a class/topic question is not a command.
  if(/\b(clase de|curso de|examen de|historia del|translation of|traducir del)\b/.test(q)||/^(que dijo|que significa|what did|what is|por que)/.test(q))return null;
- const scope=/\b(solo esta vez|una sola respuesta|esta respuesta|just once|only this time|apenas desta vez|juste cette fois)\b/.test(q)?"once":
- /(?:por esta sesion|durante esta sesion|this session|esta sessao|cette session)/.test(q)?"session":"persistent";
+ const scope=/\b(solo esta vez|una sola respuesta|esta respuesta|just once|only this time|apenas desta vez|juste cette fois|solo questa volta|nur dieses mal|nur einmal)\b/.test(q)?"once":
+ /(?:por esta sesion|durante esta sesion|this session|esta sessao|cette session|per questa sessione|fur diese sitzung|in dieser sitzung)/.test(q)?"session":"persistent";
  return {language:lang,scope,confidence:.94};
 }
 function apply(lang,rootElement){
