@@ -18,12 +18,18 @@ const SAMPLE_ID="voice-profile-local", BLOB_ID="voice-sample-local";
 function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
 function settings(style,basePitch=1,baseRate=1){
  const s=STYLES[style]||STYLES.natural;
- return {pitch:clamp(s.pitch*basePitch,.5,2),rate:clamp(s.rate*baseRate,.5,2),volume:s.volume};
+ const pitch=Number.isFinite(basePitch)&&basePitch>0?basePitch:1;
+ const rate=Number.isFinite(baseRate)&&baseRate>0?baseRate:1;
+ return {pitch:clamp(s.pitch*pitch,.5,2),rate:clamp(s.rate*rate,.5,2),volume:s.volume};
 }
 function selectVoice(voices,language,preferredURI){
- const list=Array.from(voices||[]),locale=language||"es",pool=list.filter(v=>(v.lang||"").toLowerCase().startsWith(locale.toLowerCase()));
- const candidates=pool.length?pool:list;
- return candidates.find(v=>v.voiceURI===preferredURI)||candidates.find(v=>/natural|neural/i.test(v.name||""))||candidates[0]||null;
+ // Do not pronounce one language using an unrelated system voice.
+ const requested=String(language||"es").toLowerCase().split(/[-_]/)[0];
+ const pool=Array.from(voices||[]).filter(v=>v&&typeof v.lang==="string"&&
+  v.lang.toLowerCase().split(/[-_]/)[0]===requested);
+ return pool.find(v=>v.voiceURI===preferredURI)
+  ||pool.find(v=>/natural|neural/i.test(v.name||""))
+  ||pool[0]||null;
 }
 function configureUtterance(utter,{style="natural",language="es",voices=[],voiceURI,basePitch=1,baseRate=1}={}){
  const p=settings(style,basePitch,baseRate);
