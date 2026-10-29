@@ -12,6 +12,11 @@ const NAMES={
  de:["aleman","alemán","german","allemand","tedesco","deutsch"]
 };
 const LABELS={
+ avatarAvailable:{"es":"Avatares disponibles","en":"Available avatars","pt":"Avatares disponíveis","fr":"Avatars disponibles","it":"Avatar disponibili","de":"Verfügbare Avatare"},
+ avatarStepTitle:{"es":"Elegí el avatar de Robotito","en":"Choose Robotito's avatar","pt":"Escolha o avatar do Robotito","fr":"Choisis l’avatar de Robotito","it":"Scegli l’avatar di Robotito","de":"Wähle Robotitos Avatar"},
+ avatarStepDescription:{"es":"Elegí el amigo que querés ver. Se guardará en este dispositivo.","en":"Choose the friend you want to see. Your choice will be saved on this device.","pt":"Escolha o amigo que você quer ver. Sua escolha ficará salva neste dispositivo.","fr":"Choisis ton compagnon. Ton choix sera enregistré sur cet appareil.","it":"Scegli il tuo compagno. La scelta verrà salvata su questo dispositivo.","de":"Wähle deinen Begleiter. Die Auswahl wird auf diesem Gerät gespeichert."},
+ avatarBack:{"es":"Volver al idioma","en":"Back to language","pt":"Voltar ao idioma","fr":"Retour à la langue","it":"Torna alla lingua","de":"Zurück zur Sprache"},
+ avatarReady:{"es":"Robotito está listo para despertarse.","en":"Robotito is ready to wake up.","pt":"Robotito está pronto para despertar.","fr":"Robotito est prêt à se réveiller.","it":"Robotito è pronto a svegliarsi.","de":"Robotito ist bereit aufzuwachen."},
  voiceSampleRequesting:{"es":"Pidiendo permiso para grabar…","en":"Requesting recording permission…","pt":"Solicitando permissão para gravar…","fr":"Demande d’autorisation d’enregistrement…","it":"Richiesta del permesso di registrazione…","de":"Aufnahmeberechtigung wird angefordert…"},
  voiceSampleRecording:{"es":"Grabando durante tres segundos…","en":"Recording for three seconds…","pt":"Gravando por três segundos…","fr":"Enregistrement de trois secondes…","it":"Registrazione per tre secondi…","de":"Aufnahme für drei Sekunden…"},
  voiceSampleSaving:{"es":"Guardando la muestra localmente…","en":"Saving the sample locally…","pt":"Salvando a amostra localmente…","fr":"Enregistrement local de l’échantillon…","it":"Salvataggio locale del campione…","de":"Sprachprobe wird lokal gespeichert…"},
