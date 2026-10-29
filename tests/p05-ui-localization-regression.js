@@ -64,4 +64,22 @@ ok(script.includes('languageLocale(state.languageMode||"es")'),
 ok(script.includes('t?.("uiAvatarAria",lang)'),"Avatar accessibility uses all six languages");
 ok(script.includes("updateAvatarAria();\n  populateVoiceSelect();"),
  "Language changes refresh dynamic avatar labels");
+const controls=[
+ "uiTrialSummary","uiTrialStart","uiTrialStop","uiTrialExport","uiTrialClear",
+ "uiModeLabel","uiBatteryLabel","uiTryAsking","uiLiveTranscript","uiClassMeNext",
+ "uiClassTeacherNext","uiClassmateNext","uiYouTubePrepare","uiYouTubeListen",
+ "uiYouTubeTranscriptSummary","uiYouTubeTranscriptShow","uiYouTubeSaveTranscript",
+ "uiSolveMath","uiObjectQuestion","uiRoleOther","uiRoleTeacher","uiRoleClassmate",
+ "uiVoiceStyleNatural","uiVoiceStyleDeep","uiVoiceStyleHigh","uiVoiceStyleCute",
+ "uiVoiceStyleEnergetic","uiVoiceStyleFunny","uiVoiceStyleRobotic",
+ "uiVoiceStyleStrange","uiVoiceStyleCalm","uiVoiceStyleNarrator"
+];
+for(const key of controls)ok(nodes.some(node=>node.key===key),"Visible control must be localized: "+key);
+for(const lang of languages){
+ eq(i18n.apply(lang,doc),true,lang+" control locale");
+ for(const entry of nodes.filter(node=>controls.includes(node.key))){
+  eq(entry.element.textContent,i18n.t(entry.key,lang),lang+": "+entry.key);
+  ok(entry.element.textContent!=="original",lang+": translated control "+entry.key);
+ }
+}
 console.log("P05 UI i18n localized field checks:",checks,"assertions");

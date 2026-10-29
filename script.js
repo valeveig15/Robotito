@@ -2137,6 +2137,7 @@ function setLanguageMode(mode){
   window.ROBOTITO_I18N?.apply?.(mode);
   if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
+  if(typeof applyDayNightMode==="function")applyDayNightMode(new Date());
   if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
 }
@@ -5345,19 +5346,19 @@ function applyDayNightMode(date=new Date()){
   document.body.classList.toggle("mode-day",mode==="day");
   document.body.classList.toggle("mode-night",mode==="night");
 
+  const lang=responseLanguage();
   const world=$("#world");
   if(world){
     world.dataset.timeMode=mode;
-    world.setAttribute("aria-label",mode==="night"?"Mundo nocturno de Robotito":"Mundo diurno de Robotito");
+    const key=mode==="night"?"uiWorldNightAria":"uiWorldDayAria";
+    world.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.(key,lang)
+      ||(mode==="night"?"Mundo nocturno de Robotito":"Mundo diurno de Robotito"));
   }
 
-  const lang=responseLanguage();
   const label=$("#dayNightLabel");
-  if(label){
-    label.textContent=mode==="night"
-      ?(lang==="en"?"night":lang==="pt"?"noite":"noche")
-      :(lang==="en"?"day":lang==="pt"?"dia":"día");
-  }
+  if(label)label.textContent=window.ROBOTITO_I18N?.t?.(
+    mode==="night"?"uiNightLabel":"uiDayLabel",lang)
+    ||(mode==="night"?"noche":"día");
 
   const theme=document.querySelector('meta[name="theme-color"]');
   if(theme)theme.setAttribute("content",mode==="night"?"#17213a":"#fff8fc");

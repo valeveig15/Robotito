@@ -548,6 +548,300 @@ Object.assign(LABELS,{
   "de": "Erkläre Physikaufgabe 4 Schritt für Schritt."
  }
 });
+// Point 05: controls and voice style names used by the existing interface.
+Object.assign(LABELS,{
+ "uiTrialSummary": {
+  "es": "Prueba voluntaria de reacciones del avatar",
+  "en": "Optional avatar reaction test",
+  "pt": "Teste voluntário de reações do avatar",
+  "fr": "Test facultatif des réactions de l'avatar",
+  "it": "Test facoltativo delle reazioni dell'avatar",
+  "de": "Freiwilliger Test der Avatar-Reaktionen"
+ },
+ "uiTrialStart": {
+  "es": "Iniciar registro local",
+  "en": "Start local log",
+  "pt": "Iniciar registro local",
+  "fr": "Démarrer le journal local",
+  "it": "Avvia registro locale",
+  "de": "Lokale Aufzeichnung starten"
+ },
+ "uiTrialStop": {
+  "es": "Detener",
+  "en": "Stop",
+  "pt": "Parar",
+  "fr": "Arrêter",
+  "it": "Ferma",
+  "de": "Stoppen"
+ },
+ "uiTrialExport": {
+  "es": "Descargar recuentos",
+  "en": "Download counts",
+  "pt": "Baixar contagens",
+  "fr": "Télécharger les totaux",
+  "it": "Scarica i conteggi",
+  "de": "Zählungen herunterladen"
+ },
+ "uiTrialClear": {
+  "es": "Descartar",
+  "en": "Discard",
+  "pt": "Descartar",
+  "fr": "Effacer",
+  "it": "Scarta",
+  "de": "Verwerfen"
+ },
+ "uiModeLabel": {
+  "es": "Modo",
+  "en": "Mode",
+  "pt": "Modo",
+  "fr": "Mode",
+  "it": "Modalità",
+  "de": "Modus"
+ },
+ "uiBatteryLabel": {
+  "es": "Batería",
+  "en": "Battery",
+  "pt": "Bateria",
+  "fr": "Batterie",
+  "it": "Batteria",
+  "de": "Akku"
+ },
+ "uiTryAsking": {
+  "es": "Probá preguntarle",
+  "en": "Try asking",
+  "pt": "Experimente perguntar",
+  "fr": "Essaie de demander",
+  "it": "Prova a chiedere",
+  "de": "Frag zum Beispiel"
+ },
+ "uiLiveTranscript": {
+  "es": "Transcripción en vivo",
+  "en": "Live transcript",
+  "pt": "Transcrição ao vivo",
+  "fr": "Transcription en direct",
+  "it": "Trascrizione in diretta",
+  "de": "Live-Transkription"
+ },
+ "uiClassMeNext": {
+  "es": "Próxima frase: yo",
+  "en": "Next speaker: me",
+  "pt": "Próxima fala: eu",
+  "fr": "Prochaine phrase : moi",
+  "it": "Prossima frase: io",
+  "de": "Nächster Satz: ich"
+ },
+ "uiClassTeacherNext": {
+  "es": "Próxima frase: profesor/a",
+  "en": "Next speaker: teacher",
+  "pt": "Próxima fala: professor(a)",
+  "fr": "Prochaine phrase : professeur(e)",
+  "it": "Prossima frase: insegnante",
+  "de": "Nächster Satz: Lehrkraft"
+ },
+ "uiClassmateNext": {
+  "es": "Próxima frase: compañero/a",
+  "en": "Next speaker: classmate",
+  "pt": "Próxima fala: colega",
+  "fr": "Prochaine phrase : camarade",
+  "it": "Prossima frase: compagno/a",
+  "de": "Nächster Satz: Mitschüler/in"
+ },
+ "uiYouTubePrepare": {
+  "es": "Comprobar enlace",
+  "en": "Check link",
+  "pt": "Verificar link",
+  "fr": "Vérifier le lien",
+  "it": "Verifica il link",
+  "de": "Link prüfen"
+ },
+ "uiYouTubeListen": {
+  "es": "🎧 Escuchar pestaña con audio",
+  "en": "🎧 Listen to tab audio",
+  "pt": "🎧 Ouvir áudio da aba",
+  "fr": "🎧 Écouter l'onglet audio",
+  "it": "🎧 Ascolta l'audio della scheda",
+  "de": "🎧 Tab-Audio anhören"
+ },
+ "uiYouTubeTranscriptSummary": {
+  "es": "Usar la transcripción o los subtítulos",
+  "en": "Use transcript or subtitles",
+  "pt": "Usar transcrição ou legendas",
+  "fr": "Utiliser la transcription ou les sous-titres",
+  "it": "Usa trascrizione o sottotitoli",
+  "de": "Transkript oder Untertitel verwenden"
+ },
+ "uiYouTubeTranscriptShow": {
+  "es": "Mostrar transcripción",
+  "en": "Show transcript",
+  "pt": "Mostrar transcrição",
+  "fr": "Afficher la transcription",
+  "it": "Mostra trascrizione",
+  "de": "Transkript anzeigen"
+ },
+ "uiYouTubeSaveTranscript": {
+  "es": "Guardar transcripción como material",
+  "en": "Save transcript as material",
+  "pt": "Salvar transcrição como material",
+  "fr": "Enregistrer la transcription comme document",
+  "it": "Salva la trascrizione come materiale",
+  "de": "Transkript als Material speichern"
+ },
+ "uiSolveMath": {
+  "es": "Resolver y representar",
+  "en": "Solve and graph",
+  "pt": "Resolver e representar",
+  "fr": "Résoudre et représenter",
+  "it": "Risolvi e rappresenta",
+  "de": "Lösen und darstellen"
+ },
+ "uiObjectQuestion": {
+  "es": "¿Qué objeto es?",
+  "en": "What object is it?",
+  "pt": "Que objeto é este?",
+  "fr": "Quel est cet objet ?",
+  "it": "Che oggetto è?",
+  "de": "Was ist das für ein Gegenstand?"
+ },
+ "uiRoleOther": {
+  "es": "Persona / otro",
+  "en": "Person / other",
+  "pt": "Pessoa / outro",
+  "fr": "Personne / autre",
+  "it": "Persona / altro",
+  "de": "Person / sonstige"
+ },
+ "uiRoleTeacher": {
+  "es": "Profesor/a",
+  "en": "Teacher",
+  "pt": "Professor(a)",
+  "fr": "Professeur(e)",
+  "it": "Insegnante",
+  "de": "Lehrkraft"
+ },
+ "uiRoleClassmate": {
+  "es": "Compañero/a",
+  "en": "Classmate",
+  "pt": "Colega",
+  "fr": "Camarade",
+  "it": "Compagno/a",
+  "de": "Mitschüler/in"
+ },
+ "uiVoiceStyleNatural": {
+  "es": "Natural",
+  "en": "Natural",
+  "pt": "Natural",
+  "fr": "Naturelle",
+  "it": "Naturale",
+  "de": "Natürlich"
+ },
+ "uiVoiceStyleDeep": {
+  "es": "Grave",
+  "en": "Deep",
+  "pt": "Grave",
+  "fr": "Grave",
+  "it": "Profonda",
+  "de": "Tief"
+ },
+ "uiVoiceStyleHigh": {
+  "es": "Aguda",
+  "en": "High-pitched",
+  "pt": "Aguda",
+  "fr": "Aiguë",
+  "it": "Acuta",
+  "de": "Hoch"
+ },
+ "uiVoiceStyleCute": {
+  "es": "Tierna",
+  "en": "Sweet",
+  "pt": "Fofa",
+  "fr": "Douce",
+  "it": "Tenera",
+  "de": "Niedlich"
+ },
+ "uiVoiceStyleEnergetic": {
+  "es": "Energética",
+  "en": "Energetic",
+  "pt": "Energética",
+  "fr": "Énergique",
+  "it": "Energica",
+  "de": "Energisch"
+ },
+ "uiVoiceStyleFunny": {
+  "es": "Graciosa",
+  "en": "Funny",
+  "pt": "Divertida",
+  "fr": "Amusante",
+  "it": "Divertente",
+  "de": "Lustig"
+ },
+ "uiVoiceStyleRobotic": {
+  "es": "Robótica",
+  "en": "Robotic",
+  "pt": "Robótica",
+  "fr": "Robotique",
+  "it": "Robotica",
+  "de": "Roboterhaft"
+ },
+ "uiVoiceStyleStrange": {
+  "es": "Extraña",
+  "en": "Strange",
+  "pt": "Estranha",
+  "fr": "Étrange",
+  "it": "Strana",
+  "de": "Seltsam"
+ },
+ "uiVoiceStyleCalm": {
+  "es": "Calmada",
+  "en": "Calm",
+  "pt": "Calma",
+  "fr": "Calme",
+  "it": "Calma",
+  "de": "Ruhig"
+ },
+ "uiVoiceStyleNarrator": {
+  "es": "Narradora",
+  "en": "Narrator",
+  "pt": "Narradora",
+  "fr": "Narratrice",
+  "it": "Narratrice",
+  "de": "Erzählerisch"
+ }
+});
+// Point 05: dynamic day/night labels must not overwrite localization.
+Object.assign(LABELS,{
+ "uiWorldDayAria": {
+  "es": "Mundo diurno de Robotito",
+  "en": "Robotito's daytime world",
+  "pt": "Mundo diurno do Robotito",
+  "fr": "Monde de Robotito de jour",
+  "it": "Mondo diurno di Robotito",
+  "de": "Robotitos Welt bei Tag"
+ },
+ "uiWorldNightAria": {
+  "es": "Mundo nocturno de Robotito",
+  "en": "Robotito's nighttime world",
+  "pt": "Mundo noturno do Robotito",
+  "fr": "Monde nocturne de Robotito",
+  "it": "Mondo notturno di Robotito",
+  "de": "Robotitos Welt bei Nacht"
+ },
+ "uiDayLabel": {
+  "es": "día",
+  "en": "day",
+  "pt": "dia",
+  "fr": "jour",
+  "it": "giorno",
+  "de": "Tag"
+ },
+ "uiNightLabel": {
+  "es": "noche",
+  "en": "night",
+  "pt": "noite",
+  "fr": "nuit",
+  "it": "notte",
+  "de": "Nacht"
+ }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;

@@ -18,7 +18,7 @@
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="i18n.js?v=20261029-p05-ui1"></script>
+  <script defer src="i18n.js?v=20261029-p05-ui2"></script>
   <script defer src="voice-system.js?v=20261029-p04-atomic1"></script>
   <script defer src="voice-sample-capture.js?v=20261029-p04-release3"></script>
   <script defer src="audio-perception.js?v=20261028-real-yamnet-cadence1"></script>
@@ -325,7 +325,7 @@
 
       <div class="world-controls">
         <div class="hud" aria-label="Estado de Robotito">
-          <div class="hud-pill mode-pill"><span>Modo</span><strong id="dayNightLabel">día</strong></div>
+          <div class="hud-pill mode-pill"><span data-i18n="uiModeLabel">Modo</span><strong id="dayNightLabel">día</strong></div>
           <div class="hud-pill"><span data-i18n="mood">Humor</span><strong id="moodLabel">tranquilo</strong></div>
           <div class="hud-pill"><span data-i18n="hunger">Hambre</span><strong id="hungerLabel">0%</strong></div>
           <div class="hud-pill"><span data-i18n="vision">Veo</span><strong id="seenLabel">a nadie</strong></div>
@@ -379,7 +379,7 @@
           <div class="meter"><span id="moodMeter"></span></div>
         </div>
         <div class="meter-card battery-meter-card">
-          <div class="meter-head"><span>Batería</span><span id="energyText">100%</span></div>
+          <div class="meter-head"><span data-i18n="uiBatteryLabel">Batería</span><span id="energyText">100%</span></div>
           <div class="meter" role="progressbar" aria-label="Batería del dispositivo" aria-valuemin="0" aria-valuemax="100"><span id="energyMeter"></span></div>
           <p id="batterySourceText" class="battery-source">Consultando la batería del dispositivo…</p>
         </div>
@@ -408,13 +408,13 @@
           <p class="muted" data-i18n="audioModelPrivacy">Opcional: descarga YAMNet y MediaPipe de terceros, que pueden recopilar métricas de uso. El audio se clasifica en tu dispositivo; no se envían grabaciones al servidor.</p>
           <p id="audioModelStatus" role="status" class="muted" data-i18n="audioModelOff">Clasificador avanzado desactivado.</p>
           <details class="reaction-trial-panel">
-            <summary>Prueba voluntaria de reacciones del avatar</summary>
+            <summary data-i18n="uiTrialSummary">Prueba voluntaria de reacciones del avatar</summary>
             <p class="muted">Registrá solo cantidades de sonidos detectados, acciones ejecutadas y bailes. No se guardan grabaciones, transcripciones, horas exactas ni datos del micrófono. La medición comienza únicamente cuando la activás; se descarta al ocultar o abandonar la página. Las cifras no prueban por sí solas precisión ni latencia desde el comienzo del sonido.</p>
             <div class="reaction-trial-controls">
-              <button type="button" id="reactionTrialStart">Iniciar registro local</button>
-              <button type="button" id="reactionTrialStop" disabled>Detener</button>
-              <button type="button" id="reactionTrialExport" disabled>Descargar recuentos</button>
-              <button type="button" id="reactionTrialClear">Descartar</button>
+              <button type="button" id="reactionTrialStart" data-i18n="uiTrialStart">Iniciar registro local</button>
+              <button type="button" id="reactionTrialStop" data-i18n="uiTrialStop" disabled>Detener</button>
+              <button type="button" id="reactionTrialExport" data-i18n="uiTrialExport" disabled>Descargar recuentos</button>
+              <button type="button" id="reactionTrialClear" data-i18n="uiTrialClear">Descartar</button>
             </div>
             <p id="reactionTrialStatus" class="muted" role="status" aria-live="polite">Registro apagado.</p>
           </details>
@@ -437,11 +437,11 @@
           </div>
           <label><span data-i18n="voiceStyle">Estilo de voz</span>
             <select id="voiceStyle">
-              <option value="natural">Natural</option><option value="deep">Grave</option>
-              <option value="high">Aguda</option><option value="cute">Tierna</option>
-              <option value="energetic">Energética</option><option value="funny">Graciosa</option>
-              <option value="robotic">Robótica</option><option value="strange">Extraña</option>
-              <option value="calm">Calmada</option><option value="narrator">Narradora</option>
+              <option value="natural" data-i18n="uiVoiceStyleNatural">Natural</option><option value="deep" data-i18n="uiVoiceStyleDeep">Grave</option>
+              <option value="high" data-i18n="uiVoiceStyleHigh">Aguda</option><option value="cute" data-i18n="uiVoiceStyleCute">Tierna</option>
+              <option value="energetic" data-i18n="uiVoiceStyleEnergetic">Energética</option><option value="funny" data-i18n="uiVoiceStyleFunny">Graciosa</option>
+              <option value="robotic" data-i18n="uiVoiceStyleRobotic">Robótica</option><option value="strange" data-i18n="uiVoiceStyleStrange">Extraña</option>
+              <option value="calm" data-i18n="uiVoiceStyleCalm">Calmada</option><option value="narrator" data-i18n="uiVoiceStyleNarrator">Narradora</option>
             </select>
           </label>
           <button id="testVoiceBtn" type="button" class="ghost full" data-i18n="testVoice">Probar voz</button>
@@ -459,7 +459,7 @@
         </div>
 
         <div class="card small">
-          <h3>Probá preguntarle</h3>
+          <h3 data-i18n="uiTryAsking">Probá preguntarle</h3>
           <p class="muted">Podés hablarle en español, inglés, portugués, francés, italiano o alemán. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
         </div>
       </section>
@@ -490,9 +490,9 @@
           <div class="speaker-override">
             <span class="muted" data-i18n="uiClassSpeakerHint">Robotito intenta reconocer la voz automáticamente. Si se equivoca, podés corregir quién habló en cada línea o marcar de antemano quién va a hablar.</span>
             <div class="speaker-training-actions">
-              <button id="nextMeBtn" type="button" class="tiny-btn">Próxima frase: yo</button>
-              <button id="nextTeacherBtn" type="button" class="tiny-btn">Próxima frase: profesor/a</button>
-              <button id="nextClassmateBtn" type="button" class="tiny-btn">Próxima frase: compañero/a</button>
+              <button id="nextMeBtn" data-i18n="uiClassMeNext" type="button" class="tiny-btn">Próxima frase: yo</button>
+              <button id="nextTeacherBtn" data-i18n="uiClassTeacherNext" type="button" class="tiny-btn">Próxima frase: profesor/a</button>
+              <button id="nextClassmateBtn" data-i18n="uiClassmateNext" type="button" class="tiny-btn">Próxima frase: compañero/a</button>
             </div>
           </div>
 
@@ -503,7 +503,7 @@
           <p class="muted">Robotito conserva siempre lo que oyó. Solo cambia la versión corregida cuando encuentra evidencia suficientemente clara y muestra la fuente usada.</p>
 
           <div class="live-class-box">
-            <div class="section-head"><h3>Transcripción en vivo</h3><span id="classDuration">00:00</span></div>
+            <div class="section-head"><h3 data-i18n="uiLiveTranscript">Transcripción en vivo</h3><span id="classDuration">00:00</span></div>
             <div id="classTranscript" class="class-transcript"><p class="muted" data-i18n="uiClassEmptyText">Todavía no empezó ninguna clase.</p></div>
           </div>
         </div>
@@ -587,12 +587,12 @@
           </label>
 
           <div class="button-grid two">
-            <button id="prepareYoutubeBtn" type="button">Comprobar enlace</button>
+            <button id="prepareYoutubeBtn" data-i18n="uiYouTubePrepare" type="button">Comprobar enlace</button>
             <button id="openYoutubeBtn" type="button" data-i18n="uiYoutubeOpen">Abrir en YouTube</button>
           </div>
 
           <div class="video-capture-actions">
-            <button id="startYoutubeCaptureBtn" type="button" class="primary">🎧 Escuchar pestaña con audio</button>
+            <button id="startYoutubeCaptureBtn" data-i18n="uiYouTubeListen" type="button" class="primary">🎧 Escuchar pestaña con audio</button>
             <button id="stopYoutubeCaptureBtn" type="button" class="ghost" disabled data-i18n="uiVideoStop">■ Terminar video</button>
           </div>
           <p id="youtubeCaptureStatus" class="video-capture-status muted">Pegá un enlace para comenzar.</p>
@@ -600,17 +600,17 @@
           <p id="youtubeVisualStatus" class="muted">La visión del video reconocerá objetos generales cuando compartas la pestaña.</p>
 
           <details class="youtube-transcript-help">
-            <summary>Usar la transcripción o los subtítulos</summary>
+            <summary data-i18n="uiYouTubeTranscriptSummary">Usar la transcripción o los subtítulos</summary>
             <ol>
               <li>Abrí el video en YouTube.</li>
-              <li>En la descripción o menú del video elegí <strong>Mostrar transcripción</strong>, si está disponible.</li>
+              <li>En la descripción o menú del video elegí <strong data-i18n="uiYouTubeTranscriptShow">Mostrar transcripción</strong>, si está disponible.</li>
               <li>Copiá el texto completo y pegalo aquí. También podés cargar archivos <code>.srt</code> o <code>.vtt</code> en «Cargar material académico».</li>
             </ol>
           </details>
           <label>Transcripción del video
             <textarea id="youtubeTranscript" data-i18n-placeholder="uiVideoTranscriptPrompt" rows="7" placeholder="Pegá aquí la transcripción o los subtítulos…"></textarea>
           </label>
-          <button id="saveYoutubeTranscriptBtn" type="button" class="primary full">Guardar transcripción como material</button>
+          <button id="saveYoutubeTranscriptBtn" data-i18n="uiYouTubeSaveTranscript" type="button" class="primary full">Guardar transcripción como material</button>
           <p class="muted video-privacy-note" data-i18n="uiVideoSharePrivacy">Al usar «Escuchar pestaña», el navegador te pedirá elegir qué pestaña compartir. Seleccioná la de YouTube y activá «Compartir audio». La transcripción se realiza localmente y queda en este navegador.</p>
         </div>
 
@@ -638,13 +638,13 @@
           <h2 data-i18n="uiVisualMath">Matemática visual</h2>
           <p class="muted" data-i18n="uiMathHelp">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
           <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0"></textarea>
-          <button id="solveMathBtn" type="button" class="primary full">Resolver y representar</button>
+          <button id="solveMathBtn" data-i18n="uiSolveMath" type="button" class="primary full">Resolver y representar</button>
           <div id="mathExplanation" class="study-output"></div>
           <canvas id="mathCanvas" width="520" height="360"></canvas>
         </div>
 
         <div class="card">
-          <h2>¿Qué objeto es?</h2>
+          <h2 data-i18n="uiObjectQuestion">¿Qué objeto es?</h2>
           <p class="muted" data-i18n="uiObjectHelp">Mostrá un objeto a cámara y preguntá “¿qué es esto?” o usá el botón.</p>
           <button id="detectObjectBtn" type="button" class="primary full" data-i18n="uiRecognizeObject">Reconocer objeto</button>
           <div id="objectResult" class="study-output"></div>
@@ -687,10 +687,10 @@
           </label>
           <label>En clase esta persona es
             <select id="personRole">
-              <option value="other">Persona / otro</option>
+              <option value="other" data-i18n="uiRoleOther">Persona / otro</option>
               <option value="me">Yo</option>
-              <option value="teacher">Profesor/a</option>
-              <option value="classmate">Compañero/a</option>
+              <option value="teacher" data-i18n="uiRoleTeacher">Profesor/a</option>
+              <option value="classmate" data-i18n="uiRoleClassmate">Compañero/a</option>
             </select>
           </label>
           <button id="enrollBtn" type="button" class="primary full" data-i18n="uiEnroll">Registrar cara y voz</button>

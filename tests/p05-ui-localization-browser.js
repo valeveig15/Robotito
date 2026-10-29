@@ -39,14 +39,32 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
      contact:document.querySelector(".whatsapp-help-button")?.getAttribute("aria-label")===
       expected("uiHelpContactAria"),
      eyebrow:document.getElementById("avatarBrandEyebrow")?.textContent===expected("uiBrandEyebrow"),
-     world:document.getElementById("world")?.getAttribute("aria-label")===expected("uiWorldAria")
+     world:document.getElementById("world")?.getAttribute("aria-label")===
+      expected(document.getElementById("world")?.dataset.timeMode==="night"
+       ?"uiWorldNightAria":"uiWorldDayAria"),
+     dayNight:document.getElementById("dayNightLabel")?.textContent===
+      expected(document.getElementById("world")?.dataset.timeMode==="night"
+       ?"uiNightLabel":"uiDayLabel"),
+     controls:Object.entries({
+      reactionTrialStart:"uiTrialStart",nextTeacherBtn:"uiClassTeacherNext",
+      nextClassmateBtn:"uiClassmateNext",prepareYoutubeBtn:"uiYouTubePrepare",
+      startYoutubeCaptureBtn:"uiYouTubeListen",saveYoutubeTranscriptBtn:"uiYouTubeSaveTranscript",
+      solveMathBtn:"uiSolveMath"
+     }).map(([id,key])=>document.getElementById(id)?.textContent===expected(key)),
+     voiceStyles:Object.entries({natural:"Natural",deep:"Deep",high:"High",
+      cute:"Cute",energetic:"Energetic",funny:"Funny",robotic:"Robotic",
+      strange:"Strange",calm:"Calm",narrator:"Narrator"})
+      .map(([value,suffix])=>[...document.querySelectorAll("#voiceStyle option")]
+       .some(o=>o.value===value&&o.textContent===expected("uiVoiceStyle"+suffix)))
     };
    },lang);
    assert.equal(localized.htmlLang,lang,"Language attr "+lang);
-   for(const key of ["input","subject","birthday","book","contact","eyebrow","world"])
+   for(const key of ["input","subject","birthday","book","contact","eyebrow","world","dayNight"])
     assert.equal(localized[key],true,lang+" "+key);
    assert.equal(localized.questions.length,15,lang+" full help list");
    assert.ok(localized.questions.every(Boolean),lang+" every help example translated");
+   assert.ok(localized.controls.every(Boolean),lang+" class/video/trial controls translated");
+   assert.ok(localized.voiceStyles.every(Boolean),lang+" voice style labels translated");
   }
   assert.deepEqual(errors,[],"No uncaught page errors during locale changes");
   console.log("P05 Chromium UI localization: 6 locales, 15 questions, 4 form checks and accessible labels passed");
