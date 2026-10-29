@@ -5346,7 +5346,7 @@ function applyDayNightMode(date=new Date()){
   document.body.classList.toggle("mode-day",mode==="day");
   document.body.classList.toggle("mode-night",mode==="night");
 
-  const lang=responseLanguage();
+  const lang=state.languageMode||"es";
   const world=$("#world");
   if(world){
     world.dataset.timeMode=mode;
@@ -5366,7 +5366,7 @@ function applyDayNightMode(date=new Date()){
 function clockTick(){
   const d=new Date();
   applyDayNightMode(d);
-  const lang=responseLanguage();
+  const lang=state.languageMode||"es";
   const locale=languageLocale(lang);
   $("#clock").textContent=d.toLocaleTimeString(locale,{hour:"2-digit",minute:"2-digit"});
   $("#dateInfo").textContent=d.toLocaleDateString(locale,{weekday:"long",day:"numeric",month:"long",year:"numeric"});

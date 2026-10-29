@@ -409,7 +409,7 @@ Object.assign(LABELS,{
   "pt": "DD/MM/AAAA",
   "fr": "JJ/MM/AAAA",
   "it": "GG/MM/AAAA",
-  "de": "TT.MM.JJJJ"
+  "de": "TT/MM/JJJJ"
  },
  "uiBookPromptExample": {
   "es": "Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante.",
