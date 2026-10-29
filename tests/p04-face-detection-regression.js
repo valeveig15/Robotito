@@ -60,7 +60,7 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
  eq(r.calls.schedules,0,"Stopped session does not restart loop");
  // Exercise the production face identity consensus with deterministic model outputs.
  const recognizeStart=source.indexOf("function recognize(det){");
- const recognizeEnd=source.indexOf("\\nfunction countExtendedFingers(",recognizeStart);
+ const recognizeEnd=source.indexOf("\nfunction countExtendedFingers(",recognizeStart);
  assert.ok(recognizeStart>0&&recognizeEnd>recognizeStart,"Production face matcher exists");
  let time=10000,match={label:"Ada",distance:.42};
  const calls={greet:0,save:0,affection:0,birthday:0};
@@ -69,7 +69,7 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
    {name:"Ada",lastGreetingAt:0},{name:"Bruno",lastGreetingAt:0}]};
  const recognize=new Function("state","Date","save","KEYS","say","greetingFor",
   "temporaryRobotClass","bondCategory","animateAffection","checkBirthday",
-  source.slice(recognizeStart,recognizeEnd)+"\\nreturn recognize;")(
+  source.slice(recognizeStart,recognizeEnd)+"\nreturn recognize;")(
    faceState,{now:()=>time},()=>{calls.save++;},{people:"people"},
    ()=>{calls.greet++;},p=>p.name,()=>{},()=>"",()=>{calls.affection++;},
    ()=>{calls.birthday++;});
