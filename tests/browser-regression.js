@@ -59,6 +59,44 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return true;
     });
     if(!languageIntegration)throw new Error("Language integration unavailable");
+    // P04: run the real DOM locale switching and dynamic response contracts
+    // under Chromium rather than relying only on isolated module tests.
+    const p04Browser=await page.evaluate(()=>{
+      const i18n=window.ROBOTITO_I18N;
+      if(typeof window.setLanguageMode!=="function"||!i18n?.message)
+        throw new Error("P04 language runtime missing from browser");
+      const keys=["uiPendingTasks","uiSavedClasses","uiBooksHelp","voiceConsent","uiMyBooks"];
+      let checked=0;
+      for(const lang of ["es","en","pt","fr","it","de"]){
+        window.setLanguageMode(lang);
+        if(document.documentElement.lang!==lang||
+           document.querySelector("#languageMode")?.value!==lang)
+          throw new Error("P04 selector did not apply "+lang);
+        for(const key of keys){
+          const el=document.querySelector('[data-i18n="'+key+'"]');
+          if(!el||el.textContent!==i18n.t(key,lang))
+            throw new Error("P04 untranslated DOM label "+lang+"/"+key);
+          checked++;
+        }
+        const summary=i18n.message("pendingTaskSummary",lang,
+          {count:2,first:"Biología"});
+        const birthday=i18n.message("personBirthday",lang,
+          {person:"Ana",date:"30/10/2026"});
+        if(!summary.includes("Biología")||!birthday.includes("Ana")||
+           summary.includes("{")||birthday.includes("{"))
+          throw new Error("P04 unexpanded dynamic reply "+lang);
+        checked+=2;
+        if(!document.querySelector("#voiceSampleConsent")||
+           !document.querySelector("#voiceSampleName")||
+           !document.querySelector('.quick-actions [data-action="highfive"]'))
+          throw new Error("P04 locale damaged controls for "+lang);
+        checked++;
+      }
+      window.setLanguageMode("es");
+      return checked;
+    });
+    console.log("Robotito P04 Chromium interface regression:",p04Browser,"checks");
+
     const gestures=await page.evaluate(async()=>{
       const actions=[...document.querySelectorAll(".world-controls .quick-actions button")]
         .map(button=>button.dataset.action);
