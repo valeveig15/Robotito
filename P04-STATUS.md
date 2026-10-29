@@ -17,7 +17,7 @@ Actualizado: 29 de octubre de 2026.
 - Grabación voluntaria de voz con consentimiento explícito, cancelación de permisos retrasados, retirada del consentimiento, cierre de micrófonos y borrado local de muestras.
 
 ## Evidencias ejecutadas
-- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.692 comprobaciones aisladas**.
+- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.770 comprobaciones aisladas**.
 - Captura privada de muestras y cancelación por consentimiento: **16 comprobaciones aisladas**.
 - ASR y cambios de sesión: **8 comprobaciones aisladas**.
 - Cambios de idioma persistentes, por sesión y por una respuesta: **27 comprobaciones aisladas**.
@@ -25,10 +25,15 @@ Actualizado: 29 de octubre de 2026.
 - Descarte de traducciones atrasadas después de cambios de idioma: **12 comprobaciones aisladas**.
 - Diagnóstico manual de voces y micrófono, comprobado con mocks: **30 comprobaciones aisladas**.
 - Manejador real de síntesis probado con voces sintéticas del sistema: **68 comprobaciones aisladas**.
+- Reconocimiento de voz nativo del navegador (eventos de escucha, errores, reconexión y permisos en seis idiomas): **85 comprobaciones aisladas**.
 - Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
-- **Total de estas ejecuciones:** **76.587 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
+- **Total de estas ejecuciones:** **76.750 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
 
 No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
+
+## Ampliación de localización ASR nativa
+
+Se localizó el ciclo real de reconocimiento de voz proporcionado por `SpeechRecognition` / `webkitSpeechRecognition` para español, inglés, portugués, francés, italiano y alemán: escuchando, voz detectada, micrófono bloqueado, ayuda de permisos, recuperación de micrófono, recuperación general, reconexión, inicio y navegador sin soporte. Se probó el manejador de eventos directamente con un reconocimiento simulado y se validó que usa `recognitionLanguage()` según el idioma. También se bloquearon órdenes negativas como «No quiero hablar en inglés» y «Je ne veux pas parler français», sin anular correcciones posteriores explícitas como «No quiero inglés, quiero italiano».
 
 ## Diagnóstico manual de dispositivos
 
