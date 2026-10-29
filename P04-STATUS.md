@@ -6,7 +6,7 @@ Actualizado: 29 de octubre de 2026.
 - Arranque y mensajes de cámara/micrófono en español, inglés, portugués, francés, italiano y alemán.
 - Selector de 50 avatares con nombres en seis idiomas; conservación de «¡Chocar los cinco!».
 - Controles y mensajes prioritarios de Modo Clase, tareas, biblioteca, memoria y privacidad localizados. Se reemplazó «Gravedad» por «Tono».
-- Plantillas numéricas en los seis idiomas para tareas, personas, clases, libros, fechas, cumpleaños, recuerdos y alimentación, sin acceso a servicios externos.
+- Plantillas numéricas en los seis idiomas para tareas, personas, clases, libros, fechas, cumpleaños, recuerdos y alimentación, sin acceso a servicios externos. Se ampliaron respuestas fijas de hambre, ánimo, reconocimiento de voz, estudios, biblioteca, identidad y capacidades en seis idiomas, con equivalencias españolas para respuestas de origen inglés.
 - Instrucciones de registro de cara y voz traducidas a seis idiomas; corregida la clasificación italiana para evitar bloqueos de voz.
 - Pruebas añadidas al recorrido de Chromium para verificar la interfaz, plantillas y precedencia de cambios temporales de idioma.
 - Diez estilos de síntesis mediante los motores instalados del sistema (no son diez voces humanas garantizadas ni clonación).
@@ -17,12 +17,12 @@ Actualizado: 29 de octubre de 2026.
 - Grabación voluntaria de voz con consentimiento explícito, cancelación de permisos retrasados, retirada del consentimiento, cierre de micrófonos y borrado local de muestras.
 
 ## Evidencias ejecutadas
-- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.460 comprobaciones aisladas**.
+- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.683 comprobaciones aisladas**.
 - Captura privada de muestras y cancelación por consentimiento: **16 comprobaciones aisladas**.
 - ASR y cambios de sesión: **8 comprobaciones aisladas**.
 - Cambios de idioma persistentes, por sesión y por una respuesta: **27 comprobaciones aisladas**.
 - Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
-- **Total de estas ejecuciones:** **76.224 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
+- **Total de estas ejecuciones:** **76.447 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
 
 No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
 
