@@ -21,3 +21,54 @@ ok(embedded.includes('===code'),"No cross-language voice substitution");
 ok(!/\b(fetch|XMLHttpRequest|WebSocket|MediaRecorder|localStorage|indexedDB)\b/.test(embedded),
  "Diagnostic must neither send nor store recordings");
 console.log("P04 manual device diagnostic contract:",checked,"checks");
+
+// Simulate the diagnostic UI with and without installed voices.
+async function fakeBrowser(voices=null,lateMic=false){
+ const elements={};
+ for(const id of ["lang","voiceList","speak","speechStop","speechStatus",
+  "micStart","micStop","meter","meterFill","micStatus"]){
+   elements[id]={value:id==="lang"?"es":"",style:{},textContent:"",
+    disabled:false,handlers:{},addEventListener(k,fn){this.handlers[k]=fn;},
+    setAttribute(){}};
+ }
+ const document={getElementById:id=>elements[id],addEventListener(){}};
+ const synth=voices?{getVoices:()=>voices,addEventListener(){},
+  cancel(){},speak(){this.calls=(this.calls||0)+1;}}:undefined;
+ const window={speechSynthesis:synth,
+  SpeechSynthesisUtterance:voices?class{constructor(text){this.text=text;}}:undefined,
+  addEventListener(){}};
+ let resolveMic=null;
+ const track={stops:0,stop(){this.stops++;}};
+ const navigator={mediaDevices:{getUserMedia:async()=>lateMic
+  ?new Promise(resolve=>resolveMic=()=>resolve({getTracks:()=>[track]}))
+  :{getTracks:()=>[track]}}};
+ new Function("window","document","navigator","speechSynthesis",
+  "SpeechSynthesisUtterance","requestAnimationFrame","cancelAnimationFrame",
+  embedded)(window,document,navigator,synth,window.SpeechSynthesisUtterance,()=>1,()=>{});
+ return {elements,synth,track,grant:()=>resolveMic?.()};
+}
+return (async()=>{
+ const absent=await fakeBrowser();
+ absent.elements.lang.value="fr";absent.elements.lang.handlers.change();
+ ok(absent.elements.speak.disabled,"No voice engine gracefully disables button");
+ absent.elements.speechStop.handlers.click();
+ const mixed=await fakeBrowser([{lang:"en-US",name:"English"},
+  {lang:"fr-FR",name:"French"}]);
+ mixed.elements.lang.value="fr";mixed.elements.lang.handlers.change();
+ ok(!mixed.elements.speak.disabled,"French is selectable");
+ ok(!mixed.elements.voiceList.textContent.includes("English"),"English excluded");
+ mixed.elements.speak.handlers.click();
+ ok(mixed.synth.calls===1,"French synthesis requested");
+ mixed.elements.lang.value="de";mixed.elements.lang.handlers.change();
+ ok(mixed.elements.speak.disabled,"No German voice");
+ mixed.elements.speak.handlers.click();
+ ok(mixed.synth.calls===1,"Never speak German with other language voice");
+ const delayed=await fakeBrowser(null,true);
+ delayed.elements.micStart.handlers.click();
+ delayed.elements.micStop.handlers.click();
+ delayed.grant();
+ for(let k=0;k<7;k++)await Promise.resolve();
+ ok(delayed.track.stops===1,"Cancel before permission closes late stream");
+ console.log("P04 diagnostic synthetic browser: 7 checks");
+})();
+
