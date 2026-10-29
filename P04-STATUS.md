@@ -55,3 +55,7 @@ Se corrigieron además las frases «decime algo en francés/italiano/alemán», 
 5. Auditar consentimiento, eliminación de muestras, funcionamiento sin conexión y accesibilidad en dispositivos físicos.
 
 **Estado:** implementación extensa integrada y comprobada de forma aislada; certificación exhaustiva del punto 4 **no completada**. La suite de Chromium está integrada en CI pero no verificada desde esta sesión. No se han ejecutado pruebas físicas de micrófono o sintetizador reales. No presentar el punto 5 como iniciado mientras este bloqueo permanezca.
+
+### Recuperación de fallos de traducción
+
+La promesa de localización asíncrona ahora cuenta con recuperación ante rechazo, evitando dejar «Preparando…» indefinidamente. Esta protección requiere todavía un ensayo en navegador real; la integración CI no se certifica desde las pruebas aisladas.
