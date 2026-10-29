@@ -18,7 +18,7 @@
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="i18n.js?v=20261029-p06-voices2"></script>
+  <script defer src="i18n.js?v=20261029-p07-backup1"></script>
   <script defer src="voice-system.js?v=20261029-p06-voices2"></script>
   <script defer src="voice-sample-capture.js?v=20261029-p04-release3"></script>
   <script defer src="audio-perception.js?v=20261028-real-yamnet-cadence1"></script>
@@ -32,7 +32,7 @@
   <script defer src="memory-retrieval.js?v=20261024-context2"></script>
   <script defer src="semantic-planner.js?v=20261026-semantic1"></script>
   <script defer src="intent-engine.js?v=20261026-semantic1"></script>
-  <script defer src="robotito-store.js?v=20261029-p04-atomic1"></script>
+  <script defer src="robotito-store.js?v=20261029-p07-backup1"></script>
   <script defer src="presidents.js"></script>
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
   <script defer src="speech-fallback.js?v=20261029-p04-release3"></script>
@@ -760,6 +760,19 @@
           <h2 data-i18n="uiAddMemory">Agregar un recuerdo manual</h2>
           <textarea id="memoryInput" data-i18n-placeholder="uiMemoryExample" rows="3" placeholder="Ej. Mi color favorito es el verde"></textarea>
           <button id="rememberBtn" type="button" class="primary full" data-i18n="uiSaveMemory">Guardar recuerdo</button>
+        </div>
+        <div class="card">
+          <details class="memory-backup">
+            <summary data-i18n="p07BackupTitle">Respaldo y recuperación de memoria local</summary>
+            <p class="muted" data-i18n="p07BackupWarning">El archivo JSON puede incluir recuerdos privados, rostros, audios y transcripciones. No está cifrado: guardalo en un lugar privado y no lo compartas.</p>
+            <p class="muted" data-i18n="p07BackupScope">La copia contiene los datos de IndexedDB de este navegador, de todas las personas y sesiones guardadas. No incluye archivos ni preferencias fuera de IndexedDB.</p>
+            <div class="actions">
+              <button id="downloadMemoryBackup" type="button" class="ghost" data-i18n="p07BackupDownload">Descargar copia de seguridad</button>
+              <button id="chooseMemoryBackup" type="button" class="ghost danger" data-i18n="p07BackupRestore" disabled>Restaurar una copia</button>
+            </div>
+            <input id="memoryBackupFile" type="file" accept="application/json,.json" hidden aria-label="Archivo local de respaldo Robotito" data-i18n-aria-label="p07BackupFileAria" />
+            <p id="memoryBackupStatus" class="muted" role="status" aria-live="polite"></p>
+          </details>
         </div>
         <div class="card">
           <div class="section-head">
