@@ -1,7 +1,10 @@
 "use strict";
 const assert=require("node:assert/strict");
 const {spawn}=require("node:child_process"),path=require("node:path");
-const {chromium}=require("playwright");
+const engines=require("playwright");
+const engineName=process.env.ROBOTITO_BROWSER_ENGINE||"chromium";
+if(!["chromium","firefox","webkit"].includes(engineName))throw Error("Unsupported browser engine");
+const engine=engines[engineName];
 const port=Number(process.env.ROBOTITO_P04_DEVICE_PORT||8894);
 const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],
  {cwd:path.resolve(__dirname,".."),stdio:"ignore"});
@@ -10,7 +13,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  let browser;
  try{
   await sleep(600);
-  browser=await chromium.launch({headless:true});
+  browser=await engine.launch({headless:true});
   const page=await browser.newPage({permissions:[]});
   const pageErrors=[];page.on("pageerror",e=>pageErrors.push(String(e)));
   await page.goto("http://127.0.0.1:"+port+"/p04-device-check.html",
@@ -125,7 +128,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   assert.equal(await page.locator("#asrTranscript").textContent(),"",
    "Hidden page clears transient transcript");
   assert.equal(pageErrors.length,0,"No JavaScript errors: "+pageErrors.join(" | "));
-  console.log("Robotito P04 diagnostic Chromium: 6 locales; voice and mic controls; permission denial passed");
+  console.log("Robotito P04 diagnostic "+engineName+": 6 locales; camera, ASR and mic lifecycle; permission denial passed");
  }finally{
   if(browser)await browser.close();
   server.kill("SIGTERM");
