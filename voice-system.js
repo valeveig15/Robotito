@@ -27,7 +27,10 @@ function selectVoice(voices,language,preferredURI){
  const requested=String(language||"es").toLowerCase().split(/[-_]/)[0];
  const pool=Array.from(voices||[]).filter(v=>v&&typeof v.lang==="string"&&
   v.lang.toLowerCase().split(/[-_]/)[0]===requested);
+ const requestedLocale=String(language||"es").toLowerCase().replace(/_/g,"-");
  return pool.find(v=>v.voiceURI===preferredURI)
+  ||pool.find(v=>v.lang.toLowerCase().replace(/_/g,"-")===requestedLocale&&/natural|neural/i.test(v.name||""))
+  ||pool.find(v=>v.lang.toLowerCase().replace(/_/g,"-")===requestedLocale)
   ||pool.find(v=>/natural|neural/i.test(v.name||""))
   ||pool[0]||null;
 }
