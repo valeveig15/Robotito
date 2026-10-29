@@ -35,6 +35,7 @@ const LABELS={
  speak:{es:"Hablar en voz alta",en:"Speak aloud",pt:"Falar em voz alta",fr:"Parler à voix haute",it:"Parla ad alta voce",de:"Laut sprechen"},
  selectLanguage:{es:"Idioma",en:"Language",pt:"Idioma",fr:"Langue",it:"Lingua",de:"Sprache"},
  selectVoice:{es:"Voz",en:"Voice",pt:"Voz",fr:"Voix",it:"Voce",de:"Stimme"},
+ voiceUnavailable:{es:"No hay una voz disponible para este idioma; Robotito puede mostrar la respuesta por escrito.",en:"No voice is available for this language; Robotito can still show the reply as text.",pt:"Não há voz disponível para este idioma; o Robotito ainda pode mostrar a resposta em texto.",fr:"Aucune voix n’est disponible pour cette langue ; Robotito peut afficher la réponse en texte.",it:"Nessuna voce disponibile per questa lingua; Robotito può comunque mostrare la risposta scritta.",de:"Für diese Sprache ist keine Stimme verfügbar; Robotito kann die Antwort weiterhin als Text anzeigen."},
  voiceStyle:{es:"Estilo de voz",en:"Voice style",pt:"Estilo de voz",fr:"Style vocal",it:"Stile vocale",de:"Stimmstil"},
  pitch:{es:"Tono",en:"Pitch",pt:"Tom",fr:"Hauteur",it:"Tono",de:"Tonhöhe"},
  speed:{es:"Velocidad",en:"Speed",pt:"Velocidade",fr:"Vitesse",it:"Velocità",de:"Geschwindigkeit"},
