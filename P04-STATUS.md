@@ -6,6 +6,9 @@ Actualizado: 29 de octubre de 2026.
 - Arranque y mensajes de cámara/micrófono en español, inglés, portugués, francés, italiano y alemán.
 - Selector de 50 avatares con nombres en seis idiomas; conservación de «¡Chocar los cinco!».
 - Controles y mensajes prioritarios de Modo Clase, tareas, biblioteca, memoria y privacidad localizados. Se reemplazó «Gravedad» por «Tono».
+- Plantillas numéricas en los seis idiomas para tareas, personas, clases, libros, fechas, cumpleaños, recuerdos y alimentación, sin acceso a servicios externos.
+- Instrucciones de registro de cara y voz traducidas a seis idiomas; corregida la clasificación italiana para evitar bloqueos de voz.
+- Pruebas añadidas al recorrido de Chromium para verificar la interfaz, plantillas y precedencia de cambios temporales de idioma.
 - Diez estilos de síntesis mediante los motores instalados del sistema (no son diez voces humanas garantizadas ni clonación).
 - La voz elegida debe corresponder al idioma; si el navegador solo ofrece voces extranjeras, la respuesta permanece escrita.
 - Cambios explícitos de idioma por selector, texto o voz; protección contra órdenes negadas y citas; modos persistente, sesión y una respuesta.
@@ -14,11 +17,12 @@ Actualizado: 29 de octubre de 2026.
 - Grabación voluntaria de voz con consentimiento explícito, cancelación de permisos retrasados, retirada del consentimiento, cierre de micrófonos y borrado local de muestras.
 
 ## Evidencias ejecutadas
-- Regresión P04: 1.004 comprobaciones aisladas.
-- Captura privada: 16 comprobaciones aisladas.
-- ASR y cambio de sesión: 8 comprobaciones aisladas.
-- Regresiones anteriores de planificador, audio y pruebas generativas: 74.713 comprobaciones aisladas (3 semillas).
-- **Total de estas ejecuciones:** 75.741 comprobaciones aisladas, sin fallos en los casos ejecutados.
+- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.460 comprobaciones aisladas**.
+- Captura privada de muestras y cancelación por consentimiento: **16 comprobaciones aisladas**.
+- ASR y cambios de sesión: **8 comprobaciones aisladas**.
+- Cambios de idioma persistentes, por sesión y por una respuesta: **24 comprobaciones aisladas**.
+- Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
+- **Total de estas ejecuciones:** **76.221 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
 
 No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
 
@@ -30,4 +34,4 @@ No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una 
 4. Probar rendimiento y disponibilidad real de modelos locales de traducción/ASR. Cuando no existan, informar con claridad el límite en vez de pronunciar texto no traducido.
 5. Auditar consentimiento, eliminación de muestras, funcionamiento sin conexión y accesibilidad en dispositivos físicos.
 
-**Estado:** implementación extensa integrada y comprobada de forma aislada; certificación exhaustiva del punto 4 **no completada**. No presentar el punto 5 como iniciado mientras este bloqueo permanezca.
+**Estado:** implementación extensa integrada y comprobada de forma aislada; certificación exhaustiva del punto 4 **no completada**. La suite de Chromium está integrada en CI pero no verificada desde esta sesión. No se han ejecutado pruebas físicas de micrófono o sintetizador reales. No presentar el punto 5 como iniciado mientras este bloqueo permanezca.
