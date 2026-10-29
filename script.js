@@ -600,6 +600,9 @@ function say(text, ms=3000, spokenLang=null){
     b.classList.remove("hidden");
     void localizeGeneratedSpeech(text,target).then(localized=>{
       commitSpeechMessage(localized,ms,target,token);
+    }).catch(error=>{
+      console.warn("response localization",error);
+      commitSpeechMessage(localizedSpeechFallback(target),ms,target,token);
     });
     return;
   }
