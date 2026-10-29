@@ -91,7 +91,7 @@ try{
  write(tampered.manifest,JSON.stringify(obj));
  denied(path.join(temp,"edited-labels.json"),[a.manifest,tampered.manifest],
   /Reviewed annotation SHA-256 mismatch/);
- const external=os.mkdtempSync(path.join(os.tmpdir(),"robotito-external-corpus-"));
+ const external=fs.mkdtempSync(path.join(os.tmpdir(),"robotito-external-corpus-"));
  try{
   const outside=session(path.join(external,"not-in-corpus"),"outside","outside","test",
    Buffer.from("authorized outside recording"));
