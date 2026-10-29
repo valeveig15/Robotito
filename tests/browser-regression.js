@@ -109,6 +109,33 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       return checked;
     });
     console.log("Robotito P04 Chromium interface regression:",p04Browser,"checks");
+    // Exercise actual IndexedDB rather than a mock: private audio and its
+    // consent metadata must be saved and deleted together. No microphone used.
+    const voiceStorageIntegration=await page.evaluate(async()=>{
+      const db=window.ROBOTITO_STORE,voice=window.ROBOTITO_VOICE_SYSTEM;
+      if(!db?.putRecordWithBlob||!db?.getRecord||!db?.getBlob||
+         !voice?.saveProfileFromRecording||!voice?.deleteProfile)
+        throw new Error("Atomic voice profile storage unavailable");
+      const sample=new Blob([new Uint8Array(128)],{type:"audio/webm"});
+      await voice.saveProfileFromRecording(sample,{subject:"self"});
+      const record=await db.getRecord("voice-profile-local");
+      const audio=await db.getBlob("voice-sample-local");
+      if(record?.blobId!=="voice-sample-local"||audio?.size!==128)
+        throw new Error("Voice recording and consent metadata not linked");
+      await voice.deleteProfile();
+      if(await db.getRecord("voice-profile-local")||await db.getBlob("voice-sample-local"))
+        throw new Error("Deleting a voice sample left private audio behind");
+      // Simulate an orphan left by a legacy interrupted two-step write.
+      await db.putBlob("voice-sample-local",sample,
+        {owner:"local",type:"audio",recordId:"voice-profile-local"});
+      await voice.deleteProfile();
+      if(await db.getBlob("voice-sample-local"))
+        throw new Error("Legacy orphaned voice sample could not be removed");
+      return 5;
+    });
+    console.log("Robotito P04 Chromium real IndexedDB voice privacy:",
+      voiceStorageIntegration,"checks");
+
 
     const gestures=await page.evaluate(async()=>{
       const actions=[...document.querySelectorAll(".world-controls .quick-actions button")]
