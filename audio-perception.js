@@ -87,7 +87,12 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    // A model may assign a new frameId to identical PCM in a fast callback.
    // Merely changing that ID cannot manufacture independent evidence.
    if(lastIndependentModelAt!==null&&
-      at-lastIndependentModelAt<MODEL_OBSERVATION_CADENCE.taggedMinGapMs)return [];
+      at-lastIndependentModelAt<MODEL_OBSERVATION_CADENCE.taggedMinGapMs){
+    // New IDs arriving faster than independent PCM windows invalidate the
+    // accumulated run. Do not silently sample every Nth repeated take.
+    modelEvidence=Object.create(null);
+    return [];
+   }
    lastIndependentModelAt=at;
   }
   const rawScores=scores.scores&&typeof scores.scores==="object"?scores.scores:scores;
