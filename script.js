@@ -416,13 +416,13 @@ function speakResponse(text,forcedLang=null){
     console.warn("Robotito blocked mismatched speech",{detectedLanguage,requestedLanguage:lang});
     return false;
   }
-  // When system voices are known and none matches, keep the reply as text.
+  // Until a compatible system voice is actually enumerated, keep the reply as text.
   const voices=speechSynthesis.getVoices();
   const selected=voices.find(v=>v.voiceURI===state.voiceURI);
   const selectedMatches=voiceMatchesLanguage(selected,lang);
   const chosen=selectedMatches?selected:
     window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,state.voiceURI)||chooseDefaultVoice(voices,lang);
-  if(voices.length&&!chosen)return false;
+  if(!chosen)return false;
   speechSynthesis.cancel();
   state.recentVoicePrints=[];
   state.speaking=true;
@@ -431,7 +431,7 @@ function speakResponse(text,forcedLang=null){
   }else{
     discardRecognition();
   }
-  setListenState(state.languageMode==="en"?"responding":state.languageMode==="pt"?"respondendo":"respondiendo");
+  setListenState(window.ROBOTITO_I18N?.t?.("voiceResponding",lang)||"respondiendo");
   const utter=new SpeechSynthesisUtterance(clean);
   window.ROBOTITO_VOICE_SYSTEM?.configureUtterance?.(utter,{style:state.voiceStyle,language:lang,voices,voiceURI:chosen?.voiceURI,basePitch:state.voicePitch/.65,baseRate:state.voiceRate/.82});
   if(!window.ROBOTITO_VOICE_SYSTEM){
