@@ -4091,15 +4091,22 @@ async function detectLoop(){
     const dets=await faceapi.detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.45}))
       .withFaceLandmarks().withFaceDescriptors();
     state.lastDetections=dets;
-    if(dets.length){
+    if(dets.length===1){
       state.lastSeenAt=Date.now();
-      $("#seenLabel").textContent=dets.length===1?"1 persona":dets.length+" personas";
+      $("#seenLabel").textContent="1 persona";
       followFace(dets[0].detection.box);
       recognize(dets[0]);
       detectEating(dets[0]);
     }else{
-      $("#seenLabel").textContent="a nadie";
-      if(Date.now()-state.lastFaceConfirmedAt>2600)state.currentPerson=null;
+      $("#seenLabel").textContent=dets.length?dets.length+" personas":"a nadie";
+      if(dets.length>1){
+        // A crowded frame cannot authorize a person's private context.
+        state.currentPerson=null;
+        state.faceMatchHistory=[];
+        state.lastFaceConfirmedAt=0;
+      }else if(Date.now()-state.lastFaceConfirmedAt>2600){
+        state.currentPerson=null;
+      }
       resetEyes();
     }
   }catch(e){console.warn("vision",e);}
