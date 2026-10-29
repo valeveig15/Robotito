@@ -233,4 +233,18 @@ for(const key of ["uiClassSpeakerHint","uiClassConsentHint","uiVideoIntro","uiVi
 }
 for(const key of ["uiClassSpeakerHint","uiClassConsentHint","uiVideoIntro","uiVideoSharePrivacy","uiAcademicNoFiles","uiMathHelp","uiObjectHelp","uiTaskSheetHelp","uiNoTasksHelp","uiEnrollHelp","uiGoodreadsButton","uiGoodreadsHow","uiGoodreadsData","uiBookDescriptionHelp","uiClassEmptyText","uiClassSummaryHelp"])
  ok(html.includes('data-i18n="'+key+'"'),"Translated DOM instructions "+key);
+// All voice/face enrollment prompts must be translated in 6-language mode.
+const enrollBegin=source.indexOf("const ENROLL_LOCALES=");
+const enrollEnd=source.indexOf("function setEnrollProgress(",enrollBegin);
+ok(enrollBegin>=0&&enrollEnd>enrollBegin,"Enrollment locale contract");
+for(const language of ["fr","it","de"]){
+ const translated=new Function("state","window",
+  source.slice(enrollBegin,enrollEnd)+"return enrollText;")(
+  {languageMode:language},{ROBOTITO_I18N:i18n});
+ for(const phrase of ["1/4 · Mirá de frente a la cámara.","2/4 · Girá apenas la cara hacia un lado.","3/4 · Ahora girá apenas hacia el otro lado.","4/4 · Volvé al frente con expresión natural.","Necesito una sola cara en cámara.","No veo la cara con suficiente claridad. Acercate un poco y buscá buena luz.","Acercate un poquito más a la cámara.","No conseguí suficientes muestras buenas de esa posición. Probá otra vez con más luz.","Cara aprendida. Ahora voy con la voz.","Voz · Cuando estés listo, empezá a hablar. No voy a contar tiempo hasta escucharte de verdad.","No llegué a detectar una voz. El registro no empezó: podés intentarlo de nuevo y hablar cuando veas «esperando que hables».","Te dejé de escuchar. El progreso está pausado; seguí hablando cuando quieras.","Te escucho. Seguí hablando con naturalidad; contame cualquier cosa.","Bien. Ahora decí otra frase distinta para que aprenda mejor tu voz.","Casi está. Una última frase natural, sin acercarte más al micrófono.","Escuché algo, pero no junté suficiente voz real. Necesito varios segundos efectivos hablando; los silencios no cuentan.","Las muestras de voz no fueron consistentes entre sí. Es mejor repetir el registro en un lugar más silencioso.","Voz verificada. Ya tengo varias muestras distintas de la misma voz.","Voy a tomar varias muestras. Quedate frente a la cámara.","No pude registrar la cara con suficiente calidad. Probá con buena luz y sin otras personas en cámara.","muy buena","buena","aceptable","Algo falló durante el registro. Probá otra vez con buena luz y poco ruido."]){
+  const result=translated(phrase,"English","Português");
+  ok(result!==phrase&&result!=="English"&&result.length>=2,
+   "Missing translated enrollment step "+language+"/"+phrase);
+ }
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
