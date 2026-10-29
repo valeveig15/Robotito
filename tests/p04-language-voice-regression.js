@@ -166,4 +166,14 @@ ok(source.includes('window.addEventListener("pagehide",()=>voiceSamples?.cancel(
  "BFCache return must permit a new voice sample recording");
 for(const version of ["i18n.js?v=20261029-p04-finish2","script.js?v=20261029-p04-finish2","speech-fallback.js?v=20261029-p04-finish2","voice-sample-capture.js?v=20261029-p04-finish2"])
  ok(html.includes(version),"Assets load updated P04 implementation "+version);
+// Frequent class, tasks and library messages work without a downloaded model.
+for(const original of ["Ya puedo hablar de nuevo.","Todavía no importaste tu biblioteca de Goodreads.","No tengo tu cumpleaños registrado.","Hoy todavía no escuché ninguna clase.","Ahora mismo no veo a nadie.","Ahora mismo no veo ninguna mano.","No tengo una edad humana. Soy una mascota virtual.","Soy Robotito, un panda virtual.","Estoy durmiendo.","Estoy bailando porque detecté música.","No encontré información suficiente para contestar eso.","No encontré evidencia suficiente en las transcripciones para contestar eso.","No encontré ese cumpleaños entre las personas registradas.","No veo tareas pendientes en la hoja conectada.","No tengo registrada una comida todavía.","No pude encontrar una recomendación ahora mismo.","Entendido, no voy a hacer eso.","Todavía no había dicho nada."]){
+ for(const language of langs){
+  const translated=i18n.fixedReply(original,language);
+  ok(typeof translated==="string"&&translated.length>5,"Missing fixed response "+original+"/"+language);
+ }
+}
+eq(i18n.fixedReply("Unknown private class sentence","de"),null,
+ "Do not invent unknown translations");
+ok(source.includes('fixedReply?.(text,target)'),"Known responses used before language model");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
