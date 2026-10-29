@@ -182,4 +182,8 @@ for(const key of ["voiceThirdParty","voiceThirdPartyName","voiceConsent","voiceL
 }
 ok(html.includes('id="voiceSampleConsent" type="checkbox"'),"Consent input preserved");
 ok(html.includes('id="voiceSampleName"'),"Name field preserved");
+for(const key of ["uiAskIntro","uiAskExamples","uiClassTopicHelp","uiClassSavedHelp","uiNoClasses","uiClassEditorHelp","uiClassAudioHelp","uiClassEmptyAudio","uiClassFinishHint","uiClassMaterialHelp","uiTaskReminderHelp","uiPeoplePrivacy","uiBooksHelp","uiMemoryHelp","uiSystemOff","uiLocalPrivacy","uiNoTaskSheet","uiNoLibrary"])
+ for(const code of langs)ok(i18n.t(key,code).length>4,"Missing module copy "+key+"/"+code);
+for(const key of ["uiAskIntro","uiAskExamples","uiClassTopicHelp","uiClassSavedHelp","uiNoClasses","uiClassEditorHelp","uiClassAudioHelp","uiClassEmptyAudio","uiClassFinishHint","uiClassMaterialHelp","uiTaskReminderHelp","uiPeoplePrivacy","uiBooksHelp","uiMemoryHelp","uiSystemOff","uiLocalPrivacy","uiNoTaskSheet","uiNoLibrary"])
+ ok(html.includes('data-i18n="'+key+'"'),"Visible academic/help copy localized "+key);
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
