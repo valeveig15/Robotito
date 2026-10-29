@@ -62,7 +62,7 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
  const recognizeStart=source.indexOf("function recognize(det){");
  const recognizeEnd=source.indexOf("\nfunction countExtendedFingers(",recognizeStart);
  assert.ok(recognizeStart>0&&recognizeEnd>recognizeStart,"Production face matcher exists");
- let time=10000,match={label:"Ada",distance:.42};
+ let time=100000,match={label:"Ada",distance:.42};
  const calls={greet:0,save:0,affection:0,birthday:0};
  const faceState={faceMatcher:{findBestMatch:()=>match},currentPerson:null,
   lastFaceConfirmedAt:0,faceMatchHistory:[],people:[
