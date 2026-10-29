@@ -57,7 +57,7 @@ const choose=new Function("normalizeText","responseLanguage",
  x=>String(x||"").toLowerCase(),()=> "es");
 eq(choose([voices[0]],"fr"),null,"Legacy selection must not substitute Spanish for French");
 eq(choose(voices,"de")?.voiceURI,"local-de","German selection in legacy adapter");
-ok(source.includes("if(voices.length&&!chosen)return false;"),
+ok(source.includes("if(!chosen)return false;"),
  "Unavailable language voices must not be spoken with a different accent");
 ok(html.includes('data-i18n="pitch"')&&!html.includes(">Gravedad <input"),
  "Old Gravedad label replaced with localized Tono");
@@ -262,4 +262,9 @@ for(const english of ["I'm sleepy, almost asleep.","I'm okay, but I'm pretty hun
  const spanish=i18n.fixedReply(english,"es");
  ok(spanish&&spanish!==english,"English-source answer must translate into Spanish");
 }
+for(const lang of langs){
+ ok(i18n.t("voiceResponding",lang).length>=5,"Localized speech status "+lang);
+}
+ok(source.includes('setListenState(window.ROBOTITO_I18N?.t?.("voiceResponding",lang)'),
+ "Active speech uses target language rather than base session language");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
