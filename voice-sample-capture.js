@@ -40,6 +40,8 @@ function create({requestStream=()=>root.navigator.mediaDevices.getUserMedia({aud
    obj.onstop=()=>{
     release(grant);if(stream===grant)stream=null;if(recorder===obj)recorder=null;clear();
     if(mine!==generation||disposed||!getConsent()){if(phase!=="saving")phase="idle";return;}
+    // Some MediaRecorder implementations emit stop twice; accept only one completion.
+    if(phase!=="stopping"&&phase!=="recording")return;
     phase="saving";inform("saving");
     pending=(async()=>{
      try{
