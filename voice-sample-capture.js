@@ -56,7 +56,7 @@ function create({requestStream=()=>root.navigator.mediaDevices.getUserMedia({aud
    };
    obj.onerror=()=>{cancel();inform("error");};
    obj.start();phase="recording";inform("recording");
-   timer=schedule(()=>{if(mine===generation)stop();},3000);
+   if(mine===generation&&phase==="recording")timer=schedule(()=>{if(mine===generation)stop();},3000);
    return true;
   }catch(e){
    release(grant);
