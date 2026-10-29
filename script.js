@@ -5357,7 +5357,7 @@ function bindUI(){
   $("#voiceSampleThirdParty")?.addEventListener("change",()=>voiceSamples?.cancel());
   $("#voiceSampleName")?.addEventListener("input",()=>voiceSamples?.cancel());
   document.addEventListener("visibilitychange",()=>{if(document.hidden)voiceSamples?.cancel();});
-  window.addEventListener("pagehide",()=>voiceSamples?.dispose());
+  window.addEventListener("pagehide",()=>voiceSamples?.cancel());
   $("#deleteVoiceSample")?.addEventListener("click",async()=>{
     try{await voiceSamples?.removeSample();}catch(e){console.warn("sample delete",e);}
   });
