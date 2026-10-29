@@ -2,7 +2,7 @@
   "name": "robotito-regression",
   "private": true,
   "scripts": {
-    "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:generative",
+    "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:p08 && npm run test:generative",
     "test:core": "node tests/core-regression.js",
     "test:browser": "node tests/browser-regression.js",
     "test:browser:performance": "node tests/browser-performance-smoke.js",
@@ -12,6 +12,7 @@
     "test:universal": "node tests/universal-system-regression.js",
     "test:generative": "ROBOTITO_TEST_SEED=17 npm run test:universal && ROBOTITO_TEST_SEED=42 npm run test:universal && ROBOTITO_TEST_SEED=99 npm run test:universal",
     "test:ci": "npm test && npm run test:browser && npm run test:p04:browser && npm run test:p05:browser && npm run test:p07:browser && npm run test:browser:matrix",
+    "test:p08": "node tests/p08-identity-enrollment-regression.js && node tests/p08-enrollment-flow-regression.js",
     "test:p04": "node tests/p04-language-voice-regression.js && node tests/voice-sample-capture-regression.js && node tests/p04-asr-session-regression.js && node tests/p04-language-scopes-regression.js && node tests/p04-phrase-commands-regression.js && node tests/p04-localization-race-regression.js && node tests/p04-device-check-regression.js && node tests/p04-tts-handler-regression.js && node tests/p04-browser-asr-status-regression.js && node tests/p04-voice-atomic-storage-regression.js && node tests/p04-face-detection-regression.js && node tests/p04-cross-modal-memory-regression.js && node tests/p04-face-similarity-regression.js && node tests/p04-transcript-segmentation-regression.js && node tests/p04-local-speech-segmentation-regression.js",
     "test:memory": "node tests/memory-query-regression.js && node tests/p07-contextual-memory-regression.js && npm run test:p05 && npm run test:p06",
     "test:p07:browser": "node tests/p07-backup-browser.js",
