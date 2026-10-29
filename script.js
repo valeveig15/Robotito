@@ -1999,12 +1999,12 @@ function updateAvatarAria(){
   const avatar=avatarById(state.avatar);
   const lang=avatarLanguage();
   const name=avatarName(avatar,lang);
-  robot.setAttribute("aria-label",lang==="en"
-    ?`Robotito, virtual ${name} avatar`
-    :lang==="pt"?`Robotito, avatar virtual de ${name}`:`Robotito, avatar virtual de ${name}`);
+  const aria=window.ROBOTITO_I18N?.t?.("uiAvatarAria",lang)
+    ||"Robotito, avatar virtual de {name}";
+  robot.setAttribute("aria-label",aria.replace("{name}",name));
   setAvatarVisual($("#avatarBrandIcon"),avatar,"avatar-brand-svg");
-  if($("#avatarBrandEyebrow"))$("#avatarBrandEyebrow").textContent=lang==="en"
-    ?"YOUR VIRTUAL COMPANION":lang==="pt"?"SEU COMPANHEIRO VIRTUAL":"TU COMPAÑERO VIRTUAL";
+  if($("#avatarBrandEyebrow"))$("#avatarBrandEyebrow").textContent=
+    window.ROBOTITO_I18N?.t?.("uiBrandEyebrow",lang)||"TU COMPAÑERO VIRTUAL";
 }
 function updateAvatarMoodIcon(mood=state.mood){
   const icons={
@@ -2135,6 +2135,7 @@ function setLanguageMode(mode){
   if(!setLanguageMode.sessionOnly)localStorage.setItem("robotito.languageMode.v1",mode);
   if($("#languageMode"))$("#languageMode").value=mode;
   window.ROBOTITO_I18N?.apply?.(mode);
+  if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
   if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
@@ -5042,7 +5043,7 @@ function renderMemories(){
     row.className="memory-row";
     row.innerHTML=`<strong>${escapeHtml(m.person||"Alguien")}</strong>
       <p>${escapeHtml(m.text)}</p>
-      <span class="muted">${m.source==="auto"?"Escuchado · ":"Manual · "}${new Date(m.at).toLocaleString("es-UY")}</span>`;
+      <span class="muted">${m.source==="auto"?"Escuchado · ":"Manual · "}${new Date(m.at).toLocaleString(languageLocale(state.languageMode||"es"))}</span>`;
     root.appendChild(row);
   });
 }

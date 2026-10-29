@@ -15,10 +15,10 @@ const $=s=>s==="#languageMode"?selector:null;
 const confirmation=(text,lang)=>log.push({text,lang});
 const methods=new Function("window","state","document","localStorage","$",
  "populateVoiceSelect","isMobileSpeech","discardRecognition","startListeningCycle",
- "sayInLanguage","applyAvatar","showStartupStep",source.slice(begin,end)+
+ "sayInLanguage","applyAvatar","showStartupStep","updateAvatarAria",source.slice(begin,end)+
  "return {setLanguageMode,handleLanguageCommand};")(
  {ROBOTITO_I18N:{...i18n,apply:()=>{}},RobotitoLocalASR:{active:false}},
- state,document,storage,$,()=>{},()=>false,()=>{},()=>{},confirmation,()=>{},()=>{});
+ state,document,storage,$,()=>{},()=>false,()=>{},()=>{},confirmation,()=>{},()=>{},()=>{});
 eq(methods.handleLanguageCommand("Hablame en francés solo esta vez"),true,"One-turn command");
 eq(state.languageMode,"es","One-turn command does not switch base locale");
 eq(state.nextResponseLanguage,"fr","One-turn reply language queued");

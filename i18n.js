@@ -257,17 +257,317 @@ function parseCommand(raw){
  /(?:por esta sesion|durante esta sesion|this session|esta sessao|cette session|per questa sessione|fur diese sitzung|in dieser sitzung)/.test(q)?"session":"persistent";
  return {language:lang,scope,confidence:.94};
 }
+// Point 05: reviewed translations for help, examples, fields, accessibility and avatar.
+Object.assign(LABELS,{
+ "uiHelpSummary": {
+  "es": "Preguntas y sugerencias",
+  "en": "Questions and suggestions",
+  "pt": "Perguntas e sugestões",
+  "fr": "Questions et suggestions",
+  "it": "Domande e suggerimenti",
+  "de": "Fragen und Vorschläge"
+ },
+ "uiHelpContactTitle": {
+  "es": "¿Falta alguna pregunta o función?",
+  "en": "Is a question or feature missing?",
+  "pt": "Falta alguma pergunta ou função?",
+  "fr": "Il manque une question ou une fonction ?",
+  "it": "Manca una domanda o una funzione?",
+  "de": "Fehlt eine Frage oder Funktion?"
+ },
+ "uiHelpContactText": {
+  "es": "También podés avisarme si algo no funciona bien o contarme qué te gustaría que Robotito hiciera o tuviera.",
+  "en": "You can also report a problem or suggest what Robotito should do next.",
+  "pt": "Você também pode avisar se algo não funcionar ou sugerir novas funções para o Robotito.",
+  "fr": "Tu peux aussi signaler un problème ou proposer une nouvelle fonction pour Robotito.",
+  "it": "Puoi anche segnalare un problema o suggerire nuove funzioni per Robotito.",
+  "de": "Du kannst auch Probleme melden oder neue Funktionen für Robotito vorschlagen."
+ },
+ "uiHelpContactButton": {
+  "es": "Escribime por WhatsApp",
+  "en": "Write to me on WhatsApp",
+  "pt": "Fale comigo no WhatsApp",
+  "fr": "Écris-moi sur WhatsApp",
+  "it": "Scrivimi su WhatsApp",
+  "de": "Schreib mir auf WhatsApp"
+ },
+ "uiHelpContactAria": {
+  "es": "Enviar una sugerencia sobre Robotito por WhatsApp al 096 731 690",
+  "en": "Send a Robotito suggestion via WhatsApp to 096 731 690",
+  "pt": "Enviar uma sugestão sobre o Robotito pelo WhatsApp para 096 731 690",
+  "fr": "Envoyer une suggestion sur Robotito via WhatsApp au 096 731 690",
+  "it": "Invia un suggerimento su Robotito via WhatsApp al 096 731 690",
+  "de": "Einen Robotito-Vorschlag per WhatsApp an 096 731 690 senden"
+ },
+ "uiBrandEyebrow": {
+  "es": "TU COMPAÑERO VIRTUAL",
+  "en": "YOUR VIRTUAL COMPANION",
+  "pt": "SEU COMPANHEIRO VIRTUAL",
+  "fr": "TON COMPAGNON VIRTUEL",
+  "it": "IL TUO COMPAGNO VIRTUALE",
+  "de": "DEIN VIRTUELLER BEGLEITER"
+ },
+ "uiAvatarAria": {
+  "es": "Robotito, avatar virtual de {name}",
+  "en": "Robotito, virtual {name} avatar",
+  "pt": "Robotito, avatar virtual de {name}",
+  "fr": "Robotito, avatar virtuel {name}",
+  "it": "Robotito, avatar virtuale {name}",
+  "de": "Robotito, virtueller {name}-Avatar"
+ },
+ "uiWorldAria": {
+  "es": "Mundo de Robotito",
+  "en": "Robotito's world",
+  "pt": "Mundo do Robotito",
+  "fr": "Monde de Robotito",
+  "it": "Mondo di Robotito",
+  "de": "Robotitos Welt"
+ },
+ "uiResizeAria": {
+  "es": "Ajustar el ancho entre Robotito y el panel",
+  "en": "Adjust the width between Robotito and the panel",
+  "pt": "Ajustar a largura entre Robotito e o painel",
+  "fr": "Ajuster la largeur entre Robotito et le panneau",
+  "it": "Regola la larghezza tra Robotito e il pannello",
+  "de": "Breite zwischen Robotito und dem Bereich anpassen"
+ },
+ "uiResizeTitle": {
+  "es": "Arrastrá para cambiar el ancho. Doble clic para restablecer.",
+  "en": "Drag to resize. Double-click to reset.",
+  "pt": "Arraste para redimensionar. Clique duas vezes para restaurar.",
+  "fr": "Fais glisser pour redimensionner. Double-clique pour réinitialiser.",
+  "it": "Trascina per ridimensionare. Fai doppio clic per ripristinare.",
+  "de": "Zum Ändern der Breite ziehen. Doppelklicken zum Zurücksetzen."
+ },
+ "uiInputPrompt": {
+  "es": "Escribí una pregunta, un pedido o un cambio de idioma…",
+  "en": "Type a question, request or language change…",
+  "pt": "Escreva uma pergunta, pedido ou mudança de idioma…",
+  "fr": "Écris une question, une demande ou un changement de langue…",
+  "it": "Scrivi una domanda, una richiesta o un cambio di lingua…",
+  "de": "Schreibe eine Frage, eine Bitte oder einen Sprachwechsel…"
+ },
+ "uiClassSubjectExample": {
+  "es": "Ej. Física",
+  "en": "E.g. Physics",
+  "pt": "Ex.: Física",
+  "fr": "Ex. : physique",
+  "it": "Es.: fisica",
+  "de": "Z. B. Physik"
+ },
+ "uiClassTopicExample": {
+  "es": "Ej. Impulso y cantidad de movimiento",
+  "en": "E.g. Impulse and momentum",
+  "pt": "Ex.: Impulso e quantidade de movimento",
+  "fr": "Ex. : impulsion et quantité de mouvement",
+  "it": "Es.: impulso e quantità di moto",
+  "de": "Z. B. Impuls und Bewegungsmenge"
+ },
+ "uiClassTopicEditExample": {
+  "es": "Ej. Choques elásticos",
+  "en": "E.g. Elastic collisions",
+  "pt": "Ex.: Colisões elásticas",
+  "fr": "Ex. : chocs élastiques",
+  "it": "Es.: urti elastici",
+  "de": "Z. B. elastische Stöße"
+ },
+ "uiVideoTitleAuto": {
+  "es": "Se completa automáticamente cuando es posible",
+  "en": "Filled in automatically when available",
+  "pt": "Preenchido automaticamente quando possível",
+  "fr": "Rempli automatiquement si possible",
+  "it": "Compilato automaticamente quando possibile",
+  "de": "Wird nach Möglichkeit automatisch ausgefüllt"
+ },
+ "uiVideoTranscriptPrompt": {
+  "es": "Pegá aquí la transcripción o los subtítulos…",
+  "en": "Paste the transcript or subtitles here…",
+  "pt": "Cole a transcrição ou as legendas aqui…",
+  "fr": "Colle la transcription ou les sous-titres ici…",
+  "it": "Incolla qui la trascrizione o i sottotitoli…",
+  "de": "Transkript oder Untertitel hier einfügen…"
+ },
+ "uiClassQuestionExample": {
+  "es": "Ej. Explicame paso a paso el ejercicio 4 de Impulso de Física",
+  "en": "E.g. Explain exercise 4 about momentum step by step",
+  "pt": "Ex.: Explique passo a passo o exercício 4 sobre impulso",
+  "fr": "Ex. : explique pas à pas l'exercice 4 sur l'impulsion",
+  "it": "Es.: spiega passo dopo passo l'esercizio 4 sull'impulso",
+  "de": "Z. B. erkläre Aufgabe 4 zum Impuls Schritt für Schritt"
+ },
+ "uiPersonNameExample": {
+  "es": "Ej. Antonia",
+  "en": "E.g. Antonia",
+  "pt": "Ex.: Antonia",
+  "fr": "Ex. : Antonia",
+  "it": "Es.: Antonia",
+  "de": "Z. B. Antonia"
+ },
+ "uiBirthdayPlaceholder": {
+  "es": "DD/MM/AAAA",
+  "en": "DD/MM/YYYY",
+  "pt": "DD/MM/AAAA",
+  "fr": "JJ/MM/AAAA",
+  "it": "GG/MM/AAAA",
+  "de": "TT.MM.JJJJ"
+ },
+ "uiBookPromptExample": {
+  "es": "Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante.",
+  "en": "E.g. I'd like a gentle fantasy with adventure and found family, not too long or sad. I loved Howl's Moving Castle.",
+  "pt": "Ex.: Quero uma fantasia delicada, com aventura e família escolhida, sem final triste. Gostei de O Castelo Animado.",
+  "fr": "Ex. : je cherche une fantasy douce, avec aventure et famille de cœur, pas trop longue ni triste.",
+  "it": "Es.: cerco un fantasy delicato, con avventure e una famiglia scelta, non troppo lungo e senza finale triste.",
+  "de": "Z. B. Ich suche sanfte Fantasy mit Abenteuer und Wahlfamilie, nicht zu lang und ohne trauriges Ende."
+ },
+ "uiMemoryExample": {
+  "es": "Ej. Mi color favorito es el verde",
+  "en": "E.g. My favorite color is green",
+  "pt": "Ex.: Minha cor favorita é verde",
+  "fr": "Ex. : ma couleur préférée est le vert",
+  "it": "Es.: il mio colore preferito è il verde",
+  "de": "Z. B. Meine Lieblingsfarbe ist Grün"
+ },
+ "uiAskQ1": {
+  "es": "¿Cómo te llamás?",
+  "en": "What's your name?",
+  "pt": "Como você se chama?",
+  "fr": "Comment t'appelles-tu ?",
+  "it": "Come ti chiami?",
+  "de": "Wie heißt du?"
+ },
+ "uiAskQ2": {
+  "es": "¿Cómo me llamo?",
+  "en": "What's my name?",
+  "pt": "Como eu me chamo?",
+  "fr": "Comment je m'appelle ?",
+  "it": "Come mi chiamo?",
+  "de": "Wie heiße ich?"
+ },
+ "uiAskQ3": {
+  "es": "¿Cómo estás?",
+  "en": "How are you?",
+  "pt": "Como você está?",
+  "fr": "Comment vas-tu ?",
+  "it": "Come stai?",
+  "de": "Wie geht es dir?"
+ },
+ "uiAskQ4": {
+  "es": "¿Tenés hambre?",
+  "en": "Are you hungry?",
+  "pt": "Você está com fome?",
+  "fr": "Tu as faim ?",
+  "it": "Hai fame?",
+  "de": "Hast du Hunger?"
+ },
+ "uiAskQ5": {
+  "es": "¿Qué día es? ¿Qué hora es?",
+  "en": "What day is it? What time is it?",
+  "pt": "Que dia é hoje? Que horas são?",
+  "fr": "Quel jour sommes-nous ? Quelle heure est-il ?",
+  "it": "Che giorno è? Che ore sono?",
+  "de": "Welcher Tag ist heute? Wie spät ist es?"
+ },
+ "uiAskQ6": {
+  "es": "¿Cuántos dedos ves?",
+  "en": "How many fingers can you see?",
+  "pt": "Quantos dedos você vê?",
+  "fr": "Combien de doigts vois-tu ?",
+  "it": "Quante dita vedi?",
+  "de": "Wie viele Finger siehst du?"
+ },
+ "uiAskQ7": {
+  "es": "¿Qué objeto es esto?",
+  "en": "What object is this?",
+  "pt": "Que objeto é este?",
+  "fr": "Quel est cet objet ?",
+  "it": "Che oggetto è questo?",
+  "de": "Was ist das für ein Gegenstand?"
+ },
+ "uiAskQ8": {
+  "es": "¿Cuál es el animal más grande del mundo?",
+  "en": "What's the largest animal in the world?",
+  "pt": "Qual é o maior animal do mundo?",
+  "fr": "Quel est le plus grand animal du monde ?",
+  "it": "Qual è l'animale più grande del mondo?",
+  "de": "Welches ist das größte Tier der Welt?"
+ },
+ "uiAskQ9": {
+  "es": "¿Quién es el presidente de Uruguay?",
+  "en": "Who is the president of Uruguay?",
+  "pt": "Quem é o presidente do Uruguai?",
+  "fr": "Qui est le président de l'Uruguay ?",
+  "it": "Chi è il presidente dell'Uruguay?",
+  "de": "Wer ist der Präsident von Uruguay?"
+ },
+ "uiAskQ10": {
+  "es": "¿Quién era presidente de Argentina en 2010?",
+  "en": "Who was president of Argentina in 2010?",
+  "pt": "Quem era presidente da Argentina em 2010?",
+  "fr": "Qui était président de l'Argentine en 2010 ?",
+  "it": "Chi era presidente dell'Argentina nel 2010?",
+  "de": "Wer war 2010 Präsident von Argentinien?"
+ },
+ "uiAskQ11": {
+  "es": "¿Cuánto es la raíz cuadrada de 144?",
+  "en": "What's the square root of 144?",
+  "pt": "Qual é a raiz quadrada de 144?",
+  "fr": "Quelle est la racine carrée de 144 ?",
+  "it": "Quanto fa la radice quadrata di 144?",
+  "de": "Wie viel ist die Quadratwurzel aus 144?"
+ },
+ "uiAskQ12": {
+  "es": "Recomendame un libro de misterio.",
+  "en": "Recommend a mystery book.",
+  "pt": "Recomende um livro de mistério.",
+  "fr": "Recommande-moi un roman policier.",
+  "it": "Consigliami un giallo.",
+  "de": "Empfiehl mir einen Krimi."
+ },
+ "uiAskQ13": {
+  "es": "¿Qué recordás de mí?",
+  "en": "What do you remember about me?",
+  "pt": "O que você lembra de mim?",
+  "fr": "Que te souviens-tu de moi ?",
+  "it": "Che cosa ricordi di me?",
+  "de": "Woran erinnerst du dich über mich?"
+ },
+ "uiAskQ14": {
+  "es": "¿Qué explicó la profesora sobre este tema?",
+  "en": "What did the teacher explain about this topic?",
+  "pt": "O que a professora explicou sobre este assunto?",
+  "fr": "Qu'a expliqué la professeure sur ce sujet ?",
+  "it": "Che cosa ha spiegato l'insegnante su questo argomento?",
+  "de": "Was hat die Lehrerin zu diesem Thema erklärt?"
+ },
+ "uiAskQ15": {
+  "es": "Explicame paso a paso el ejercicio 4 de Física.",
+  "en": "Explain physics exercise 4 step by step.",
+  "pt": "Explique passo a passo o exercício 4 de Física.",
+  "fr": "Explique-moi pas à pas l'exercice 4 de physique.",
+  "it": "Spiegami passo dopo passo l'esercizio 4 di fisica.",
+  "de": "Erkläre Physikaufgabe 4 Schritt für Schritt."
+ }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
  if(!doc)return false;
  if(doc.documentElement)doc.documentElement.lang=lang;
- for(const el of doc.querySelectorAll("[data-i18n]")){
-  const key=el.getAttribute("data-i18n");
-  if(key&&LABELS[key])el.textContent=t(key,lang);
- }
- for(const el of doc.querySelectorAll("[data-i18n-title]")){
-  el.title=t(el.getAttribute("data-i18n-title"),lang);
+ for(const [selector,keyAttribute,targetAttribute] of [
+  ["[data-i18n]","data-i18n","textContent"],
+  ["[data-i18n-title]","data-i18n-title","title"],
+  ["[data-i18n-placeholder]","data-i18n-placeholder","placeholder"],
+  ["[data-i18n-aria-label]","data-i18n-aria-label","aria-label"]
+ ]){
+  for(const el of doc.querySelectorAll(selector)){
+   const key=el.getAttribute(keyAttribute);
+   // If a translation is missing, keep the original value unchanged: never
+   // label unreviewed Spanish copy as translated into another language.
+   const translated=key&&LABELS[key]?.[lang];
+   if(typeof translated!=="string")continue;
+   if(targetAttribute==="aria-label")el.setAttribute(targetAttribute,translated);
+   else el[targetAttribute]=translated;
+  }
  }
  return true;
 }
