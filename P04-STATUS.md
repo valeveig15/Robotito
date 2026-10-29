@@ -17,14 +17,24 @@ Actualizado: 29 de octubre de 2026.
 - Grabación voluntaria de voz con consentimiento explícito, cancelación de permisos retrasados, retirada del consentimiento, cierre de micrófonos y borrado local de muestras.
 
 ## Evidencias ejecutadas
-- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.683 comprobaciones aisladas**.
+- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.690 comprobaciones aisladas**.
 - Captura privada de muestras y cancelación por consentimiento: **16 comprobaciones aisladas**.
 - ASR y cambios de sesión: **8 comprobaciones aisladas**.
 - Cambios de idioma persistentes, por sesión y por una respuesta: **27 comprobaciones aisladas**.
+- Órdenes «decime algo en…» en seis idiomas: **21 comprobaciones aisladas**.
+- Descarte de traducciones atrasadas después de cambios de idioma: **12 comprobaciones aisladas**.
+- Diagnóstico manual de voces y micrófono, comprobado con mocks: **30 comprobaciones aisladas**.
+- Manejador real de síntesis probado con voces sintéticas del sistema: **67 comprobaciones aisladas**.
 - Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
-- **Total de estas ejecuciones:** **76.447 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
+- **Total de estas ejecuciones:** **76.584 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
 
 No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
+
+## Diagnóstico manual de dispositivos
+
+El archivo [p04-device-check.html](p04-device-check.html) permite verificar manualmente las voces instaladas, escuchar una muestra por idioma y comprobar el micrófono con permiso explícito. No graba ni almacena audio; apaga las pistas al detener la prueba o al salir. Su prueba estática y de interacciones simuladas integra `npm run test:p04`. Una prueba independiente de Chromium (`npm run test:p04:browser`) se agregó a `npm run test:ci`, pero todavía **no está verificada como ejecutada** en este entorno. Las pruebas de audio reales en dispositivos siguen siendo necesarias.
+
+Se corrigieron además las frases «decime algo en francés/italiano/alemán», la pérdida de coherencia por traducciones asíncronas atrasadas y el uso de voces del idioma incorrecto cuando `getVoices()` todavía está vacío. El estado de síntesis «respondiendo» quedó localizado.
 
 ## Aceptación que sigue pendiente
 
