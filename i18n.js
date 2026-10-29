@@ -233,6 +233,12 @@ function t(key,lang="es"){return LABELS[key]?.[lang]||LABELS[key]?.es||key;}
 function parseCommand(raw){
  const q=fold(raw).trim().replace(/^[¿?¡!\s]+/,""),words=q.split(/\s+/);
  if(words.length>24||words.length===0)return null;
+ // Refusal of a language is not an instruction to activate that language.
+ // A later affirmative correction after a comma is handled by the existing
+ // language-name and intent parser (e.g. "No quiero inglés, quiero italiano").
+ const refused=/^(?:(?:por favor|please)[,\s]+)?(?:no\s+(?:quiero|deseo|pienso|pretendo|tengo\s+ganas\s+de)\b|je\s+ne\s+(?:veux|souhaite|desire)\s+pas\b|je\s+ne\s+veux\s+plus\b)/;
+ const affirmativeCorrection=/(?:,|;)\s*(?:(?:pero|but|mais|ma|sondern)\s+)?(?:quiero|prefiero|hablame|cambia|speak|switch|change|parla|sprich)\b/;
+ if(refused.test(q)&&!affirmativeCorrection.test(q))return null;
  const desire=/\b(habl(?:a|ame|ar|amos|e)?|respond(?:e|eme|er|a)?|contest(?:a|ame|ar)|cambi(?:a|ame|ar|emos)|pas(?:emos|amos)|desde ahora|a partir de ahora|quiero practicar|quiero aprender|volv(?:e|er|amos)|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parler|parlez|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|sprech(?:e|en|t|st)?|antwort(?:e|en|est|et)?|repond(?:s|ez|re)?|praticar|practicar|practise|practice)\b/;
  // Reported commands and explicit negative requests are not language changes.
  if(/\b(?:teacher|profesora?|maestra?|dijo|dijeron|said|told|quoted|lehrer|professeur)\b/.test(q))return null;
