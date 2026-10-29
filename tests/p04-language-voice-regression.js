@@ -141,4 +141,8 @@ for(const key of ["avatarAvailable","avatarStepTitle","avatarStepDescription","a
  for(const language of langs)ok(i18n.t(key,language)!==key,"Missing "+key+"/"+language);
 ok(source.includes('t?.("avatarReady",mode)'),"Startup ready state localized");
 ok(source.includes('t?.("avatarStepTitle",lang)'),"Avatar screen localized");
+for(const key of ["uiUnderstood","uiClassMode","uiSubject","uiClassTopic","uiStartClass","uiStopClass","uiSavedClasses","uiClassEdit","uiTopic","uiDateTime","uiCancel","uiSaveChanges","uiClassRecordings","uiLearned","uiRefreshSummary","uiVideoTitle","uiVideoURL","uiVideoName","uiYoutubeOpen","uiVideoStop","uiUploadMaterials","uiAskClasses","uiAsk","uiFlashcards","uiVisualMath","uiRecognizeObject","uiTasksSheet","uiConnectTasks","uiPendingTasks","uiRefresh","uiRegisterPerson","uiName","uiBirthday","uiEnroll","uiPeopleRemembered","uiMyBooks","uiReadingChoice","uiDescription","uiBookRecommendations","uiAutoMemory","uiAddMemory","uiSaveMemory","uiMemories","uiDeleteMemory","uiVoiceSampleTitle","uiRecordSample","uiDeleteSample"]){
+ for(const language of langs)ok(i18n.t(key,language)!==key,
+  "Static locale dictionary "+key+"/"+language);
+}
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
