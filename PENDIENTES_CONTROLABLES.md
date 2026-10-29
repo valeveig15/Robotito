@@ -23,6 +23,8 @@ El panel real de Robotito ya permite un registro **voluntario, en memoria y sin 
 
 Se corrigió además una divergencia entre la cadencia real de ventanas YAMNet (~487,5 ms) y los 140 ms máximos heredados que impedían acumular varias observaciones con ID en el detector. El sistema ahora valida ventanas independientes y descarta repeticiones o ráfagas de IDs demasiado rápidos; CI lo prueba con datos simulados. La corrección no certifica un modelo acústico ni habilita reacciones por sí sola: aún faltan clasificación calibrada en humanos, revisión de fuentes, micrófonos físicos y latencia real de avatares.
 
+Las sesiones continuas ahora incluyen precisión/recuperación por sonido, denominadores explícitos y cotas de error Wilson para evitar porcentajes inventados cuando faltan ejemplos. Las cifras de CI todavía no constituyen validación de estornudos, tos, risas o llanto humanos reales.
+
 El benchmark público opcional ESC-50 ahora tiene una separación explícita por Freesound original y folds de desarrollo/validación/prueba. Esto evita medir un derivado de la misma grabación en la prueba mientras otro se usa para calibrar; no asegura validez acústica fuera del dataset ni cambia la necesidad de datos humanos autorizados, revisión independiente y latencia real del avatar.
 
 El comando `audit:audio:p03` ofrece un inventario local reproducible de sesiones revisadas y borradores, fuentes por partición y tipo de evento, y diagnósticos de micrófonos declarados; nunca expone identificadores locales ni usa pruebas sintéticas para certificar P03. Permanece pendiente que personas autorizadas aporten grabaciones reales, constaten su independencia, prueben hardware y reacciones end-to-end, y aprueben explícitamente umbrales seguros.
