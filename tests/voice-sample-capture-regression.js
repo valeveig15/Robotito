@@ -48,5 +48,21 @@ function fixture({deferPermission=false,deferSave=false}={}){
   eq(calls,2,"Retry creates a new recorder");
   eq(stops,2,"Retry failure also releases microphone");
  }
+ // A failing stop must invalidate even a subsequently delivered stale onstop event.
+ {
+  let released=0,writes=0;
+  const recorder={state:"recording",mimeType:"audio/webm",start(){},stop(){throw Error("stop rejected");}};
+  const guarded=create({getConsent:()=>true,
+   requestStream:async()=>({getTracks:()=>[{stop(){released++;}}]}),
+   recorderFactory:()=>recorder,
+   save:async()=>{writes++;}});
+  eq(await guarded.start(),true,"Recording began before stop failure");
+  recorder.ondataavailable({data:new Blob([new Uint8Array(150)])});
+  eq(guarded.stop(),false,"Stop failure is exposed");
+  eq(guarded.getStatus().phase,"idle","Stop failure resets phase");
+  eq(released,1,"Stop failure releases mic track");
+  recorder.onstop();await tick();
+  eq(writes,0,"Late stop callback cannot save invalidated audio");
+ }
  console.log("Voice sample lifecycle:",checked,"assertions");
 })().catch(e=>{console.error(e);process.exitCode=1});
