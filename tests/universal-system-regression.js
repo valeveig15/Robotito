@@ -146,8 +146,8 @@ for(let i=0;i<3600;i++){
   const savedStore=global.ROBOTITO_STORE;
   const now=Date.now();
   global.ROBOTITO_STORE={queryRecords:async()=>[
-    {id:"current",timestamp:now,topic:"",subject:"",data:{text:"Recordame lo que me dijiste"}},
-    {id:"real-memory",timestamp:now-20000,topic:"",subject:"",data:{text:"El examen es el lunes."}}
+    {id:"current",type:"memories",owner:"local",timestamp:now,topic:"",subject:"",data:{text:"Recordame lo que me dijiste"}},
+    {id:"real-memory",type:"memories",owner:"local",timestamp:now-20000,topic:"",subject:"",data:{text:"El examen es el lunes."}}
   ]};
   const found=await recall.search("Recordame lo que me dijiste",{owner:"local"});
   equal(found.rows.length,1,"Do not retrieve the question itself");
