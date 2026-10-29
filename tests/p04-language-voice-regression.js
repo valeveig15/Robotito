@@ -267,4 +267,8 @@ for(const lang of langs){
 }
 ok(source.includes('setListenState(window.ROBOTITO_I18N?.t?.("voiceResponding",lang)'),
  "Active speech uses target language rather than base session language");
+ok(source.includes("!window.speechSynthesis?.getVoices"),
+ "No available Web Speech engine must fail safely");
+ok(source.includes("window.speechSynthesis.onvoiceschanged=populateVoiceSelect"),
+ "Voice enumeration refresh waits for available engine");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
