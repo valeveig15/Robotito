@@ -94,7 +94,12 @@ function t(key,lang="es"){return LABELS[key]?.[lang]||LABELS[key]?.es||key;}
 function parseCommand(raw){
  const q=fold(raw).trim().replace(/^[¿?¡!\s]+/,""),words=q.split(/\s+/);
  if(words.length>24||words.length===0)return null;
- const desire=/\b(habl(?:a|ame|ar|amos|e)?|respond(?:e|eme|er|a)?|contest(?:a|ame|ar)|cambi(?:a|ame|ar|emos)|pas(?:emos|amos)|desde ahora|a partir de ahora|quiero practicar|quiero aprender|volv(?:e|er|amos)|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parler|parlez|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|praticar|practicar|practise|practice)\b/;
+ const desire=/\b(habl(?:a|ame|ar|amos|e)?|respond(?:e|eme|er|a)?|contest(?:a|ame|ar)|cambi(?:a|ame|ar|emos)|pas(?:emos|amos)|desde ahora|a partir de ahora|quiero practicar|quiero aprender|volv(?:e|er|amos)|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parler|parlez|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|sprech(?:e|en|t|st)?|antwort(?:e|en|est|et)?|repond(?:s|ez|re)?|praticar|practicar|practise|practice)\b/;
+ // Reported commands and explicit negative requests are not language changes.
+ if(/\b(?:teacher|profesora?|maestra?|dijo|dijeron|said|told|quoted|lehrer|professeur)\b/.test(q))return null;
+ const prohibited=/(?:^|\s)(?:don't|do not|never|nao|non|nicht|nunca)\b(?:[\s,]+\S+){0,3}[\s,]+(?:speak\w*|switch\w*|change\w*|answer\w*|fal\w*|parl\w*|repond\w*|habl\w*|respond\w*|cambi\w*|sprech\w*|sprich|antwort\w*|auf)\b/;
+ if(prohibited.test(q)||/\bno\s+(?:(?:me|nos|les|te)\s+)?(?:habl\w*|respond\w*|contest\w*|cambi\w*)\b/.test(q)||
+    /\bne\s+(?:me\s+)?(?:parl\w*|repond\w*)\s+pas\b/.test(q))return null;
  if(!desire.test(q))return null;
  let lang=null;for(const [code,names] of Object.entries(NAMES)){
   if(names.some(name=>new RegExp("(?:^|\\s)"+fold(name)+"(?:\\s|[.!?]|$)").test(q))){lang=code;break;}
