@@ -168,6 +168,12 @@ try{
  assert.equal(JSON.stringify(report).includes("sha256:"),false,
   "No local recording fingerprints are exported in the report");
  assert.equal(report.continuousEvaluation.overall.sessionCount,1);
+ assert.equal(report.continuousEvaluation.overall.eventConfusion.background.sneeze,0,
+  "Real YAMNet timeline includes false-alert attribution without invented human events");
+ assert.equal(report.continuousEvaluation.overall.referenceDetectorLatencySeconds.sneeze.count,0,
+  "No actual annotated sneezes means no fabricated detector delay");
+ assert.match(report.continuousEvaluation.latencyScope,/NOT physical mic/,
+  "Reference decision delay must never be reported as physical reaction latency");
  assert.equal(report.continuousEvaluation.sessions[0].environment,"synthetic-tone");
  const evaluated=report.continuousEvaluation.sessions[0];
  assert.ok(evaluated.classifiedFrames>=2,
