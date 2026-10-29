@@ -114,7 +114,7 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   // background/voice score does not justify an unsolicited "¡Salud!".
   const NON_EVENT_CLASSES=["other","unknown","voice","speech","music","noise","impact","silence"];
   const ranked=[...MODEL_EVENTS,...NON_EVENT_CLASSES].map(kind=>({
-    kind,score:clamp(Number(rawScores[kind]))
+    kind,score:typeof rawScores[kind]==="number"&&Number.isFinite(rawScores[kind])?clamp(rawScores[kind]):0
   })).sort((a,b)=>b.score-a.score);
   const values=Object.fromEntries(ranked.map(row=>[row.kind,row.score]));
   const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
