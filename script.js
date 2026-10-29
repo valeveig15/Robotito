@@ -488,7 +488,7 @@ const SPEECH_LANGUAGE_HINTS={
   en:["the","a","an","what","which","where","when","who","why","how","because","for","with","without","but","i","i'm","my","you","your","we","it","is","are","am","this","that","here","now","very","have","has","want","can","could","will","would","please","thanks","hello","good","yes","not","really","like","love","gentle","pats","ready","help","hungry","sleepy","sad","happy","scared","angry","hug","play","food","robotito"],
   pt:["o","os","as","um","uma","que","qual","onde","quando","quem","porque","para","por","com","sem","mas","eu","voce","seu","sua","estou","esta","isso","aqui","agora","muito","tenho","tem","quero","posso","pode","vamos","obrigado","ola","bem","fome","sono","triste","feliz","assustado","bravo","carinho","comida","brincar","abraco","robotito"],
   fr:["je","tu","nous","vous","avec","pour","dans","est","suis","sont","bonjour","merci","comment","pourquoi","quoi","quel","quelle","aujourd","demain","hier","livre","cours","exercice","s'il","plait"],
-  it:["io","tu","noi","voi","con","per","nel","sono","come","perche","grazie","ciao","buongiorno","domani","ieri","libro","lezione","esercizio","spiega","aiuto"],
+  it:["io","tu","noi","voi","con","per","nel","sono","come","perche","grazie","ciao","buongiorno","domani","ieri","libro","lezione","esercizio","spiega","aiuto","hai","attivita","compleanno","ricordo"],
   de:["ich","du","wir","sie","mit","fur","und","aber","ist","sind","wie","was","warum","danke","hallo","guten","morgen","gestern","heute","buch","aufgabe","unterricht","bitte"]
 };
 function speechHintScore(normalized,hints){
@@ -509,7 +509,9 @@ function detectGeneratedSpeechLanguage(text){
   };
   if(/[¿¡ñ]/i.test(raw))scores.es+=3;
   if(/[ãõ]/i.test(raw))scores.pt+=3;
-  if(/[œêèàû]/i.test(raw))scores.fr+=3;
+  if(/[œêû]/i.test(raw))scores.fr+=3;
+  // French è/à are shared with Italian: never classify on accents alone.
+  if(/\b(hai|attivita|compleanno|ricordo|lezione|grazie|buongiorno)\b/i.test(normalized))scores.it+=2;
   if(/[äöüß]/i.test(raw))scores.de+=3;
   if(/\b(?:the|this|that|with|without|please|thanks|hello|i'm|you're|don't|can't)\b/i.test(raw))scores.en+=2;
   if(/\b(?:para|porque|estoy|tengo|quiero|puedo|gracias|hola|mimos|abrazo)\b/i.test(normalized))scores.es+=2;
