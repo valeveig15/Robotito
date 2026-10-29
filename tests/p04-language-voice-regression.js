@@ -145,4 +145,10 @@ for(const key of ["uiUnderstood","uiClassMode","uiSubject","uiClassTopic","uiSta
  for(const language of langs)ok(i18n.t(key,language)!==key,
   "Static locale dictionary "+key+"/"+language);
 }
+for(const key of ["uiSubject","uiClassTopic","uiTopic","uiDateTime","uiVideoURL","uiVideoName","uiName","uiBirthday","uiDescription"]){
+ ok(html.includes('data-i18n="'+key+'"'),"Input-bearing label localized "+key);
+}
+ok(html.includes('id="classSubject"'),"Class subject input preserved");
+ok(html.includes('id="personBirthday"'),"Birthday field preserved");
+ok(html.includes('id="youtubeUrl"')||html.includes('id="youtubeLink"')||html.includes('id="youtubeVideoUrl"')||html.includes('id="youtubeUrlInput"'),"YouTube input remains on screen");
 console.log("Robotito P04 startup and voice locale regression:",checks,"checks");
