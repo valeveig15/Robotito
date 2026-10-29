@@ -30,7 +30,9 @@ async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={
   // The active question is often recorded by autoRemember before retrieval.
   // Exclude it so Robotito cannot "remember" the question as its own answer.
   const utterance=fold(row.data?.text||"").trim();
-  return !utterance||utterance!==fold(raw).trim();
+  // A previously recorded recall request is not evidence of an event.
+  // Exclude it even when the same question is now asked in another language.
+  return !utterance||(utterance!==fold(raw).trim()&&!intent(utterance));
  });
  let selected=rows;
  const words=found.search.replace(/[^\p{L}\p{N}\s]/gu," ").split(/\s+/).filter(x=>x.length>=6&&!/record|recomend|clase|libro|recuerd|tarea|semana|pasada|before|about|after/.test(x));
