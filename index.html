@@ -448,14 +448,14 @@
           <details class="voice-sample-options">
             <summary data-i18n="uiVoiceSampleTitle">Muestra voluntaria de voz (sin clonación)</summary>
             <p class="muted" data-i18n="synthesised">Voz sintetizada; no es una grabación de una persona real.</p>
-            <label><input id="voiceSampleThirdParty" type="checkbox" /> La voz pertenece a otra persona</label>
-            <label><span data-i18n="uiName">Nombre</span> de esa persona <input id="voiceSampleName" type="text" autocomplete="off" /></label>
-            <label><input id="voiceSampleConsent" type="checkbox" /> Tengo consentimiento explícito para registrar esta muestra de audio.</label>
+            <label><input id="voiceSampleThirdParty" type="checkbox" /> <span data-i18n="voiceThirdParty">La voz pertenece a otra persona</span></label>
+            <label><span data-i18n="voiceThirdPartyName">Nombre de esa persona</span> <input id="voiceSampleName" type="text" autocomplete="off" /></label>
+            <label><input id="voiceSampleConsent" type="checkbox" /> <span data-i18n="voiceConsent">Tengo consentimiento explícito para registrar esta muestra de audio.</span></label>
             <button id="recordVoiceSample" type="button" class="ghost" data-i18n="uiRecordSample">Grabar muestra (3 segundos)</button>
             <button id="deleteVoiceSample" type="button" class="ghost" data-i18n="uiDeleteSample">Eliminar muestra</button>
             <p id="voiceSampleStatus" role="status" class="muted"></p>
           </details>
-          <p class="muted">Podés cambiar el idioma por voz, texto o selector. La síntesis y el reconocimiento dependen de los idiomas disponibles en el navegador.</p>
+          <p class="muted" data-i18n="voiceLanguageHelp">Podés cambiar el idioma por voz, texto o selector. La síntesis y el reconocimiento dependen de los idiomas disponibles en el navegador.</p>
         </div>
 
         <div class="card small">
