@@ -3,6 +3,11 @@
 // ESC-50 by Karol J. Piczak (CC BY-NC 3.0): noncommercial use only.
 // https://github.com/karolpiczak/ESC-50
 const fs=require("node:fs"),path=require("node:path");
+const {sourceAudit}=require("../audio-source-groups.js");
+// Use the original dataset's source-aware folds: no original Freesound
+// recording must appear in more than one development/validation/test split.
+const SPLIT_BY_FOLD=Object.freeze({1:"development",2:"development",3:"development",
+ 4:"validation",5:"test"});
 const CATEGORIES=Object.freeze({
  crying_baby:"cry",sneezing:"sneeze",coughing:"cough",
  laughing:"laugh",clapping:"clap",
@@ -40,7 +45,8 @@ function build(root,{fold="1",limitPerCategory=Infinity}={}){
   const cells=parseCsv(line),category=cells[ix.category],file=cells[ix.filename];
   const itemFold=cells[ix.fold];
   if(!Object.hasOwn(CATEGORIES,category)||fold!=="all"&&itemFold!==String(fold))continue;
-  if(!/^[1-5]-\d+-[A-Z]-\d+\.wav$/.test(file)||!["1","2","3","4","5"].includes(itemFold))
+  const match=/^([1-5])-(\d+)-[A-Z]-\d+\.wav$/.exec(file);
+  if(!match||match[1]!==itemFold||!SPLIT_BY_FOLD[itemFold])
    throw Error("Unsafe or invalid ESC-50 filename/fold: "+file);
   const physical=path.join(base,"audio",file);
   if(!fs.existsSync(physical)||!fs.statSync(physical).isFile()||
@@ -50,17 +56,21 @@ function build(root,{fold="1",limitPerCategory=Infinity}={}){
   if(rows.length<limitPerCategory){
    rows.push({id:"esc50:"+file,path:"audio/"+file,label:CATEGORIES[category],
     environment:"ESC-50/"+category,rights:"open-license",
+    sourceGroup:"esc50-source-"+match[2],evaluationSplit:SPLIT_BY_FOLD[itemFold],
     datasetCategory:category,datasetFold:Number(itemFold)});
    byCategory.set(category,rows);
   }
  }
  const clips=[...byCategory.values()].flat().sort((a,b)=>a.id.localeCompare(b.id));
  if(!clips.length)throw Error("No matching ESC-50 clips found");
+ const foldAudit=sourceAudit(clips);
  return {name:"ESC-50 "+(fold==="all"?"all folds":"fold "+fold)+" sound benchmark (exploratory)",
   license:"CC-BY-NC-3.0",source:"https://github.com/karolpiczak/ESC-50",
   citation:"K. J. Piczak, ESC: Dataset for Environmental Sound Classification, ACM Multimedia 2015",
   scope:"Exploratory labels are weak clip-level annotations; not live mic calibration",
-  clips};
+  foldPolicy:"Folds 1-3 development, fold 4 validation, fold 5 untouched test; original Freesound source ID grouped",
+  declaredSourceGroupCount:foldAudit.sourceGroups,
+  verifiedRealWorldIndependence:false,clips};
 }
 function main(argv=process.argv.slice(2)){
  const root=argv[0];if(!root)throw Error(
