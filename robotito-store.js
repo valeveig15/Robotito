@@ -262,7 +262,7 @@ function validateBackup(raw){
  for(const row of raw.blobs){
   if(!row||typeof row!=="object"||typeof row.base64!=="string"||
     typeof row.owner!=="string"||!row.owner.trim()||typeof row.type!=="string"||
-    typeof row.recordId!=="string"||!row.recordId.trim()||
+    (row.recordId!=null&&(typeof row.recordId!=="string"||!row.recordId.trim()))||
     !Number.isSafeInteger(row.size)||row.size<0||row.size>BACKUP_MAX_SINGLE_BLOB)
    throw new TypeError("Invalid backup audio/blob");
   check("blobs",row.id);
@@ -280,6 +280,7 @@ function validateBackup(raw){
   }
  }
  for(const blob of raw.blobs){
+  if(blob.recordId==null)continue;
   const linked=raw.records.find(r=>r.id===blob.recordId);
   if(!linked||linked.blobId!==blob.id||linked.owner!==blob.owner)
    throw new TypeError("Backup contains an orphan or cross-owner blob");
