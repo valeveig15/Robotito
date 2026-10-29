@@ -249,9 +249,8 @@ function languageLabel(lang){
   return ({es:"Español",en:"English",pt:"Português",fr:"Français",it:"Italiano",de:"Deutsch"})[lang]||"Español";
 }
 function chooseDefaultVoice(voices,targetLang="es"){
-  const pref=targetLang==="en"?/^en([-_]|$)/i:targetLang==="pt"?/^pt([-_]|$)/i:/^es([-_]|$)/i;
-  const langPool=voices.filter(v=>pref.test(v.lang||""));
-  const pool=langPool.length?langPool:voices;
+  const pool=voices.filter(v=>voiceMatchesLanguage(v,targetLang));
+  if(!pool.length)return null;
   const maleHints=targetLang==="en"
     ?["daniel","george","arthur","aaron","fred","thomas","matthew","alex","male"]
     :targetLang==="pt"
@@ -260,7 +259,6 @@ function chooseDefaultVoice(voices,targetLang="es"){
   return pool.find(v=>maleHints.some(h=>normalizeText(v.name).includes(h)))
     || pool.find(v=>/natural|neural|premium/i.test(v.name))
     || pool[0]
-    || voices[0]
     || null;
 }
 function voiceMatchesLanguage(voice,targetLang=responseLanguage()){
@@ -269,13 +267,19 @@ function voiceMatchesLanguage(voice,targetLang=responseLanguage()){
 function populateVoiceSelect(){
   const select=$("#voiceSelect");
   if(!select||!("speechSynthesis" in window))return;
-  const all=speechSynthesis.getVoices();
-  const supported=all.filter(v=>/^(es|en|pt|fr|it|de)([-_]|$)/i.test(v.lang||""));
-  const voices=supported.length?supported:all;
-  const previous=state.voiceURI;
-  select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
   const target=responseLanguage();
-  let chosen=voices.find(v=>v.voiceURI===previous&&voiceMatchesLanguage(v,target))||chooseDefaultVoice(voices,target);
+  const voices=speechSynthesis.getVoices().filter(v=>voiceMatchesLanguage(v,target));
+  const previous=state.voiceURI;
+  if(!voices.length){
+    const label=window.ROBOTITO_I18N?.t?.("voiceUnavailable",target)||"No compatible voice";
+    select.innerHTML='<option value="">'+escapeHtml(label)+'</option>';
+    select.disabled=true;
+    state.voiceURI="";
+    return;
+  }
+  select.disabled=false;
+  select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'+escapeHtml(v.name+" — "+v.lang)+'</option>').join("");
+  const chosen=voices.find(v=>v.voiceURI===previous)||chooseDefaultVoice(voices,target);
   if(chosen){
     state.voiceURI=chosen.voiceURI;
     select.value=chosen.voiceURI;
@@ -404,6 +408,13 @@ function speakResponse(text,forcedLang=null){
     console.warn("Robotito blocked mismatched speech",{detectedLanguage,requestedLanguage:lang});
     return false;
   }
+  // When system voices are known and none matches, keep the reply as text.
+  const voices=speechSynthesis.getVoices();
+  const selected=voices.find(v=>v.voiceURI===state.voiceURI);
+  const selectedMatches=voiceMatchesLanguage(selected,lang);
+  const chosen=selectedMatches?selected:
+    window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,state.voiceURI)||chooseDefaultVoice(voices,lang);
+  if(voices.length&&!chosen)return false;
   speechSynthesis.cancel();
   state.recentVoicePrints=[];
   state.speaking=true;
@@ -414,10 +425,6 @@ function speakResponse(text,forcedLang=null){
   }
   setListenState(state.languageMode==="en"?"responding":state.languageMode==="pt"?"respondendo":"respondiendo");
   const utter=new SpeechSynthesisUtterance(clean);
-  const voices=speechSynthesis.getVoices();
-  const selected=voices.find(v=>v.voiceURI===state.voiceURI);
-  const selectedMatches=voiceMatchesLanguage(selected,lang);
-  const chosen=selectedMatches?selected:window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,state.voiceURI)||chooseDefaultVoice(voices,lang);
   window.ROBOTITO_VOICE_SYSTEM?.configureUtterance?.(utter,{style:state.voiceStyle,language:lang,voices,voiceURI:chosen?.voiceURI,basePitch:state.voicePitch/.65,baseRate:state.voiceRate/.82});
   if(!window.ROBOTITO_VOICE_SYSTEM){
     if(chosen)utter.voice=chosen;
@@ -939,8 +946,8 @@ function primeMobileSpeechFromGesture(){
 
 async function startSenses(){
   if(state.started)return;
-  if(!["es","en","pt"].includes(state.languageMode)){
-    toast("Elegí Español, English o Português primero.");
+  if(!window.ROBOTITO_I18N?.supported?.(state.languageMode)){
+    toast(window.ROBOTITO_I18N?.t?.("selectLanguage",state.languageMode)||"Elegí un idioma válido.");
     return;
   }
 
