@@ -59,3 +59,7 @@ Se corrigieron además las frases «decime algo en francés/italiano/alemán», 
 ### Recuperación de fallos de traducción
 
 La promesa de localización asíncrona ahora cuenta con recuperación ante rechazo, evitando dejar «Preparando…» indefinidamente. Esta protección requiere todavía un ensayo en navegador real; la integración CI no se certifica desde las pruebas aisladas.
+
+### Prueba de rechazo de traducción (29/10)
+
+`tests/p04-localization-race-regression.js` ahora simula una promesa que rechaza explícitamente, verifica que se muestre un mensaje de error localizado y que un rechazo tardío no restaure contenido luego de cambiar el idioma. **15 comprobaciones aisladas aprobadas** para esa regresión. El cambio está integrado en el código de GitHub; la validación en Chromium y dispositivos físicos continúa pendiente.
