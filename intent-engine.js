@@ -83,7 +83,7 @@
     if(frame.speechAct==="social")intent="conversation";
     if(frame.speechAct==="statement")intent="statement";
     else if(!frame.shouldExecute&&frame.negative)intent="statement";
-    else if(["object","calculation"].includes(old.intent)&&frame.shouldExecute)intent=old.intent;
+    else if(["object","calculation"].includes(old.intent)&&frame.shouldExecute&&!frame.quotedContent)intent=old.intent;
     else if(old.intent==="command"&&frame.shouldExecute&&["conversation","factual-question"].includes(frame.intent))intent="command";
     else if(old.intent==="book-recommendation"&&frame.shouldExecute&&["book","conversation","factual-question"].includes(frame.intent))intent="book-recommendation";
     else if(["comparison","explanation"].includes(old.intent)&&frame.shouldExecute&&frame.intent==="factual-question")intent=old.intent;

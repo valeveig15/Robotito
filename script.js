@@ -3629,6 +3629,10 @@ async function askClass(){
   try{
     const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
     const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q,{plan:planned})||planned||{};
+    if(planned?.needsClarification){
+      if(out)out.textContent=window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?";
+      return;
+    }
     if(planned&&planned.shouldExecute===false){
       if(out)out.innerHTML='<div class="study-chip">Eso parece un comentario, no una solicitud para consultar materiales.</div>';
       return;
@@ -3858,17 +3862,8 @@ async function handleSemanticFollowUp(plan,owner,channel){
   if(target===reply.language){sayInLanguage(reply.text,target);return true;}
   // Offline-only translation of prior replies. Do not leak private class
   // content or conversation memories to an unconsented third-party API.
-  let translated=null;
-  try{
-   if(typeof window.LanguageModel?.create==="function"){
-    const session=await window.LanguageModel.create({temperature:0});
-    translated=String(await session.prompt(
-      "Translate the following assistant answer to "+languageLabel(target)+
-      ". Keep any names, numbers and formulas unchanged. Return only the translation:\n"+
-      String(reply.text).slice(0,3000))||"").trim();
-    session.destroy?.();
-   }
-  }catch(error){console.warn("on-device follow-up translation",error);}
+  const translated=await translateShortPhrase(String(reply.text).slice(0,3000),reply.language,target);
+  if(owner!==(state.currentVoicePerson||state.currentPerson||"local"))return true;
   if(translated){
    const detected=detectGeneratedSpeechLanguage(translated);
    if(detected==="und"||detected===target){sayInLanguage(translated,target);return true;}
@@ -3894,6 +3889,7 @@ async function handleSemanticFollowUp(plan,owner,channel){
 let robotitoConversationContext=window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
 const robotitoContextsByOwner=new Map();
 let robotitoContextOwner="local";
+let robotitoPlanningEpoch=0;
 function selectRobotitoContext(owner){
   if(owner===robotitoContextOwner)return robotitoConversationContext;
   robotitoContextsByOwner.set(robotitoContextOwner,robotitoConversationContext);
@@ -3906,11 +3902,13 @@ function selectRobotitoContext(owner){
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
   const owner=state.currentVoicePerson||state.currentPerson||"local";
   selectRobotitoContext(owner);
+  const planningEpoch=++robotitoPlanningEpoch;
   const interpretation=plan||await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{
     context:robotitoConversationContext,language:state.languageMode||"es",channel
   });
+  if(planningEpoch!==robotitoPlanningEpoch||owner!==(state.currentVoicePerson||state.currentPerson||"local"))return;
   if(interpretation){
-    if(interpretation.followUp){
+    if(interpretation.followUp&&(atomic||interpretation.actions?.length<=1)){
       await handleSemanticFollowUp(interpretation,owner,channel);
       return;
     }
@@ -3958,10 +3956,18 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(interpreted,{plan:interpretation})
     ||interpretation||{};
 
+  // Literal repetition never re-enters command routing or retrieves its payload.
+  if(interpretation?.intent==="repeat"&&interpretation.shouldExecute){
+    sayInLanguage(interpretation.literalText,responseLanguage());
+    return;
+  }
+  const generalAcademic=interpretation?.source==="general"&&
+    ["definition","explanation","comparison","example","summary"].includes(understood.intent);
+
   // Silence is a voice command, so it takes priority over questions and other actions.
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
-  if(handleLanguageCommand(interpreted))return;
+  if(!generalAcademic&&!interpretation?.quotedContent&&handleLanguageCommand(interpreted))return;
   // Conversation records remain local and attributable to the active profile.
   window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner,
     timestamp:Date.now(),source:"dialogue",language:state.languageMode||"es",
@@ -3984,7 +3990,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     return;
   }
   const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
-    owner,language:state.languageMode||"es"
+    owner,language:state.languageMode||"es",plan:interpretation
   });
   if(recalled?.handled){say(recalled.text,readingDisplayTime(recalled.text));return;}
 
@@ -4016,6 +4022,14 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
 
   // One intent router handles live knowledge, object vision and visual math before decorative fallbacks.
   if(await window.ROBOTITO_ROUTER?.handle?.(interpreted,{lang:detectedLang,plan:interpretation}))return;
+
+  // A request about the meaning of an action is an academic question. It must
+  // not fall through into high-five, drawing, books or camera commands.
+  if(generalAcademic){
+    if(!await answerGeneralAcademicQuestion(interpreted,{speak:true,render:false}))
+      say(window.ROBOTITO_I18N?.t?.("notSure",detectedLang)||"No tengo información suficiente para responder eso.");
+    return;
+  }
 
   if(drawRequestedThing(interpreted,detectedLang))return;
   // Object display is handled by ROBOTITO_ROUTER and drawRequestedThing.
