@@ -78,11 +78,23 @@ const rows={
   conditional:["Wenn es regnet, erkläre {topic}"]
  }
 };
+const repairs={es:["Perdón, 5","Quise decir 5"],en:["Sorry, I meant 5","I meant 5"],pt:["Quis dizer 5","Queria dizer 5"],fr:["Je voulais dire 5","Je veux dire 5"],it:["Volevo dire 5","Intendevo 5"],de:["Ich meinte 5","Ich meine 5"]};
+const exercises={es:"Explicame paso a paso el ejercicio 3 de {topic}",en:"Explain step by step exercise 3 about {topic}",pt:"Explique passo a passo o exercicio 3 de {topic}",fr:"Explique étape par étape l'exercice 3 de {topic}",it:"Spiega passo passo esercizio 3 di {topic}",de:"Erkläre Schritt für Schritt Aufgabe 3 in {topic}"};
+for(const language of Object.keys(rows)){rows[language].repair=repairs[language];rows[language].exercise=[exercises[language]];}
+const conflictingSources={es:"Explicame mis apuntes pero no uses mis apuntes",en:"Explain my class notes but don't use my class notes",pt:"Explique minhas notas sem usar minhas notas",fr:"Explique mes notes sans mes notes",it:"Spiega i miei appunti senza i miei appunti",de:"Erkläre meine Notizen ohne meine Notizen"};
+for(const language of Object.keys(rows))rows[language].sourceConflict=[conflictingSources[language]];
+function contextFor(language,family,topic){
+ if(family!=="repair")return undefined;
+ return {version:2,turns:[],focus:{intent:"exercise",source:"materials",language,mayReadClass:true,entities:{exerciseNumber:3,topic}}};
+}
 // One expected frame per semantic family, not inferred from production output.
 const execute={shouldExecute:true,needsClarification:false};
 const general={...execute,source:"general",mayReadClass:false};
 const noAction={shouldExecute:false,mayReadClass:false};
 const expected={
+ sourceConflict:{...noAction,needsClarification:true,clarificationReason:"contradictory-sources"},
+ repair:{...execute,intent:"exercise",source:"materials",mayReadClass:true,"entities.exerciseNumber":5},
+ exercise:{...execute,intent:"exercise",source:"materials",mayReadClass:true,depth:"step-by-step","entities.exerciseNumber":3},
  definition:{...general,intent:"definition"},domainDefinition:{...general,intent:"definition"},
  explanation:{...general,intent:"explanation"},comparison:{...general,intent:"comparison"},summary:{...general,intent:"summary"},
  sourceExcluded:{...general,intent:"explanation"},class:{...execute,intent:"class-question",source:"classes",mayReadClass:true},
@@ -92,4 +104,4 @@ const expected={
  quoted:{...general,intent:"definition"},conflict:{...noAction,needsClarification:true},conditional:{...noAction,needsClarification:true}
 };
 const topics={es:["permutación","densidad","enzimas"],en:["permutation","density","enzymes"],pt:["permutação","densidade","enzimas"],fr:["permutation","densité","enzymes"],it:["permutazione","densità","enzimi"],de:["Permutation","Dichte","Enzyme"]};
-module.exports={rows,expected,topics};
+module.exports={rows,expected,topics,contextFor};

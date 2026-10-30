@@ -1020,6 +1020,57 @@ function apply(lang,rootElement){
  }
  return true;
 }
+// P01: concise clarification choices, shared by voice, chat and class questions.
+Object.assign(LABELS,{
+  "p01ClarifyReference": {
+    "es": "¿A qué tema o respuesta te referís?",
+    "en": "Which topic or answer do you mean?",
+    "pt": "A qual tema ou resposta você se refere?",
+    "fr": "De quel sujet ou de quelle réponse parles-tu ?",
+    "it": "A quale argomento o risposta ti riferisci?",
+    "de": "Welches Thema oder welche Antwort meinst du?"
+  },
+  "p01ClarifyActions": {
+    "es": "Me pediste hacer y no hacer lo mismo. ¿Querés que lo haga o que lo deje?",
+    "en": "You asked me to do and not do the same thing. Should I do it or leave it?",
+    "pt": "Você pediu para fazer e não fazer a mesma coisa. Devo fazer ou deixar?",
+    "fr": "Tu demandes de faire et de ne pas faire la même chose. Dois-je le faire ou laisser ?",
+    "it": "Mi chiedi di fare e non fare la stessa cosa. Devo farlo o lasciar perdere?",
+    "de": "Du bittest mich, dasselbe zu tun und nicht zu tun. Soll ich es tun oder lassen?"
+  },
+  "p01ClarifySources": {
+    "es": "¿Querés que use tus apuntes o que responda sin consultarlos?",
+    "en": "Should I use your notes or answer without them?",
+    "pt": "Devo usar suas notas ou responder sem consultá-las?",
+    "fr": "Dois-je utiliser tes notes ou répondre sans les consulter ?",
+    "it": "Devo usare i tuoi appunti o rispondere senza consultarli?",
+    "de": "Soll ich deine Notizen verwenden oder ohne sie antworten?"
+  },
+  "p01ClarifyExercise": {
+    "es": "Mencionaste dos ejercicios como alternativas. ¿Cuál número querés resolver?",
+    "en": "You mentioned two alternative exercises. Which number should we solve?",
+    "pt": "Você mencionou dois exercícios como alternativas. Qual número quer resolver?",
+    "fr": "Tu as mentionné deux exercices possibles. Quel numéro veux-tu résoudre ?",
+    "it": "Hai indicato due esercizi alternativi. Quale numero vuoi risolvere?",
+    "de": "Du hast zwei Aufgaben als Alternativen genannt. Welche Nummer möchtest du lösen?"
+  },
+  "p01ClarifyCondition": {
+    "es": "¿Querés que lo haga ahora o estás describiendo una condición para después?",
+    "en": "Should I do it now, or are you describing a condition for later?",
+    "pt": "Devo fazer agora ou você está descrevendo uma condição para depois?",
+    "fr": "Dois-je le faire maintenant ou décris-tu une condition pour plus tard ?",
+    "it": "Devo farlo ora o stai descrivendo una condizione per dopo?",
+    "de": "Soll ich es jetzt tun, oder beschreibst du eine Bedingung für später?"
+  },
+  "p01ClarifyTone": {
+    "es": "No estoy seguro de si lo decís en serio. ¿Querés que lo haga?",
+    "en": "I am not sure whether you mean that literally. Should I do it?",
+    "pt": "Não sei se você está falando sério. Devo fazer isso?",
+    "fr": "Je ne sais pas si tu le dis sérieusement. Dois-je le faire ?",
+    "it": "Non so se lo dici sul serio. Vuoi che lo faccia?",
+    "de": "Ich bin nicht sicher, ob du das ernst meinst. Soll ich es tun?"
+  }
+});
 root.ROBOTITO_I18N={supported,locale:code=>LOCALES[code]||LOCALES.es,t,fixedReply,message,parseCommand,apply,languages:Object.keys(LOCALES)};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_I18N;
 })(typeof window!=="undefined"?window:globalThis);

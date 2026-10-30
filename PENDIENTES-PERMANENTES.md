@@ -1,6 +1,6 @@
 # Robotito — pendientes permanentes y seguimiento
 
-Actualizado: 29 de octubre de 2026.
+Actualizado: 30 de octubre de 2026.
 
 > Este documento **no reemplaza los 82 pedidos originales**, cuyo orden de implementación se mantiene. Sirve para conservar las limitaciones solucionables que se detectan al desarrollar y probar cada punto. Nunca eliminar una limitación por pasar al siguiente punto; marcarla resuelta únicamente con evidencia y pruebas.
 
@@ -9,6 +9,7 @@ Actualizado: 29 de octubre de 2026.
 1. **Punto 1: cerebro semántico y diversidad de preguntas.**
    - Ampliar cobertura contextual, variaciones lingüísticas y combinaciones adversarias; conservar el objetivo de las 999.999 formulaciones y 50 variantes por cada una como aspiración de pruebas, sin prometer comprensión perfecta.
    - Verificar fuentes, contexto, ambigüedad, repreguntas y regresiones sin ejecuciones indebidas.
+   - **Revisión 30/10:** corregidas fuentes excluidas, citas, órdenes literales, reparaciones y referencias en seis idiomas; modelo local limitado y contexto protegido frente a resultados atrasados. Auditoría finita: 22 familias, 352 casos semánticos, 5.632 ejecuciones y cero fallos. Se conserva la expansión con corpus independiente y el objetivo masivo: [P01-STATUS.md](P01-STATUS.md).
 2. **Alternativa privada para traducción.**
    - Proveer una opción útil cuando el modelo local no esté disponible, con consentimiento explícito antes de enviar información a servicios externos.
    - No fingir que se tradujo texto que quedó en el idioma original.

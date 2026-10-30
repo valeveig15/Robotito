@@ -28,7 +28,7 @@ const server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.
     window.ROBOTITO_STORE.queryRecords=async()=>{privateReads++;return [];};
     window.ROBOTITO_CLASS_EXERCISES.handleRequest=async()=>{exerciseCalls++;return false;};
     window.highFiveRobot=()=>{highfives++;};
-    for(const text of ['¿Qué es un ejercicio?','Explicame permutación sin mis apuntes','Explicame permutación y no uses mis apuntes',"¿Qué significa 'mostrame lo que hablamos ayer'?","¿Qué significa 'qué objeto es esto'?",'¿Qué significa chocar los cinco?' ,"Explicame qué significa 'speak French'",'Explicame el ejercicio 3 o 4','Abre el libro y no abras el libro','Si llueve, explicame la clase']){
+    for(const text of ['¿Qué es un ejercicio?','Explicame permutación sin mis apuntes','Explicame permutación y no uses mis apuntes',"¿Qué significa 'mostrame lo que hablamos ayer'?","¿Qué significa 'qué objeto es esto'?",'¿Qué significa chocar los cinco?' ,"Explicame qué significa 'speak French'",'Explicame el ejercicio 3 o 4','Abre el libro y no abras el libro','Si llueve, explicame la clase','Explicame mis apuntes pero no uses mis apuntes']){
      await chat.send(text,{channel:'text'});
      check(privateReads===0,'Private source bypass: '+text);
      check(exerciseCalls===0,'Unexpected exercise retrieval: '+text);
@@ -65,6 +65,19 @@ const server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.
      check(chat.context().focus.entities.topic==='permutación','Late plan overwrote another person context');
      check(bubble.textContent===bobReply,'Late plan spoke to the wrong person');
     }finally{planner.planAsync=planAsync;state.currentPerson=null;state.currentVoicePerson=null;}
+    const exercisePlans=[];
+    window.ROBOTITO_CLASS_EXERCISES.handleRequest=async(text,{plan})=>{exercisePlans.push(plan);return true;};
+    await chat.send("Explicame el ejercicio 3 de Física",{channel:"text"});
+    await chat.send("Perdón, 5",{channel:"text"});
+    await chat.send("Resolvelo",{channel:"text"});
+    check(exercisePlans.length===3,"Contextual requests did not reach the exercise handler");
+    check(exercisePlans[1].entities.exerciseNumber===5&&exercisePlans[2].entities.exerciseNumber===5,"Corrected number was lost at the real handler boundary");
+    check(exercisePlans.every(p=>p.mayReadClass&&/fisica/i.test(p.entities.topic)),"Exercise source/topic lost in dialogue");
+    for(const language of ["es","en","pt","fr","it","de"]){
+      for(const key of ["p01ClarifyReference","p01ClarifyActions","p01ClarifySources","p01ClarifyExercise","p01ClarifyCondition","p01ClarifyTone"]){
+        check(window.ROBOTITO_I18N.t(key,language)!==key,"Missing localized clarification: "+language+"/"+key);
+      }
+    }
     return {checks,privateReads,exerciseCalls,highfives,translatorFallback:translated};
    }finally{
     window.ROBOTITO_WEB_KNOWLEDGE.answer=original.web;window.ROBOTITO_STORE.queryRecords=original.query;

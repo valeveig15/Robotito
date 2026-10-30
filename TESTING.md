@@ -250,3 +250,13 @@ Se añadieron claves de traducción para estados de `SpeechRecognition` / `webki
 `ROBOTITO_STORE.putRecordWithBlob` guarda metadatos de consentimiento y audio en una sola transacción de IndexedDB. `ROBOTITO_VOICE_SYSTEM.deleteProfile` elimina tanto el registro como el blob conocido, cubriendo el caso histórico de blobs huérfanos. Las pruebas aisladas `tests/p04-voice-atomic-storage-regression.js` se integran en `npm run test:p04` (19 aserciones); `tests/browser-regression.js` comprueba este ciclo contra IndexedDB real en Chromium, pendiente de ejecución de CI verificada. Se regeneraron las versiones de caché de `robotito-store.js`, `voice-system.js`, `script.js` e `i18n.js`.
 
 - **P04:** recuperación ante promesa rechazada de traducción; prueba de contrato en `tests/p04-localization-race-regression.js`.
+
+
+## P01 — contratos, ejecución y diversidad semántica (30/10/2026)
+
+- `npm run test:p01`: contratos en seis idiomas, restricciones del modelo, métricas reproducibles y recuperación de ejercicios con entidades estructuradas.
+- `npm run test:p01:browser`: chat real de Chromium; las fuentes externas y los modelos de los casos de política se simulan. No requiere ni certifica micrófonos físicos.
+- `ROBOTITO_AUDIT_EXHAUSTIVE=1 ROBOTITO_AUDIT_REPORT=/tmp/semantic.json npm run test:semantic:audit`: recorre **todo el generador finito**, no todas las formulaciones humanas. El informe distingue casos semánticos, entradas, formatos/canales, repeticiones exactas, errores y confusiones por familia e idioma.
+- `ROBOTITO_AUDIT_LANGUAGES=fr ROBOTITO_AUDIT_SEED=42 ROBOTITO_AUDIT_BATCH=1 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit`: lote reproducible de un idioma. Cada semilla/lote cambia el orden de muestreo; no crea por sí misma nuevos significados. Si se supera el inventario finito se informa la repetición.
+
+`semantic-audit.yml` conserva seis informes separados en cada PR, cambio de `main`, ejecución manual y revisión diaria. Los oráculos versionados están en `tests/fixtures/p01-semantic-cases.js`, separados del planificador. El informe incluye SHA-256 del código y de los oráculos. Cero discrepancias mide este corpus de regresión; no equivale a exactitud universal ni a calibración con conversaciones reales. No se deben sumar ejecuciones repetidas como preguntas nuevas.

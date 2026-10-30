@@ -1,17 +1,19 @@
 # Robotito — limitaciones controlables que siguen pendientes
 
-Actualizado: 28/10/2026. **No borrar este registro al cerrar una aceptación parcial.** Incluir un resumen de estas tareas pendientes al final de las respuestas del chat y actualizar cada entrada cuando se implemente y pase la CI. La prioridad de ejecución de los 82 pedidos sigue determinada por [ROADMAP_82.md](ROADMAP_82.md).
+Actualizado: 30/10/2026. **No borrar este registro al cerrar una aceptación parcial.** Incluir un resumen de estas tareas pendientes al final de las respuestas del chat y actualizar cada entrada cuando se implemente y pase la CI. La prioridad de ejecución de los 82 pedidos sigue determinada por [ROADMAP_82.md](ROADMAP_82.md).
 
 Las tareas siguientes son **mejorables mediante desarrollo**, aunque no se garantiza resolver literalmente todas las expresiones humanas ni certificar funcionamiento perfecto en cualquier hardware. Se diferencian de la mera capacidad de abrir GitHub: una página HTTPS se puede abrir desde múltiples dispositivos, pero cámara, micrófono, Web Audio, Web Worker y modelos locales también requieren permisos y APIs compatibles.
 
 ## P01 — Generalización semántica a 999.999 preguntas y 50 variantes
 
-**Estado: pendiente de expansión; el criterio básico de P01 ya se aceptó.**
+**Estado: ampliación funcional y auditoría por familias implementadas; sigue pendiente la validación masiva independiente.**
+
+La revisión del 30/10 corrige exclusiones de fuentes, citas, referencias y reparaciones en seis idiomas, contradicciones, repeticiones literales, límites del modelo local y el paso de entidades al buscador de ejercicios. Se mantiene un generador reproducible con 22 familias y 352 casos semánticos: 5.632 ejecuciones, 26.080 verificaciones y cero discrepancias en el informe versionado. La matriz programada y por PR retiene métricas de cada idioma. Véase [P01-STATUS.md](P01-STATUS.md). **Esto no certifica 49.999.950 formulaciones ni sustituye conversaciones reales.**
 El objetivo aspiracional equivale a hasta **49.999.950 formulaciones**. Las 360 paráfrasis de definiciones, 900 variaciones de superficie, propiedades generativas y CI existentes NO prueban ese volumen ni 999.999 intenciones distintas. Implementar generadores combinatorios semánticamente diversos en seis idiomas, contexto temporal, reparaciones, ironía, negación, citas, fuentes, profundidad y múltiples canales. Conservar casos adversariales reales como oráculos versionados; medir tasas de exactitud por familia y por idioma, no solo cantidad de casos. Ejecutar matrices grandes en trabajos programados separados de la CI rápida. Corregir familias de errores en módulos generales, no con millones de frases rígidas. Informar errores y límites.
 
 ## P01/P05 — Traducción puntual cuando no existe el modelo local
 
-**Estado: pendiente.** El seguimiento «¿Y en portugués?» usa traducción local cuando está disponible y una limitación explícita cuando no. Incorporar una alternativa privada y verificable, idealmente un modelo descargable **optativo** en el dispositivo o traducción local equivalente, sin filtrar transcripciones de clases ni recuerdos. Auditar también otros caminos de traducción que hoy usan APIs externas; consentimiento, privacidad y coincidencia real del idioma. Probar español, inglés, portugués, francés, italiano y alemán, más fallos de red y carga.
+**Estado: alternativa local integrada; disponibilidad real de los modelos aún depende del navegador.** El seguimiento «¿Y en portugués?» reutiliza traducción local, incluida `Translator` cuando no existe `LanguageModel`; el camino alternativo se prueba en Chromium con un adaptador simulado y sin transmitir texto a un servicio externo. Sin ninguna API/modelo compatible se comunica la limitación. Incorporar una alternativa privada y verificable, idealmente un modelo descargable **optativo** en el dispositivo o traducción local equivalente, sin filtrar transcripciones de clases ni recuerdos. Auditar también otros caminos de traducción que hoy usan APIs externas; consentimiento, privacidad y coincidencia real del idioma. Probar español, inglés, portugués, francés, italiano y alemán, más fallos de red y carga.
 
 ## P03 — Precisión y calibración de risa, llanto, tos, estornudos y aplausos
 

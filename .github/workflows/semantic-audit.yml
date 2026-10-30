@@ -1,0 +1,41 @@
+name: Robotito semantic family audit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '13 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  semantic-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [es, en, pt, fr, it, de]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit every case in the finite semantic generator
+        env:
+          ROBOTITO_AUDIT_LANGUAGES: ${{ matrix.language }}
+          ROBOTITO_AUDIT_EXHAUSTIVE: '1'
+          ROBOTITO_AUDIT_REPORT: semantic-${{ matrix.language }}.json
+        run: node tests/semantic-adversarial-batches.js
+      - name: Retain denominators, duplicates, errors and family coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-${{ matrix.language }}
+          path: semantic-${{ matrix.language }}.json
+          if-no-files-found: error
+          retention-days: 14

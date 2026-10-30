@@ -50,7 +50,7 @@
     "test:p04:tts": "node tests/p04-tts-handler-regression.js",
     "test:p04:asr:browser": "node tests/p04-browser-asr-status-regression.js",
     "test:p04:storage": "node tests/p04-voice-atomic-storage-regression.js",
-    "test:p01": "node tests/p01-semantic-contract-regression.js && node tests/p01-model-policy-regression.js",
+    "test:p01": "node tests/p01-semantic-contract-regression.js && node tests/p01-model-policy-regression.js && node tests/p01-audit-report-regression.js && node tests/p01-exercise-context-regression.js",
     "test:p01:browser": "node tests/p01-dialogue-browser.js"
   },
   "devDependencies": {

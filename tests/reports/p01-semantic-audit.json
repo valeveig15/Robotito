@@ -1,0 +1,767 @@
+{
+  "schemaVersion": 2,
+  "implementationSha256": "e00ff2f98de26dbd5dc672c7b185953f51838f3ef2e1e19b62a234ad93f070d8",
+  "oracleSha256": "a393dbf95859aa393f0b5acf4c41a4e2ee0dabaf4ff64a411a87708223bb4e61",
+  "source": "reviewed synthetic templates; not an independent real-user corpus",
+  "seed": 17,
+  "batch": 0,
+  "exhaustive": true,
+  "notes": [
+    "Format and channel variants are not new semantic paraphrases.",
+    "Exhaustive means the finite checked-in generator only, never all human formulations."
+  ],
+  "perLanguageErrorRates": {
+    "es": {
+      "cases": 992,
+      "checks": 4656,
+      "errors": 0,
+      "errorRate": 0,
+      "uniqueInputs": 418,
+      "uniqueSemanticCases": 62,
+      "duplicateSamples": 156,
+      "generatorCases": 992,
+      "generatorCoverage": 1,
+      "byFamily": {
+        "negative": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceExcluded": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "domainDefinition": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "summary": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "ambiguous": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "definition": {
+          "cases": 144,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "class": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "emotion": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "exercise": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "explanation": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repair": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "comparison": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conditional": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "example": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "brief": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "night": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repeat": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "reported": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceConflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "quoted": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "detail": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        }
+      },
+      "confusions": {}
+    },
+    "en": {
+      "cases": 992,
+      "checks": 4656,
+      "errors": 0,
+      "errorRate": 0,
+      "uniqueInputs": 385,
+      "uniqueSemanticCases": 62,
+      "duplicateSamples": 222,
+      "generatorCases": 992,
+      "generatorCoverage": 1,
+      "byFamily": {
+        "explanation": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceConflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "definition": {
+          "cases": 144,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "reported": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceExcluded": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "domainDefinition": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "detail": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "comparison": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conditional": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "exercise": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "ambiguous": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repair": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "quoted": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repeat": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "brief": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "example": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "negative": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "summary": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "night": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "emotion": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "class": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        }
+      },
+      "confusions": {}
+    },
+    "pt": {
+      "cases": 912,
+      "checks": 4192,
+      "errors": 0,
+      "errorRate": 0,
+      "uniqueInputs": 373,
+      "uniqueSemanticCases": 57,
+      "duplicateSamples": 166,
+      "generatorCases": 912,
+      "generatorCoverage": 1,
+      "byFamily": {
+        "exercise": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceConflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "explanation": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "domainDefinition": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceExcluded": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "detail": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "quoted": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "night": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "brief": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "negative": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "emotion": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conditional": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "summary": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "reported": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "example": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repair": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "definition": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "comparison": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "class": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "ambiguous": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repeat": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        }
+      },
+      "confusions": {}
+    },
+    "fr": {
+      "cases": 912,
+      "checks": 4192,
+      "errors": 0,
+      "errorRate": 0,
+      "uniqueInputs": 372,
+      "uniqueSemanticCases": 57,
+      "duplicateSamples": 168,
+      "generatorCases": 912,
+      "generatorCoverage": 1,
+      "byFamily": {
+        "definition": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "night": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceConflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "exercise": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "class": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "domainDefinition": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "explanation": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "summary": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "reported": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "example": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "ambiguous": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "emotion": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repair": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceExcluded": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "brief": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conditional": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "comparison": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "quoted": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "negative": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repeat": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "detail": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        }
+      },
+      "confusions": {}
+    },
+    "it": {
+      "cases": 912,
+      "checks": 4192,
+      "errors": 0,
+      "errorRate": 0,
+      "uniqueInputs": 370,
+      "uniqueSemanticCases": 57,
+      "duplicateSamples": 172,
+      "generatorCases": 912,
+      "generatorCoverage": 1,
+      "byFamily": {
+        "exercise": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "negative": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "comparison": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "example": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "summary": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "explanation": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "quoted": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "reported": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "definition": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceExcluded": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repair": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conditional": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "night": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "detail": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "class": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "brief": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceConflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "emotion": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repeat": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "domainDefinition": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "ambiguous": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        }
+      },
+      "confusions": {}
+    },
+    "de": {
+      "cases": 912,
+      "checks": 4192,
+      "errors": 0,
+      "errorRate": 0,
+      "uniqueInputs": 380,
+      "uniqueSemanticCases": 57,
+      "duplicateSamples": 152,
+      "generatorCases": 912,
+      "generatorCoverage": 1,
+      "byFamily": {
+        "exercise": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "explanation": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceExcluded": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repeat": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "definition": {
+          "cases": 96,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "negative": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "reported": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "emotion": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "sourceConflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conditional": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "detail": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "summary": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "class": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "comparison": {
+          "cases": 48,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "example": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "repair": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "quoted": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "brief": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "conflict": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "domainDefinition": {
+          "cases": 16,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "ambiguous": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        },
+        "night": {
+          "cases": 32,
+          "errors": 0,
+          "errorRate": 0
+        }
+      },
+      "confusions": {}
+    }
+  },
+  "examples": [],
+  "totals": {
+    "cases": 5632,
+    "checks": 26080,
+    "errors": 0,
+    "uniqueSemanticCases": 352,
+    "duplicateSamples": 1036
+  }
+}
