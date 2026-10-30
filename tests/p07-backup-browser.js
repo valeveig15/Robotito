@@ -9,6 +9,13 @@ runBrowserTest("p07-backup",async test=>{
    &&Boolean(window.ROBOTITO_STORE?.restoreBackup),null,{timeout:20000});
   const result=await page.evaluate(async()=>{
    const store=window.ROBOTITO_STORE;
+   // Include the failing boundary in diagnostics from engines that omit an
+   // IndexedDB request's stack when rejecting its transaction.
+   for(const name of ["putRecord","putRecordWithBlob","putBlob","set","exportBackup","restoreBackup"]){
+    const original=store[name];store[name]=async(...args)=>{
+      try{return await original(...args);}catch(e){throw Error(name+": "+e.name+": "+e.message);}
+    };
+   }
    const at=Date.now()-60000;
    await store.putRecord({id:"p07-ada",type:"memories",owner:"Ada",timestamp:at,
     data:{text:"Only Ada may see this"}});

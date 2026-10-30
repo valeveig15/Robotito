@@ -2795,6 +2795,9 @@ body.layout-resizing *{cursor:col-resize!important}
     overflow:visible;
   }
   .tabs,.tabpage,.card,.meter-card{min-width:0}
+  .panel{overflow-wrap:anywhere}
+  .panel input,.panel select,.panel textarea{min-width:0;max-width:100%}
+  .panel .button-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
   .robotito{
     top:50%!important;
     width:248px;

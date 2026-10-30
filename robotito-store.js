@@ -10,7 +10,7 @@ const LEGACY_TYPE={"robotito.classLines.v1":"transcripts","robotito.classSummari
 const queues=new Map();
 let dbPromise=null;
 function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB request failed"));});}
-function complete(tx){return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error("IndexedDB transaction failed"));tx.onabort=()=>reject(tx.error||new Error("IndexedDB transaction aborted"));});}
+function complete(tx){return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onerror=event=>reject(event?.target?.error||tx.error||new Error("IndexedDB transaction failed"));tx.onabort=()=>reject(tx.error||new Error("IndexedDB transaction aborted"));});}
 function openDb(){
  if(dbPromise)return dbPromise;
  if(typeof indexedDB==="undefined")return Promise.reject(new Error("IndexedDB unavailable"));
