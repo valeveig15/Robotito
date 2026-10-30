@@ -19,9 +19,13 @@ function intent(raw){
  const type=choices.find(choice=>choice.terms.test(q))?.type||"memories";
  return {type,search:q};
 }
-async function search(raw,{owner="local",language="es",now=new Date(),limit=8}={}){
+async function search(raw,{owner="local",language="es",now=new Date(),limit=8,plan=null}={}){
+ // Lexical matches cannot override the central planner's source/negation policy.
+ if(plan&&(plan.shouldExecute===false||plan.needsClarification||
+   ["general","none","conversation"].includes(plan.source)))return {handled:false,rows:[]};
  const found=intent(raw),store=root.ROBOTITO_STORE,clock=root.ROBOTITO_TEMPORAL;
  if(!found||!store?.queryRecords)return {handled:false,rows:[]};
+ if(plan&&found.type==="classes"&&plan.mayReadClass!==true)return {handled:false,rows:[]};
  const time=clock?.resolve?.(raw,{now,language});
  const options={type:found.type,owner,limit:Math.max(1,Math.min(20,limit))};
  if(time?.start!==null&&time?.start!==undefined){options.after=time.start;options.before=time.end;}

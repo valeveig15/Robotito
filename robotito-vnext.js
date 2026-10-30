@@ -290,6 +290,7 @@
     // Neither keywords in ambient comments nor negated instructions can
     // authorize a camera, browser, or academic action.
     if(frame&&frame.shouldExecute===false)return {...central,intent:central?.intent||"statement",depth,shouldExecute:false};
+    if(frame?.quotedContent&&frame.source==="general")return {...central,depth,shouldExecute:true};
     if(window.ROBOTITO_PRESIDENTS?.parseQuestion?.(raw))
       return {...central,intent:"president",depth,shouldExecute:true};
     if(/\b(que es esto|que objeto es|que estoy mostrando|reconoce este objeto|reconoce esto|what is this object|what am i showing)\b/.test(q))
