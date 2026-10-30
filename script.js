@@ -3618,6 +3618,12 @@ function summarizeClass(){
   }
   out.innerHTML=selected.reverse().map(t=>'<div class="study-chip">• '+escapeHtml(t)+'</div>').join("");
 }
+function semanticClarification(plan){
+  const keys={"missing-reference":"p01ClarifyReference","contradictory-actions":"p01ClarifyActions",
+    "contradictory-sources":"p01ClarifySources","ambiguous-exercise":"p01ClarifyExercise",
+    "conditional-action":"p01ClarifyCondition","uncertain-tone":"p01ClarifyTone"};
+  return window.ROBOTITO_I18N?.t?.(keys[plan?.clarificationReason]||"notSure",responseLanguage())||"¿Podés aclararlo?";
+}
 async function askClass(){
   const q=$("#classQuestion").value.trim();
   if(!q)return;
@@ -3630,14 +3636,14 @@ async function askClass(){
     const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
     const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q,{plan:planned})||planned||{};
     if(planned?.needsClarification){
-      if(out)out.textContent=window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?";
+      if(out)out.textContent=semanticClarification(planned);
       return;
     }
     if(planned&&planned.shouldExecute===false){
       if(out)out.innerHTML='<div class="study-chip">Eso parece un comentario, no una solicitud para consultar materiales.</div>';
       return;
     }
-    const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true});
+    const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true,plan:planned});
     if(exerciseHandled)return;
     if(understood.useClassMemory){
       const classAnswered=await answerClassQuestion(q,{speak:true,render:true,announceMissing:false});
@@ -3852,6 +3858,7 @@ function shortenPreviousAnswer(value){
 // restrictions. Never fabricate a more detailed answer from stored fragments.
 async function handleSemanticFollowUp(plan,owner,channel){
  const reply=robotitoReplyByOwner.get(owner),prior=robotitoRequestByOwner.get(owner);
+ const epoch=robotitoPlanningEpoch;
  const kind=plan?.followUp?.kind;
  const clarify=()=>say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
  if(!kind||!reply?.text){clarify();return true;}
@@ -3863,7 +3870,7 @@ async function handleSemanticFollowUp(plan,owner,channel){
   // Offline-only translation of prior replies. Do not leak private class
   // content or conversation memories to an unconsented third-party API.
   const translated=await translateShortPhrase(String(reply.text).slice(0,3000),reply.language,target);
-  if(owner!==(state.currentVoicePerson||state.currentPerson||"local"))return true;
+  if(epoch!==robotitoPlanningEpoch||owner!==(state.currentVoicePerson||state.currentPerson||"local"))return true;
   if(translated){
    const detected=detectGeneratedSpeechLanguage(translated);
    if(detected==="und"||detected===target){sayInLanguage(translated,target);return true;}
@@ -3872,6 +3879,7 @@ async function handleSemanticFollowUp(plan,owner,channel){
   return true;
  }
  if(!prior?.text){clarify();return true;}
+ if(plan.references?.previousSource&&plan.references.previousSource!==prior.source){clarify();return true;}
  if(kind==="example"&&!prior.topic){clarify();return true;}
  if(kind==="example"){
   const classSource=prior.source==="classes"||prior.source==="materials";
@@ -3914,7 +3922,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     }
     if(!atomic&&interpretation.actions?.length>1){
       if(interpretation.needsClarification){
-        say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+        say(semanticClarification(interpretation));
         return;
       }
       for(const action of interpretation.actions){
@@ -3940,7 +3948,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
       if(robotitoRequestByOwner.size>24)robotitoRequestByOwner.delete(robotitoRequestByOwner.keys().next().value);
     }
     if(interpretation.needsClarification){
-      say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"¿Podés aclararlo?");
+      say(semanticClarification(interpretation));
       return;
     }
   }
@@ -3996,7 +4004,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
 
   // Exact exercise requests from uploaded academic material have top priority.
   // This prevents "ejercicio 4 de Física" from being treated as a generic class question.
-  if(understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(interpreted,{spoken:true}))return;
+  if(understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(interpreted,{spoken:true,plan:interpretation}))return;
 
   // Saved classes are used first only when the person explicitly asks about
   // the class, teacher, transcript or uploaded material. General questions must

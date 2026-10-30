@@ -14,6 +14,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 ## Pedido 01 — COMPLETADO para los criterios de aceptación comprobables
 
+**Revisión de detalles, 30/10/2026:** corregidos fallos que no cubría la aceptación inicial, con alcance y evidencia actualizados en [P01-STATUS.md](P01-STATUS.md). El [PR #110](https://github.com/valeveig15/Robotito/pull/110) ya está integrado con CI aprobada. La revisión amplía a 22 familias en seis idiomas, conserva restricciones hasta los ejecutores, transmite entidades a ejercicios y distingue formatos repetidos de diversidad semántica. La validación masiva independiente permanece explícita en el registro de pendientes.
+
 **Base documental:** el pedido 01 de `Robotito_82_pedidos_completos-1.docx` pide un planificador central integrado en `semantic-planner.js`, `intent-engine.js` y `script.js` que diferencie preguntas, órdenes, emociones, negaciones, referencias y seguimiento en los seis idiomas, sin confundir conocimiento general con clases. La aceptación pide probar paráfrasis, ambigüedades, contradicciones y aclaraciones.
 
 **Implementación integrada en `main`, en incrementos independientes y verificados:**

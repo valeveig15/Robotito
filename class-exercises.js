@@ -140,12 +140,15 @@
     score+=words.filter(w=>body.includes(w)).length*.45;
     return score;
   }
-  function findExercise(query){
-    const num=requestedNumber(query);
+  function findExercise(query,plan=null){
+    const num=Number.isInteger(plan?.entities?.exerciseNumber)?plan.entities.exerciseNumber:requestedNumber(query);
     if(num===null)return {exercise:null,reason:"missing-number",matches:[]};
-    const scope=scopeFromQuery(query);
+    const scopedQuery=[query,plan?.entities?.subject,plan?.entities?.topic].filter(Boolean).join(" ");
+    const scope=scopeFromQuery(scopedQuery);
     const all=(state.academicMaterials||[]).flatMap(materialExercises);
-    const sameNumber=all.filter(e=>Number(e.number)===Number(num));
+    const sameNumber=all.filter(e=>Number(e.number)===Number(num)&&
+      (!scope.explicitSubject||norm(e.subject)===norm(scope.subject))&&
+      (!scope.explicitTopic||norm(e.topic)===norm(scope.topic)));
     if(!sameNumber.length)return {exercise:null,reason:"not-found",number:num,scope,matches:[]};
 
     const ranked=sameNumber
@@ -257,12 +260,13 @@ Reglas:
     renderDetailed(exercise,null,null);
     return {ok:false,exercise,reason:"cannot-solve"};
   }
-  async function handleRequest(text,{spoken=true}={}){
-    if(!looksLikeExerciseRequest(text))return false;
+  async function handleRequest(text,{spoken=true,plan=null}={}){
+    if(plan&&(plan.intent!=="exercise"||!plan.shouldExecute||!plan.mayReadClass||plan.needsClarification))return false;
+    if(!plan&&!looksLikeExerciseRequest(text))return false;
 
     const root=document.querySelector("#classAnswer");
     if(root)root.innerHTML='<div class="study-chip">Buscando el ejercicio exacto en el material cargado…</div>';
-    const result=findExercise(text);
+    const result=findExercise(text,plan);
     if(!result.exercise){
       renderMissing(text,result);
       if(spoken&&typeof say==="function"){

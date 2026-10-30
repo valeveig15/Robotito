@@ -219,7 +219,7 @@ function semanticFeatures(text){
  const tokens=semanticTokens(unquoted(text)),roles={};
  for(const token of tokens)for(const role of tokenRoles(token))roles[role]=(roles[role]||0)+1;
  const first=tokens.slice(0,5),last=tokens.slice(-6);
- const question=/(?:[¿?])/.test(text)||/^(?:what|how|why|when|where|who|which|que|cual|como|quien|cuando|donde|cuanto|por que|qual|o que|was|wie)\b/.test(fold(text));
+ const question=/^(?:c['’]est quoi|qu['’](?:a|est)|che|cosa|comment|pourquoi|wann|warum|wer|wo)\b/.test(fold(text))||/(?:[¿?])/.test(text)||/^(?:what|how|why|when|where|who|which|que|cual|como|quien|cuando|donde|cuanto|por que|qual|o que|was|wie)\b/.test(fold(text));
  // Only a directed gesture verb (plus optional courtesy/vocative) is a command.
  // A teacher or user mentioning the same gesture must remain a statement.
  const gestureRequest=tokens.some((token,index)=>tokenRoles(token).includes("GESTURE")
@@ -235,13 +235,13 @@ function semanticFeatures(text){
    && !/^\s*[¿?]?\s*(?:que|what|como|how|por que)\b/.test(fold(text));
  const reportedUtterance=isReportedUtterance(text);
  const effectiveNegative=reportedUtterance?false:negativeDirective(text);
- const corrective=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|en realidad|rather|i meant|sorry,? i mean)\b/.test(fold(text));
+ const corrective=Boolean(correctionParts(text));
  const personalSentiment=/^(?:no|nunca)\s+(?:te|les|los|las|me|nos)\s+(?:quiero|amo|adoro|amas|quieres)\b/.test(fold(text));
  const nonDirectiveDisinterest=/^(?:no|nunca)\s+(?:quiero|deseo|puedo|tengo ganas de)\s+(?!que\b)/.test(fold(text))&&!implicit;
  let speechAct="statement";
  if(reportedUtterance)speechAct="statement";
  else if(question&&!mentionQuestion)speechAct="question";
- else if(!personalSentiment&&!nonDirectiveDisinterest&&(effectiveNegative||!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&/^(?:perdon|quise|queria|corrijo|mejor dicho|no,? mejor|en realidad)/.test(fold(text))))speechAct="request";
+ else if(!personalSentiment&&!nonDirectiveDisinterest&&(effectiveNegative||!pastNarration||first.some(token=>tokenRoles(token).includes("ORDER")&&!/^recomend/.test(token)))&&(leadingRequest||implicit||effectiveNegative||corrective&&isRepairStart(text)))speechAct="request";
  else if(roles.SOCIAL&&first.some(t=>tokenRoles(t).includes("SOCIAL")))speechAct="social";
  const directed=vocative||speechAct==="question"||speechAct==="request"||speechAct==="social";
  return {tokens,roles,first,last,question,leadingRequest,implicit,vocative,
@@ -278,6 +278,8 @@ const FOLLOWUP_LANGUAGE_NAMES={
 function followUpModifier(input){
  const q=fold(stripAddress(input)).replace(/^[?¿!¡.,:;\s]+|[?¿!¡.,:;\s]+$/g,"").trim();
  if(!q||q.split(/\s+/).length>11)return null;
+ if(/^(?:explicalo|explicamelo|explain it|explique isso|explique cela|spiegalo|erklare das)$/.test(q))return {kind:"detailed"};
+ if(/^(?:resumilo|resumelo|summarize it|resuma isso|resume cela|riassumilo|fasse das zusammen)$/.test(q))return {kind:"brief"};
  const localized={
   brief:/^(?:(?:y|and|e|et|und)\s+)?(?:mas breve|shorter|more briefly|mais curto|mais breve|plus court|plus bref|piu breve|piu corto|kurzer|in einem satz|en une phrase|em uma frase|in una frase)$/,
   detailed:/^(?:(?:y|and|e|et|und)\s+)?(?:mas detallado|more detail|mais detalhes|em detalhe|plus de details|en detail|piu dettagli|in dettaglio|mehr details|ausfuhrlicher)$/,
@@ -306,12 +308,17 @@ function isReferenceOnly(q){
  return /^(?:(?:y|and|e|et|und)\s+)?(?:eso|ese|esa|este|esta|aquello|el otro|la otra|lo de ayer|de noche|por la noche|a la noche|en la noche|de tarde|por la tarde|en la tarde|por la manana|en la manana|de manana|in the afternoon|in the morning|at night|at noon|a noite|de noite|la nuit|le soir|di notte|nachts|tomorrow|manana|demain|morgen|tonight|that one|the other|what about that)[?.! ]*$/i.test(q.trim());
 }
 function correctionParts(text){
- const folded=fold(text);
- const marker=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|o mejor|en realidad|rather|i meant|sorry,? i mean)\b/g;
+ // Keep masked quote lengths so correction offsets still index the original text.
+ const folded=unquoted(text).toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+ const marker=/\b(?:quise decir|queria decir|mejor dicho|perdon|corrijo|no,? digo|no,? mejor|o mejor|en realidad|rather|i meant|sorry,? i mean|quis dizer|queria dizer|je voulais dire|je veux dire|volevo dire|intendevo|ich meinte|ich meine)\b/g;
  let match,last=null;
  while((match=marker.exec(folded)))last={start:match.index,end:marker.lastIndex};
  if(!last)return null;
  return {before:normalize(text.slice(0,last.start)),after:normalize(text.slice(last.end)).replace(/^[\s,.:;-]+/,"").trim()};
+}
+function isRepairStart(text){
+ const repair=correctionParts(text);
+ return Boolean(repair&&/^(?:(?:no|eh|em|sorry|perdon|desculpa|pardon|scusa|entschuldigung)[,\s]*)?$/i.test(fold(stripAddress(repair.before))));
 }
 function splitActions(text){
  const source=normalize(text);
@@ -367,6 +374,9 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const fallback=legacyPlan(scope.text,{context,language,now});
  const features=semanticFeatures(directedText),q=fold(directedText),previous=context?.focus||null;
  if(isReferenceOnly(q)){features.speechAct="request";features.directed=true;}
+ const solveReference=/^(?:resolv\p{L}*lo|resuelv\p{L}*lo|solve it|resolva isso|resous cela|risolvilo|lose das)[.!?]*$/u.test(q);
+ const knownExercise=solveReference&&previous?.intent==="exercise"&&Number.isInteger(previous?.entities?.exerciseNumber)&&previous?.source==="materials"&&previous?.mayReadClass!==false;
+ if(solveReference){features.speechAct="request";features.directed=true;}
  const followUp=followUpModifier(directedText);
  const roles=features.roles;
  let {intent,source,confidence}=fallback;
@@ -407,18 +417,21 @@ function inferFrame(text,{context,language,now},inSequence=false){
  if(previous&&isReferenceOnly(q)&&previous.intent&&previous.source){
   intent=previous.intent;source=previous.source;confidence=.86;
  }
+ if(knownExercise){intent="exercise";source="materials";confidence=.86;}
  const correction=correctionParts(text);
- if(correction&&previous&&/\b(?:perdon|quise decir|queria decir|mejor dicho|no digo|corrijo|rather|i meant)\b/.test(q)
-   &&(!correction.before||/^(?:no|eh|em)$/i.test(correction.before))){
+ if(correction&&previous&&isRepairStart(text)&&!features.negative&&
+   (intent==="conversation"||intent===previous.intent||/^\d+/.test(correction.after))){
   intent=previous.intent;source=previous.source;confidence=.8;
  }
  let entities={...fallback.entities};
+ if(knownExercise)entities={...previous.entities,...Object.fromEntries(Object.entries(entities).filter(([,v])=>v!==null)),exerciseNumber:previous.entities.exerciseNumber};
  const afterNum=correction?.after?.match(/\b(\d{1,3})\b/);
  if(afterNum&&(intent==="exercise"||previous?.intent==="exercise"))entities.exerciseNumber=Number(afterNum[1]);
  if(entities.exerciseNumber==null&&previous?.intent==="exercise"&&isReferenceOnly(q))entities.exerciseNumber=previous.entities?.exerciseNumber??null;
  if(!entities.date&&previous?.entities?.date&&isReferenceOnly(q))entities.date=previous.entities.date;
  const inheritedSubject=/\b(?:ese|esa|esto|eso|otro|otra|lo anterior|it|that|one|lo de ayer)\b/.test(q);
- const topic=isReferenceOnly(q)&&previous?.entities?.topic?previous.entities.topic:topicEntity(correction?.after||(scope.excludedSources.length?scope.text:directedText),intent,(inheritedSubject||correction&&previous)?previous:null);
+ const numberRepair=correction&&isRepairStart(text)&&afterNum&&previous?.intent==="exercise";
+ const topic=(isReferenceOnly(q)||numberRepair||knownExercise)&&previous?.entities?.topic?previous.entities.topic:topicEntity(correction?.after||(scope.excludedSources.length?scope.text:directedText),intent,(inheritedSubject||correction&&previous)?previous:null);
  entities={...entities,topic:topic||null};
  if(inheritedSubject&&previous?.entities?.subject&&!entities.subject)entities.subject=previous.entities.subject;
  const examRequested=/\b(?:para (?:un |el )?examen|como (?:en|para) (?:un )?examen|modo examen|exam style|exam answer)\b/.test(q);
@@ -430,11 +443,12 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const negativeCommand=features.negative&&["request","question"].includes(features.speechAct);
  const shouldExecute=!negativeCommand&&features.speechAct!=="statement"&&features.speechAct!=="social";
  const bareReference=q.replace(/^[¿?!\s]+|[?!\s]+$/g,"");
- const needsClarification=ambiguousReference||unresolvedCommand||deicticRequest&&!previous?.entities?.topic||
+ const needsClarification=ambiguousReference||((unresolvedCommand||solveReference)&&!knownExercise)||deicticRequest&&!previous?.entities?.topic||
+  Boolean(correction&&isRepairStart(text)&&!previous&&/^\d+[.!?]*$/.test(correction.after))||
   (features.speechAct!=="statement"&&/^(?:y\s+)?(?:el otro|la otra|the other)$/i.test(bareReference)&&!(previous?.entities?.alternatives?.length>=2));
  const shouldRespond=features.speechAct!=="statement"||features.vocative||features.implicit;
  const mayReadClass=!excludesClass&&shouldExecute&&!needsClarification&&(source==="classes"||source==="materials")
-  &&(explicitClass||explicitExercise||(isReferenceOnly(q)&&previous?.source===source));
+  &&(explicitClass||explicitExercise||knownExercise||((isReferenceOnly(q)||numberRepair)&&previous?.source===source&&previous?.mayReadClass!==false));
  if(followUp||deicticRequest&&previous?.entities?.topic){
   const modifier=followUp||{kind:"detailed"};
   const hasAntecedent=Boolean(previous&&previous.intent!=="conversation");
@@ -448,7 +462,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
  return {...fallback,intent,source,confidence,language:fallback.language,depth,
   speechAct:features.speechAct,addressed:features.directed||Boolean(inSequence),
   shouldRespond,shouldExecute:shouldExecute&&!needsClarification,negative:features.negative,correction:correction||null,
-  needsClarification,mayReadClass,entities,topic:topic||fallback.topic,
+  needsClarification,clarificationReason:needsClarification?"missing-reference":null,mayReadClass,entities,topic:topic||fallback.topic,
   constraints:{excludedSources:scope.excludedSources},quotedContent:unquoted(text)!==text,
   references:{usesPrevious:Boolean(previous&&(isReferenceOnly(q)||inheritedSubject)),previousSource:previous?.source||null},
   modifiers:{negated:features.negative,depth,daypart:entities.daypart||null},
@@ -487,23 +501,27 @@ function plan(raw,{context=createContext(),language,now=new Date()}={}){
    needsClarification:frame.needsClarification}];
  const exerciseChoice=/\b(?:ejercicio|exercise|exercicio|exercice|esercizio|aufgabe)\s*\d+\s+(?:o|or|ou|oder)\s+\d+\b/i.test(unquoted(text));
  const conflict=frame.actions.some((a,i)=>frame.actions.some((b,j)=>i!==j&&a.negative!==b.negative&&actionIdentity(a.text)&&actionIdentity(a.text)===actionIdentity(b.text)));
+ const scope=sourceScope(text);
+ const sourceConflict=scope.excludedSources.length>0&&(
+  frame.actions.some(a=>a.shouldExecute&&a.mayReadClass)||
+  /\b(?:mis apuntes|my (?:class )?notes|minhas notas|mes notes|miei appunti|meine notizen)\b/.test(scope.text));
  const conditional=/^(?:si|if|se|wenn)\b[^,]+,\s*\S/i.test(stripAddress(unquoted(text)))&&frame.shouldExecute;
  const ironic=/(?:🙄|\/s(?:\s|$))/.test(text)&&frame.shouldExecute;
- if(exerciseChoice||conflict||conditional||ironic){
-  frame={...frame,needsClarification:true,clarificationReason:conflict?"contradictory-actions":conditional?"conditional-action":ironic?"uncertain-tone":"ambiguous-exercise",shouldExecute:false,mayReadClass:false,
+ if(exerciseChoice||conflict||sourceConflict||conditional||ironic){
+  frame={...frame,needsClarification:true,clarificationReason:sourceConflict?"contradictory-sources":conflict?"contradictory-actions":conditional?"conditional-action":ironic?"uncertain-tone":"ambiguous-exercise",shouldExecute:false,mayReadClass:false,
    actions:frame.actions.map(a=>({...a,shouldExecute:false,mayReadClass:false,needsClarification:true}))};
  }
  return frame;
 }
 
 function actionIdentity(text){
- const tokens=semanticTokens(text).filter(w=>!STOPWORDS.has(w)&&!["no","not","never","n","don","t","do","nao","non","ne","pas","nicht","please","favor"].includes(w));
+ const tokens=semanticTokens(stripAddress(text)).filter(w=>!STOPWORDS.has(w)&&!["no","not","never","n","don","t","do","nao","non","ne","pas","nicht","please","favor"].includes(w));
  const head=tokens.shift()||"";
  const operation=/^(?:abr|apri|open|ouvr|offn)/.test(head)?"open":/^(?:borr|elimin|delet|apaga|supprim|losch)/.test(head)?"delete":/^(?:explic|explain|spieg|erklar)/.test(head)?"explain":/^(?:mostr|muestr|show|zeig)/.test(head)?"show":null;
  return operation?operation+":"+tokens.join(" "):null;
 }
 
-function advance(context,planned){const entry={intent:planned.intent,source:planned.source,language:planned.language,entities:planned.entities,topic:planned.topic,speechAct:planned.speechAct};const canFocus=planned.speechAct!=="social"&&!planned.negative&&!planned.needsClarification&&planned.intent!=="empty"&&planned.intent!=="follow-up"&&
+function advance(context,planned){const entry={intent:planned.intent,source:planned.source,language:planned.language,entities:planned.entities,topic:planned.topic,speechAct:planned.speechAct,mayReadClass:planned.mayReadClass};const canFocus=planned.speechAct!=="social"&&!planned.negative&&!planned.needsClarification&&planned.intent!=="empty"&&planned.intent!=="follow-up"&&
  (planned.shouldExecute===true||["task","book","weather"].includes(planned.intent));return {version:2,turns:[...(context?.turns||[]).slice(-19),entry],focus:canFocus?entry:context?.focus||null};}
 // Optional on-device language-model refinement for novel phrasings. Never
 // call a remote inference endpoint; the deterministic planner is the fallback.
