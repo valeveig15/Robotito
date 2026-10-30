@@ -1,19 +1,10 @@
 "use strict";
-const assert=require('node:assert/strict');
-const {spawn}=require('node:child_process');
-const {chromium}=require('playwright');
-const path=require('node:path');
-const port=Number(process.env.ROBOTITO_TEST_PORT||8781);
-const server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.1'],{cwd:path.resolve(__dirname,'..'),stdio:'ignore'});
-(async()=>{
- let browser;
- try{
-  await new Promise(resolve=>setTimeout(resolve,500));
-  browser=await chromium.launch({headless:true});
-  const page=await browser.newPage();const errors=[];
-  page.on('pageerror',e=>errors.push(String(e)));
-  await page.route('https://**/*',r=>r.fulfill({status:200,contentType:'application/javascript',body:''}));
-  await page.goto(`http://127.0.0.1:${port}`,{waitUntil:'domcontentloaded'});
+const assert=require("node:assert/strict");
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p01-dialogue",async test=>{
+  const {page,baseURL}=test,errors=test.report.pageErrors;
+  test.phase("p01-dialogue");
+  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>Boolean(window.ROBOTITO_CHAT));
   const result=await page.evaluate(async()=>{
    state.voiceEnabled=false;setLanguageMode('es');
@@ -85,6 +76,5 @@ const server=spawn('python3',['-m','http.server',String(port),'--bind','127.0.0.
     window.LanguageModel=original.model;window.Translator=original.translator;
    }
   });
-  assert.deepEqual(errors,[]);console.log('P01 real Chromium dialogue:',JSON.stringify(result));
- }finally{await browser?.close();server.kill();}
-})().catch(e=>{console.error(e);process.exitCode=1;});
+  test.report.result=result;assert.deepEqual(errors,[]);console.log('P01 real '+test.engineName+' dialogue:',JSON.stringify(result));
+}).catch(e=>{console.error(e);process.exitCode=1;});

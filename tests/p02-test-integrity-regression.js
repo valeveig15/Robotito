@@ -56,9 +56,20 @@ async function rejects(fn,pattern){await assert.rejects(fn,pattern);checks++;}
     const result=spawnSync(process.execPath,[path.join(__dirname,"behavior-properties.js")],{env,encoding:"utf8",timeout:30000});
     equal(result.status,1,"The actual properties command rejects an unknown replay");
     assert.match(result.stderr,/Unknown or unexecuted replay property/);checks++;
-    const report=JSON.parse(fs.readFileSync(path.join(directory,"properties-"+kit.hashSeed(env.ROBOTITO_TEST_SEED||17)+"-scale-"+(env.ROBOTITO_PROP_SCALE||1)+".json"),"utf8"));
+    const report=JSON.parse(fs.readFileSync(path.join(directory,"properties-"+kit.hashSeed(env.ROBOTITO_TEST_SEED||"17")+"-scale-"+(env.ROBOTITO_PROP_SCALE||1)+".json"),"utf8"));
     equal(report.status,"failed","Real CLI failure artifact exists");
     equal(report.propertyRuns,0,"Zero executed properties is explicit");
+    const replayReports=[];
+    for(const explicit of [false,true]){
+      const replayEnv={...env,ROBOTITO_REPLAY_PROPERTY:"normalization-metamorphic",ROBOTITO_REPLAY_CASE:"12",ROBOTITO_PROP_SCALE:"1"};
+      delete replayEnv.ROBOTITO_TEST_SEED;if(explicit)replayEnv.ROBOTITO_TEST_SEED="17";
+      const replay=spawnSync(process.execPath,[path.join(__dirname,"behavior-properties.js")],{env:replayEnv,encoding:"utf8",timeout:30000});
+      equal(replay.status,0,"Valid default/explicit-seed replay succeeds");
+      const saved=JSON.parse(fs.readFileSync(path.join(directory,"properties-"+kit.hashSeed("17")+"-scale-1.json"),"utf8"));
+      equal(saved.propertyRuns,1,"Only the requested property case is checked");
+      replayReports.push({seed:saved.seed,matrix:saved.matrix,properties:saved.properties});
+    }
+    equal(replayReports[0],replayReports[1],"Default seed and the copied CLI seed reproduce the same matrix");
   }finally{fs.rmSync(directory,{recursive:true,force:true});}
   console.log("P02 test integrity:",checks,"checks passed");
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -260,3 +260,10 @@ Se añadieron claves de traducción para estados de `SpeechRecognition` / `webki
 - `ROBOTITO_AUDIT_LANGUAGES=fr ROBOTITO_AUDIT_SEED=42 ROBOTITO_AUDIT_BATCH=1 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit`: lote reproducible de un idioma. Cada semilla/lote cambia el orden de muestreo; no crea por sí misma nuevos significados. Si se supera el inventario finito se informa la repetición.
 
 `semantic-audit.yml` conserva seis informes separados en cada PR, cambio de `main`, ejecución manual y revisión diaria. Los oráculos versionados están en `tests/fixtures/p01-semantic-cases.js`, separados del planificador. El informe incluye SHA-256 del código y de los oráculos. Cero discrepancias mide este corpus de regresión; no equivale a exactitud universal ni a calibración con conversaciones reales. No se deben sumar ejecuciones repetidas como preguntas nuevas.
+
+
+## P02 — matrices y evidencia reproducible (30/10/2026)
+
+Ver [P02-STATUS.md](P02-STATUS.md) para la aceptación, evidencia y límites. `npm run test:p02` comprueba la integridad de los generadores. `npm run test:p02:browser` comprueba transacciones fallidas, dos pestañas, aislamiento de propietarios, recarga y resistencia acelerada. `npm run test:p02:harness` verifica que el ejecutor conserve fallos y cierre sus recursos.
+
+`ROBOTITO_BROWSER_ENGINE=firefox ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios` reproduce la matriz completa en el motor y la semilla indicados; usar `webkit` o `chromium` para los otros motores. `npm run test:browser:extended` añade diálogo, interfaz, restauración y concurrencia. Instalar previamente el motor de Playwright correspondiente. Los JSON en `test-results/` incluyen fase/fila, cobertura de filas verificadas y revisión; las trazas/capturas se guardan ante fallos con datos sintéticos únicamente. La CI conserva estos artefactos 14 días. Una matriz aprobada no certifica todas las combinaciones ni hardware físico.

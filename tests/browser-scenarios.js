@@ -1,14 +1,8 @@
 "use strict";
 const assert=require("node:assert/strict");
-const {spawn}=require("node:child_process");
-const path=require("node:path");
-const {chromium}=require("playwright");
+const {runBrowserTest}=require("./browser-test-harness.js");
 const {coveringArray,coverageReport}=require("./generative-kit.js");
-const seed=process.env.ROBOTITO_TEST_SEED||17;
-const port=Number(process.env.ROBOTITO_SCENARIO_PORT||8766);
-const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],
-  {cwd:path.resolve(__dirname,".."),stdio:"ignore"});
-const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const seed=process.env.ROBOTITO_TEST_SEED||"17";
 const viewports={
   "small-phone":{width:320,height:640},
   "phone":{width:360,height:740},
@@ -29,17 +23,11 @@ const criticalTriples=[
   ["viewport","mood","audioState"],
   ["language","avatar","mood"]
 ];
-(async()=>{
- let browser,page;
- try{
-  await sleep(500);
-  browser=await chromium.launch({headless:true});
-  page=await browser.newPage({viewport:viewports.desktop,permissions:[]});
-  await page.route("https://cdn.jsdelivr.net/**",route=>route.fulfill({
-    status:200,contentType:"application/javascript",body:""
-  }));
-  const errors=[];page.on("pageerror",err=>errors.push(String(err)));
-  await page.goto("http://127.0.0.1:"+port+"/",{waitUntil:"domcontentloaded",timeout:60000});
+runBrowserTest("browser-scenarios",async test=>{
+  const {page,context,engineName}=test;
+  const errors=test.report.pageErrors;
+  test.report.command="npm run test:browser:scenarios";
+  await page.goto(test.baseURL,{waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>window.ROBOTITO_STORE?.putRecord
     &&document.querySelector("#robotito")?.dataset.avatar,{timeout:30000});
   await page.evaluate(()=>{
@@ -52,8 +40,11 @@ const criticalTriples=[
   const report=coverageReport(cases,factors,{criticalTriples});
   assert.equal(report.complete,true);
   assert.ok(report.targets>350,"Expected substantial real browser combinations");
-  let checked=0;
+  let checked=0;const executed=[];
+  test.checkpoint(()=>{test.report.matrices.ui={planned:cases.length,executed:checked,
+    coverage:coverageReport(executed,factors,{criticalTriples})};});
   for(const row of cases){
+    test.phase("ui",checked,row);
     await page.setViewportSize(viewports[row.viewport]);
     const result=await page.evaluate(row=>{
       if(typeof window.applyAvatar!=="function"
@@ -129,11 +120,12 @@ const criticalTriples=[
       "Only approved interactions remain across avatars and languages "+JSON.stringify(row));
     assert.ok(result.scrollWidth<=result.width+1,
       "No horizontal overflow "+JSON.stringify({row,result}));
-    checked++;
+    executed.push(row);checked++;
   }
 
   // Dragging the actual desktop splitter must never extend grid tracks past
   // the padded content area (a historical overflow regression).
+  test.phase("splitter");
   await page.setViewportSize(viewports.desktop);
   const divider=page.locator("#layoutResizer");
   assert.equal(await divider.isVisible(),true,"Desktop resizing handle exists");
@@ -153,6 +145,7 @@ const criticalTriples=[
   assert.ok(Number(resized.ratio)>0&&Number(resized.ratio)<1,
     "Desktop ratio should survive navigation");
 
+  test.phase("persistence-and-suspension");
   // Simulated tab suspension, recovery and a durable record across reload.
   await page.evaluate(()=>{
     const hidden=Object.getOwnPropertyDescriptor(document,"hidden");
@@ -192,7 +185,9 @@ const criticalTriples=[
     "Unavailable microphone must not create a phantom class recording");
   // Actual Chromium permission rejection: no test may silently assume a mic.
   // The app must not create a recording on a denied microphone permission.
-  const origin="http://127.0.0.1:"+port;
+  test.phase("microphone-permission");
+  const origin=test.baseURL;
+  if(engineName==="chromium"){
   await page.context().grantPermissions([],{origin});
   const deniedMicrophone=await page.evaluate(async()=>{
     const state=await navigator.permissions.query({name:"microphone"})
@@ -216,7 +211,24 @@ const criticalTriples=[
   assert.deepEqual(deniedMicrophone.start,{ok:false,reason:"no-audio-track"},
     "Denied microphone cannot start a phantom class recording");
   assert.equal(deniedMicrophone.active,false,"No hidden recording after denial");
+  test.report.microphone={kind:"native-denial-or-absent-hardware",...deniedMicrophone};
   await page.context().clearPermissions();
+  }else{
+    // Firefox/WebKit have different headless permission-query support. Exercise
+    // a deterministic rejection and label it as simulated, never as hardware.
+    test.report.microphone=await page.evaluate(async()=>{
+      const media=navigator.mediaDevices,original=media.getUserMedia;
+      try{
+        media.getUserMedia=async()=>{throw new DOMException("Test denial","NotAllowedError");};
+        let request;try{await media.getUserMedia({audio:true});}catch(e){request=e.name;}
+        const start=await window.ROBOTITO_CLASS_AUDIO.start("P02 denied microphone");
+        return {kind:"simulated-denial",request,start,active:window.ROBOTITO_CLASS_AUDIO.isRecording()};
+      }finally{media.getUserMedia=original;}
+    });
+    assert.equal(test.report.microphone.request,"NotAllowedError");
+    assert.deepEqual(test.report.microphone.start,{ok:false,reason:"no-audio-track"});
+    assert.equal(test.report.microphone.active,false);
+  }
 
   // Executed fault combinations, not merely policy values: network loss,
   // visibility interruption, mode suppression, narrow layouts, IndexedDB
@@ -234,9 +246,12 @@ const criticalTriples=[
   const faultCases=coveringArray(faultFactors,{seed,criticalTriples:faultTriples,maxCases:100});
   const faultCoverage=coverageReport(faultCases,faultFactors,{criticalTriples:faultTriples});
   assert.equal(faultCoverage.complete,true,"All fault pairs and risky triples covered");
-  let faultChecked=0;
+  let faultChecked=0;const executedFaults=[];
+  test.checkpoint(()=>{test.report.matrices.faults={planned:faultCases.length,executed:faultChecked,
+    coverage:coverageReport(executedFaults,faultFactors,{criticalTriples:faultTriples})};});
   try{
     for(const row of faultCases){
+      test.phase("fault",faultChecked,row);
       await page.setViewportSize(viewports[row.viewport]);
       await page.context().setOffline(row.network==="offline");
       const observation=await page.evaluate(async ({row,id})=>{
@@ -286,7 +301,7 @@ const criticalTriples=[
       assert.equal(observation.roundTrip,true,JSON.stringify(row)+" offline storage");
       assert.equal(observation.noOverflow,true,JSON.stringify(row)+" no horizontal overflow");
       assert.equal(observation.noMobileOverlap,true,JSON.stringify(row)+" controls do not overlap");
-      faultChecked++;
+      executedFaults.push(row);faultChecked++;
     }
   }finally{
     await page.context().setOffline(false);
@@ -306,30 +321,45 @@ const criticalTriples=[
   const speechCases=coveringArray(speechFactors,{seed,criticalTriples:speechTriples,maxCases:250});
   const speechReport=coverageReport(speechCases,speechFactors,{criticalTriples:speechTriples});
   assert.equal(speechReport.complete,true,"Voice capability covering array is complete");
-  const speechResult=await page.evaluate(rows=>{
-    const policy=window.ROBOTITO_RUNTIME_POLICY;
-    if(typeof policy?.canSpeak!=="function")throw Error("Runtime voice policy not loaded");
-    let checked=0;
-    for(const row of rows){
-      const state={classMode:row.mode==="class",muted:row.mode==="muted",
-        voiceEnabled:row.voiceEnabled,synthesisAvailable:row.synthesisAvailable};
-      const expected=row.mode==="normal"&&row.voiceEnabled&&row.synthesisAvailable;
-      if(policy.canSpeak(state)!==expected)
-        throw Error("Unexpected speech activation: "+JSON.stringify(row));
-      if(!window.ROBOTITO_I18N.locale(row.language).startsWith(row.language))
-        throw Error("Language locale mismatch: "+JSON.stringify(row));
-      checked++;
-    }
-    return checked;
-  },speechCases);
-  assert.equal(speechResult,speechCases.length,"Every generated capability case was executed");
+  let speechResult=0;const executedSpeech=[];
+  test.checkpoint(()=>{test.report.matrices.speech={planned:speechCases.length,executed:speechResult,
+    evidence:"real handlers; simulated speech engine",coverage:coverageReport(executedSpeech,speechFactors,{criticalTriples:speechTriples})};});
+  for(const row of speechCases){
+    test.phase("speech",speechResult,row);
+    await page.setViewportSize(viewports[row.viewport]);
+    const result=await page.evaluate(row=>{
+      const descriptor=Object.getOwnPropertyDescriptor(window,"speechSynthesis");
+      const utteranceDescriptor=Object.getOwnPropertyDescriptor(window,"SpeechSynthesisUtterance");
+      const saved={classMode:state.classMode,voiceEnabled:state.voiceEnabled,silentUntil:state.silentUntil,
+        speaking:state.speaking,languageMode:state.languageMode};
+      let calls=0;
+      try{
+        setLanguageMode(row.language);state.classMode=row.mode==="class";
+        state.silentUntil=row.mode==="muted"?Date.now()+60000:0;
+        state.voiceEnabled=row.voiceEnabled;
+        const synth=row.synthesisAvailable?{getVoices:()=>[{lang:ROBOTITO_I18N.locale(row.language),voiceURI:"p02-test"}],
+          cancel(){},speak(utterance){calls++;utterance.onend?.();}}:undefined;
+        Object.defineProperty(window,"speechSynthesis",{configurable:true,value:synth});
+        Object.defineProperty(window,"SpeechSynthesisUtterance",{configurable:true,value:class{constructor(text){this.text=text;}}});
+        const accepted=speakResponse("123",row.language);
+        return {accepted,calls,language:document.documentElement.lang,
+          noOverflow:document.documentElement.scrollWidth<=document.documentElement.clientWidth+1};
+      }finally{
+        if(descriptor)Object.defineProperty(window,"speechSynthesis",descriptor);else delete window.speechSynthesis;
+        if(utteranceDescriptor)Object.defineProperty(window,"SpeechSynthesisUtterance",utteranceDescriptor);else delete window.SpeechSynthesisUtterance;
+        Object.assign(state,saved);
+      }
+    },row);
+    const expected=row.mode==="normal"&&row.voiceEnabled&&row.synthesisAvailable;
+    assert.equal(result.accepted,expected,"Actual speech handler "+JSON.stringify(row));
+    assert.equal(result.calls,expected?1:0,"Speech requests "+JSON.stringify(row));
+    assert.equal(result.language,row.language);assert.equal(result.noOverflow,true);
+    executedSpeech.push(row);speechResult++;
+  }
+  assert.equal(speechResult,speechCases.length);
   console.log("Robotito voice availability matrix:",speechResult,
-    "browser cases /",speechReport.covered,"pairs/triples; seed:",seed);
+    "actual handler cases /",speechReport.covered,"pairs/triples; seed:",seed);
 if(errors.length)throw Error("Browser exceptions: "+errors.join("\n"));
   console.log("Robotito browser scenario matrix:",checked,"real UI states /",
     report.covered,"pair/triple targets; reload and suspension passed; seed:",seed);
- }finally{
-  if(browser)await browser.close();
-  server.kill("SIGTERM");
- }
-})().catch(error=>{console.error(error);process.exitCode=1;});
+}).catch(error=>{console.error(error);process.exitCode=1;});

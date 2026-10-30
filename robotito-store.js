@@ -116,10 +116,18 @@ async function putRecordWithBlob(input,blob,{type="binary"}={}){
  if(!row.blobId)throw new TypeError("Record requires blobId");
  return serial("record:"+row.id,async()=>{
   const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
-  tx.objectStore("blobs").put({id:row.blobId,blob,owner:row.owner,type,
-   recordId:row.id,updatedAt:Date.now()});
-  tx.objectStore("records").put(row);
-  await finished;return row;
+  try{
+   tx.objectStore("blobs").put({id:row.blobId,blob,owner:row.owner,type,
+    recordId:row.id,updatedAt:Date.now()});
+   tx.objectStore("records").put(row);
+   await finished;return row;
+  }catch(error){
+   // A synchronous DataCloneError does not automatically abort earlier writes.
+   // Roll back the staged blob as well, preserving any previously saved pair.
+   try{tx.abort();}catch{}
+   await finished.catch(()=>{});
+   throw error;
+  }
  });
 }
 async function getBlob(id){
