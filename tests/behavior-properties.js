@@ -4,6 +4,7 @@ const fs=require("node:fs");
 const path=require("node:path");
 const vm=require("node:vm");
 const kit=require("./generative-kit.js");
+const {writeEvidence}=require("./test-evidence.js");
 const planner=require("../semantic-planner.js");
 const temporal=require("../nlu-temporal.js");
 const i18n=require("../i18n.js");
@@ -14,11 +15,14 @@ const seed=process.env.ROBOTITO_TEST_SEED||17;
 const scale=Number(process.env.ROBOTITO_PROP_SCALE||1);
 if(!Number.isInteger(scale)||scale<1||scale>5)throw Error("ROBOTITO_PROP_SCALE must be 1..5");
 let checks=0,propertyRuns=0;
+const evidence={suite:"behavior-properties",seed,scale,status:"running",properties:[],matrix:null};
+let matrixState=null;
+const evidenceFile="properties-"+kit.hashSeed(seed)+"-scale-"+scale+".json";
 function eq(actual,expected,label){assert.deepEqual(actual,expected,label);checks++;}
 function ok(condition,label){assert.ok(condition,label);checks++;}
 async function property(spec){
  const report=await kit.checkProperty({...spec,seed,runs:spec.runs*scale});
- propertyRuns+=report.checked;return report;
+ evidence.properties.push(report);propertyRuns+=report.checked;return report;
 }
 const locales=["es","en","pt","fr","it","de"];
 const concepts=["permutación","clima","libro","profesora","impulso","densidad","enzimas"];
@@ -64,7 +68,11 @@ function sentence({language,mode,concept,number,depth,punctuation}){
  ok(coverage.complete,"all pairwise and critical triples covered");
  eq(coverage.targets,785,"all 465 pairs and 320 critical triples enumerated");
  const anchor=new Date("2026-10-24T12:00:00");
+ const executed=[];
+ matrixState={factors,criticalTriples,executed};
+ evidence.matrix={planned:cases.length,executed:0,coverage:kit.coverageReport([],factors,{criticalTriples})};
  for(const row of cases){
+   evidence.activeCase={family:"semantic-combinations",index:executed.length,row};
    const input=sentence(row);
    const opts={language:row.language,channel:row.channel,context:sourceContext(row.context,anchor),now:anchor};
    const frame=planner.plan(input,opts);
@@ -86,7 +94,10 @@ function sentence({language,mode,concept,number,depth,punctuation}){
    eq([otherChannel.intent,otherChannel.source,otherChannel.shouldExecute,otherChannel.mayReadClass],
      [frame.intent,frame.source,frame.shouldExecute,frame.mayReadClass],
      "spoken/typed semantic equivalence "+JSON.stringify(row));
+   executed.push(row);evidence.matrix.executed=executed.length;
  }
+ evidence.matrix.coverage=kit.coverageReport(executed,factors,{criticalTriples});
+ evidence.activeCase=null;
  console.log("Covering matrix:",cases.length,"rows /",coverage.covered,"verified pair/triple targets");
 
  await property({name:"normalization-metamorphic",runs:1800,
@@ -213,6 +224,7 @@ function sentence({language,mode,concept,number,depth,punctuation}){
    }
  });
 
+ kit.assertPropertySelection(evidence.properties);
  let context=planner.createContext();
  const focusSamples=["¿Cómo va a estar el clima mañana?","¿Y de noche?","Tengo tareas mañana",
    "¿Y de noche?","¿Qué es permutación?","La profesora habló de impulso","No me muestres apuntes"];
@@ -225,4 +237,14 @@ function sentence({language,mode,concept,number,depth,punctuation}){
  }
  console.log("Robotito behavior properties:",propertyRuns,"generated cases,",checks,
    "assertions, seed:",seed);
-})().catch(error=>{console.error(error);process.exitCode=1;});
+ evidence.status="passed";
+})().catch(error=>{
+ evidence.status="failed";evidence.error=String(error.stack||error);
+ evidence.counterexample=error.counterexample||null;
+ console.error(error);process.exitCode=1;
+}).finally(()=>{
+ if(matrixState)evidence.matrix.coverage=kit.coverageReport(matrixState.executed,matrixState.factors,
+   {criticalTriples:matrixState.criticalTriples});
+ evidence.checks=checks;evidence.propertyRuns=propertyRuns;
+ writeEvidence(evidenceFile,evidence);
+});

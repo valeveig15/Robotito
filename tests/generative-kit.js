@@ -36,6 +36,9 @@ function normalizeFactors(factors){
     const values=factors[name];
     if(!Array.isArray(values)||!values.length||new Set(values.map(v=>JSON.stringify(v))).size!==values.length)
       throw Error("Each factor needs distinct, nonempty values: "+name);
+    if(values.some(v=>v!==null&&!['string','boolean','number'].includes(typeof v)
+      ||typeof v==='number'&&(!Number.isFinite(v)||Object.is(v,-0))))
+      throw Error("Factor values must be reproducible JSON scalars: "+name);
   }
   return names;
 }
@@ -64,16 +67,29 @@ function matches(row,target){
   return target.keys.every((key,i)=>Object.is(row[key],target.values[i]));
 }
 function coverageReport(rows,factors,options={}){
+  const names=normalizeFactors(factors);
+  if(!Array.isArray(rows))throw Error("Coverage rows must be an array");
+  for(const row of rows){
+    if(!row||typeof row!=="object"||Object.keys(row).length!==names.length
+      ||names.some(k=>!Object.hasOwn(row,k)||!factors[k].some(v=>Object.is(row[k],v))))
+      throw Error("Invalid executed coverage row: "+stableJson(row));
+  }
   const targets=targetsFor(factors,options);
   const missing=targets.filter(target=>!rows.some(row=>matches(row,target)));
+  const uniqueCases=new Set(rows.map(row=>JSON.stringify(names.map(k=>row[k])))).size;
   return {targets:targets.length,covered:targets.length-missing.length,
-    missing,complete:missing.length===0,cases:rows.length};
+    missing,complete:missing.length===0,cases:rows.length,uniqueCases,duplicateCases:rows.length-uniqueCases};
 }
 function coveringArray(factors,{seed=17,criticalTriples=[],maxCases=2048,candidates=24}={}){
   const names=normalizeFactors(factors),random=randomSource(seed);
+  if(!Number.isSafeInteger(maxCases)||maxCases<1||!Number.isSafeInteger(candidates)||candidates<1)
+    throw Error("maxCases and candidates must be positive safe integers");
   const targets=targetsFor(factors,{criticalTriples});
   const uncovered=new Set(targets.map((_,i)=>i)),cases=[],seen=new Set();
-  if(names.length===1)return factors[names[0]].map(value=>({[names[0]]:value}));
+  if(names.length===1){
+    if(factors[names[0]].length>maxCases)throw Error("Covering array exceeded maxCases");
+    return factors[names[0]].map(value=>({[names[0]]:value}));
+  }
   while(uncovered.size){
     if(cases.length>=maxCases)throw Error("Covering array exceeded maxCases with "+uncovered.size+" targets uncovered");
     const anchor=targets[uncovered.values().next().value];
@@ -100,44 +116,74 @@ function stableJson(value){
     return typeof encoded==="string"?encoded:String(value);
   }catch{return String(value);}
 }
+function replaySelection(env=process.env){
+  const name=env.ROBOTITO_REPLAY_PROPERTY,raw=env.ROBOTITO_REPLAY_CASE;
+  if(name!==undefined&&(typeof name!=="string"||!name.trim()))throw Error("Invalid replay property");
+  if(raw!==undefined&&(!name||!/^\d+$/.test(raw)||!Number.isSafeInteger(Number(raw))))
+    throw Error("Replay case requires a property and a nonnegative integer index");
+  return {name,index:raw===undefined?null:Number(raw)};
+}
+function assertPropertySelection(reports,env=process.env){
+  const selection=replaySelection(env);
+  if(!Array.isArray(reports)||!reports.length)throw Error("No property reports were produced");
+  if(selection.name){
+    const matched=reports.filter(r=>r.name===selection.name);
+    if(matched.length!==1||matched[0].checked<1)throw Error("Unknown or unexecuted replay property: "+selection.name);
+    const expected=selection.index===null?matched[0].runs:1;
+    if(matched[0].checked!==expected)throw Error("Replay did not execute the selected cases");
+  }else if(reports.some(r=>r.checked!==r.runs))throw Error("Incomplete property execution");
+  return true;
+}
+const shellQuote=value=>"'"+String(value).replaceAll("'","'\\''")+"'";
 async function checkProperty({name,runs=200,seed=process.env.ROBOTITO_TEST_SEED||17,generate,check,shrink}={}){
   if(typeof name!=="string"||!name||!Number.isSafeInteger(runs)||runs<1
     ||typeof generate!=="function"||typeof check!=="function")throw Error("Invalid property definition");
   const random=randomSource(hashSeed(String(seed)+":"+name));
-  const replayProperty=process.env.ROBOTITO_REPLAY_PROPERTY;
-  const replayCase=process.env.ROBOTITO_REPLAY_CASE;
-  const specific=replayProperty===name&&replayCase!==undefined?Number(replayCase):null;
+  const selection=replaySelection();
+  const replayProperty=selection.name;
+  const specific=replayProperty===name?selection.index:null;
   if(specific!==null&&(!Number.isSafeInteger(specific)||specific<0||specific>=runs))throw Error("Invalid replay index for "+name);
   let checked=0;
+  if(replayProperty&&replayProperty!==name)return {name,seed,runs,checked,skipped:true,replay:false};
+  const verify=async(value,meta)=>{if(await check(value,meta)===false)throw Error("Property returned false");};
   for(let index=0;index<runs;index++){
-    const value=generate(random,index);
-    if(replayProperty&&replayProperty!==name)continue;
-    if(specific!==null&&specific!==index)continue;
-    try{await check(value,{index,seed});checked++;}
+    let value,phase="generate";
+    try{
+      value=await generate(random,index);
+      if(specific!==null&&specific!==index)continue;
+      phase="check";await verify(value,{index,seed});checked++;
+    }
     catch(error){
-      let minimal=value;
-      if(typeof shrink==="function"){
+      let minimal=value,shrinkError=null;
+      if(phase==="check"&&typeof shrink==="function"){
         // A shrinker can be lazy or infinite: inspect at most 64 candidates
         // without exhausting the iterator. Keep the smallest failing input.
         let examined=0,smallest=stableJson(value);
-        for(const candidate of shrink(value)){
-          if(examined++>=64)break;
-          const encoded=stableJson(candidate);
-          if(encoded.length>smallest.length||
-             (encoded.length===smallest.length&&encoded>=smallest))continue;
-          try{await check(candidate,{index,seed});}
-          catch{minimal=candidate;smallest=encoded;}
-        }
+        try{
+          const iterator=shrink(value)[Symbol.iterator]();
+          try{
+            while(examined++<64){
+              const item=iterator.next();if(item.done)break;
+              const candidate=item.value,encoded=stableJson(candidate);
+              if(encoded.length>smallest.length||
+                 (encoded.length===smallest.length&&encoded>=smallest))continue;
+              try{await verify(candidate,{index,seed});}
+              catch{minimal=candidate;smallest=encoded;}
+            }
+          }finally{iterator.return?.();}
+        }catch(e){shrinkError=String(e?.message||e);}
       }
-      const replay="ROBOTITO_TEST_SEED="+seed+" ROBOTITO_REPLAY_PROPERTY='"+name
-        +"' ROBOTITO_REPLAY_CASE="+index;
+      const replay="ROBOTITO_TEST_SEED="+shellQuote(seed)+" ROBOTITO_REPLAY_PROPERTY="+shellQuote(name)
+        +" ROBOTITO_REPLAY_CASE="+index+" ROBOTITO_PROP_SCALE="+shellQuote(process.env.ROBOTITO_PROP_SCALE||1);
       const result=new Error("PROPERTY FAILED "+name+" seed="+seed+" case="+index
         +"\nInput: "+stableJson(value)+"\nShrunk: "+stableJson(minimal)
         +"\nReproduce: "+replay+" npm run test:properties"
-        +"\nCause: "+String(error?.stack||error));
-      result.cause=error;throw result;
+        +"\nCause: "+String(error?.stack||error)+(shrinkError?"\nShrinker: "+shrinkError:""));
+      result.cause=error;
+      result.counterexample={name,seed,index,phase,input:value,minimal,shrinkError,replay:replay+" npm run test:properties"};
+      throw result;
     }
   }
   return {name,seed,runs,checked,replay:specific!==null};
 }
-module.exports={hashSeed,randomSource,targetsFor,coverageReport,coveringArray,checkProperty};
+module.exports={hashSeed,randomSource,targetsFor,coverageReport,coveringArray,checkProperty,replaySelection,assertPropertySelection};
