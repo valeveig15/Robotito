@@ -69,6 +69,9 @@ button:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(82,63,85,.08)
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;background:#faf3f8;padding:5px;border-radius:15px;position:sticky;top:0;z-index:5}
 .tab{font-size:12px;padding:9px 6px;background:transparent}.tab.active{background:#fff;box-shadow:0 3px 12px rgba(80,58,82,.08)}
 .tabpage{display:none;padding-top:12px}.tabpage.active{display:block}
+/* Closed native details can retain a stale overflow area in WebKit after
+   resizing. Their controls participate in layout only while expanded. */
+details:not([open]) > :not(summary){display:none}
 .card,.meter-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:10px}
 .card h2,.card h3{margin:0 0 8px}.card h2{font-size:17px}.card h3{font-size:14px}.card p{margin:7px 0;line-height:1.45}
 .muted,.mini-status{color:var(--muted);font-size:12px}.intro-card,.memory-info{background:linear-gradient(145deg,#fff,#fff5fa)}
