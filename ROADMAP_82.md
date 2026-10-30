@@ -35,6 +35,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 ## Pedido 02 — COMPLETADO según aceptación comprobable
 
+**Revisión de detalles del 30/10/2026:** se está ampliando el cierre anterior con integridad de reproducciones, informes de fallos y ejecución de la aplicación en otros motores. Ver [P02-STATUS.md](P02-STATUS.md) para evidencia y alcance actuales; los resultados históricos siguientes se conservan como antecedentes.
+
 **Base documental:** conservar y ampliar pruebas, Playwright, matrices generativas, GitHub Actions y regresiones; ejecutar pruebas después de **cada** incremento con semillas reproducibles. La aceptación pide positivos, negativos, fallos, persistencia, interrupciones, escenarios adversos y distintos tamaños de pantalla.
 
 **Infraestructura previa conservada (auditada, no reemplazada):** `npm run test:core`, `test:regressions`, `test:kit`, `test:properties:matrix`, `test:planner`, `test:semantic`, `test:memory`, `test:generative`, `test:browser`, `test:browser:matrix`; Playwright/Chromium; tres semillas 17/42/99; workflow `.github/workflows/regression.yml` en cada PR/push, más prueba profunda programada/manual.
