@@ -64,6 +64,11 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   seenObservations.clear();lastObservedTimestamp=null;
   lastKind="unknown";lastFrame=0;
  }
+ function invalidModelObservation(reason){
+  modelEvidence=Object.create(null);
+  modelCandidate={kind:"uncertain",score:0,reason};
+  return [];
+ }
  function classifierEvents(feature,at,active){
   modelCandidate=null;
   if(!modelAvailable)return [];
@@ -79,20 +84,59 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
   // An asynchronous model is expected to cache its most recent prediction.
   let scores;
   try{scores=classifier.predict(feature,{noiseFloor,history:frames.slice(-28)})}
-  catch(error){console.warn("Audio model inference",error);return [];}
-  if(!scores||typeof scores!=="object"||typeof scores.then==="function")return [];
+  catch(error){return invalidModelObservation("inference-error");}
+  if(scores&&typeof scores.then==="function"){
+   Promise.resolve(scores).catch(()=>{});
+   return invalidModelObservation("asynchronous-contract");
+  }
+  if(!scores||typeof scores!=="object"||Array.isArray(scores))return invalidModelObservation("invalid-scores");
+  const rawScores=Object.hasOwn(scores,"scores")?scores.scores:scores;
+  if(!rawScores||typeof rawScores!=="object"||Array.isArray(rawScores))return invalidModelObservation("invalid-scores");
+  // Model outputs may also include non-reactive alternatives. They MUST
+  // compete with human event labels: a high sneeze score next to a high
+  // background/voice score does not justify an unsolicited "¡Salud!".
+  const NON_EVENT_CLASSES=["other","unknown","voice","speech","music","noise","impact","silence"];
+  const classes=[...MODEL_EVENTS,...NON_EVENT_CLASSES];
+  if(!classes.some(kind=>Object.hasOwn(rawScores,kind))||classes.some(kind=>Object.hasOwn(rawScores,kind)&&
+    (typeof rawScores[kind]!=="number"||!Number.isFinite(rawScores[kind])||rawScores[kind]<0||rawScores[kind]>1)))
+   return invalidModelObservation("invalid-probability");
+  const ranked=classes.map(kind=>({
+    kind,score:typeof rawScores[kind]==="number"&&Number.isFinite(rawScores[kind])?clamp(rawScores[kind]):0
+  })).sort((a,b)=>b.score-a.score);
+  const values=Object.fromEntries(ranked.map(row=>[row.kind,row.score]));
+  const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
+  const bestGate=MODEL_GATE[best.kind];
+  if(bestGate&&best.score>=bestGate.threshold&&best.score-runnerUp>=bestGate.margin)
+   modelCandidate={kind:best.kind,score:best.score};
+  else if(best.score>=.80&&runnerUp>=.65)
+   modelCandidate={kind:"uncertain",score:best.score,runnerUp};
+  else if(!bestGate&&best.score>=.7)
+   modelCandidate={kind:"non-event",score:best.score,label:best.kind};
   // A cached asynchronous model may expose an observation timestamp/frame ID.
   // Repeated or stale predictions are NOT independent evidence: without this
   // gate one single sneeze prediction could produce a false "¡Salud!".
   const tagged=Object.hasOwn(scores,"observedAt")||Object.hasOwn(scores,"frameId");
   if(tagged){
-   const observed=Number(scores.observedAt),id=scores.frameId;
-   if((Object.hasOwn(scores,"observedAt")&&(!Number.isFinite(observed)||observed>at+80||at-observed>240))
-     ||(Object.hasOwn(scores,"frameId")&&(typeof id!=="string"&&typeof id!=="number")))
-    return [];
-   const key=Object.hasOwn(scores,"frameId")?"id:"+String(id):"time:"+observed;
-   if(seenObservations.has(key)||
-      (Object.hasOwn(scores,"observedAt")&&lastObservedTimestamp!==null&&observed<=lastObservedTimestamp))return [];
+   const observed=scores.observedAt,id=scores.frameId;
+   const hasTime=Object.hasOwn(scores,"observedAt"),hasId=Object.hasOwn(scores,"frameId");
+   if((hasTime&&(typeof observed!=="number"||!Number.isFinite(observed)||observed<0))
+     ||(hasId&&!(typeof id==="string"&&id.trim().length>0&&id.length<=128
+       ||Number.isSafeInteger(id)&&id>=0)))return invalidModelObservation("invalid-observation-tag");
+   const key=hasId?"id:"+String(id):"time:"+observed;
+   const cached=seenObservations.has(key);
+   if(cached&&key!==lastModelObservation)return invalidModelObservation("replayed-observation");
+   if(cached&&hasTime&&observed!==lastObservedTimestamp)return invalidModelObservation("mutated-observation");
+   if(hasTime&&(observed>at+80||at-observed>240)){
+    // An ordinary cached result ages between real ~500 ms model windows.
+    // It cannot unlock heuristics, but does not erase independent prior frames.
+    if(cached&&observed<=at&&at-lastIndependentModelAt<=MODEL_OBSERVATION_CADENCE.taggedMaxGapMs){
+     modelCandidate={kind:"uncertain",score:0,reason:"cached-observation-expired"};return [];
+    }
+    return invalidModelObservation("stale-observation");
+   }
+   if(cached)return [];
+   if(hasTime&&lastObservedTimestamp!==null&&observed<=lastObservedTimestamp)
+    return invalidModelObservation("out-of-order-observation");
    seenObservations.add(key);
    if(seenObservations.size>128)seenObservations.delete(seenObservations.values().next().value);
    lastModelObservation=key;
@@ -108,23 +152,6 @@ function create({onEvent=()=>{},clock=()=>Date.now(),classifier=null}={}){
    }
    lastIndependentModelAt=at;
   }
-  const rawScores=scores.scores&&typeof scores.scores==="object"?scores.scores:scores;
-  // Model outputs may also include non-reactive alternatives. They MUST
-  // compete with human event labels: a high sneeze score next to a high
-  // background/voice score does not justify an unsolicited "¡Salud!".
-  const NON_EVENT_CLASSES=["other","unknown","voice","speech","music","noise","impact","silence"];
-  const ranked=[...MODEL_EVENTS,...NON_EVENT_CLASSES].map(kind=>({
-    kind,score:typeof rawScores[kind]==="number"&&Number.isFinite(rawScores[kind])?clamp(rawScores[kind]):0
-  })).sort((a,b)=>b.score-a.score);
-  const values=Object.fromEntries(ranked.map(row=>[row.kind,row.score]));
-  const best=ranked[0],runnerUp=ranked[1]?.score||0,events=[];
-  const bestGate=MODEL_GATE[best.kind];
-  if(bestGate&&best.score>=bestGate.threshold&&best.score-runnerUp>=bestGate.margin)
-   modelCandidate={kind:best.kind,score:best.score};
-  else if(best.score>=.80&&runnerUp>=.65)
-   modelCandidate={kind:"uncertain",score:best.score,runnerUp};
-  else if(!bestGate&&best.score>=.7)
-   modelCandidate={kind:"non-event",score:best.score,label:best.kind};
   for(const kind of MODEL_EVENTS){
    const gate=MODEL_GATE[kind],valid=best.kind===kind&&best.score>=gate.threshold
     &&best.score-runnerUp>=gate.margin;

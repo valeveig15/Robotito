@@ -10,7 +10,7 @@ const LEGACY_TYPE={"robotito.classLines.v1":"transcripts","robotito.classSummari
 const queues=new Map();
 let dbPromise=null;
 function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB request failed"));});}
-function complete(tx){return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error||new Error("IndexedDB transaction failed"));tx.onabort=()=>reject(tx.error||new Error("IndexedDB transaction aborted"));});}
+function complete(tx){return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onerror=event=>reject(event?.target?.error||tx.error||new Error("IndexedDB transaction failed"));tx.onabort=()=>reject(tx.error||new Error("IndexedDB transaction aborted"));});}
 function openDb(){
  if(dbPromise)return dbPromise;
  if(typeof indexedDB==="undefined")return Promise.reject(new Error("IndexedDB unavailable"));
@@ -105,8 +105,11 @@ async function queryRecords({type,owner,after,before,subject,topic,tags,limit=10
 }
 async function putBlob(id,blob,{owner="local",type="binary",recordId=null}={}){
  if(!(blob instanceof Blob))throw new TypeError("Blob required");
+ // ArrayBuffer works in engines/private contexts that cannot persist Blob
+ // backing files. Decode before opening a transaction, never while it idles.
+ const blobBytes=await blob.arrayBuffer(),mimeType=blob.type;
  const db=await openDb(),tx=db.transaction("blobs","readwrite"),finished=complete(tx);
- tx.objectStore("blobs").put({id:String(id),blob,owner,type,recordId,updatedAt:Date.now()});
+ tx.objectStore("blobs").put({id:String(id),blobBytes,mimeType,owner,type,recordId,updatedAt:Date.now()});
  await finished;return String(id);
 }
 // Consent metadata and sampled audio share one atomic IndexedDB transaction.
@@ -115,16 +118,31 @@ async function putRecordWithBlob(input,blob,{type="binary"}={}){
  const row=normalizeRecord(input);
  if(!row.blobId)throw new TypeError("Record requires blobId");
  return serial("record:"+row.id,async()=>{
+  const blobBytes=await blob.arrayBuffer(),mimeType=blob.type;
   const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
-  tx.objectStore("blobs").put({id:row.blobId,blob,owner:row.owner,type,
-   recordId:row.id,updatedAt:Date.now()});
-  tx.objectStore("records").put(row);
-  await finished;return row;
+  try{
+   tx.objectStore("blobs").put({id:row.blobId,blobBytes,mimeType,owner:row.owner,type,
+    recordId:row.id,updatedAt:Date.now()});
+   tx.objectStore("records").put(row);
+   await finished;return row;
+  }catch(error){
+   // A synchronous DataCloneError does not automatically abort earlier writes.
+   // Roll back the staged blob as well, preserving any previously saved pair.
+   try{tx.abort();}catch{}
+   await finished.catch(()=>{});
+   throw error;
+  }
  });
 }
 async function getBlob(id){
  const db=await openDb(),row=await request(db.transaction("blobs","readonly").objectStore("blobs").get(String(id)));
- return row?.blob||null;
+ return storedBlob(row);
+}
+function storedBlob(row){
+ if(!row)return null;
+ if(row.blob instanceof Blob)return row.blob; // Existing recordings remain readable.
+ if(row.blobBytes instanceof ArrayBuffer)return new Blob([row.blobBytes],{type:row.mimeType||""});
+ return null;
 }
 // Removes legacy blobs even if a previous interrupted save left no record.
 async function deleteBlob(id){
@@ -315,13 +333,14 @@ async function exportBackup(){
   if(name!=="blobs"){snapshot[name]=rows[i];continue;}
   snapshot.blobs=[];
   for(const item of rows[i]){
-   if(!(item.blob instanceof Blob)||item.blob.size>BACKUP_MAX_SINGLE_BLOB)
+   const blob=storedBlob(item);
+   if(!blob||blob.size>BACKUP_MAX_SINGLE_BLOB)
     throw new Error("Cannot back up a large or invalid local file; no partial backup was produced");
-   totalBytes+=item.blob.size;
+   totalBytes+=blob.size;
    if(totalBytes>BACKUP_MAX_BYTES)throw new Error("Local files exceed backup limit; no partial backup was produced");
    snapshot.blobs.push({id:item.id,owner:item.owner,type:item.type,recordId:item.recordId,
-    updatedAt:item.updatedAt,size:item.blob.size,mime:item.blob.type||"application/octet-stream",
-    base64:encodeBytes(await item.blob.arrayBuffer())});
+    updatedAt:item.updatedAt,size:blob.size,mime:blob.type||"application/octet-stream",
+    base64:encodeBytes(await blob.arrayBuffer())});
   }
  }
  validateBackup(snapshot);
@@ -341,7 +360,7 @@ async function restoreBackup(raw,{confirmation}={}){
   const bytes=decodeBytes(item.base64);
   if(bytes.length!==item.size)throw new TypeError("Invalid backup blob size");
   decoded.push({id:item.id,owner:item.owner,type:item.type,recordId:item.recordId,
-   updatedAt:item.updatedAt,blob:new Blob([bytes],{type:item.mime||"application/octet-stream"})});
+   updatedAt:item.updatedAt,blobBytes:bytes.buffer,mimeType:item.mime||"application/octet-stream"});
  }
  const db=await openDb();
  if(BACKUP_STORES.some(name=>!db.objectStoreNames.contains(name))||
