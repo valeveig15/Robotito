@@ -1,26 +1,21 @@
 "use strict";
 const assert=require("node:assert/strict");
-const path=require("node:path"),{spawn}=require("node:child_process");
-const {chromium}=require("playwright");
-const port=Number(process.env.ROBOTITO_P07_PORT||8874);
-const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],{
- cwd:path.resolve(__dirname,".."),stdio:"ignore"});
-const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-(async()=>{
- let browser;
- try{
-  await pause(600);
-  browser=await chromium.launch({headless:true,acceptDownloads:true});
-  const page=await browser.newPage({acceptDownloads:true,viewport:{width:1280,height:900}});
-  const errors=[];page.on("pageerror",e=>errors.push(String(e)));
-  await page.route("https://cdn.jsdelivr.net/**",r=>r.fulfill({
-   status:200,contentType:"application/javascript",body:""
-  }));
-  await page.goto("http://127.0.0.1:"+port+"/",{waitUntil:"domcontentloaded",timeout:30000});
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p07-backup",async test=>{
+  const {page,baseURL}=test,errors=test.report.pageErrors;
+  test.phase("p07-backup");
+  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.exportBackup)
    &&Boolean(window.ROBOTITO_STORE?.restoreBackup),null,{timeout:20000});
   const result=await page.evaluate(async()=>{
    const store=window.ROBOTITO_STORE;
+   // Include the failing boundary in diagnostics from engines that omit an
+   // IndexedDB request's stack when rejecting its transaction.
+   for(const name of ["putRecord","putRecordWithBlob","putBlob","set","exportBackup","restoreBackup"]){
+    const original=store[name];store[name]=async(...args)=>{
+      try{return await original(...args);}catch(e){throw Error(name+": "+e.name+": "+e.message);}
+    };
+   }
    const at=Date.now()-60000;
    await store.putRecord({id:"p07-ada",type:"memories",owner:"Ada",timestamp:at,
     data:{text:"Only Ada may see this"}});
@@ -107,10 +102,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   await page.waitForFunction(()=>window.__p07ConfirmCount===1,null,{timeout:5000});
   assert.equal(await page.evaluate(()=>document.getElementById("memoryBackupFile").value),"");
   assert.deepEqual(errors,[],"No uncaught errors: "+errors.join(" | "));
-  console.log("P07 real IndexedDB browser backup and safe restore:",JSON.stringify(result),
+  test.report.result=result;
+  console.log("P07 "+test.engineName+" IndexedDB backup and safe restore:",JSON.stringify(result),
    "cross-owner rejection, bad bytes, duplicate IDs, explicit confirmation and download passed");
- }finally{
-  if(browser)await browser.close();
-  server.kill("SIGTERM");
- }
-})().catch(e=>{console.error(e);process.exitCode=1;});
+}).catch(e=>{console.error(e);process.exitCode=1;});
