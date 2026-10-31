@@ -46,7 +46,7 @@ runBrowserTest("browser-scenarios",async test=>{
   for(const row of cases){
     test.phase("ui",checked,row);
     await page.setViewportSize(viewports[row.viewport]);
-    const result=await page.evaluate(row=>{
+    const result=await page.evaluate(async row=>{
       if(typeof window.applyAvatar!=="function"
          ||typeof window.setLanguageMode!=="function"
          ||typeof window.setMood!=="function")
@@ -54,6 +54,10 @@ runBrowserTest("browser-scenarios",async test=>{
       window.setLanguageMode(row.language);
       window.applyAvatar(row.avatar);
       window.setMood(row.mood,"Browser scenario");
+      const beforePaintWidth=document.documentElement.scrollWidth;
+      // Resize and localization mutate native controls. Measure the rendered
+      // frame, after the browser has applied its resize/layout callbacks.
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const element=document.querySelector("#robotito");
       const label=document.querySelector('[data-i18n="typedChat"]');
       const source=window.ROBOTITO_AUDIO_PERCEPTION.create({clock:()=>0});
@@ -76,6 +80,7 @@ runBrowserTest("browser-scenarios",async test=>{
         localized:label?.textContent===window.ROBOTITO_I18N.t("typedChat",row.language),
         width:document.documentElement.clientWidth,
         scrollWidth:document.documentElement.scrollWidth,
+        beforePaintWidth,
         layoutGeometry:Object.fromEntries(["#app",".topbar",".layout",".world",".panel",".tabs","#layoutResizer"]
          .map(selector=>{
            const el=document.querySelector(selector),r=el?.getBoundingClientRect();
@@ -94,6 +99,8 @@ runBrowserTest("browser-scenarios",async test=>{
         panelScrollSources:[...document.querySelectorAll(".panel *")].filter(el=>
           el.clientWidth>0&&el.scrollWidth>el.clientWidth+1).map(el=>({
            tag:el.tagName,id:el.id,cls:String(el.className||""),client:el.clientWidth,scroll:el.scrollWidth,
+           controls:[...el.querySelectorAll("input,select")].map(control=>control.id),
+           text:el.tagName==="LABEL"?el.textContent.trim().slice(0,120):null,
            overflow:getComputedStyle(el).overflow,display:getComputedStyle(el).display
           })).slice(0,20),
         // Desktop uses display:contents for the controls wrapper, so its own
@@ -109,6 +116,7 @@ runBrowserTest("browser-scenarios",async test=>{
         volumeBounds:result.confidence>=0&&result.confidence<=1
       };
     },row);
+    if(checked===0)test.report.firstResponsiveFrame={beforePaint:result.beforePaintWidth,rendered:result.scrollWidth};
     assert.equal(result.avatar,row.avatar,"Avatar change "+JSON.stringify(row));
     assert.equal(result.avatarClass,true,"Avatar CSS "+JSON.stringify(row));
     assert.equal(result.moodClass,true,"Emotion CSS "+JSON.stringify(row));
