@@ -2,6 +2,8 @@
 
 Robotito es un panda virtual interactivo que vive en el navegador. Ve, escucha, recuerda, aprende de clases, responde preguntas y construye una relación distinta con cada persona registrada.
 
+El estado de la percepción de sonidos, las correcciones de continuidad y sus límites de validación están en [P03-STATUS.md](P03-STATUS.md).
+
 ## Funciones principales
 
 ### Mascota viva e interactiva

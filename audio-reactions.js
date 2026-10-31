@@ -9,6 +9,7 @@ const REACTIONS=Object.freeze({
  cough:{action:"notice",minimum:.94,cooldown:9500,requiresModel:true},
  sneeze:{action:"bless",minimum:.96,cooldown:5200,requiresModel:true}
 });
+const MAX_EVENT_AGE_MS=1000;
 // No downloaded/pretrained model can authorize unsolicited human reactions.
 // Only an independently validated and deliberately approved deployment may
 // set this capability to true. It is false for Robotito's shipped app.
@@ -18,19 +19,19 @@ function create({clock=()=>Date.now(),humanModelReactionsApproved=false}={}){
  let lastVocalAt=-Infinity;
  const VOCAL_GROUP=new Set(["laugh","cry","cough","sneeze"]);
  const VOCAL_GROUP_COOLDOWN=1700;
- let musicStartedAt=null,musicFrames=0,musicLastAt=0,musicActive=false;
+ let musicStartedAt=null,musicFrames=0,musicLastAt=0,musicCountedAt=0,musicActive=false;
  function updateMusic(status,{suppressed=false,now=clock()}={}){
   // Keep movement downstream of acoustic classification. An instantaneous
   // music candidate is insufficient: require independent, spaced frames.
   if(suppressed||!status||status.kind!=="music"||
      !Number.isFinite(status.musicConfidence)||status.musicConfidence<.76||
-     !Number.isFinite(now)||(musicFrames>0&&(now<musicLastAt||now-musicLastAt>450))){
+     !Number.isFinite(now)||now<0||(musicFrames>0&&(now<musicLastAt||now-musicLastAt>450))){
    musicStartedAt=null;musicFrames=0;musicActive=false;
    musicLastAt=Number.isFinite(now)?now:0;
    return false;
   }
   if(musicStartedAt===null)musicStartedAt=now;
-  if(musicFrames===0||now-musicLastAt>=35)musicFrames++;
+  if(musicFrames===0||now-musicCountedAt>=35){musicFrames++;musicCountedAt=now;}
   musicLastAt=now;
   if(musicFrames>=6&&now-musicStartedAt>=330)musicActive=true;
   return musicActive;
@@ -38,6 +39,7 @@ function create({clock=()=>Date.now(),humanModelReactionsApproved=false}={}){
  function decide(event,{suppressed=false,now=clock()}={}){
   if(suppressed||!event||!Number.isFinite(now)||now<0||
      !Number.isFinite(event.confidence)||event.confidence<0||event.confidence>1)return null;
+  if(event.at!==undefined&&(!Number.isFinite(event.at)||event.at<0||event.at>now||now-event.at>MAX_EVENT_AGE_MS))return null;
   const policy=REACTIONS[event.kind];
   if(!policy||event.confidence<policy.minimum)return null;
   // A model name is not proof of calibration or permission to react.
@@ -60,10 +62,10 @@ function create({clock=()=>Date.now(),humanModelReactionsApproved=false}={}){
  }
  function reset(){
   for(const key of Object.keys(last))delete last[key];
-  lastVocalAt=-Infinity;musicStartedAt=null;musicFrames=0;musicLastAt=0;musicActive=false;
+  lastVocalAt=-Infinity;musicStartedAt=null;musicFrames=0;musicLastAt=0;musicCountedAt=0;musicActive=false;
  }
  return {decide,updateMusic,reset};
 }
-root.ROBOTITO_AUDIO_REACTIONS={create,REACTIONS};
+root.ROBOTITO_AUDIO_REACTIONS={create,REACTIONS,MAX_EVENT_AGE_MS};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_AUDIO_REACTIONS;
 })(typeof window!=="undefined"?window:globalThis);

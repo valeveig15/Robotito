@@ -1417,12 +1417,8 @@ function setupAudio(stream){
           const lang=responseLanguage();
           sayInLanguage(window.ROBOTITO_I18N?.t?.("soundComfort",lang)||"¿Está todo bien?",lang);
         }else if(reaction.action==="bless"){
-          // Share cooldown with the separate speech-recognition sneeze path.
-          if(now-(handleSocialSpeech.lastBlessAt||0)<5000){
-            reactionTrial?.observeEvent(event.kind);
-            return;
-          }
-          handleSocialSpeech.lastBlessAt=now;
+          // Only the acoustic policy can authorize this reaction, including
+          // independent evidence, explicit approval and its own cooldown.
           const lang=responseLanguage();
           sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",lang)||"¡Salud!",lang);
         }
@@ -4246,16 +4242,8 @@ function handleSocialSpeech(text){
   const name=known?", "+known:"";
   const enName=known?", "+known:"";
 
-  if(/\b(achu|achis|achoo|atchoo|atishoo)\b/.test(text)){
-    // Consecutive ASR fragments from the same sneeze get one reaction.
-    const now=Date.now();
-    if(now-(handleSocialSpeech.lastBlessAt||0)>=4500){
-      handleSocialSpeech.lastBlessAt=now;
-      const lang=responseLanguage();
-      sayInLanguage(window.ROBOTITO_I18N?.t?.("bless",lang)||"¡Salud!",lang);
-    }
-    return true;
-  }
+  // Written/transcribed onomatopoeias are conversation content, never proof
+  // of a real sneeze. They must not bypass the acoustic reaction policy.
   if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
   if(/\b(boa tarde)\b/.test(text)){wakeFromNight();sayInLanguage("Boa tarde"+enName+".","pt");return true;}
   if(/\b(boa noite)\b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");setTimeout(sleepForNight,700);return true;}
