@@ -91,6 +91,11 @@ runBrowserTest("browser-scenarios",async test=>{
         panelOverflow:[...document.querySelectorAll(".panel *")].filter(el=>{
           const r=el.getBoundingClientRect();return r.width>0&&r.right>document.documentElement.clientWidth+1;
         }).slice(0,15).map(el=>({tag:el.tagName,id:el.id,cls:String(el.className||""),width:el.getBoundingClientRect().width})),
+        panelScrollSources:[...document.querySelectorAll(".panel *")].filter(el=>
+          el.clientWidth>0&&el.scrollWidth>el.clientWidth+1).map(el=>({
+           tag:el.tagName,id:el.id,cls:String(el.className||""),client:el.clientWidth,scroll:el.scrollWidth,
+           overflow:getComputedStyle(el).overflow,display:getComputedStyle(el).display
+          })).slice(0,20),
         // Desktop uses display:contents for the controls wrapper, so its own
         // bounding rectangle is intentionally empty. Separation is required
         // only for the structural mobile layout.
