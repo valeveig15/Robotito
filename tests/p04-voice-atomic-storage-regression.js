@@ -23,6 +23,23 @@ let count=0;const eq=(a,b,m)=>{assert.deepEqual(a,b,m);count++;};
   eq(writes.length,2,"Both writes staged in same transaction");
   eq(writes.map(x=>x[0]),["blobs","records"],"Blob and metadata");
   eq(writes[0][1].recordId,writes[1][1].id,"Linked record ID");
+  eq([...new Uint8Array(writes[0][1].blobBytes)],[...new Uint8Array(await blob.arrayBuffer())],"Portable storage preserves exact audio bytes");
+  eq(writes[0][1].mimeType,blob.type,"Portable storage preserves MIME type");
+ }
+ // Older installations stored native Blob objects. The public read API must
+ // support both representations without losing MIME type or audio bytes.
+ let stored;
+ const readEnd=storeSource.indexOf("// Removes legacy blobs",end);
+ const read=new Function("openDb","request","Blob","ArrayBuffer",
+  storeSource.slice(end,readEnd)+"return getBlob;")(
+   async()=>({transaction:()=>({objectStore:()=>({get:()=>stored})})}),
+   async row=>row,Blob,ArrayBuffer);
+ for(const oldFormat of [true,false]){
+  stored=oldFormat?{blob}:{blobBytes:await blob.arrayBuffer(),mimeType:blob.type};
+  const loaded=await read("existing-audio");
+  eq(loaded instanceof Blob,true,"Public read still returns Blob");
+  eq(loaded.type,blob.type,"Old and new formats retain audio type");
+  eq([...new Uint8Array(await loaded.arrayBuffer())],[...new Uint8Array(await blob.arrayBuffer())],"Old and new audio bytes survive reading");
  }
  const actions=[],root={ROBOTITO_STORE:{
   putRecordWithBlob:(row,audio,options)=>{actions.push({row,audio,options});return Promise.resolve(row);},

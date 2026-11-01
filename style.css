@@ -2795,6 +2795,9 @@ body.layout-resizing *{cursor:col-resize!important}
     overflow:visible;
   }
   .tabs,.tabpage,.card,.meter-card{min-width:0}
+  /* WebKit can propagate native option text past a correctly sized select.
+     Contain its painting without clipping the panel's other controls. */
+  .panel select{contain:paint}
   .robotito{
     top:50%!important;
     width:248px;

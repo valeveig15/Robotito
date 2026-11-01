@@ -30,22 +30,6 @@ jobs:
         # GitHub Ubuntu runners include Chromium's standard shared libraries.
         # Avoid an apt transaction that can stall the whole regression run.
         run: npx playwright install chromium
-      - name: Run real YAMNet Worker smoke
-        # Run external integration first for quick, actionable diagnostics;
-        # every PR still must pass the full regression suite below.
-        run: npm run test:audio:real
-      - name: Run real continuous sound-evaluation CLI
-        # Generated synthetic WAV, no real/private audio files or claims
-        # of recognition accuracy. Exercises the full evaluation command.
-        run: npm run test:audio:timeline:real
-      - name: Verify private sound-corpus recording and manifest exports
-        # Fake Chromium microphone and local WAV; no person or private audio.
-        run: npm run test:audio:studio
-      - name: Verify manual microphone field diagnostic with synthetic hardware
-        # Headless fake microphone only; never claims physical hardware passed.
-        run: npm run test:audio:device
-      - name: Verify actual avatar reaction trial in Chromium without human audio
-        run: npm run test:audio:reactions:browser
       - name: Semantic adversarial coverage by language and seeded batch
         run: |
           ROBOTITO_AUDIT_SEED=17 ROBOTITO_AUDIT_BATCH=0 ROBOTITO_AUDIT_CASES=120 npm run test:semantic:audit
@@ -59,8 +43,8 @@ jobs:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         run: |
           ROBOTITO_PROP_SCALE=3 npm run test:properties:matrix
-          ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios
-          ROBOTITO_TEST_SEED=99 npm run test:browser:scenarios
+          ROBOTITO_TEST_SEED=42 npm run test:p02:browser
+          ROBOTITO_TEST_SEED=99 npm run test:p02:browser
       - name: Retain reproducible test evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,3 +53,33 @@ jobs:
           path: test-results/
           if-no-files-found: warn
           retention-days: 14
+
+  media-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install Chromium
+        run: npx playwright install chromium
+      - name: Run real YAMNet Worker smoke
+        # External dependencies have a separate required job so a CDN failure
+        # cannot prevent the deterministic application regressions.
+        run: npm run test:audio:real
+      - name: Run real continuous sound-evaluation CLI
+        # Generated synthetic WAV, no real/private audio files or claims
+        # of recognition accuracy. Exercises the full evaluation command.
+        run: npm run test:audio:timeline:real
+      - name: Verify private sound-corpus recording and manifest exports
+        # Fake Chromium microphone and local WAV; no person or private audio.
+        run: npm run test:audio:studio
+      - name: Verify manual microphone field diagnostic with synthetic hardware
+        # Headless fake microphone only; never claims physical hardware passed.
+        run: npm run test:audio:device
+      - name: Verify actual avatar reaction trial in Chromium without human audio
+        run: npm run test:audio:reactions:browser

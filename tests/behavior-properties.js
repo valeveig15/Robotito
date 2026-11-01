@@ -11,7 +11,7 @@ const i18n=require("../i18n.js");
 const voice=require("../voice-system.js");
 const audio=require("../audio-perception.js");
 const weather=require("../weather-forecast.js");
-const seed=process.env.ROBOTITO_TEST_SEED||17;
+const seed=process.env.ROBOTITO_TEST_SEED||"17";
 const scale=Number(process.env.ROBOTITO_PROP_SCALE||1);
 if(!Number.isInteger(scale)||scale<1||scale>5)throw Error("ROBOTITO_PROP_SCALE must be 1..5");
 let checks=0,propertyRuns=0;

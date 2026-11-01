@@ -55,6 +55,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 ## Pedido 03 — EN PROGRESO, no cerrado
 
+**Revisión de detalles 31/10/2026:** corregidos el atajo de «¡Salud!» por texto/ASR, la evidencia que sobrevivía a fallos, las observaciones almacenadas, la recuperación de modelos bloqueados y el baile con consultas rápidas. Ver [P03-STATUS.md](P03-STATUS.md) para pruebas y validación acústica externa pendiente.
+
 **Objetivo del documento:** voz, música, aplausos, risa, llanto, tos, estornudos, golpes y silencio, usando evidencia acústica temporal/espectral y un modelo cuando haga falta; bailar o aplaudir solamente con evidencia, abstenerse ante eventos inciertos y no reaccionar a voz propia, clase o audio suspendido.
 
 **Incrementos ya fusionados en `main` con CI completa verde:**

@@ -1,6 +1,6 @@
 # Robotito — pendientes permanentes y seguimiento
 
-Actualizado: 30 de octubre de 2026.
+Actualizado: 31 de octubre de 2026.
 
 > Este documento **no reemplaza los 82 pedidos originales**, cuyo orden de implementación se mantiene. Sirve para conservar las limitaciones solucionables que se detectan al desarrollar y probar cada punto. Nunca eliminar una limitación por pasar al siguiente punto; marcarla resuelta únicamente con evidencia y pruebas.
 
@@ -18,6 +18,7 @@ Actualizado: 30 de octubre de 2026.
    - Medir precisión, recuperación, confusiones, falsos avisos por hora y latencia.
    - Verificar micrófonos, permisos, suspensión y recuperación en dispositivos físicos.
    - Revisar GitHub Actions tras las últimas modificaciones. Mantener desactivadas las reacciones humanas automáticas hasta aprobación documentada.
+   - **Revisión 31/10:** corregidos avisos por onomatopeyas de texto/ASR, acumulación tras errores, resultados atrasados, consultas rápidas del baile y bloqueo del modelo sin PCM nuevo; regresiones de lógica y controles reales con micrófono sintético. No equivale a calibración humana.
    - Consultar [P03-STATUS.md](P03-STATUS.md) para los criterios de aceptación sin falsos certificados.
 4. **Dependencias externas y rendimiento.**
    - Reducir dependencias innecesarias, verificar navegación con descarga/caché de modelos, tiempos de arranque, memoria y latencia en dispositivos representativos.

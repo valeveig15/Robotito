@@ -4,7 +4,7 @@
 (function(root){
 "use strict";
 const WINDOW_SAMPLES=15600,STEP_SAMPLES=7800,TARGET_RATE=16000;
-const MAX_INFERENCE_MS=2500;
+const MAX_INFERENCE_MS=2500,MAX_MODEL_LOAD_MS=30000;
 const LABELS={
  sneeze:/\bsneez(?:e|ing)\b/i,
  cough:/\bcough(?:ing)?\b/i,
@@ -21,8 +21,8 @@ function mapCategories(categories){
  let strongest={kind:"unknown",score:0,label:""};
  for(const row of Array.isArray(categories)?categories:[]){
   const label=String(row?.categoryName||row?.displayName||"");
-  const confidence=Number(row?.score);
-  if(!Number.isFinite(confidence)||confidence<0||confidence>1)continue;
+  const confidence=row?.score;
+  if(typeof confidence!=="number"||!Number.isFinite(confidence)||confidence<0||confidence>1)continue;
   let matched=false;
   for(const [kind,pattern]of Object.entries(LABELS)){
    // A bird singing is not evidence of a human song or music.
@@ -99,17 +99,35 @@ function createResampler(targetRate=TARGET_RATE){
  return {push,reset,getInputRate:()=>inputRate};
 }
 function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
- clock=()=>Date.now(),onUpdate=()=>{}}={}){
+ clock=()=>Date.now(),onUpdate=()=>{},
+ setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id)}={}){
  let worker=null,state="off",statusMessage="",last=null,writeAt=0,filled=0,sinceLast=0;
  let sequence=0,minimumAcceptedId=0,pendingId=0,pendingAt=0,busy=false;
+ let loadTimer=null,inferenceTimer=null;
  let inferenceCount=0,inferenceTotalMs=0,lastInferenceMs=null,
   maxInferenceMs=0,timedOutInferences=0;
  let ring=new Float32Array(WINDOW_SAMPLES);
  const resampler=createResampler();
  const version="YAMNet AudioSet (uncalibrated for Robotito)";
  const publish=()=>{try{onUpdate(getStatus());}catch(e){console.warn("Sound model state",e);}};
+ function timer(fn,ms){const id=setTimer(fn,ms);id?.unref?.();return id;}
+ function cancelLoad(){if(loadTimer!==null)clearTimer(loadTimer);loadTimer=null;}
+ function cancelInference(){if(inferenceTimer!==null)clearTimer(inferenceTimer);inferenceTimer=null;}
+ function fail(expected,message){
+  if(worker!==expected)return;
+  cancelLoad();cancelInference();worker=null;
+  try{expected?.terminate();}catch{}
+  state="error";statusMessage=String(message).slice(0,200);
+  busy=false;pendingId=0;pendingAt=0;last=null;filled=0;sinceLast=0;
+  ring.fill(0);resampler.reset();publish();
+ }
+ function timeoutInference(expected,id){
+  if(worker!==expected||!busy||pendingId!==id)return;
+  timedOutInferences++;fail(expected,"El clasificador no respondió a tiempo");
+ }
  function getStatus(){
-  const recent=last&&clock()-last.observedAt<=2600?last:null;
+  const age=last?clock()-last.observedAt:Infinity;
+  const recent=last&&age>=0&&age<=2600?last:null;
   return {state,message:statusMessage,version,calibrated:false,
     candidate:recent?{...recent.candidate}:null,scores:recent?{...recent.scores}:null,
     performance:{completedInferences:inferenceCount,
@@ -118,6 +136,7 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
       timedOutInferences,activeInference:busy}};
  }
  function clearAudio(){
+  cancelInference();
   if(!filled&&!last&&!busy&&!resampler.getInputRate())return;
   // Clear a session's PCM and reject a prediction whose samples predate
   // class mode, sleep, Robotito's own voice or an interrupted microphone.
@@ -126,6 +145,7 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
   ring.fill(0);resampler.reset();publish();
  }
  function disable(){
+  cancelLoad();cancelInference();
   const previous=worker;worker=null;
   if(previous)try{previous.terminate();}catch{}
   state="off";statusMessage="";last=null;writeAt=0;filled=0;sinceLast=0;busy=false;
@@ -145,24 +165,21 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
    state="error";statusMessage="Worker unavailable";publish();return false;
   }
   worker=created;state="loading";statusMessage="";publish();
-  const fail=message=>{
-   if(worker!==created)return;
-   worker=null;try{created.terminate();}catch{}
-   state="error";statusMessage=String(message).slice(0,200);
-   busy=false;last=null;filled=0;sinceLast=0;ring.fill(0);resampler.reset();publish();
-  };
   created.onmessage=event=>{
    if(worker!==created)return;
    const data=event?.data||{};
-   if(data.type==="ready"){state="ready";statusMessage="";publish();}
+   if(data.type==="ready"){
+    if(state!=="loading")return;
+    cancelLoad();state="ready";statusMessage="";publish();
+   }
    else if(data.type==="result"){
     // Delayed results from a prior class/sleep interval must not unlock a
     // newer in-flight classification, nor appear fresh when they are stale.
     if(!Number.isInteger(data.id)||data.id!==pendingId)return;
-    busy=false;pendingId=0;
+    cancelInference();busy=false;pendingId=0;
     const elapsed=clock()-pendingAt;pendingAt=0;
     if(data.id<minimumAcceptedId||data.id<= (last?.id||0)||
-       elapsed<0||elapsed>MAX_INFERENCE_MS)return;
+       !Number.isFinite(elapsed)||elapsed<0||elapsed>MAX_INFERENCE_MS){last=null;publish();return;}
     inferenceCount++;inferenceTotalMs+=elapsed;lastInferenceMs=elapsed;
     maxInferenceMs=Math.max(maxInferenceMs,elapsed);
     const mapped=mapCategories(data.categories);
@@ -178,10 +195,11 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
      // Untagged errors are reserved for initialization failures only.
      return;
     }
-    fail(data.message||"Model unavailable");
+    fail(created,data.message||"Model unavailable");
    }
   };
-  created.onerror=()=>fail("Model worker error");
+  created.onerror=()=>fail(created,"Model worker error");
+  loadTimer=timer(()=>fail(created,"El modelo no terminó de cargar a tiempo"),MAX_MODEL_LOAD_MS);
   try{created.postMessage({type:"init"});}
   catch(error){disable();state="error";statusMessage=String(error);publish();return false;}
   return true;
@@ -200,26 +218,23 @@ function create({workerFactory=()=>new root.Worker("audio-model-worker.js"),
   });
   // Do not keep the queue stuck forever when WASM inference hangs.
   if(busy&&clock()-pendingAt>MAX_INFERENCE_MS){
-   timedOutInferences++;
-   const failed=worker;worker=null;try{failed?.terminate();}catch{}
-   state="error";statusMessage="El clasificador no respondió a tiempo";
-   last=null;filled=0;sinceLast=0;ring.fill(0);busy=false;
-   pendingId=0;pendingAt=0;resampler.reset();publish();return;
+   timeoutInference(worker,pendingId);return;
   }
   if(filled<WINDOW_SAMPLES||sinceLast<STEP_SAMPLES||busy)return;
   const frame=new Float32Array(WINDOW_SAMPLES);
   for(let i=0;i<WINDOW_SAMPLES;i++)frame[i]=ring[(writeAt+i)%WINDOW_SAMPLES];
   busy=true;sinceLast=0;pendingAt=clock();pendingId=++sequence;
+  const requestedWorker=worker,requestedId=pendingId;
+  // Real deadlines must still fire when the microphone stops delivering PCM.
+  inferenceTimer=timer(()=>timeoutInference(requestedWorker,requestedId),MAX_INFERENCE_MS);
   try{worker.postMessage({type:"classify",id:pendingId,sampleRate:TARGET_RATE,samples:frame},[frame.buffer]);}
   catch(error){
-   busy=false;state="error";statusMessage=String(error);
-   const failed=worker;worker=null;try{failed?.terminate();}catch{}
-   ring.fill(0);filled=0;last=null;pendingId=0;pendingAt=0;
-   resampler.reset();publish();
+   fail(requestedWorker,error);
   }
  }
  return {enable,disable,clearAudio,pushPCM,getStatus,calibrated:false,version};
 }
-root.ROBOTITO_SOUND_MODEL={create,createResampler,mapCategories,WINDOW_SAMPLES,TARGET_RATE};
+root.ROBOTITO_SOUND_MODEL={create,createResampler,mapCategories,WINDOW_SAMPLES,TARGET_RATE,
+ MAX_INFERENCE_MS,MAX_MODEL_LOAD_MS};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_SOUND_MODEL;
 })(typeof window!=="undefined"?window:globalThis);

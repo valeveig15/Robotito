@@ -1,21 +1,10 @@
 "use strict";
-const assert=require("node:assert/strict"),{spawn}=require("node:child_process");
-const path=require("node:path"),{chromium}=require("playwright");
-const port=Number(process.env.ROBOTITO_P05_PORT||8845);
-const server=spawn("python3",["-m","http.server",String(port),"--bind","127.0.0.1"],{
- cwd:path.resolve(__dirname,".."),stdio:"ignore"});
-const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-(async()=>{
- let browser;
- try{
-  await sleep(600);
-  browser=await chromium.launch({headless:true});
-  const page=await browser.newPage({viewport:{width:390,height:844}});
-  const errors=[];page.on("pageerror",error=>errors.push(String(error)));
-  await page.route("https://cdn.jsdelivr.net/**",r=>r.fulfill({
-   status:200,contentType:"application/javascript",body:""
-  }));
-  await page.goto("http://127.0.0.1:"+port+"/",{waitUntil:"domcontentloaded",timeout:30000});
+const assert=require("node:assert/strict");
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p05-ui-localization",async test=>{
+  const {page,baseURL}=test,errors=test.report.pageErrors;
+  test.phase("p05-ui-localization");
+  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>window.ROBOTITO_I18N&&typeof window.setLanguageMode==="function",null,{timeout:20000});
   const initial=await page.evaluate(()=>[...document.querySelectorAll("#languageGateTitle .startup-language-line")]
    .map(node=>({lang:node.lang,display:getComputedStyle(node).display,text:node.textContent})));
@@ -67,9 +56,6 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
    assert.ok(localized.voiceStyles.every(Boolean),lang+" voice style labels translated");
   }
   assert.deepEqual(errors,[],"No uncaught page errors during locale changes");
-  console.log("P05 Chromium UI localization: 6 locales, 15 questions, 4 form checks and accessible labels passed");
- }finally{
-  if(browser)await browser.close();
-  server.kill("SIGTERM");
- }
-})().catch(error=>{console.error(error);process.exitCode=1;});
+  test.report.result={locales:6,questions:15,forms:4};
+  console.log("P05 "+test.engineName+" UI localization: 6 locales, 15 questions, 4 form checks and accessible labels passed");
+},{viewport:{width:390,height:844}}).catch(error=>{console.error(error);process.exitCode=1;});

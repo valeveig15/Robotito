@@ -1,55 +1,42 @@
-# Robotito — Punto 3: entrega de ingeniería y validación pendiente
+# Robotito — Punto 3: implementación y evidencia pendiente
 
-Actualización: 29 de octubre de 2026.
+Actualización: 31 de octubre de 2026. Requisito: punto 03 de `Robotito_82_pedidos_completos-1.docx`.
 
-## Alcance implementado
+## Comportamiento implementado
 
-- Detector acústico de silencio, actividad vocal, música, impactos y candidatos prudentes de aplauso.
-- Resultados tentativos de risa, llanto, tos y estornudos solo mediante clasificador acústico opcional. No se infieren de intensidad o ASR.
-- Evidencia temporal, competencia entre etiquetas, umbrales por clase, rechazo de predicciones antiguas y repetidas, restablecimiento de la evidencia cuando el audio se interrumpe o hay silencio, y rechazo de puntuaciones de modelo que no sean números finitos.
-- Política independiente de acciones y enfriamiento; supresión por voz propia, Modo Clase, sueño, pestaña oculta y micrófono no disponible.
-- «¡Chocar los cinco!» y movimientos por aplausos conservados.
-- Módulos de evaluación de confusión entre sonidos, latencia, privacidad, manifestaciones de consentimiento y preparación de corpus etiquetado.
+- Detector de silencio, actividad vocal, música, ruido, impactos y candidatos de aplauso mediante características temporales y espectrales. Un golpe aislado no basta para aplaudir; bailar exige música sostenida y se detiene al perderla.
+- Clasificación opcional YAMNet ejecutada localmente tras consentimiento. Risa, llanto, tos y estornudo se presentan como candidatos tentativos; no se deducen de intensidad ni de texto transcrito.
+- Detección separada de las acciones del avatar; umbrales, competencia entre clases, enfriamiento, supresión por voz propia, Modo Clase, sueño, pestaña oculta y micrófono no disponible.
+- Herramientas locales para grabaciones consentidas, anotaciones, separación de fuentes, hashes, confusión, latencia y diagnóstico de micrófono. Los informes no autoaprueban el modelo ni certifican hardware.
+- «Chocar los cinco» permanece en voz, texto, botones y animaciones.
 
-## Qué se ha verificado
+## Correcciones de esta revisión
 
-Verificación aislada de JavaScript de 29/10/2026 (NO una ejecución de `npm test` ni un GitHub Actions exitoso):
-- Regresión de cadencia y observaciones: 31 comprobaciones.
-- Regresión de eventos con semillas 17, 42, 99: 500 por semilla.
-- Adaptador de modelo de sonido: 66 comprobaciones.
-- Registros de reacciones de avatar y confusión temporal: 64 comprobaciones.
-- Calibración, ciclo de vida del micrófono y PCM de respaldo: 118 comprobaciones.
-- Total de estas ejecuciones aisladas: 1.779 comprobaciones exitosas.
+1. Una inferencia inválida, rechazada o fuera de contrato corta el conjunto parcial de confirmaciones. Dos predicciones anteriores a un fallo ya no se suman a una sola posterior para autorizar un estornudo.
+2. Una observación almacenada sigue impidiendo reacciones heurísticas incompatibles, pero no cuenta como otra confirmación. Se distingue la espera normal entre ventanas YAMNet de observaciones nuevas atrasadas, repetidas o mal etiquetadas.
+3. Probabilidades, identificadores y marcas temporales se validan sin convertir cadenas o booleanos en confianza. Un retroceso del reloj no rejuvenece una predicción.
+4. La carga del modelo vence a los 30 segundos y la inferencia a los 2,5 segundos, incluso si deja de llegar PCM. Se termina el Worker, se libera la evidencia, se informa el error y puede reintentarse mediante el control existente. Cancelación y desactivación limpian los temporizadores.
+5. Las acciones descartan eventos con marcas inválidas, futuras o de más de un segundo. El baile conserva confirmaciones independientes aunque la interfaz consulte a intervalos menores de 35 ms.
+6. Se eliminó el atajo de texto/ASR que decía «¡Salud!» por palabras como “achís” o “achoo”. La reacción queda exclusivamente detrás de la política acústica y su autorización; el texto sigue disponible para conversación normal.
 
-Las verificaciones anteriores son de lógica con dobles de prueba, NO de precisión sobre sonidos reales ni de integración Chromium/CI.
+## Verificación y reproducción
 
-## Bloqueo externo: NO aprobar todavía las reacciones humanas
+- `tests/audio-continuity-regression.js`: 40 comprobaciones nuevas de fallos, continuidad, observaciones almacenadas, tiempos, recuperación y limpieza. Forma parte de `test:audio`, ejecutado con semillas 17, 42 y 99.
+- Se conservan cadencia (31), eventos acústicos (500 por semilla), adaptador/remuestreo (66) y todas las regresiones de corpus, privacidad, ventanas y evaluación.
+- `npm run test:audio:reactions:browser` reproduce la aplicación en Chromium con micrófono sintético. Comprueba texto sin evidencia acústica, estado localizado de carga fallida, reintento, inferencia bloqueada, desactivación, aplauso atrasado, aplauso válido, supresión y estornudo no aprobado. La prueba nueva reprodujo el «¡Salud!» falso antes de corregirlo y pasó después.
+- `npm run test:ci` pasó localmente el 31/10/2026: conserva la regresión completa de los puntos anteriores, incluidos 555 controles de navegador, cuatro tamaños y las matrices de tres semillas. GitHub Actions también ejecuta las matrices de Firefox/WebKit y una tarea separada con YAMNet/MediaPipe genuinos, PCM sintético, evaluación continua, grabación privada y diagnóstico. Consultar el resultado del HEAD de cada PR; configurar una prueba no equivale a haberla aprobado.
 
-No hay evidencia independiente suficiente en estas verificaciones para aprobar reacciones automáticas a risa, llanto, tos o estornudos. El permiso de despliegue `humanModelReactionsApproved` permanece desactivado; `evidenceStatus.p03VerifiedComplete` y `automaticHumanReactionsApproved` permanecen en `false`.
+Las pruebas de lógica y el micrófono sintético no miden exactitud en sonidos humanos. La integración con YAMNet genuino comprueba su carga y procesamiento, no la corrección de etiquetas sobre personas reales.
 
-Antes de certificar el punto 3 empíricamente:
-1. Obtener grabaciones reales autorizadas, con positivos y negativos de distintos orígenes, entornos, idiomas y dispositivos; auditar etiquetas de forma independiente.
-2. Reservar fuentes de prueba separadas, validar hashes de audio y anotaciones y ejecutar `npm run validate:audio -- /ruta/manifest.json`, `npm run evaluate:audio -- /ruta/manifest.json` y `npm run audit:audio:p03 -- /ruta/manifest.json`.
-3. Medir matrices de confusión, precisión/recuperación, falsos avisos por hora y latencia con datos reales de reserva.
-4. Comprobar consentimiento, permiso/revocación, silencio, desconexión, captura y reacciones en micrófonos físicos representativos; usar `tools/audio-device-check.html` y el ensayo de avatar.
-5. Revisar los resultados y riesgos antes de habilitar cualquier reacción humana nueva.
+## Qué impide declarar el punto completamente validado
 
-## Revalidación de integración requerida
+`humanModelReactionsApproved` permanece desactivado en la aplicación. El inventario conserva `p03VerifiedComplete:false` y `automaticHumanReactionsApproved:false`. No existe en esta revisión evidencia independiente suficiente para aprobar sonrisas por risa, consuelo por llanto, reacciones a tos o «¡Salud!» automáticos.
 
-Ejecutar en un entorno Node 22 con Playwright Chromium:
-```bash
-npm ci --ignore-scripts
-npx playwright install chromium
-npm run test:audio
-npm run test:audio:real
-npm run test:audio:timeline:real
-npm run test:audio:studio
-npm run test:audio:device
-npm run test:audio:reactions:browser
-npm run test:ci
-```
-Consultar la ejecución de `.github/workflows/regression.yml`. Estas pruebas no pueden considerarse ejecutadas solo por haber subido cambios.
+Falta completar con evidencia auténtica:
 
-## Transición al punto 4
+1. Corpus autorizado con positivos, negativos y superposiciones; etiquetas revisadas independientemente, fuentes separadas de desarrollo/validación/prueba y diversidad de entornos/dispositivos.
+2. Ejecutar `validate:audio`, `evaluate:audio` y `audit:audio:p03` sobre ese corpus y medir precisión, recuperación, confusiones, falsos avisos por hora y latencia. Cero errores en datos sintéticos no reemplaza esta medición.
+3. Ensayos con micrófonos físicos representativos: permisos y revocación, silencio, voz propia, desconexión, suspensión y recuperación; usar `tools/audio-device-check.html` y el ensayo del avatar.
+4. Revisar los resultados y documentar una aprobación de umbrales antes de activar reacciones humanas. No convertir etiquetas automáticas ni declaraciones de una herramienta en revisión humana.
 
-La implementación controlable del punto 3 puede mantenerse en modo prudente y continuar con el punto 4 (idiomas/voces), **sin afirmar que el punto 3 esté certificado con dispositivos o grabaciones reales**. Conservar las verificaciones externas anteriores como deuda explícita y no reactivar automáticamente reacciones humanas en el punto 4.
+Los seis bloques históricos se conservan en [PENDIENTES-PERMANENTES.md](PENDIENTES-PERMANENTES.md). La ingeniería comprobada y la validación externa pendiente se informan por separado.
