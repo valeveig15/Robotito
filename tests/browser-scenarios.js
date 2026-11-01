@@ -54,11 +54,14 @@ runBrowserTest("browser-scenarios",async test=>{
       window.setLanguageMode(row.language);
       window.applyAvatar(row.avatar);
       window.setMood(row.mood,"Browser scenario");
+      const element=document.querySelector("#robotito");
+      // Check the requested transition before the independent ambient-mood
+      // timer can legitimately choose a later state during rendering.
+      const moodClass=element?.classList.contains("mood-"+row.mood);
       const beforePaintWidth=document.documentElement.scrollWidth;
       // Resize and localization mutate native controls. Measure the rendered
       // frame, after the browser has applied its resize/layout callbacks.
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-      const element=document.querySelector("#robotito");
       const label=document.querySelector('[data-i18n="typedChat"]');
       const source=window.ROBOTITO_AUDIO_PERCEPTION.create({clock:()=>0});
       const sample={rms:.1,flat:.96,harmonic:.01,low:42,mid:38,high:18,zcr:.31};
@@ -75,7 +78,7 @@ runBrowserTest("browser-scenarios",async test=>{
       return {
         avatar:element?.dataset.avatar,
         avatarClass:element?.classList.contains("avatar-"+row.avatar),
-        moodClass:element?.classList.contains("mood-"+row.mood),
+        moodClass,
         lang:document.documentElement.lang,
         localized:label?.textContent===window.ROBOTITO_I18N.t("typedChat",row.language),
         width:document.documentElement.clientWidth,
@@ -192,12 +195,15 @@ runBrowserTest("browser-scenarios",async test=>{
   assert.equal(durability.marker,"survive-reload","IndexedDB record survives browser reload");
   assert.equal(durability.avatar,final.avatar,"Avatar survives browser reload");
   assert.equal(durability.language,final.language,"Language survives browser reload");
+  const recorderAvailable=await page.evaluate(()=>typeof window.MediaRecorder==="function");
+  test.report.capabilities={mediaRecorder:recorderAvailable};
+  const unavailableRecording={ok:false,reason:recorderAvailable?"no-audio-track":"unsupported"};
   const interruptedMicrophone=await page.evaluate(async()=>{
     const start=await window.ROBOTITO_CLASS_AUDIO.start("Prueba sin micrófono","sin pista");
     return {start,active:window.ROBOTITO_CLASS_AUDIO.isRecording()};
   });
   assert.deepEqual(interruptedMicrophone,
-    {start:{ok:false,reason:"no-audio-track"},active:false},
+    {start:unavailableRecording,active:false},
     "Unavailable microphone must not create a phantom class recording");
   // Actual Chromium permission rejection: no test may silently assume a mic.
   // The app must not create a recording on a denied microphone permission.
@@ -224,7 +230,7 @@ runBrowserTest("browser-scenarios",async test=>{
   assert.ok(["NotAllowedError","NotFoundError"].includes(deniedMicrophone.request),
     "Denied/unavailable microphone must not supply a media stream");
   console.log("Robotito microphone negative capability:",JSON.stringify(deniedMicrophone));
-  assert.deepEqual(deniedMicrophone.start,{ok:false,reason:"no-audio-track"},
+  assert.deepEqual(deniedMicrophone.start,unavailableRecording,
     "Denied microphone cannot start a phantom class recording");
   assert.equal(deniedMicrophone.active,false,"No hidden recording after denial");
   test.report.microphone={kind:"native-denial-or-absent-hardware",...deniedMicrophone};
@@ -242,7 +248,7 @@ runBrowserTest("browser-scenarios",async test=>{
       }finally{media.getUserMedia=original;}
     });
     assert.equal(test.report.microphone.request,"NotAllowedError");
-    assert.deepEqual(test.report.microphone.start,{ok:false,reason:"no-audio-track"});
+    assert.deepEqual(test.report.microphone.start,unavailableRecording);
     assert.equal(test.report.microphone.active,false);
   }
 

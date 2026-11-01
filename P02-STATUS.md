@@ -1,6 +1,6 @@
 # Punto 02 — pruebas reproducibles e integración continua
 
-Revisión: 30/10/2026. Requisito: punto 02 de `Robotito_82_pedidos_completos-1.docx`.
+Revisión: 31/10/2026. Requisito: punto 02 de `Robotito_82_pedidos_completos-1.docx`.
 
 Se conservan las regresiones históricas, Playwright, los generadores, las semillas 17/42/99 y las pruebas después de cada incremento. El criterio es ejecutar escenarios positivos, negativos, fallos, persistencia, interrupciones, entornos adversos y tamaños de pantalla; no afirmar ausencia universal de errores.
 
@@ -24,6 +24,10 @@ Se conservan las regresiones históricas, Playwright, los generadores, las semil
 
 Una excepción síncrona `DataCloneError` al guardar metadatos podía confirmar un blob ya preparado. `putRecordWithBlob` ahora aborta toda la transacción y espera su finalización antes de devolver el error. La regresión comprueba inserción, actualización, conservación de bytes anteriores, borrado y recuperación de la cola tras una operación fallida (15 comprobaciones).
 
+Además, WebKit rechazaba el guardado nativo de `Blob` en el contexto de prueba. Se guardan ahora los bytes en `ArrayBuffer` y su MIME, antes de abrir la transacción; la API sigue devolviendo `Blob` y lee también el formato anterior. La restauración conserva bytes, tipos, propietarios y vínculos. Las regresiones de lectura anterior/nueva y almacenamiento atómico suman 28 comprobaciones, además del ensayo real de respaldo y concurrencia en los tres motores.
+
+El selector de voz podía extender el ancho desplazable hasta 615 px en una pantalla de 320 px aunque su caja midiera 250 px. Se limita el pintado del control nativo con `contain:paint`, sin recortar el panel ni sus otros controles. La matriz mide la geometría después del renderizado y verifica la transición de emoción antes de que el temporizador ambiental elija legítimamente otro estado. También distingue la ausencia real de `MediaRecorder` de un micrófono sin pista: ambos deben impedir una grabación, con la causa correcta.
+
 ## Evidencia local y límites
 
 La batería completa `npm run test:ci` pasó en Chromium. Las pruebas nuevas verificaron:
@@ -35,6 +39,6 @@ La batería completa `npm run test:ci` pasó en Chromium. Las pruebas nuevas ver
 - Nueve muestras de preparación de la aplicación en tres tamaños; p50/p95/máximo se conservan en JSON como tiempos de CI, sin extrapolarlos a teléfonos físicos.
 - El propio ejecutor fue probado con un fallo intencional y un plazo vencido; ambos conservan estado de error y cierran el servidor.
 
-**Las doce horas son tiempo simulado en una prueba acelerada**, no doce horas de navegador abierto. La red, la visibilidad y parte de las capacidades de voz/permisos se simulan. No hay micrófonos, cámaras, personas reales ni certificación de precisión acústica en estas cifras. Firefox/WebKit requieren aprobación de la CI del HEAD antes de integrar esta ampliación.
+**Las doce horas son tiempo simulado en una prueba acelerada**, no doce horas de navegador abierto. La red, la visibilidad y parte de las capacidades de voz/permisos se simulan. No hay micrófonos, cámaras, personas reales ni certificación de precisión acústica en estas cifras. La CI exige aprobación de Chromium, Firefox y WebKit en el HEAD que se integra; no permite omitir las comprobaciones por diferencias entre motores.
 
 Las seis áreas de pendientes permanentes permanecen en `PENDIENTES-PERMANENTES.md`; «Chocar los cinco» se conserva y forma parte de las regresiones.
