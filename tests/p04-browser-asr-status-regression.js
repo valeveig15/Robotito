@@ -13,6 +13,8 @@ const engine=new Function("window","state","recognitionLanguage","isIOSSpeech",
 let checks=0;
 const eq=(a,b,label)=>{assert.equal(a,b,label);checks++;};
 function setup(lang,available=true){
+ let now=10000;
+ const document={hidden:false};
  const states=[],transcript={textContent:""},queued=[],flushed=[];
  const state={languageMode:lang,started:true,recognitionWanted:true,
   speechBlocked:false,speaking:false,speechRetryCount:0,
@@ -25,13 +27,26 @@ function setup(lang,available=true){
   (message,category)=>states.push([message,category]),
   selector=>selector==="#transcript"?transcript:null,
   result=>result?.[0],text=>queued.push(text),()=>{},
-  ()=>1,()=>{},{hidden:false},{warn:()=>{}},
+  ()=>1,()=>{},document,{warn:()=>{}},
   text=>String(text||"").toLowerCase().trim(),
   (left,right)=>left?left+" "+right:right,
-  ()=>flushed.push(true),Date);
- return {runtime,state,states,transcript,queued,flushed};
+  ()=>flushed.push(true),{now:()=>now});
+ return {runtime,state,states,transcript,queued,flushed,document,advance:ms=>now+=ms};
 }
 for(const lang of i18n.languages){
+ const replay=setup(lang);
+ replay.runtime.startListeningCycle();
+ const final=Object.assign([{transcript:"repeat the exercise"}],{isFinal:true});
+ replay.state.recognition.onresult({resultIndex:0,results:[final]});
+ replay.advance(6000);
+ replay.state.recognition.onresult({resultIndex:0,results:[final]});
+ eq(replay.queued.length,1,lang+": final indexes never replay after four seconds");
+ replay.document.hidden=true;
+ replay.state.recognition.onresult({resultIndex:1,results:[final,final]});
+ eq(replay.queued.length,1,lang+": hidden page cannot execute microphone commands");
+ replay.document.hidden=false;replay.state.speaking=true;
+ replay.state.recognition.onresult({resultIndex:1,results:[final,final]});
+ eq(replay.queued.length,1,lang+": own speech cannot execute microphone commands");
  const {runtime,state,states,transcript,queued,flushed}=setup(lang);
  runtime.startListeningCycle();
  const r=state.recognition;
@@ -77,6 +92,8 @@ for(const lang of i18n.languages){
  const staleQueueCount=stale.queued.length;
  obsolete.onresult({resultIndex:0,results:[Object.assign([{transcript:"stale command"}],{isFinal:true})]});
  eq(stale.queued.length,staleQueueCount,lang+": old recognition cannot commit commands");
+ obsolete.onerror({error:"not-allowed"});
+ eq(stale.state.speechBlocked,false,lang+": obsolete error cannot block the new session");
  const blocked=setup(lang);
  blocked.runtime.startListeningCycle();
  blocked.state.recognition.onerror({error:"not-allowed"});

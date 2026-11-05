@@ -24,6 +24,8 @@ function fixture(){
  }};
 }
 const f=fixture();
+eq(f.runtime.cleanRecognitionTranscript("No no, no borres eso"),"No no, no borres eso","A repeated negation is real transcript content");
+eq(f.runtime.cleanRecognitionTranscript("I had had enough"),"I had had enough","Grammatical repeated words are preserved");
 for(const [a,b,expected] of [
  ["Qué es","es permutación","Qué es permutación"],
  ["¿Qué es permutación?","¿Qué es permutación?","¿Qué es permutación?"],
