@@ -1,6 +1,6 @@
 # Robotito — pendientes permanentes y seguimiento
 
-Actualizado: 31 de octubre de 2026.
+Actualizado: 5 de noviembre de 2026.
 
 > Este documento **no reemplaza los 82 pedidos originales**, cuyo orden de implementación se mantiene. Sirve para conservar las limitaciones solucionables que se detectan al desarrollar y probar cada punto. Nunca eliminar una limitación por pasar al siguiente punto; marcarla resuelta únicamente con evidencia y pruebas.
 
@@ -23,7 +23,7 @@ Actualizado: 31 de octubre de 2026.
 4. **Dependencias externas y rendimiento.**
    - Reducir dependencias innecesarias, verificar navegación con descarga/caché de modelos, tiempos de arranque, memoria y latencia en dispositivos representativos.
    - La capacidad de acceder al código de GitHub es el requisito básico de disponibilidad; las funciones que requieran micrófono o modelos específicos necesitan pruebas adicionales.
-5. **Punto 4: seis idiomas y traducción dinámica.**
+5. **Puntos 4 y 5: ASR/TTS, seis idiomas y traducción dinámica.**
    - Completar todas las respuestas dinámicas, clases, tareas, libros, clima, cumpleaños, estados de ánimo y mensajes de error en español, inglés, portugués, francés, italiano y alemán.
    - Probar ASR, TTS, cambio por selector/texto/voz y las modalidades persistente, sesión y una sola respuesta en navegadores reales.
    - **Aplicado 29/10:** inicio de los seis idiomas; avisos iniciales de micrófono/cámara y bienvenida localizados; impedir usar una voz de otro idioma. Pruebas específicas P04: 1.770 comprobaciones de lógica y localización, además de consentimiento (16), cambios de sesión ASR (8) y alcance persistente/sesión/una respuesta (27), órdenes multilingües (21), descarte de traducciones atrasadas (12), diagnóstico privado (30) y manejador de síntesis (68), manejo de eventos ASR del navegador en seis idiomas (85) y almacenamiento atómico/borrado de muestras (19). Integradas selecciones de los seis idiomas, 50 avatares, diez estilos, traducción privada y grupos prioritarios de mensajes. Se agregaron plantillas de fechas, cumpleaños, clases, tareas y biblioteca, traducción del registro de cara y voz, y localización de estados y errores del reconocimiento nativo de voz. Las respuestas dinámicas no cubiertas siguen dependiendo de modelos locales disponibles; la suite de CI y las pruebas de voz físicas todavía requieren validación. Se incorporó [p04-device-check.html](p04-device-check.html) para comprobar micrófono y voces reales sin almacenar audio. El audio de muestras voluntarias y su consentimiento se guardan atómicamente; el borrado elimina también blobs huérfanos anteriores.
@@ -42,6 +42,6 @@ Actualizado: 31 de octubre de 2026.
 
 ## Estado del punto 4
 
-Ver [P04-STATUS.md](P04-STATUS.md). No se debe considerar terminada la validación física ni la localización exhaustiva de todos los mensajes dinámicos hasta que existan pruebas reales y auditoría completa de cadenas. Conservar el bloqueo de despliegue como pendiente, aunque comience el siguiente trabajo de ingeniería.
+El punto 4 es captación de escucha, voz y rostro; idiomas y estilos corresponden a los puntos 5 y 6. Ver [P04-STATUS.md](P04-STATUS.md) para las correcciones de sesiones canceladas, transcripciones fieles, pistas liberadas e identidades caducadas. La revisión del 5/11 añade pruebas temporales y de aplicación para permisos tardíos, interrupciones y recuperación; no acredita precisión biométrica o acústica en equipos físicos.
 
-- **P04 (29/10):** recuperación ante rechazo de traducción local implementada; pendiente la comprobación en Chromium real.
+Se conservan H01–H16, corpus independientes autorizados, tasas de error y latencia por dispositivo/idioma. Las cifras de 29/10 anteriores son históricas; la CI actual se verifica por commit. No declarar este punto completamente terminado ni suponer que las pruebas simuladas validan hardware.

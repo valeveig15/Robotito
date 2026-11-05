@@ -6,6 +6,7 @@
   const RECORDINGS="recordings";
   const CHUNKS="chunks";
   let active=null;
+  let captureRequest=0;
   let objectUrls=[];
 
   function openDb(){
@@ -298,10 +299,17 @@
     if(!window.MediaRecorder)return {ok:false,reason:"unsupported"};
     // When the user explicitly shares a video tab, record that audio instead of the microphone.
     const source=window.ROBOTITO_YOUTUBE_MATERIAL?.captureStream||state.stream;
+    const sharedCapture=source===state.stream;
+    const epoch=state.captureEpoch,revision=state.captureRevision;
     const tracks=source?.getAudioTracks?.().filter(t=>t.readyState==="live")||[];
     if(!tracks.length)return {ok:false,reason:"no-audio-track"};
+    const request=++captureRequest;
 
     try{await navigator.storage?.persist?.();}catch{}
+    if(request!==captureRequest)return {ok:false,reason:"capture-canceled"};
+    if(sharedCapture&&(source!==state.stream||state.captureEpoch!==epoch||state.captureRevision!==revision||
+       !state.started||document.hidden||state.captureSuspended))return {ok:false,reason:"capture-canceled"};
+    if(tracks.some(track=>track.readyState!=="live"))return {ok:false,reason:"no-audio-track"};
 
     const id=crypto.randomUUID?.()||("class-audio-"+Date.now()+"-"+Math.random().toString(16).slice(2));
     const startedAt=Date.now();
@@ -341,6 +349,7 @@
     return {ok:true,id};
   }
   async function stop(){
+    ++captureRequest;
     const session=active;
     if(!session)return null;
     if(session.stopped)return null;
@@ -354,6 +363,9 @@
 
     try{
       if(session.recorder.state!=="inactive")session.recorder.stop();
+      // Cloned microphone tracks must close before IndexedDB or recorder
+      // completion can block. Saving already recorded bytes needs no mic.
+      session.audioStream.getTracks().forEach(t=>{try{t.stop();}catch{}});
       await stopped;
       await Promise.allSettled(session.pending);
       // Give the final dataavailable write a brief chance to register.

@@ -175,7 +175,7 @@
 
 
     if(speechQA){
-      results.push(same(speechQA.cleanTranscript("qué qué es la densidad"),"qué es la densidad","limpia repeticiones del reconocimiento"));
+      results.push(same(speechQA.cleanTranscript("qué qué es la densidad"),"qué qué es la densidad","preserva las palabras; deduplica por evento ASR"));
       results.push(same(speechQA.mergeChunks("qué es la","la densidad"),"qué es la densidad","une fragmentos de una misma pregunta"));
       results.push(same(speechQA.mergeChunks("cuál es el animal","el animal más grande del mundo"),"cuál es el animal más grande del mundo","conserva solapamiento entre fragmentos"));
       results.push(truthy(speechQA.alternativeScore({transcript:"qué es permutación",confidence:.7})>speechQA.alternativeScore({transcript:"mmm",confidence:.7}),"prioriza alternativas con intención clara"));

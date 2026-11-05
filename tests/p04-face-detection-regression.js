@@ -62,7 +62,9 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
  const recognizeStart=source.indexOf("function recognize(det){");
  const recognizeEnd=source.indexOf("\nfunction countExtendedFingers(",recognizeStart);
  assert.ok(recognizeStart>0&&recognizeEnd>recognizeStart,"Production face matcher exists");
- let time=100000,match={label:"Ada",distance:.42};
+ let time=100000;
+ const frame=(value,score=.9)=>{time+=700;return {descriptor:new Float32Array(128).fill(value),detection:{score}};};
+ let match={label:"Ada",distance:.42};
  const calls={greet:0,save:0,affection:0,birthday:0};
  const faceState={faceMatcher:{findBestMatch:()=>match},currentPerson:null,
   lastFaceConfirmedAt:0,faceMatchHistory:[],people:[
@@ -73,28 +75,48 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
    faceState,{now:()=>time},()=>{calls.save++;},{people:"people"},
    ()=>{calls.greet++;},p=>p.name,()=>{},()=>"",()=>{calls.affection++;},
    ()=>{calls.birthday++;},()=>false);
- recognize({descriptor:new Float32Array([.5])});
+ recognize(frame(.5));
  eq(faceState.currentPerson,null,"One matching frame does not grant identity");
- match={label:"Ada",distance:.41};recognize({descriptor:new Float32Array([.5])});
+ match={label:"Ada",distance:.41};recognize(frame(.5));
  eq(faceState.currentPerson,"Ada","Two strong matching frames confirm identity");
  eq(calls.greet,1,"Confirmed known face receives one greeting");
  match={label:"unknown",distance:.99};time+=100;
- recognize({descriptor:new Float32Array([.9])});
+ recognize(frame(.9));
  eq(faceState.currentPerson,null,"Unknown face immediately revokes private identity");
  eq(calls.greet,1,"Unknown face never gets a known person's greeting");
  match={label:"Ada",distance:.65};time+=100;
- recognize({descriptor:new Float32Array([.7])});
+ recognize(frame(.7));
  eq(faceState.currentPerson,null,"Poor score cannot authorize a known identity");
  match={label:"Bruno",distance:.40};time+=100;
- recognize({descriptor:new Float32Array([.4])});
+ recognize(frame(.4));
  eq(faceState.currentPerson,null,"New person requires consensus before identity switch");
- recognize({descriptor:new Float32Array([.4])});
+ recognize(frame(.4));
  eq(faceState.currentPerson,"Bruno","Second strong frame confirms new person");
  match={label:"Ada",distance:.42};time+=100;
- recognize({descriptor:new Float32Array([.4])});
+ recognize(frame(.4));
  eq(faceState.currentPerson,null,"Different visible face revokes stale identity pending consensus");
  faceState.faceMatcher=null;time+=3000;
- recognize({descriptor:new Float32Array([.3])});
+ recognize(frame(.3));
  eq(faceState.currentPerson,null,"No matcher does not fabricate identity");
+ // Adjacent inferences of a frozen frame cannot grant identity.
+ faceState.faceMatcher={findBestMatch:()=>match};faceState.faceMatchHistory=[];
+ match={label:"Ada",distance:.4};
+ const still=frame(.4);recognize(still);recognize(still);
+ eq(faceState.currentPerson,null,"Two calls at the same time are not independent evidence");
+ recognize(frame(.4));
+ eq(faceState.currentPerson,"Ada","Later independent frame completes evidence");
+ time+=3000;recognize(frame(.4));
+ eq(faceState.currentPerson,null,"An expired identity needs new consensus after a long gap");
+ recognize(frame(.4));
+ eq(faceState.currentPerson,"Ada","Fresh consensus restores an expired identity");
+ recognize(frame(.4,.3));
+ eq(faceState.currentPerson,null,"Low-confidence face cannot retain private identity");
+ for(const label of ["Ada","Bruno","Ada","Bruno","Ada"]){
+  match={label,distance:.48};recognize(frame(.4));
+ }
+ eq(faceState.currentPerson,null,"Alternating people cannot accumulate a three-of-five identity");
+ match={label:"Ada",distance:.4};recognize(frame(.4));
+ time-=10000;recognize(frame(.4));
+ eq(faceState.currentPerson,null,"Clock rollback breaks consensus");
  console.log("P04 camera face-selection privacy regression:",checks,"checks");
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -32,7 +32,7 @@ const faceapi={TinyFaceDetectorOptions:class{},detectAllFaces:()=>({
 const run=new Function("state","document","faceapi","camera","$",
  "followFace","recognize","detectEating","resetEyes","setTimeout","Date",
  detection+"\nreturn detectLoop;")(lateState,{hidden:false},faceapi,{},()=>view,
- ()=>called++,()=>called++,()=>called++,()=>called++,()=>scheduled++,{now:()=>1000});
+ ()=>called++,()=>called++,()=>called++,()=>called++,(_fn,ms)=>{if(ms===700)scheduled++;return 1;},{now:()=>1000});
 (async()=>{
  const pending=run();
  lateState.started=false;

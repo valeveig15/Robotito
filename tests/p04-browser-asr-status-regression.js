@@ -12,7 +12,7 @@ const engine=new Function("window","state","recognitionLanguage","isIOSSpeech",
  source.slice(start,end)+"return {createSpeechRecognition,startListeningCycle};");
 let checks=0;
 const eq=(a,b,label)=>{assert.equal(a,b,label);checks++;};
-function setup(lang,available=true){
+function setup(lang,available=true,onFlush=null){
  let now=10000;
  const document={hidden:false};
  const states=[],transcript={textContent:""},queued=[],flushed=[];
@@ -30,10 +30,15 @@ function setup(lang,available=true){
   ()=>1,()=>{},document,{warn:()=>{}},
   text=>String(text||"").toLowerCase().trim(),
   (left,right)=>left?left+" "+right:right,
-  ()=>flushed.push(true),{now:()=>now});
+  ()=>{flushed.push(true);onFlush?.(state);},{now:()=>now});
  return {runtime,state,states,transcript,queued,flushed,document,advance:ms=>now+=ms};
 }
 for(const lang of i18n.languages){
+ const endSwitch=setup(lang,true,state=>{state.recognition={replacement:true};});
+ endSwitch.runtime.startListeningCycle();
+ endSwitch.state.recognition._hadFinal=true;
+ endSwitch.state.recognition.onend();
+ eq(endSwitch.state.recognition.replacement,true,lang+": final language command cannot lose its replacement recognizer");
  const replay=setup(lang);
  replay.runtime.startListeningCycle();
  const final=Object.assign([{transcript:"repeat the exercise"}],{isFinal:true});
