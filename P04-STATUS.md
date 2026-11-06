@@ -37,6 +37,8 @@ El ejecutor conserva informes por motor en `test-results/p04-capture-*.json`, er
 
 `npm run test:ci` terminó correctamente en esta revisión: regresión de núcleo, tres semillas, 557 comprobaciones de navegador con cuatro tamaños de pantalla, nuevos casos de captación, matriz de estados, almacenamiento concurrente y resistencia acelerada. Los archivos de evidencia registran `physicalHardware: false`. Firefox/WebKit se verifican además en GitHub Actions del PR.
 
+La primera CI del PR #115 falló antes de las pruebas porque `ubuntu-latest` seleccionó Ubuntu 26.04, no soportado por Playwright 1.56.1. Los tres trabajos que usan navegadores se fijaron a `ubuntu-24.04`, compatible con la dependencia bloqueada en `package-lock.json`; se exige repetir la CI del commit actualizado, sin omitir suites.
+
 ## Aceptación pendiente
 
 **No cerrado al 100 %:** falta evidencia física y de precisión con personas y grabaciones autorizadas. [P04-HARDWARE-VALIDATION.md](P04-HARDWARE-VALIDATION.md) conserva H01–H16; [P04-REAL-HARDWARE-RUNNER.md](P04-REAL-HARDWARE-RUNNER.md) describe el ejecutor optativo. No se ha sustituido esa evidencia por resultados simulados.

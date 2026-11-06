@@ -18,7 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         engine: [firefox, webkit]
-    runs-on: ubuntu-latest
+    # Match the OS supported by the pinned Playwright/browser versions.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       ROBOTITO_BROWSER_ENGINE: ${{ matrix.engine }}
