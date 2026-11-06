@@ -1,79 +1,50 @@
-# Robotito — Punto 4: balance de implementación y aceptación
+# Punto 04 — Escucha, voz y rostro: captación de calidad
 
-Actualizado: 29 de octubre de 2026.
+Revisión: 5 de noviembre de 2026. Requisito: punto 04 de `Robotito_82_pedidos_completos-1.docx`.
 
-## Verificación posterior con CI (29/10/2026)
+El punto 4 corresponde a **captación y calidad de voz/rostro**. La internacionalización completa corresponde al punto 5 y los estilos de voz al 6. El nombre histórico `test:p04` incluye pruebas compartidas de esas áreas; no modifica la numeración original. El balance anterior se conserva en [P04-LANGUAGE-VOICE-HISTORY.md](P04-LANGUAGE-VOICE-HISTORY.md).
 
-Las advertencias históricas de esta página que dicen que todavía no se había ejecutado CI se refieren a la fecha de esos incrementos, **no al estado actual**. GitHub Actions confirmó:
+## Cambios de comportamiento
 
-- [CI final en `main` tras PR #91](https://github.com/valeveig15/Robotito/actions/runs/40895269669): **success**, `npm run test:ci` con regresiones de núcleo y navegador, audio, idiomas/voz y privacidad.
-- [CI de PR #91](https://github.com/valeveig15/Robotito/actions/runs/40894995211): **success**, incluyendo matriz profunda de estrés con las semillas configuradas.
-- La regresión de selección facial añadió 31 comprobaciones (una cara, varias, desconocidos, baja confianza, cambio de identidad, pestaña oculta); la batería de navegador informó 555/555 pruebas aprobadas y cuatro tamaños de pantalla.
+- Los resultados finales nativos se deduplican por índice de la sesión, no por el contenido de sus palabras. Una retransmisión vieja no repite una acción; dos fragmentos independientes conservan repeticiones legítimas como «I had had enough». «Em» en portugués no se elimina como ruido.
+- El ASR local conserva las repeticiones entre palabras y entre segmentos de audio distintos. Los cambios de idioma, pausa y detención invalidan inferencias pendientes. Un error al cargar ambos modelos permite reintentar; al detener se desconectan fuente, procesador y ganancia y se cierra su contexto de audio.
+- El botón **Detener cámara y micrófono** invalida la sesión, cancela transcripciones pendientes, cierra pistas y análisis, cancela muestras voluntarias y descarta identidades de voz/rostro. Un permiso concedido tarde se cierra sin afectar a una sesión posterior.
+- La pestaña oculta o una pista silenciada/deshabilitada pausa el procesamiento y borra evidencia previa. Una pista terminada cierra la captación y permite comenzar de nuevo. `pagehide` cierra los sentidos. Los temporizadores pendientes no pueden ejecutar órdenes ni reactivar una sesión nueva.
+- La grabación de clase también se detiene al pausar/cerrar los sentidos. Sus pistas clonadas se cierran antes de esperar al guardado; se conservan los bytes ya grabados. Al regresar se puede seguir transcribiendo, pero iniciar otra grabación de audio de clase exige volver a activar Modo Clase.
+- El reconocimiento facial necesita descriptores válidos, confianza de detección y consenso temporal de la misma persona. Rostros alternados, resultados inciertos, errores y muestras demasiado próximas no acumulan una identidad. Una cámara congelada no cuenta como un fotograma nuevo.
+- Una inferencia lenta retira la identidad a los 2,5 segundos y su resultado ya no autoriza identidad; a los 10 segundos sin terminar se detienen los sentidos para permitir un reintento explícito. Los resultados de sesiones/intervalos anteriores y los gestos de manos anteriores se descartan.
+- El registro de rostro/voz comprueba continuamente la sesión y el consentimiento, incluso si se revoca y vuelve a marcar. No guarda muestras de una sesión reemplazada, de cámara congelada o de descriptor inválido. Una interrupción descarta lo no guardado.
+- Los avisos nuevos están en los seis idiomas. «Chocar los cinco» permanece en controles, órdenes y animaciones.
 
-**Instrumento físico:** [`p04-device-check.html`](p04-device-check.html) incluye vista previa de cámara, medidor de micrófono, voces del sistema y transcripción ASR manual por idioma. [`P04-HARDWARE-VALIDATION.md`](P04-HARDWARE-VALIDATION.md) define H01–H16 para pruebas en equipos físicos, con consentimiento y resultados PASS/FAIL/BLOCKED/NOT RUN. Los tests automatizados usan dispositivos simulados y **no sustituyen** un micrófono o cámara reales.
+Los umbrales de confianza y tiempo son **límites de ingeniería provisionales**, no una calibración biométrica ni una garantía de identificación correcta en equipos lentos.
 
-**Pendiente de aceptación final:** resultados de H01–H16 ejecutados en dispositivos físicos representativos, además de completar cadenas dinámicas históricas aún no localizadas. No declarar el punto 4 al 100 % solo por una CI verde.
+## Evidencia reproducible
 
+| Comando o prueba | Qué comprueba | Alcance |
+| --- | --- | --- |
+| `npm run test:p04` | ASR, transcripciones, síntesis, consentimiento, identidad y cancelación | Datos/modelos simulados y funciones de producción |
+| `tests/p04-local-asr-lifecycle-regression.js` | Cierre de recursos, fallo de modelos, reintento y cargas antiguas | 19 comprobaciones; no ejecuta Whisper real |
+| `tests/p04-capture-temporal-regression.js` | Congelación, errores, inferencias atrasadas/reemplazadas y watchdog | 15 comprobaciones con reloj/modelo controlados |
+| `tests/p04-enrollment-capture-regression.js` | Captura válida y cancelada de muestras de rostro/voz | 26 comprobaciones sintéticas |
+| `tests/p04-class-audio-cancellation-regression.js` | Cancelación durante permisos y cierre inmediato de pistas clonadas | 5 comprobaciones sintéticas |
+| `npm run test:p04:browser` | Diagnóstico y aplicación completa; permisos, pausa, pérdidas, reintento, palabras y gestos viejos | Motor real; permisos, pistas, ASR y modelos simulados |
+| `npm run test:ci` | Regresión histórica, tres semillas, contexto, audio, memoria, interfaz y nuevos casos | Chromium y lógica local; no hardware físico |
+| Workflow `cross-browser.yml` | Matriz de UI, almacenamiento, diálogo y `test:p04:browser` | Firefox/WebKit reales en CI; multimedia simulada |
 
+El ejecutor conserva informes por motor en `test-results/p04-capture-*.json`, errores y trazas cuando corresponde. GitHub Actions conserva evidencia durante 14 días. El resultado final de integración se consulta en el PR y en Actions del mismo commit; una suite añadida no se considera ejecutada solo por figurar en esta tabla.
 
-## Implementado y enviado a GitHub
-- Arranque y mensajes de cámara/micrófono en español, inglés, portugués, francés, italiano y alemán.
-- Selector de 50 avatares con nombres en seis idiomas; conservación de «¡Chocar los cinco!».
-- Controles y mensajes prioritarios de Modo Clase, tareas, biblioteca, memoria y privacidad localizados. Se reemplazó «Gravedad» por «Tono».
-- Plantillas numéricas en los seis idiomas para tareas, personas, clases, libros, fechas, cumpleaños, recuerdos y alimentación, sin acceso a servicios externos. Se ampliaron respuestas fijas de hambre, ánimo, reconocimiento de voz, estudios, biblioteca, identidad y capacidades en seis idiomas, con equivalencias españolas para respuestas de origen inglés.
-- Instrucciones de registro de cara y voz traducidas a seis idiomas; corregida la clasificación italiana para evitar bloqueos de voz.
-- Pruebas añadidas al recorrido de Chromium para verificar la interfaz, plantillas y precedencia de cambios temporales de idioma.
-- Diez estilos de síntesis mediante los motores instalados del sistema (no son diez voces humanas garantizadas ni clonación).
-- La voz elegida debe corresponder al idioma; si el navegador solo ofrece voces extranjeras, la respuesta permanece escrita.
-- Cambios explícitos de idioma por selector, texto o voz; protección contra órdenes negadas y citas; modos persistente, sesión y una respuesta. Cualquier cambio manual, permanente o de sesión cancela un idioma pendiente de una sola respuesta.
-- El reconocimiento móvil descarta resultados pendientes cuando se cambia de idioma, pausa o detiene la escucha.
-- Traducción de frases locales comunes y motor Translator/LanguageModel en el navegador si está disponible. No se envía contenido a servicios externos de traducción sin autorización.
-- Grabación voluntaria de voz con consentimiento explícito, cancelación de permisos retrasados, retirada del consentimiento, cierre de micrófonos y borrado local de muestras.
+## Verificación local final
 
-## Evidencias ejecutadas
-- Regresión P04 de voces, traducción, interfaz, instrucciones y respuestas dinámicas: **1.770 comprobaciones aisladas**.
-- Captura privada de muestras y cancelación por consentimiento: **16 comprobaciones aisladas**.
-- ASR y cambios de sesión: **8 comprobaciones aisladas**.
-- Cambios de idioma persistentes, por sesión y por una respuesta: **27 comprobaciones aisladas**.
-- Órdenes «decime algo en…» en seis idiomas: **21 comprobaciones aisladas**.
-- Descarte de traducciones atrasadas después de cambios de idioma: **12 comprobaciones aisladas**.
-- Diagnóstico manual de voces y micrófono, comprobado con mocks: **30 comprobaciones aisladas**.
-- Manejador real de síntesis probado con voces sintéticas del sistema: **68 comprobaciones aisladas**.
-- Reconocimiento de voz nativo del navegador (eventos de escucha, errores, reconexión y permisos en seis idiomas): **85 comprobaciones aisladas**.
-- Almacenamiento atómico de muestras privadas y borrado de blobs antiguos: **19 comprobaciones aisladas**.
-- Regresiones anteriores de planificador, audio y pruebas generativas: **74.713 comprobaciones aisladas** (3 semillas).
-- **Total de estas ejecuciones:** **76.769 comprobaciones aisladas**. Sin fallos en los casos ejecutados.
+`npm run test:ci` terminó correctamente en esta revisión: regresión de núcleo, tres semillas, 557 comprobaciones de navegador con cuatro tamaños de pantalla, nuevos casos de captación, matriz de estados, almacenamiento concurrente y resistencia acelerada. Los archivos de evidencia registran `physicalHardware: false`. Firefox/WebKit se verifican además en GitHub Actions del PR.
 
-No representan un `npm run test:ci` completo ejecutado en GitHub Actions ni una certificación de compatibilidad/precisión con micrófonos físicos o voces del sistema.
+La primera CI del PR #115 falló antes de las pruebas porque `ubuntu-latest` seleccionó Ubuntu 26.04, no soportado por Playwright 1.56.1. Los tres trabajos que usan navegadores se fijaron a `ubuntu-24.04`, compatible con la dependencia bloqueada en `package-lock.json`; se exige repetir la CI del commit actualizado, sin omitir suites.
 
-## Ampliación de localización ASR nativa
+## Aceptación pendiente
 
-Se localizó el ciclo real de reconocimiento de voz proporcionado por `SpeechRecognition` / `webkitSpeechRecognition` para español, inglés, portugués, francés, italiano y alemán: escuchando, voz detectada, micrófono bloqueado, ayuda de permisos, recuperación de micrófono, recuperación general, reconexión, inicio y navegador sin soporte. Se probó el manejador de eventos directamente con un reconocimiento simulado y se validó que usa `recognitionLanguage()` según el idioma. También se bloquearon órdenes negativas como «No quiero hablar en inglés» y «Je ne veux pas parler français», sin anular correcciones posteriores explícitas como «No quiero inglés, quiero italiano».
+**No cerrado al 100 %:** falta evidencia física y de precisión con personas y grabaciones autorizadas. [P04-HARDWARE-VALIDATION.md](P04-HARDWARE-VALIDATION.md) conserva H01–H16; [P04-REAL-HARDWARE-RUNNER.md](P04-REAL-HARDWARE-RUNNER.md) describe el ejecutor optativo. No se ha sustituido esa evidencia por resultados simulados.
 
-## Integridad del almacenamiento de muestras de voz
-
-Se reemplazó la escritura en dos pasos por `ROBOTITO_STORE.putRecordWithBlob`, que usa una única transacción `readwrite` sobre `records` y `blobs`; si una operación falla, IndexedDB revierte ambas. El botón de eliminación borra el registro vinculado y también el identificador de blob conocido, incluso si alguna versión anterior dejó audio sin metadatos. La regresión `tests/p04-voice-atomic-storage-regression.js` verifica las llamadas y el consentimiento mediante simulaciones. Se añadió a `tests/browser-regression.js` una comprobación del ciclo real de IndexedDB en Chromium, aún pendiente de ejecución verificada.
-
-## Diagnóstico manual de dispositivos
-
-El archivo [p04-device-check.html](p04-device-check.html) permite verificar manualmente las voces instaladas, escuchar una muestra por idioma y comprobar el micrófono con permiso explícito. No graba ni almacena audio; apaga las pistas al detener la prueba o al salir. Su prueba estática y de interacciones simuladas integra `npm run test:p04`. Una prueba independiente de Chromium (`npm run test:p04:browser`) se agregó a `npm run test:ci`, pero todavía **no está verificada como ejecutada** en este entorno. Las pruebas de audio reales en dispositivos siguen siendo necesarias.
-
-Se corrigieron además las frases «decime algo en francés/italiano/alemán», la pérdida de coherencia por traducciones asíncronas atrasadas y el uso de voces del idioma incorrecto cuando `getVoices()` todavía está vacío. También se evita un fallo si el navegador expone `speechSynthesis` pero su motor no está inicializado. El estado de síntesis «respondiendo» quedó localizado.
-
-## Aceptación que sigue pendiente
-
-1. Revisar y completar TODAS las cadenas dinámicas históricas que aún están escritas en español, especialmente respuestas extensas de clases, ejercicios y libros, más textos no cubiertos de interfaz.
-2. Probar `npm run test:ci`, `npm run test:browser` y la matriz de estrés del punto 4 en un entorno Chromium real y verificar el resultado de GitHub Actions del commit final.
-3. Probar en dispositivos reales selección de voz, síntesis, reconocimiento, pausas y cambios persistente/sesión/una respuesta en los seis idiomas, incluyendo permisos e interrupciones.
-4. Probar rendimiento y disponibilidad real de modelos locales de traducción/ASR. Cuando no existan, informar con claridad el límite en vez de pronunciar texto no traducido.
-5. Auditar consentimiento, eliminación de muestras, funcionamiento sin conexión y accesibilidad en dispositivos físicos.
-
-**Estado:** implementación extensa integrada y comprobada de forma aislada; certificación exhaustiva del punto 4 **no completada**. La suite de Chromium está integrada en CI pero no verificada desde esta sesión. No se han ejecutado pruebas físicas de micrófono o sintetizador reales. No presentar el punto 5 como iniciado mientras este bloqueo permanezca.
-
-### Recuperación de fallos de traducción
-
-La promesa de localización asíncrona ahora cuenta con recuperación ante rechazo, evitando dejar «Preparando…» indefinidamente. Esta protección requiere todavía un ensayo en navegador real; la integración CI no se certifica desde las pruebas aisladas.
-
-### Prueba de rechazo de traducción (29/10)
-
-`tests/p04-localization-race-regression.js` ahora simula una promesa que rechaza explícitamente, verifica que se muestre un mensaje de error localizado y que un rechazo tardío no restaure contenido luego de cambiar el idioma. **15 comprobaciones aisladas aprobadas** para esa regresión. El cambio está integrado en el código de GitHub; la validación en Chromium y dispositivos físicos continúa pendiente.
+1. Ejecutar permisos, desconexión, cámara lenta, ocultación, apagado de pantalla y recuperación en Android, iPhone y equipos de escritorio representativos.
+2. Medir errores de palabras/transcripción y latencia por idioma, dispositivo, ruido y tipo de micrófono con muestras autorizadas e independientes de las de ajuste.
+3. Medir falsos reconocimientos, rechazos y abstenciones con personas diferentes y parecidas, varias caras, movimiento e iluminación adversa; ajustar umbrales según resultados.
+4. Verificar Whisper/modelos, síntesis y disponibilidad sin red en esos equipos. Los tests de ciclo de vida no certifican calidad de esos modelos.
+5. Completar las auditorías separadas de traducción dinámica y voces de los puntos 5 y 6, conservando las seis áreas de [pendientes permanentes](PENDIENTES-PERMANENTES.md).

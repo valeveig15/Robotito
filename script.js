@@ -117,7 +117,6 @@ const state = {
   handNearMouthDistance: 1,
   handNearMouthSince: 0,
   mouthHistory: [],
-  handsBusy: false,
   visibleFingers: 0,
   visibleHands: 0,
   lastHandSeenAt: 0,
@@ -328,7 +327,7 @@ function discardRecognition(){
   pendingRecognitionMeta=null;
 }
 function restartRecognitionAfterSpeech(){
-  if(!state.started||state.speechBlocked||!state.recognitionWanted)return;
+  if(!state.started||state.speechBlocked||document.hidden||state.captureSuspended||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
   
   setListenState(state.languageMode==="en"?"reconnecting…":state.languageMode==="pt"?"reconectando…":"reconectando…");
@@ -444,6 +443,7 @@ function speakResponse(text,forcedLang=null){
   const chosen=selectedMatches?selected:
     window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,preferredVoiceURI)||chooseDefaultVoice(voices,lang);
   if(!chosen)return false;
+  const speechSession=state.speechSession=(state.speechSession||0)+1;
   speechSynthesis.cancel();
   state.recentVoicePrints=[];
   state.speaking=true;
@@ -463,9 +463,11 @@ function speakResponse(text,forcedLang=null){
     utter.volume=.92;
   }
   const done=()=>{
+    if(state.speechSession!==speechSession)return;
     state.speaking=false;
+    const epoch=state.captureEpoch;
     if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
-      setTimeout(()=>window.RobotitoLocalASR.pause(false),320);
+      setTimeout(()=>{if(state.started&&state.captureEpoch===epoch&&!document.hidden&&!state.captureSuspended&&!state.speaking&&!state.enrollmentActive)window.RobotitoLocalASR.pause(false);},320);
     }else{
       restartRecognitionAfterSpeech();
     }
@@ -985,6 +987,85 @@ function primeMobileSpeechFromGesture(){
   });
 }
 
+function clearCaptureIdentity(){
+  state.currentPerson=null;state.currentVoicePerson=null;
+  state.faceMatchHistory=[];state.lastFaceConfirmedAt=0;
+  state.lastDetections=[];state.recentVoicePrints=[];state.recentAudioFeatures=[];
+  state.visibleHands=0;state.visibleFingers=0;state.handNearMouth=false;
+  state.handNearMouthDistance=1;state.handNearMouthSince=0;state.lastHandSeenAt=0;
+  state.audioLevel=0;
+  state.mouthHistory=[];state.lastFaceMediaTime=null;
+  resetEyes();
+}
+function stopSenses(reason="captureStopped"){
+  state.started=false;
+  state.captureEpoch=(state.captureEpoch||0)+1;
+  state.captureRevision=(state.captureRevision||0)+1;
+  state.captureSuspended=false;
+  state.captureReady=false;
+  state.speechSession=(state.speechSession||0)+1;
+  window.speechSynthesis?.cancel?.();state.speaking=false;
+  clearTimeout(state.speechRestartTimer);clearTimeout(state.faceLoopTimer);
+  state.captureCleanup?.();state.captureCleanup=null;
+  state.handsCleanup?.();state.handsCleanup=null;
+  discardRecognition();
+  window.RobotitoLocalASR?.stop();
+  void window.ROBOTITO_CLASS_AUDIO?.stop?.();
+  state.cancelVoiceSample?.();
+  if($("#personEnrollmentConsent"))$("#personEnrollmentConsent").checked=false;
+  state.audioCleanup?.();state.audioCleanup=null;
+  try{Promise.resolve(state.audioContext?.close?.()).catch(()=>{});}catch{}
+  state.audioContext=null;
+  const stream=state.stream;state.stream=null;
+  stream?.getTracks?.().forEach(track=>track.stop());
+  camera.pause?.();camera.srcObject=null;
+  clearCaptureIdentity();
+  state.recognitionWanted=false;
+  $("#startBtn").disabled=false;
+  $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",state.languageMode);
+  if($("#stopSensesBtn"))$("#stopSensesBtn").disabled=true;
+  const message=window.ROBOTITO_I18N.t(reason,state.languageMode);
+  $("#systemStatus").textContent=message;setListenState(message);
+}
+function reconcileCaptureState(){
+  if(!state.started)return;
+  const tracks=state.stream?.getTracks?.()||[];
+  if(!tracks.length){if(document.hidden)stopSenses("capturePaused");return;}
+  if(tracks.some(t=>t.readyState==="ended")){stopSenses("captureDisconnected");return;}
+  const suspended=document.hidden||tracks.some(t=>t.muted||t.enabled===false);
+  if(suspended===!!state.captureSuspended)return;
+  state.captureSuspended=suspended;
+  state.captureRevision=(state.captureRevision||0)+1;
+  clearCaptureIdentity();
+  if($("#personEnrollmentConsent"))$("#personEnrollmentConsent").checked=false;
+  clearTimeout(state.speechRestartTimer);
+  if(suspended){
+    discardRecognition();
+    window.RobotitoLocalASR?.pause(true);
+    void window.ROBOTITO_CLASS_AUDIO?.stop?.();
+    try{Promise.resolve(state.audioContext?.suspend?.()).catch(()=>{});}catch{}
+    setListenState(window.ROBOTITO_I18N.t("capturePaused",state.languageMode));
+  }else{
+    if(!state.captureReady)return;
+    try{Promise.resolve(state.audioContext?.resume?.()).catch(()=>{});}catch{}
+    if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.pause(state.speaking);
+    else if(!state.speaking)startListeningCycle(false);
+  }
+}
+function watchCaptureStream(stream){
+  state.captureCleanup?.();
+  const update=()=>{if(state.stream===stream)reconcileCaptureState();};
+  for(const track of stream.getTracks())
+    for(const name of ["ended","mute","unmute"])track.addEventListener(name,update);
+  // stop() and changes to enabled do not emit an ended/mute event.
+  const timer=setInterval(update,500);
+  state.captureCleanup=()=>{
+    clearInterval(timer);
+    for(const track of stream.getTracks())
+      for(const name of ["ended","mute","unmute"])track.removeEventListener(name,update);
+  };
+}
+
 async function startSenses(){
   if(state.started)return;
   if(!window.ROBOTITO_I18N?.supported?.(state.languageMode)){
@@ -995,13 +1076,20 @@ async function startSenses(){
   const startupText=key=>window.ROBOTITO_I18N?.t?.(key,state.languageMode)||key;
   const mobile=isMobileSpeech();
   state.started=true;
+  const epoch=state.captureEpoch=(state.captureEpoch||0)+1;
+  state.captureRevision=(state.captureRevision||0)+1;
+  state.captureSuspended=false;clearCaptureIdentity();
+  state.captureReady=false;
+  const current=()=>state.started&&state.captureEpoch===epoch;
+  $("#startBtn").disabled=true;
+  if($("#stopSensesBtn"))$("#stopSensesBtn").disabled=false;
 
   // Prime the local audio engine synchronously from the initial user gesture.
   if(mobile){
     try{
       window.RobotitoLocalASR?.prime(
         state.languageMode,
-        (text,kind)=>setListenState(text,kind)
+        (text,kind)=>{if(current()&&!document.hidden&&!state.captureSuspended)setListenState(text,kind);}
       );
     }catch(e){console.warn("local ASR prime",e);}
   }
@@ -1009,13 +1097,26 @@ async function startSenses(){
   $("#systemStatus").textContent=startupText(mobile?"startupRequestingMedia":"startupPermissions");
 
   try{
-    state.stream=await navigator.mediaDevices.getUserMedia({
+    const granted=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},
       audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}
     });
-
+    if(!current()||document.hidden){
+      granted.getTracks().forEach(t=>t.stop());
+      if(current())stopSenses("capturePaused");
+      return;
+    }
+    state.stream=granted;
+    watchCaptureStream(granted);
     camera.srcObject=state.stream;
     await camera.play();
+    if(!current())return;
+    // Visibility or track loss can interrupt play() before it resolves.
+    // A fresh start is safer than activating only half of an old session.
+    if(document.hidden||state.captureSuspended||granted.getTracks().some(t=>t.readyState==="ended")){
+      stopSenses("capturePaused");return;
+    }
+    state.captureReady=true;
 
     // Keep audio analysis/voice-print learning on the same shared stream.
     setupAudio(state.stream);
@@ -1036,17 +1137,22 @@ async function startSenses(){
         stream:state.stream,
         lang:state.languageMode,
         onTranscript:(text,meta)=>{
+          if(!current()||document.hidden||state.captureSuspended||state.speaking)return;
+          if((state.stream?.getTracks?.()||[]).some(t=>t.readyState==="ended"||t.muted||t.enabled===false))return;
           updateDetectedLanguage(text);
           processSpeechResult(text,meta);
         },
-        statusCallback:(text,kind)=>setListenState(text,kind)
-      }).then(()=>{
+        statusCallback:(text,kind)=>{if(current()&&!state.captureSuspended)setListenState(text,kind);}
+      }).then(ready=>{
+        if(!ready||!current()||state.captureSuspended)return;
         $("#systemStatus").textContent=startupText("startupListening");
       }).catch(err=>{
+        if(!current())return;
         console.warn("local ASR",err);
+        state.recognitionWanted=true;
+        if(document.hidden||state.captureSuspended)return;
         $("#systemStatus").textContent=startupText("startupSpeechFailed");
         // Desktop-style Web Speech remains a last automatic fallback if available.
-        state.recognitionWanted=true;
         startListeningCycle(false);
       });
     }else{
@@ -1059,19 +1165,19 @@ async function startSenses(){
 
     // Vision loads after audio has already begun.
     loadFaceModels().then(()=>{
+      if(!current())return;
       setupHands();
       detectLoop();
-    }).catch(err=>console.warn("face models",err));
+    }).catch(err=>{
+      console.warn("face models",err);
+      if(current())$("#seenLabel").textContent=startupText("captureVisionUnavailable");
+    });
 
     say(startupText("startupAwake"),3200,state.languageMode);
   }catch(err){
+    if(!current())return;
     console.error(err);
-    state.stream?.getTracks?.().forEach(t=>t.stop());
-    state.stream=null;
-    try{window.RobotitoLocalASR?.stop();}catch{}
-    state.started=false;
-    discardRecognition();
-    $("#systemStatus").textContent=startupText("startupMediaFailed");
+    stopSenses("startupMediaFailed");
     toast(startupText("startupAllowMedia"));
   }
 }
@@ -1245,14 +1351,14 @@ function setupAudio(stream){
       // Stream permissions can be revoked without stopping the Robotito UI.
       // Drop the PCM and all cached evidence before a stale buffer can count.
       if(!microphoneGate?.isLive()){soundModel?.clearAudio();return;}
-      if(state.speaking||state.classMode||state.sleeping||document.hidden)
+      if(state.speaking||state.classMode||state.sleeping||document.hidden||state.captureSuspended)
         soundModel.clearAudio();
       else soundModel.pushPCM(samples,rate);
     };
     const allowedToCapture=()=>state.started&&state.audioContext===ctx&&
       microphoneGate?.isLive()&&soundModelToggle?.checked&&
       soundModel?.getStatus().state==="ready"&&!state.speaking&&
-      !state.classMode&&!state.sleeping&&!document.hidden;
+      !state.classMode&&!state.sleeping&&!document.hidden&&!state.captureSuspended;
     // This is used only if AudioWorklet is absent or cannot initialize.
     // Unlike polling AnalyserNode, ScriptProcessor delivers ordered,
     // non-overlapping PCM blocks (where the deprecated API is supported).
@@ -1388,7 +1494,7 @@ function setupAudio(stream){
       onEvent:event=>{
         const now=Date.now();
         const suppressed=state.classMode||state.sleeping||state.speaking||
-          document.hidden||!microphoneGate?.isLive();
+          document.hidden||state.captureSuspended||!microphoneGate?.isLive();
         const reaction=reactionPolicy?.decide?.(event,{now,suppressed});
         if(!reaction){
           reactionTrial?.observeEvent(event.kind,{suppressed});
@@ -1425,18 +1531,22 @@ function setupAudio(stream){
         reactionTrial?.observeEvent(event.kind,{action:reaction.action});
       }
     });
+    let closed=false;
+    const cleanup=()=>{
+      if(closed)return;closed=true;
+      stopContinuousCapture();soundModel?.disable();
+      soundModelToggle?.removeEventListener("change",handleSoundModelToggle);
+      document.removeEventListener("visibilitychange",clearModelOnHidden);
+      microphoneGate?.dispose();
+      try{src.disconnect();analyser.disconnect();ctx.close().catch(()=>{});}catch{}
+    };
+    state.audioCleanup=cleanup;
     let lastTick=0,prevSpectrum=null;
     const tick=(at=0)=>{
-      if(!state.started||state.audioContext!==ctx){
-        stopContinuousCapture();
-        soundModel?.disable();
-        soundModelToggle?.removeEventListener("change",handleSoundModelToggle);
-        document.removeEventListener("visibilitychange",clearModelOnHidden);
-        microphoneGate?.dispose();
-        try{src.disconnect();analyser.disconnect();ctx.close();}catch{}
-        return;
-      }
+      if(closed)return;
+      if(!state.started||state.audioContext!==ctx){cleanup();return;}
       requestAnimationFrame(tick);
+      if(document.hidden||state.captureSuspended){soundModel?.clearAudio();return;}
       if(at-lastTick<45)return;
       lastTick=at;
       if(microphoneGate?.status()==="ended")captureMicUnavailable();
@@ -1500,8 +1610,6 @@ let recognitionCommitTimer=null;
 function cleanRecognitionTranscript(input){
   return String(input||"")
     .replace(/\s+/g," ")
-    .replace(/(^|\s)([a-záéíóúüñ]+)(?:\s+\2)(?=\s|$)/gi,"$1$2")
-    .replace(/\b(?:eh|em|mmm|uh)\b(?:\s+\b(?:eh|em|mmm|uh)\b)*/gi," ")
     .replace(/\s+([,.;!?])/g,"$1")
     .trim();
 }
@@ -1530,16 +1638,20 @@ function flushRecognitionChunks(){
   const meta=pendingRecognitionMeta;
   pendingRecognitionText="";
   pendingRecognitionMeta=null;
+  if(!state.started||document.hidden||state.captureSuspended||state.speaking||state.speechBlocked||
+     (state.stream?.getTracks?.()||[]).some(t=>t.readyState==="ended"||t.muted||t.enabled===false))return;
   if(text){
     updateDetectedLanguage(text);
     processSpeechResult(text,meta);
   }
 }
 
-function queueRecognitionChunk(text,meta=null){
+function queueRecognitionChunk(text,meta=null,{independent=false}={}){
   const clean=cleanRecognitionTranscript(text);
   if(!clean)return;
-  pendingRecognitionText=mergeRecognitionChunks(pendingRecognitionText,clean);
+  pendingRecognitionText=independent
+    ?cleanRecognitionTranscript(pendingRecognitionText+" "+clean)
+    :mergeRecognitionChunks(pendingRecognitionText,clean);
   pendingRecognitionMeta=pendingRecognitionMeta||meta;
   $("#transcript").textContent=pendingRecognitionText+" …";
   clearTimeout(recognitionCommitTimer);
@@ -1625,23 +1737,27 @@ function createSpeechRecognition(){
   r.continuous=!isIOSSpeech();
   r.interimResults=true;
   r.maxAlternatives=5;
+  const current=()=>state.recognition===r&&state.started&&!document.hidden&&
+    !state.captureSuspended&&!state.speechBlocked&&!state.speaking;
 
   r.onstart=()=>{
+    if(!current())return;
     state.lastSpeechStartAt=Date.now();
     state.speechRetryCount=0;
     setListenState(asrMessage("asrListening"),"listening");
     
   };
 
-  r.onspeechstart=()=>setListenState(asrMessage("asrHeard"),"listening");
-  r.onspeechend=()=>{if(isMobileSpeech())setListenState(asrMessage("asrListening"),"listening");};
+  r.onspeechstart=()=>{if(current())setListenState(asrMessage("asrHeard"),"listening");};
+  r.onspeechend=()=>{if(current()&&isMobileSpeech())setListenState(asrMessage("asrListening"),"listening");};
 
-  const emittedFinals=new Map();
+  // Final indexes are immutable for this native recognition session. Keep a
+  // bounded cursor, not a time-based text cache that can replay old commands.
+  let lastFinalIndex=-1;
   r.onresult=ev=>{
-    if(state.recognition!==r||!state.started||state.speechBlocked)return;
+    if(!current())return;
     let finalText="";
     let interim="";
-    const now=Date.now();
     for(let i=Math.max(0,ev.resultIndex||0);i<ev.results.length;i++){
       const result=ev.results[i];
       const best=chooseSpeechAlternative(result);
@@ -1650,20 +1766,19 @@ function createSpeechRecognition(){
       if(result.isFinal){
         // Some native ASR engines resend unchanged final indexes. Replaying
         // them can execute the same command twice, even after debouncing.
-        const normalized=normalizeText(text);
-        const last=emittedFinals.get(i);
-        if(last&&last.text===normalized&&now-last.at<4000)continue;
-        emittedFinals.set(i,{text:normalized,at:now});
-        finalText=mergeRecognitionChunks(finalText,text);
+        if(i<=lastFinalIndex)continue;
+        lastFinalIndex=i;
+        finalText+=(finalText?" ":"")+text;
       }else{
         interim+=(interim?" ":"")+text;
       }
     }
     if(interim)$("#transcript").textContent=interim+" …";
-    if(finalText){r._hadFinal=true;queueRecognitionChunk(finalText);}
+    if(finalText){r._hadFinal=true;queueRecognitionChunk(finalText,null,{independent:true});}
   };
 
   r.onerror=e=>{
+    if(state.recognition!==r||!state.started)return;
     console.warn("speech",e.error);
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){
       state.speechBlocked=true;
@@ -1687,9 +1802,11 @@ function createSpeechRecognition(){
   r.onend=()=>{
     // Stale recognizers must not restart listening or commit old commands.
     if(state.recognition!==r)return;
+    if(!current()){discardRecognition();return;}
     // Commit the final words on a natural end instead of waiting for the
     // debounce timer. This also prevents a restart from dropping them.
     if(r._hadFinal)flushRecognitionChunks();
+    if(state.recognition!==r)return;
     state.recognition=null;
     if(!state.started||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
     state.speechRetryCount=Math.min(8,state.speechRetryCount+1);
@@ -1702,7 +1819,7 @@ function createSpeechRecognition(){
 }
 
 function startListeningCycle(userGesture=false){
-  if(!state.started||state.speaking||!state.recognitionWanted)return;
+  if(!state.started||document.hidden||state.captureSuspended||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
@@ -4155,12 +4272,35 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
 
 async function detectLoop(){
   if(!state.started)return;
-  if(document.hidden){setTimeout(detectLoop,2200);return;}
+  const epoch=state.captureEpoch,revision=state.captureRevision;
+  clearTimeout(state.faceLoopTimer);
+  const current=()=>state.started&&state.captureEpoch===epoch;
+  const schedule=()=>{if(current())state.faceLoopTimer=setTimeout(detectLoop,700);};
+  const revoke=()=>{state.currentPerson=null;state.faceMatchHistory=[];
+    state.lastFaceConfirmedAt=0;state.lastDetections=[];resetEyes();};
+  if(document.hidden||state.captureSuspended){schedule();return;}
+  if(state.faceInferencePending&&state.faceInferencePending.epoch===epoch)return;
+  const frame=camera.currentTime;
+  if((Number.isFinite(camera.readyState)&&camera.readyState<2)||
+     (Number.isFinite(frame)&&frame===state.lastFaceMediaTime)){
+    if(Date.now()-state.lastFaceConfirmedAt>2500)revoke();
+    schedule();return;
+  }
+  state.lastFaceMediaTime=Number.isFinite(frame)?frame:null;
+  const job={epoch},began=Date.now();state.faceInferencePending=job;
+  const watchdog=setTimeout(()=>{
+    if(current()&&state.faceInferencePending===job)revoke();
+  },2500);
+  const deadline=setTimeout(()=>{
+    if(current()&&state.faceInferencePending===job)stopSenses("captureVisionTimeout");
+  },10000);
   try{
     const dets=await faceapi.detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.45}))
       .withFaceLandmarks().withFaceDescriptors();
-    // A slow camera/model response must not act after the session was stopped.
-    if(!state.started||document.hidden)return;
+    if(!current()||document.hidden||state.captureSuspended||state.captureRevision!==revision)return;
+    const elapsed=Date.now()-began;
+    state.lastFaceInferenceMs=elapsed;
+    if(elapsed<0||elapsed>2500||!Array.isArray(dets)){revoke();return;}
     state.lastDetections=dets;
     if(dets.length===1){
       state.lastSeenAt=Date.now();
@@ -4170,18 +4310,20 @@ async function detectLoop(){
       detectEating(dets[0]);
     }else{
       $("#seenLabel").textContent=dets.length?dets.length+" personas":"a nadie";
-      if(dets.length>1){
-        // A crowded frame cannot authorize a person's private context.
-        state.currentPerson=null;
-        state.faceMatchHistory=[];
-        state.lastFaceConfirmedAt=0;
-      }else if(Date.now()-state.lastFaceConfirmedAt>2600){
-        state.currentPerson=null;
-      }
-      resetEyes();
+      // Missing/crowded frames break consensus even during a brief dropout.
+      // A previously confirmed face can last 2.5 s, but cannot be renewed by
+      // an empty or frozen camera image.
+      state.faceMatchHistory=[];
+      if(dets.length>1||Date.now()-state.lastFaceConfirmedAt>2500)revoke();
+      else resetEyes();
     }
-  }catch(e){console.warn("vision",e);}
-  setTimeout(detectLoop,700);
+  }catch(e){if(current())revoke();console.warn("vision",e);}
+  finally{
+    clearTimeout(watchdog);
+    clearTimeout(deadline);
+    if(state.faceInferencePending===job)state.faceInferencePending=null;
+    schedule();
+  }
 }
 
 function buildMatcher(){
@@ -4342,8 +4484,14 @@ function competingFaceTooClose(descriptor,matchedLabel,matchedDistance){
 }
 function recognize(det){
   const now=Date.now();
+  if(now-state.lastFaceConfirmedAt>2500||now<state.lastFaceConfirmedAt)state.currentPerson=null;
+  const descriptor=det?.descriptor,confidence=det?.detection?.score;
+  if(!descriptor||descriptor.length!==128||!Array.from(descriptor).every(Number.isFinite)||
+     !Number.isFinite(confidence)||confidence<.65||confidence>1){
+    state.currentPerson=null;state.faceMatchHistory=[];state.lastFaceConfirmedAt=0;return;
+  }
   if(!state.faceMatcher){
-    if(now-state.lastFaceConfirmedAt>2500)state.currentPerson=null;
+    state.currentPerson=null;state.faceMatchHistory=[];state.lastFaceConfirmedAt=0;
     return;
   }
 
@@ -4352,6 +4500,10 @@ function recognize(det){
     && best.distance>=0 && best.distance<=.50
     && !competingFaceTooClose(det.descriptor,best.label,best.distance);
 
+  const previous=state.faceMatchHistory.at(-1);
+  if(previous&&(previous.label!==best.label||now-previous.t>2500||now<previous.t)){
+    state.faceMatchHistory=[];
+  }else if(known&&previous&&now-previous.t<150)return;
   state.faceMatchHistory.push({
     label:known?best.label:"unknown",
     distance:known?best.distance:1,
@@ -4363,6 +4515,7 @@ function recognize(det){
     // An unknown visible face must not inherit another person's private context.
     state.currentPerson=null;
     state.faceMatchHistory=[];
+    state.lastFaceConfirmedAt=0;
     return;
   }
 
@@ -4421,10 +4574,19 @@ function countExtendedFingers(hand, handedness){
 function setupHands(){
   try{
     if(typeof Hands==="undefined")return;
+    state.handsCleanup?.();
+    const epoch=state.captureEpoch;
+    let closed=false,timer=null,pendingRevision=null;
     const hands=new Hands({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    state.handsCleanup=()=>{
+      closed=true;clearTimeout(timer);
+      try{Promise.resolve(hands.close?.()).catch(()=>{});}catch{}
+    };
     hands.setOptions({maxNumHands:4,modelComplexity:0,minDetectionConfidence:.58,minTrackingConfidence:.52});
 
     hands.onResults(results=>{
+      if(closed||!state.started||state.captureEpoch!==epoch||document.hidden||
+         state.captureSuspended||pendingRevision!==state.captureRevision)return;
       const landmarks=results.multiHandLandmarks||[];
       state.visibleHands=landmarks.length;
 
@@ -4464,11 +4626,11 @@ function setupHands(){
     });
 
     const loop=async()=>{
-      if(!state.started||state.handsBusy||document.hidden){setTimeout(loop,450);return;}
-      state.handsBusy=true;
+      if(closed||!state.started||state.captureEpoch!==epoch)return;
+      if(document.hidden||state.captureSuspended){timer=setTimeout(loop,450);return;}
+      pendingRevision=state.captureRevision;
       try{await hands.send({image:camera});}catch{}
-      state.handsBusy=false;
-      setTimeout(loop,450);
+      if(!closed)timer=setTimeout(loop,450);
     };
     loop();
   }catch(e){console.warn("hands",e);}
@@ -4542,6 +4704,13 @@ function descriptorDistance(a,b){
   return Math.sqrt(sum);
 }
 async function captureFaceEnrollment(){
+  const epoch=state.captureEpoch,revision=state.captureRevision;
+  const consentRevision=state.enrollmentRevision;
+  const current=()=>state.started&&!document.hidden&&!state.captureSuspended&&
+    state.captureEpoch===epoch&&state.captureRevision===revision&&
+    state.enrollmentRevision===consentRevision&&
+    $("#personEnrollmentConsent")?.checked===true;
+  let lastFrame=null;
   const stages=[
     {
       msg:enrollText("1/4 · Mirá de frente a la cámara.","1/4 · Look straight at the camera.","1/4 · Olhe de frente para a câmera."),
@@ -4570,15 +4739,24 @@ async function captureFaceEnrollment(){
     let got=0;
     const deadline=Date.now()+7500;
     while(got<stage.count&&Date.now()<deadline){
-      if(!state.started||document.hidden||$("#personEnrollmentConsent")?.checked!==true)
-        return null;
-      const dets=await faceapi
-        .detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.55}))
-        .withFaceLandmarks()
-        .withFaceDescriptors();
+      if(!current())return null;
+      const frame=camera.currentTime;
+      if(camera.readyState<2||(Number.isFinite(frame)&&frame===lastFrame)){
+        await waitMs(200);continue;
+      }
+      lastFrame=frame;
+      const began=Date.now();
+      let timeout;
+      const dets=await Promise.race([
+        faceapi.detectAllFaces(camera,new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:.55}))
+          .withFaceLandmarks().withFaceDescriptors(),
+        new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error("Face enrollment timed out")),10000);})
+      ]).finally(()=>clearTimeout(timeout));
 
-      if(!state.started||document.hidden||$("#personEnrollmentConsent")?.checked!==true)
-        return null;
+      if(!current())return null;
+      if(Date.now()-began>2500||Date.now()<began||!Array.isArray(dets)){
+        await waitMs(200);continue;
+      }
       if(dets.length!==1){
         const msg=dets.length>1
           ?enrollText("Necesito una sola cara en cámara.","I need exactly one face in the camera.","Preciso de apenas um rosto na câmera.")
@@ -4589,6 +4767,10 @@ async function captureFaceEnrollment(){
       }
 
       const det=dets[0];
+      if(!Number.isFinite(det?.detection?.score)||det.detection.score<.65||det.detection.score>1||
+         det?.descriptor?.length!==128||!Array.from(det.descriptor).every(Number.isFinite)){
+        await waitMs(200);continue;
+      }
       const vw=camera.videoWidth||640;
       const vh=camera.videoHeight||480;
       const box=det.detection.box;
@@ -4618,7 +4800,7 @@ async function captureFaceEnrollment(){
     }
   }
 
-  if(samples.length<9)return null;
+  if(!current()||samples.length<9)return null;
   setEnrollProgress(45,enrollText("Cara aprendida. Ahora voy con la voz.","Face learned. Now I'll learn the voice.","Rosto aprendido. Agora vou aprender a voz."));
   return samples;
 }
@@ -4630,6 +4812,14 @@ function collectNewVoiceSamples(startAt,map){
   }
 }
 async function captureEnrollmentVoice(){
+  const epoch=state.captureEpoch,revision=state.captureRevision;
+  const consentRevision=state.enrollmentRevision;
+  const current=()=>state.started&&!document.hidden&&!state.captureSuspended&&
+    state.captureEpoch===epoch&&state.captureRevision===revision&&
+    state.enrollmentRevision===consentRevision&&
+    $("#personEnrollmentConsent")?.checked===true;
+  const canceled=()=>({prints:[],quality:0,error:"canceled",voicedSeconds:0});
+  const wasEnrolling=state.enrollmentActive;
   const wasRecognitionWanted=state.recognitionWanted;
   state.enrollmentActive=true;
   window.speechSynthesis?.cancel?.();
@@ -4660,6 +4850,7 @@ async function captureEnrollmentVoice(){
 
     // Arming phase: wait for a sustained cluster, not one noise spike.
     while(Date.now()-armAt<30000&&!voiceStarted){
+      if(!current())return canceled();
       const recent=state.recentVoicePrints.filter(x=>x.t>=armAt&&Date.now()-x.t<1100);
       if(recent.length>=6){
         voiceStarted=true;
@@ -4683,6 +4874,7 @@ async function captureEnrollmentVoice(){
 
     const captureDeadline=Date.now()+45000;
     while(Date.now()<captureDeadline&&captured.size<targetSamples){
+      if(!current())return canceled();
       const before=captured.size;
       collectNewVoiceSamples(firstVoiceAt,captured);
       if(captured.size>before)lastCapturedAt=Date.now();
@@ -4719,6 +4911,7 @@ async function captureEnrollmentVoice(){
       await waitMs(110);
     }
 
+    if(!current())return canceled();
     const ordered=[...captured.values()].sort((a,b)=>a.t-b.t);
     if(ordered.length<minimumSamples){
       setEnrollProgress(50,enrollText(
@@ -4765,12 +4958,17 @@ async function captureEnrollmentVoice(){
     ));
     return {prints,quality,verification,voicedSeconds:ordered.length*.09};
   }finally{
-    state.enrollmentActive=false;
-    if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
-      setTimeout(()=>window.RobotitoLocalASR.pause(false),250);
-    }else{
+    state.enrollmentActive=wasEnrolling;
+    if(state.captureEpoch===epoch){
       state.recognitionWanted=wasRecognitionWanted;
-      if(wasRecognitionWanted&&state.started)setTimeout(()=>startListeningCycle(false),350);
+      if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
+        setTimeout(()=>{
+          if(state.captureEpoch===epoch&&state.started&&!document.hidden&&!state.captureSuspended&&!state.speaking&&!state.enrollmentActive)
+            window.RobotitoLocalASR.pause(false);
+        },250);
+      }else if(wasRecognitionWanted&&state.started){
+        setTimeout(()=>{if(state.captureEpoch===epoch)startListeningCycle(false);},350);
+      }
     }
   }
 }
@@ -4815,9 +5013,16 @@ async function enrollPerson(){
   if($("#personEnrollmentConsent")?.checked!==true)
     return toast(window.ROBOTITO_I18N?.t?.("p08ConsentRequired",responseLanguage())||"Confirmá el consentimiento de la persona.");
   if(birthdayRaw&&!birthday)return toast("Usá el cumpleaños como DD/MM/AAAA.");
-  if(!state.started)return toast("Primero activá cámara y micrófono.");
+  if(!state.started||document.hidden||state.captureSuspended)return toast("Primero activá cámara y micrófono.");
   if(state.enrollmentActive)return;
 
+  const epoch=state.captureEpoch,revision=state.captureRevision;
+  const consentRevision=state.enrollmentRevision;
+  const current=()=>state.started&&!document.hidden&&!state.captureSuspended&&
+    state.captureEpoch===epoch&&state.captureRevision===revision&&
+    state.enrollmentRevision===consentRevision&&
+    $("#personEnrollmentConsent")?.checked===true;
+  state.enrollmentActive=true;
   btn.disabled=true;
   setEnrollProgress(0,enrollText(
     "Voy a tomar varias muestras. Quedate frente a la cámara.",
@@ -4827,6 +5032,7 @@ async function enrollPerson(){
 
   try{
     const samples=await captureFaceEnrollment();
+    if(!current())return;
     if(!samples){
       setEnrollProgress(0,enrollText(
         "No pude registrar la cara con suficiente calidad. Probá con buena luz y sin otras personas en cámara.",
@@ -4844,9 +5050,9 @@ async function enrollPerson(){
       return;
     }
     // Revocation during a long camera capture must discard all unsaved samples.
-    if($("#personEnrollmentConsent")?.checked!==true||!state.started)return;
+    if(!current())return;
     const voiceCapture=await captureEnrollmentVoice();
-    if($("#personEnrollmentConsent")?.checked!==true||!state.started)return;
+    if(!current()||voiceCapture?.error==="canceled")return;
     const voicePrints=voiceCapture?.prints||[];
     const existing=identity.existing;
     // When refreshing a known person's voice, verify the newly collected
@@ -4924,6 +5130,7 @@ async function enrollPerson(){
       "Algo falhou durante o registro. Tente novamente com boa luz e pouco ruído."
     ));
   }finally{
+    state.enrollmentActive=false;
     btn.disabled=false;
     if($("#personEnrollmentConsent"))$("#personEnrollmentConsent").checked=false;
   }
@@ -5506,6 +5713,7 @@ function bindUI(){
   });
   $("#backToLanguage")?.addEventListener("click",()=>showStartupStep("language"));
   $("#startBtn").addEventListener("click",startSenses);
+  $("#stopSensesBtn")?.addEventListener("click",()=>stopSenses());
   $("#languageMode")?.addEventListener("change",e=>{
     const mode=e.target.value;
     setLanguageMode(mode);
@@ -5553,6 +5761,7 @@ function bindUI(){
       if(label)label.textContent=window.ROBOTITO_I18N?.t?.("voiceSample"+status[0].toUpperCase()+status.slice(1),responseLanguage())||status;
     }
   });
+  state.cancelVoiceSample=()=>voiceSamples?.cancel();
   // Permission may arrive after the user changed their mind: cancel and close
   // the track, even before MediaRecorder starts. Never retain canceled PCM.
   $("#voiceSampleConsent")?.addEventListener("change",e=>{if(!e.target.checked)voiceSamples?.cancel();});
@@ -5580,6 +5789,9 @@ function bindUI(){
     speakResponse(text,lang);
   });
   $("#enrollBtn").addEventListener("click",enrollPerson);
+  $("#personEnrollmentConsent")?.addEventListener("change",()=>{
+    state.enrollmentRevision=(state.enrollmentRevision||0)+1;
+  });
   $("#personBirthday")?.addEventListener("input",e=>{
     const digits=e.target.value.replace(/\D/g,"").slice(0,8);
     e.target.value=digits.length<=2?digits:digits.length<=4?digits.slice(0,2)+"/"+digits.slice(2):digits.slice(0,2)+"/"+digits.slice(2,4)+"/"+digits.slice(4);
@@ -5739,6 +5951,8 @@ window.ROBOTITO_QUESTION_ROUTING={
   shouldUseClassFirst:raw=>hasExplicitClassReference(raw)
 };
 
+document.addEventListener("visibilitychange",reconcileCaptureState);
+window.addEventListener("pagehide",()=>{if(state.started)stopSenses();});
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){
     clearBlinkState();

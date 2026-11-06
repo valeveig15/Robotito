@@ -32,19 +32,21 @@ const actions={capture:0,voice:0,writes:0,build:0,toasts:[],statuses:[]};
 let nextFace=Array.from({length:12},()=>[0.01,0,0]);
 let nextVoice={prints:[[1,0],[1,0],[1,0],[1,0]],quality:.92};
 let revokeAtCapture=false;
+let replaceAtCapture=false,replaceAtVoice=false;
 const register=new Function(
  "state","$","parseBirthdayInput","toast","setEnrollProgress","enrollText",
  "captureFaceEnrollment","enrollmentIdentityCheck","captureEnrollmentVoice",
  "averageVoiceVectors","cosineSimilarity","save","KEYS","ensureBond",
- "buildMatcher","renderPeople","say","window","responseLanguage",
+ "buildMatcher","renderPeople","say","window","responseLanguage","document",
  source.slice(begin,end)+"\nreturn enrollPerson;"
 )(state,id=>$fields[id],v=>v? "2026-10-30":"",x=>actions.toasts.push(x),
  (p,msg)=>actions.statuses.push({p,msg}),a=>a,
- async()=>{actions.capture++;if(revokeAtCapture)$fields["#personEnrollmentConsent"].checked=false;return nextFace;},
- policy,async()=>{actions.voice++;return nextVoice;},mean,cosine,
+ async()=>{actions.capture++;if(revokeAtCapture)$fields["#personEnrollmentConsent"].checked=false;
+  if(replaceAtCapture)state.captureEpoch=(state.captureEpoch||0)+1;return nextFace;},
+ policy,async()=>{actions.voice++;if(replaceAtVoice)state.captureEpoch=(state.captureEpoch||0)+1;return nextVoice;},mean,cosine,
  ()=>{actions.writes++;},{people:"people"},()=>{},
  ()=>{actions.build++;},()=>{},()=>{},
- {ROBOTITO_I18N:{t:k=>k}} ,()=> "es");
+ {ROBOTITO_I18N:{t:k=>k}} ,()=> "es",{hidden:false});
 const eq=(a,b,why)=>assert.deepEqual(a,b,why);
 (async()=>{
  await register();
@@ -83,6 +85,13 @@ const eq=(a,b,why)=>assert.deepEqual(a,b,why);
  eq(actions.voice,captureBefore,"Consent revocation stops before voice capture");
  eq(actions.writes,successfulWrites,"Revocation causes no profile writes");
  revokeAtCapture=false;
+ for(const phase of ["face","voice"]){
+  $fields["#personEnrollmentConsent"].checked=true;
+  replaceAtCapture=phase==="face";replaceAtVoice=phase==="voice";
+  await register();
+  eq(actions.writes,successfulWrites,"Stop/restart during "+phase+" cannot save the older enrollment");
+ }
+ replaceAtCapture=false;replaceAtVoice=false;
  $fields["#personEnrollmentConsent"].checked=true;
  await register();
  eq(actions.writes,successfulWrites+2,"Verified same person may explicitly refresh their own data");
@@ -92,5 +101,5 @@ const eq=(a,b,why)=>assert.deepEqual(a,b,why);
  eq($fields["#enrollBtn"].disabled,false,"Enroll control unlocks after each attempt");
  assert.ok(actions.statuses.some(x=>/p08Collision/.test(x.msg)));
  assert.ok(actions.statuses.some(x=>/p08VoiceMismatch/.test(x.msg)));
- console.log("P08 actual enrollment consent and anti-impersonation flow: 20 checks");
+ console.log("P08 actual enrollment consent and anti-impersonation flow: 22 checks");
 })().catch(e=>{console.error(e);process.exitCode=1;});

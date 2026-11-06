@@ -12,6 +12,12 @@ const NAMES={
  de:["aleman","alemán","german","allemand","tedesco","deutsch"]
 };
 const LABELS={
+ captureVisionTimeout:{es:"La cámara tardó demasiado. Podés volver a iniciar los sentidos.",en:"The camera took too long. You can start the senses again.",pt:"A câmera demorou demais. Você pode iniciar os sentidos novamente.",fr:"La caméra a mis trop de temps. Tu peux réactiver les sens.",it:"La fotocamera ha impiegato troppo tempo. Puoi riattivare i sensi.",de:"Die Kamera hat zu lange gebraucht. Du kannst die Sinne erneut starten."},
+ captureVisionUnavailable:{es:"Reconocimiento de rostro no disponible",en:"Face recognition unavailable",pt:"Reconhecimento facial indisponível",fr:"Reconnaissance faciale indisponible",it:"Riconoscimento facciale non disponibile",de:"Gesichtserkennung nicht verfügbar"},
+ captureStop:{es:"Detener cámara y micrófono",en:"Stop camera and microphone",pt:"Parar câmera e microfone",fr:"Arrêter caméra et microphone",it:"Ferma fotocamera e microfono",de:"Kamera und Mikrofon stoppen"},
+ captureStopped:{es:"Cámara y micrófono detenidos",en:"Camera and microphone stopped",pt:"Câmera e microfone parados",fr:"Caméra et microphone arrêtés",it:"Fotocamera e microfono fermati",de:"Kamera und Mikrofon gestoppt"},
+ capturePaused:{es:"Captación pausada",en:"Capture paused",pt:"Captação pausada",fr:"Capture en pause",it:"Acquisizione in pausa",de:"Erfassung pausiert"},
+ captureDisconnected:{es:"Se desconectó un dispositivo. Podés volver a iniciar los sentidos.",en:"A device disconnected. You can start the senses again.",pt:"Um dispositivo foi desconectado. Você pode iniciar os sentidos novamente.",fr:"Un appareil s’est déconnecté. Tu peux réactiver les sens.",it:"Un dispositivo si è scollegato. Puoi riattivare i sensi.",de:"Ein Gerät wurde getrennt. Du kannst die Sinne erneut starten."},
  voiceDeviceCheck:{es:"Comprobar voces y micrófono (sin guardar audio)",en:"Test voices and microphone (no audio saved)",pt:"Testar vozes e microfone (sem salvar áudio)",fr:"Tester les voix et le microphone (sans enregistrer d’audio)",it:"Verifica voci e microfono (senza salvare audio)",de:"Stimmen und Mikrofon testen (ohne Audio zu speichern)"},
  asrListening:{"es":"escuchando","en":"listening","pt":"escutando","fr":"écoute en cours","it":"in ascolto","de":"hört zu"},
  asrHeard:{"es":"te escucho","en":"I hear you","pt":"estou ouvindo","fr":"je t’entends","it":"ti sento","de":"ich höre dich"},

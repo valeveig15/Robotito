@@ -117,8 +117,9 @@
     results.push(same("class-mode","micrófono puede seguir escuchando en silencio",runtime?.microphoneMayKeepListeningWhileSilent,true));
 
     const speechRows=[
-      ["qué qué es la densidad","qué es la densidad"],["hola hola robotito","hola robotito"],
-      ["cuál cuál es el animal más grande","cuál es el animal más grande"]
+      ["qué qué es la densidad","qué qué es la densidad"],["hola hola robotito","hola hola robotito"],
+      ["cuál cuál es el animal más grande","cuál cuál es el animal más grande"],
+      ["I had had enough","I had had enough"],["Estou em casa","Estou em casa"]
     ];
     matrix(results,"microphone",speechRows,row=>same("microphone",row[0],speech?.cleanTranscript(row[0]),row[1]));
     results.push(same("microphone","une fragmentos solapados",speech?.mergeChunks("qué es la","la densidad"),"qué es la densidad"));

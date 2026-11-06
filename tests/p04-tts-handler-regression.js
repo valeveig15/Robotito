@@ -51,5 +51,12 @@ for(const code of codes){
  eq(compatible.statuses.at(-1),i18n.t("voiceResponding",code),"Speaking status localized "+code);
  compatible.played[0].onend?.();
  eq(compatible.state.speaking,false,"Speaking completes "+code);
+ compatible.speak("First message");
+ const first=compatible.played.at(-1);
+ compatible.speak("Replacement message");
+ first.onend();
+ eq(compatible.state.speaking,true,"Old TTS completion cannot unpause the replacement "+code);
+ compatible.played.at(-1).onend();
+ eq(compatible.state.speaking,false,"Replacement TTS completes normally "+code);
 }
 console.log("Robotito P04 actual TTS handler with synthetic voices:",checks,"checks");

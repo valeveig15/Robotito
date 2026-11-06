@@ -274,3 +274,12 @@ Ver [P02-STATUS.md](P02-STATUS.md) para la aceptación, evidencia y límites. `n
 Ver [P03-STATUS.md](P03-STATUS.md). `tests/audio-continuity-regression.js` agrega 40 comprobaciones al conjunto de tres semillas: inferencias inválidas intercaladas, observaciones almacenadas y vencidas, probabilidades no numéricas, eventos atrasados, consultas rápidas del estado musical y plazos de carga/inferencia independientes de la llegada de PCM. Los temporizadores son controlados en las pruebas unitarias; producción usa temporizadores reales con límites de 30 s y 2,5 s.
 
 `test:audio:reactions:browser` utiliza el callback y los controles reales de la aplicación con micrófono sintético. Verifica que un texto/transcripción “achís” no produzca «¡Salud!», que los errores del modelo lleguen a la interfaz localizada, que pueda reintentarse tras el fallo y que se limpie la escucha al desactivar. El Worker de los escenarios de fallo es simulado; `test:audio:real` conserva por separado la integración con YAMNet genuino. No se habilitan reacciones humanas sin calibración independiente.
+
+
+### Revisión P04 de captación (5/11/2026)
+
+El punto 4 original es escucha, voz y rostro. `npm run test:p04` conserva las pruebas históricas y añade ciclo de vida del ASR local, reloj y cámara lenta/congelada, cancelación de inscripción y cierre de pistas de clase antes del almacenamiento. La limpieza preserva repeticiones legítimas y palabras portuguesas; la deduplicación nativa usa índices finales de sesión. Las expectativas antiguas que eliminaban palabras repetidas se sustituyen por conservación de texto más pruebas explícitas de no repetición de eventos.
+
+`npm run test:p04:browser` ejecuta tanto el diagnóstico como `tests/p04-capture-browser.js` dentro de la aplicación real. Incluye pausa/reanudación, mute/unmute, pérdida de pista, cancelación, permisos fuera de orden, ocultación durante `play()`, eventos antiguos de manos/voz y `pagehide`. Se ejecuta en Chromium en `test:ci` y en Firefox/WebKit en `cross-browser.yml`. La entrada multimedia se simula; no representa precisión de reconocimiento ni hardware físico. Véanse [P04-STATUS.md](P04-STATUS.md) y [P04-HARDWARE-VALIDATION.md](P04-HARDWARE-VALIDATION.md).
+
+Los trabajos de navegador usan `ubuntu-24.04`: Playwright 1.56.1 no contiene binarios/dependencias de Ubuntu 26.04, al que apuntó `ubuntu-latest` en la ejecución inicial del PR #115. Una futura actualización de runner debe comprobarse junto con la versión de Playwright y los tres motores, sin saltarse instalación o pruebas.

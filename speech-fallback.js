@@ -2,11 +2,11 @@
 // Continuous local speech recognition using Whisper via Transformers.js.
 // This avoids relying on the inconsistent mobile Web Speech API.
 (function(){
-  let ctx=null, source=null, processor=null, streamRef=null;
+  let ctx=null, source=null, processor=null, mute=null, streamRef=null;
   let transcriber=null, modelPromise=null, active=false, paused=false;
-  let language="es", languageRevision=0, onText=()=>{}, onStatus=()=>{};
+  let language="es", languageRevision=0, sessionRevision=0, onText=()=>{}, onStatus=()=>{};
   let speaking=false, segment=[], preRoll=[], segmentStart=0, segmentStartEpoch=0, lastVoiceAt=0, voiceFrames=0;
-  let noiseFloor=.0075, lastTranscript="", lastTranscriptAt=0;
+  let noiseFloor=.0075;
   let queue=Promise.resolve();
 
   function status(text,kind=""){ try{onStatus(text,kind);}catch{} }
@@ -50,7 +50,7 @@
         }
       }
       return transcriber;
-    })();
+    })().catch(error=>{modelPromise=null;throw error;});
     return modelPromise;
   }
 
@@ -69,11 +69,13 @@
   }
 
   function prime(lang="es",statusCb){
+    const session=sessionRevision;
     language=normalizeLang(lang);
     if(statusCb)onStatus=statusCb;
     try{ensureAudioContext();}catch{}
     // Begin model download immediately; do not block the UI.
     loadModel().catch(err=>{
+      if(session!==sessionRevision)return;
       console.warn("local ASR model",err);
       status(statusText("No pude cargar el reconocimiento local","Local speech model failed to load","Não consegui carregar o reconhecimento local"),"problem");
     });
@@ -151,13 +153,10 @@
       const text=String(result?.text||"").trim()
         .replace(/^\[[^\]]+\]\s*/,"")
         .replace(/^\([^\)]+\)\s*/,"")
-        .replace(/(^|\s)([a-záéíóúüñ]+)(?:\s+\2)(?=\s|$)/gi,"$1$2")
         .replace(/\s+/g," ");
-      const normalized=text.toLowerCase().replace(/[^a-záéíóúüñ0-9]+/g," ").trim();
-      const duplicate=normalized&&normalized===lastTranscript&&Date.now()-lastTranscriptAt<4500;
-      if(text && text.length>1 && !duplicate && !/^\.{1,3}$/.test(text)){
-        lastTranscript=normalized;
-        lastTranscriptAt=Date.now();
+      // Each non-overlapping audio segment is delivered once. Equal words in
+      // different segments can be intentional; text is not an event identity.
+      if(text && text.length>1 && !/^\.{1,3}$/.test(text)){
         onText(text,meta||null);
       }
       if(active&&!paused&&rev===languageRevision)status(statusText("escuchando","listening","escutando"),"listening");
@@ -180,36 +179,36 @@
   }
 
   async function start({stream,lang="es",onTranscript,statusCallback}){
+    const session=++sessionRevision;
     ++languageRevision;
     language=normalizeLang(lang);
     onText=typeof onTranscript==="function"?onTranscript:()=>{};
     onStatus=typeof statusCallback==="function"?statusCallback:()=>{};
     streamRef=stream;
     active=true;paused=false;
-    resetSegment();
+    resetSegment();noiseFloor=.0075;
+    disconnectCapture();
 
+    try{
     const ac=ensureAudioContext();
     status(statusText("Preparando escucha continua…","Preparing continuous listening…","Preparando escuta contínua…"),"loading");
 
-    // Load in parallel while wiring audio.
-    const modelReady=loadModel();
-
-    if(processor){try{processor.disconnect();}catch{}}
-    if(source){try{source.disconnect();}catch{}}
-
     const audioTracks=stream?.getAudioTracks?.()||[];
-    if(!audioTracks.length)throw new Error("No audio track available");
+    if(!audioTracks.length||audioTracks.some(track=>track.readyState==="ended"))
+      throw new Error("No live audio track available");
 
     source=ac.createMediaStreamSource(new MediaStream(audioTracks));
     processor=ac.createScriptProcessor(4096,1,1);
-    const mute=ac.createGain();
+    mute=ac.createGain();
     mute.gain.value=0;
     source.connect(processor);
     processor.connect(mute);
     mute.connect(ac.destination);
+    const modelReady=loadModel();
 
     processor.onaudioprocess=e=>{
-      if(!active||paused)return;
+      if(!active||paused||session!==sessionRevision||
+         audioTracks.some(track=>track.readyState==="ended"||track.muted||track.enabled===false))return;
       const data=new Float32Array(e.inputBuffer.getChannelData(0));
       const rms=rmsOf(data);
       const now=performance.now();
@@ -249,8 +248,14 @@
     };
 
     await modelReady;
-    if(active&&!paused)status(statusText("escuchando","listening","escutando"),"listening");
+    if(session!==sessionRevision||!active)return false;
+    if(!paused)status(statusText("escuchando","listening","escutando"),"listening");
     return true;
+    }catch(error){
+      // An older start must not disconnect the replacement session.
+      if(session===sessionRevision)stop();
+      throw error;
+    }
   }
 
   function pause(value=true){
@@ -268,15 +273,22 @@
     const next=normalizeLang(lang);
     if(next===language)return;
     language=next;++languageRevision;queue=Promise.resolve();resetSegment();
-    lastTranscript="";lastTranscriptAt=0;
   }
 
-  async function stop(){
-    ++languageRevision;queue=Promise.resolve();
-    active=false;paused=false;resetSegment();
+  function disconnectCapture(){
     if(processor){processor.onaudioprocess=null;try{processor.disconnect();}catch{};processor=null;}
     if(source){try{source.disconnect();}catch{};source=null;}
+    if(mute){try{mute.disconnect();}catch{};mute=null;}
+  }
+  function stop(){
+    ++sessionRevision;
+    ++languageRevision;queue=Promise.resolve();
+    active=false;paused=false;resetSegment();
+    disconnectCapture();
+    const oldContext=ctx;ctx=null;
+    try{Promise.resolve(oldContext?.close?.()).catch(()=>{});}catch{}
     streamRef=null;
+    onText=()=>{};onStatus=()=>{};
   }
 
   window.RobotitoLocalASR={prime,start,pause,setLanguage,stop,

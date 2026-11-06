@@ -13,7 +13,7 @@ function create(){
  const context=new Function("rmsOf","performance","Date",
  "let active=true,paused=false,noiseFloor=.0075,speaking=false,segment=[],preRoll=[],\n"+
  "segmentStart=0,segmentStartEpoch=0,lastVoiceAt=0,voiceFrames=0;\n"+
- "const ac={sampleRate:48000},processor={};\n"+
+ "const ac={sampleRate:48000},processor={},audioTracks=[],session=1,sessionRevision=1;\n"+
  "const finalize=()=>{};\n"+
  callback+"\n"+
  "return {accept(input){processor.onaudioprocess({inputBuffer:{getChannelData(){return input;}}});},\n"+

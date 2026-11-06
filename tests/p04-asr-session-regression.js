@@ -32,11 +32,17 @@ const cycle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
  assert.equal(t.options.at(-1).language,"german");
  t.waiting.shift()({text:"Neue Antwort"});await cycle();
  assert.deepEqual(t.output,["Neue Antwort"]);
+ for(const text of ["No no, no borres eso","I had had enough","repetí","repetí"]){
+  t.enqueue(new Float32Array(2000));await cycle();
+  t.waiting.shift()({text});await cycle();
+  assert.equal(t.output.at(-1),text,"Local transcription preserves meaningful repetitions");
+ }
+ assert.equal(t.output.length,5,"Equal words in separate audio segments are delivered separately");
  t.enqueue(new Float32Array(2000));await cycle();
  t.pause();t.waiting.shift()({text:"Old paused"});await cycle();
- assert.equal(t.output.length,1,"Paused inference rejected");
+ assert.equal(t.output.length,5,"Paused inference rejected");
  t.resume();t.enqueue(new Float32Array(2000));await cycle();
  t.stop();t.waiting.shift()({text:"Old stopped"});await cycle();
- assert.equal(t.output.length,1,"Stopped inference rejected");
+ assert.equal(t.output.length,5,"Stopped inference rejected");
  console.log("Robotito ASR language-switch regression passed");
 })().catch(e=>{console.error(e);process.exitCode=1});
