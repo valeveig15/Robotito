@@ -34,7 +34,7 @@ runBrowserTest("p01-dialogue",async test=>{
     await chat.send('más breve y después chocá los cinco',{channel:'text'});
     check(highfives===1,'Compound follow-up lost the next action');
     let translated=0,destroyed=0;
-    window.Translator={create:async({sourceLanguage,targetLanguage})=>{
+    window.Translator={availability:async()=>"available",create:async({sourceLanguage,targetLanguage})=>{
      check(sourceLanguage==='es'&&targetLanguage==='pt','Wrong translation pair');
      return {translate:async()=>{translated++;return 'Isso é uma explicação em português.';},destroy:()=>{destroyed++;}};
     }};

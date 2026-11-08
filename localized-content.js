@@ -8,6 +8,7 @@ function currentLanguage(){return root.document?.documentElement?.lang||"es";}
 function safeDestroy(session){try{session?.destroy?.();}catch{}}
 async function runModel(api,options,perform,{timeout=2500,allowDownload=false}={}){
  if(!api?.create)return null;
+ if(!api.availability&&!allowDownload)return null;
  let timer,session,expired=false;
  const controller=new AbortController();
  const work=(async()=>{
@@ -71,6 +72,9 @@ function update(element,entry){
   if(manual)status.textContent=i18n.text("Traduciendo en este dispositivo…",language);
   let source=entry.source;
   if(source==="und")source=root.ROBOTITO_LANGUAGE_PIPELINE?.detect?.(entry.original)||"und";
+  if(source===language){
+   paragraph.lang=language;status.remove();button.remove();return;
+  }
   const result=await translate(entry.original,source,language,{allowDownload:manual,timeout:manual?20000:2500});
   if(!valid())return;
   if(result){

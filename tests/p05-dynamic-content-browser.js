@@ -39,6 +39,35 @@ runBrowserTest("p05-dynamic-content",async test=>{
   assert.deepEqual(result.names,["Borrar"]);assert.equal(result.dates,result.expectedDate);
   assert.equal(result.controls,true,lang+": all explicit copy markers localized");
  }
+ test.phase("built-in-books-drawings-and-study-cards");
+ await page.evaluate(()=>{
+  setLanguageMode("fr");
+  showBookRecommendations([{book:{...LOCAL_BOOK_CATALOG[0],title:"Borrar",language:"es"},matched:["fantasía"],owned:false}],analyzeBookPrompt("fantasía"),"fantasía",true);
+  drawRequestedThing("dibujame un libro","fr");
+  state.classLines[0].text="La profesora explicó cómo la luz atraviesa el agua.";
+  makeFlashcards();
+ });
+ for(const lang of ["fr","de","en"]){
+  await page.evaluate(lang=>setLanguageMode(lang),lang);
+  await page.waitForFunction(lang=>document.querySelector('.book-description .localized-content-text')?.lang===lang,lang);
+  const panel=await page.evaluate(lang=>({
+   title:document.querySelector(".book-card strong").textContent,
+   reason:document.querySelector(".book-match-reason").textContent,
+   expectedReason:ROBOTITO_I18N.text("Puede encajar por {topics}.",lang,{topics:ROBOTITO_I18N.text("fantasía",lang)}),
+   description:document.querySelector('.book-description .localized-content-text').textContent,
+   expectedDescription:ROBOTITO_I18N.text(LOCAL_BOOK_CATALOG[0].description,lang),
+   drawing:document.getElementById("drawingTitle").textContent,
+   expectedDrawing:ROBOTITO_I18N.text("Robotito dibujó {name}",lang,{name:ROBOTITO_OBJECTS.displayName("book",lang)}),
+   question:document.querySelector("#classAnswer strong").textContent,
+   original:document.querySelector(".flashcard-answer .localized-content-text").textContent
+  }),lang);
+  assert.equal(panel.title,"Borrar","Book title stays verbatim");
+  assert.equal(panel.reason,panel.expectedReason);
+  assert.equal(panel.description,panel.expectedDescription,"Built-in catalogue translates without a model");
+  assert.equal(panel.drawing,panel.expectedDrawing);
+  assert.ok(panel.question.startsWith({fr:"Question",de:"Frage",en:"Question"}[lang]));
+  assert.equal(panel.original,"La profesora explicó cómo la luz atraviesa el agua.");
+ }
  test.phase("translation-provenance-and-races");
  await page.evaluate(()=>{
   setLanguageMode("en");delete window.Translator;delete window.LanguageModel;
@@ -62,6 +91,37 @@ runBrowserTest("p05-dynamic-content",async test=>{
  await page.waitForTimeout(30);
  assert.notEqual(await page.locator('#p05-generated .localized-content-text').textContent(),"ANCIEN RÉSULTAT");
  assert.equal(await page.locator('#p05-generated .localized-content-text').textContent(),"La clase de Ana trata sobre la luz.","Original survives successful translation and locale switch");
+ test.phase("audio-and-explicit-language-reply");
+ const preserved=await page.evaluate(()=>{
+  const root=document.getElementById("classRecordingsList");
+  const audio=document.createElement("audio");audio.id="p05-playing-recording";root.append(audio);
+  setLanguageMode("it");
+  handleLanguageCommand("Hablame en francés solo esta vez");
+  sayInLanguage("Bonjour !","fr");
+  return {sameAudio:document.getElementById("p05-playing-recording")===audio,oneReplyConsumed:state.nextResponseLanguage===null};
+ });
+ assert.deepEqual(preserved,{sameAudio:true,oneReplyConsumed:true});
+ test.phase("late-translation-after-language-switch");
+ await page.evaluate(()=>{
+  window.p05Pending=[];
+  window.Translator={availability:async()=>"available",create:async()=>({translate:()=>new Promise(resolve=>p05Pending.push(resolve)),destroy(){}})};
+  setLanguageMode("es");
+  window.p05Translation=handleSayInLanguageCommand('Cómo se dice “La casa de Ana tiene una ventana” en inglés');
+ });
+ await page.waitForFunction(()=>p05Pending.length>0);
+ await page.evaluate(()=>{setLanguageMode("de");for(const finish of p05Pending)finish("Ana’s house has a window.");});
+ await page.evaluate(()=>p05Translation);
+ assert.notEqual(await page.locator('#speechBubble').textContent(),"Ana’s house has a window.");
+ test.phase("late-translation-after-speaker-switch");
+ await page.evaluate(()=>{
+  setLanguageMode("es");state.currentVoicePerson="Ada";window.p05Pending=[];
+  window.p05Translation=handleSayInLanguageCommand('Cómo se dice “La casa de Ana tiene una ventana” en inglés');
+ });
+ await page.waitForFunction(()=>p05Pending.length>0);
+ await page.evaluate(()=>{state.currentVoicePerson="Bruno";for(const finish of p05Pending)finish("Private answer for Ada.");});
+ await page.evaluate(()=>p05Translation);
+ assert.notEqual(await page.locator('#speechBubble').textContent(),"Private answer for Ada.");
+ await page.evaluate(()=>{state.currentVoicePerson=null;});
  test.phase("scopes-and-persistence");
  const scopes=await page.evaluate(()=>{
   delete window.Translator;setLanguageMode("es");

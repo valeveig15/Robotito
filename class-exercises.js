@@ -169,29 +169,39 @@
   function sourceLabel(exercise){
     return [exercise.subject,exercise.topic,exercise.sourceName].filter(Boolean).join(" · ");
   }
+  const tr=(source,data={})=>window.ROBOTITO_I18N?.text?.(source,state.languageMode||"es",data)||source.replace(/\{(\w+)\}/g,(m,k)=>data[k]??m);
+  function localizeExplanation(){
+    const root=document.querySelector("#classAnswer");
+    if(!root?.querySelectorAll)return;
+    for(const node of root.querySelectorAll(".exercise-generated,.exercise-step p,.exercise-step strong,.exercise-final strong")){
+      window.ROBOTITO_LOCALIZED_CONTENT?.render(node,node.textContent,"es");
+    }
+    const original=root.querySelector(".exercise-statement p");
+    if(original)window.ROBOTITO_LOCALIZED_CONTENT?.render(original,original.textContent,"und");
+  }
   function renderMissing(query,result){
     const root=document.querySelector("#classAnswer");
     if(!root)return;
     if(result.reason==="ambiguous"){
       const opts=result.matches.map(e=>'<li>'+esc(e.subject||"Sin materia")+' › '+esc(e.topic||"Sin tema")+' · '+esc(e.sourceName||"material")+'</li>').join("");
-      root.innerHTML='<div class="exercise-solution"><strong>Necesito una precisión</strong><p>Encontré más de un ejercicio '+esc(result.number)+' en tus materiales. Decime también la materia o el tema.</p><ul>'+opts+'</ul></div>';
+      root.innerHTML='<div class="exercise-solution"><strong data-ui-copy=Necesito%20una%20precisi%C3%B3n>Necesito una precisión</strong><p>'+esc(tr('Encontré más de un ejercicio {number} en tus materiales. Decime también la materia o el tema.',{number:result.number}))+'</p><ul>'+opts+'</ul></div>';
       return;
     }
     if(result.reason==="missing-number"){
-      root.innerHTML='<div class="exercise-solution"><strong>¿Qué ejercicio?</strong><p>Decime el número, por ejemplo: “explicame paso a paso el ejercicio 4 de Impulso de Física”.</p></div>';
+      root.innerHTML='<div class="exercise-solution"><strong data-ui-copy=%C2%BFQu%C3%A9%20ejercicio%3F>¿Qué ejercicio?</strong><p data-ui-copy=Decime%20el%20n%C3%BAmero%2C%20por%20ejemplo%3A%20%E2%80%9Cexplicame%20paso%20a%20paso%20el%20ejercicio%204%20de%20Impulso%20de%20F%C3%ADsica%E2%80%9D.>Decime el número, por ejemplo: “explicame paso a paso el ejercicio 4 de Impulso de Física”.</p></div>';
       return;
     }
-    root.innerHTML='<div class="exercise-solution"><strong>No encontré ese ejercicio</strong><p>Busqué el ejercicio '+esc(result.number??"")+' en el material cargado'+(result.scope?.subject?' de '+esc(result.scope.subject):'')+(result.scope?.topic?' › '+esc(result.scope.topic):'')+'. No voy a inventar un enunciado que no esté en tus archivos.</p></div>';
+    root.innerHTML='<div class="exercise-solution"><strong data-ui-copy=No%20encontr%C3%A9%20ese%20ejercicio>No encontré ese ejercicio</strong><p>'+esc(tr('Busqué el ejercicio {number} en tus materiales. No voy a inventar un enunciado que no esté en tus archivos.',{number:result.number??''}))+'</p></div>';
   }
   function renderDetailed(exercise,solution,generatedText=null){
     const root=document.querySelector("#classAnswer");
     if(!root)return;
-    const header='<div class="exercise-source"><strong>Ejercicio '+esc(exercise.number)+'</strong><span>'+esc(sourceLabel(exercise))+'</span></div>';
-    const statement='<div class="exercise-statement"><strong>Enunciado recuperado</strong><p>'+esc(exercise.statement)+'</p></div>';
+    const header='<div class="exercise-source"><strong>'+esc(tr('Ejercicio {number}',{number:exercise.number}))+'</strong><span>'+esc(sourceLabel(exercise))+'</span></div>';
+    const statement='<div class="exercise-statement"><strong data-ui-copy=Enunciado%20recuperado>Enunciado recuperado</strong><p>'+esc(exercise.statement)+'</p></div>';
 
     if(generatedText){
       root.innerHTML='<div class="exercise-solution">'+header+statement+
-        '<div class="exercise-explanation"><strong>Resolución paso a paso</strong><div class="exercise-generated">'+esc(generatedText).replace(/\n/g,"<br>")+'</div></div>'+
+        '<div class="exercise-explanation"><strong data-ui-copy=Resoluci%C3%B3n%20paso%20a%20paso>Resolución paso a paso</strong><div class="exercise-generated">'+esc(generatedText).replace(/\n/g,"<br>")+'</div></div>'+
         '</div>';
       return;
     }
@@ -201,14 +211,14 @@
         '<div class="exercise-step"><strong>'+esc(step.title)+'</strong><p>'+esc(step.body)+'</p></div>'
       ).join("");
       root.innerHTML='<div class="exercise-solution">'+header+statement+
-        '<div class="exercise-explanation"><strong>Resolución paso a paso</strong>'+steps+
-          '<div class="exercise-final"><span>Resultado</span><strong>'+esc(solution.result||"")+'</strong></div>'+
+        '<div class="exercise-explanation"><strong data-ui-copy=Resoluci%C3%B3n%20paso%20a%20paso>Resolución paso a paso</strong>'+steps+
+          '<div class="exercise-final"><span data-ui-copy=Resultado>Resultado</span><strong>'+esc(solution.result||"")+'</strong></div>'+
         '</div></div>';
       return;
     }
 
     root.innerHTML='<div class="exercise-solution">'+header+statement+
-      '<div class="study-chip">Encontré el ejercicio exacto, pero con los datos del enunciado no puedo construir una resolución segura sin inventar información.</div></div>';
+      '<div class="study-chip" data-ui-copy=Encontr%C3%A9%20el%20ejercicio%20exacto%2C%20pero%20con%20los%20datos%20del%20enunciado%20no%20puedo%20construir%20una%20resoluci%C3%B3n%20segura%20sin%20inventar%20informaci%C3%B3n.>Encontré el ejercicio exacto, pero con los datos del enunciado no puedo construir una resolución segura sin inventar información.</div></div>';
   }
   async function aiExplanation(exercise,physicsCheck=null){
     if(!window.LanguageModel?.create)return null;
@@ -255,9 +265,11 @@ Reglas:
     }
     const generated=await aiExplanation(exercise,physics);
     renderDetailed(exercise,physics,generated);
+    localizeExplanation();
     if(generated)return {ok:true,exercise,generated,solution:physics};
     if(physics)return {ok:true,exercise,solution:physics};
     renderDetailed(exercise,null,null);
+    localizeExplanation();
     return {ok:false,exercise,reason:"cannot-solve"};
   }
   async function handleRequest(text,{spoken=true,plan=null}={}){
@@ -265,7 +277,7 @@ Reglas:
     if(!plan&&!looksLikeExerciseRequest(text))return false;
 
     const root=document.querySelector("#classAnswer");
-    if(root)root.innerHTML='<div class="study-chip">Buscando el ejercicio exacto en el material cargado…</div>';
+    if(root)root.innerHTML='<div class="study-chip" data-ui-copy=Buscando%20el%20ejercicio%20exacto%20en%20el%20material%20cargado%E2%80%A6>Buscando el ejercicio exacto en el material cargado…</div>';
     const result=findExercise(text,plan);
     if(!result.exercise){
       renderMissing(text,result);

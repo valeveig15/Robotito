@@ -261,7 +261,7 @@ function uiSet(element,source,data={}){
  else if(element)element.textContent=source;
 }
 function refreshLocalizedUI(){
-  clockTick();
+ clockTick();
  renderAvatarChoices();
  if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatarById(state.avatar));
  uiSet($("#moodLabel"),({calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"})[state.emotion]||"tranquilo");
@@ -269,8 +269,13 @@ function refreshLocalizedUI(){
  renderPeople();renderMemories();renderTasks();updateLibraryStats();renderClassTranscript();
  window.ROBOTITO_CLASS_ORGANIZER?.render?.();
  window.ROBOTITO_CLASS_ORGANIZER?.renderAcademicMaterials?.();
- window.ROBOTITO_CLASS_AUDIO?.render?.();
+ window.ROBOTITO_CLASS_AUDIO?.refreshLocale?.();
+ refreshDrawingLocale();
+ for(const cover of document.querySelectorAll("[data-book-title]"))cover.alt=uiText("Portada de {title}",{title:cover.dataset.bookTitle});
  if(typeof document.dispatchEvent==="function")document.dispatchEvent(new Event("robotito:languagechange"));
+}
+function objectDisplayName(item,lang=state.languageMode||"es"){
+ return window.ROBOTITO_OBJECTS?.displayName?.(item,lang)||item?.es?.[0]||"";
 }
 function languageLabel(lang){
   return ({es:"Español",en:"English",pt:"Português",fr:"Français",it:"Italiano",de:"Deutsch"})[lang]||"Español";
@@ -612,9 +617,12 @@ async function localizeGeneratedSpeech(text,target=responseLanguage()){
   if(translatedLanguage!=="und"&&translatedLanguage!==target)return localizedSpeechFallback(target);
   return translated;
 }
-function commitSpeechMessage(text,ms,lang,token){
+function commitSpeechMessage(text,ms,lang,token,ownerAtRequest){
   if(token!==state.speechBubbleToken)return;
   state.pendingSpeechLocalization=false;
+  if(ownerAtRequest!==undefined&&ownerAtRequest!==(state.currentVoicePerson||state.currentPerson||"local")){
+    $("#speechBubble")?.classList.add("hidden");return;
+  }
   state.lastSaid=text;
   // Local ephemeral reply state is scoped to the active conversational owner.
   const replyOwner=state.currentVoicePerson||state.currentPerson||"local";
@@ -634,26 +642,27 @@ function commitSpeechMessage(text,ms,lang,token){
 function say(text, ms=3000, spokenLang=null){
   const target=spokenLang||responseLanguage();
   // A one-response language override must not leak into later replies.
-  if(state.nextResponseLanguage&&!spokenLang)state.nextResponseLanguage=null;
+  if(state.nextResponseLanguage)state.nextResponseLanguage=null;
   const b=$("#speechBubble");
   if(!b)return;
   const token=++state.speechBubbleToken;
+  const owner=state.currentVoicePerson||state.currentPerson||"local";
 
   if(speechNeedsLocalization(text,target,spokenLang)){
     state.pendingSpeechLocalization=true;
     b.textContent=window.ROBOTITO_I18N?.t?.("prepareLocalized",target)||"Preparando la respuesta…";
     b.classList.remove("hidden");
     void localizeGeneratedSpeech(text,target).then(localized=>{
-      commitSpeechMessage(localized,ms,target,token);
+      commitSpeechMessage(localized,ms,target,token,owner);
     }).catch(error=>{
       console.warn("response localization",error);
-      commitSpeechMessage(localizedSpeechFallback(target),ms,target,token);
+      commitSpeechMessage(localizedSpeechFallback(target),ms,target,token,owner);
     });
     return;
   }
 
   state.pendingSpeechLocalization=false;
-  commitSpeechMessage(String(text||""),ms,target,token);
+  commitSpeechMessage(String(text||""),ms,target,token,owner);
 }
 function sayInLanguage(text,lang,ms=3500){
   say(text,ms,lang);
@@ -1047,7 +1056,7 @@ function stopSenses(reason="captureStopped"){
   $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",state.languageMode);
   if($("#stopSensesBtn"))$("#stopSensesBtn").disabled=true;
   const message=window.ROBOTITO_I18N.t(reason,state.languageMode);
-  $("#systemStatus").textContent=message;setListenState(message);
+  uiSet($("#systemStatus"),message);setListenState(message);
 }
 function reconcileCaptureState(){
   if(!state.started)return;
@@ -1116,7 +1125,7 @@ async function startSenses(){
     }catch(e){console.warn("local ASR prime",e);}
   }
 
-  $("#systemStatus").textContent=startupText(mobile?"startupRequestingMedia":"startupPermissions");
+  uiSet($("#systemStatus"),startupText(mobile?"startupRequestingMedia":"startupPermissions"));
 
   try{
     const granted=await navigator.mediaDevices.getUserMedia({
@@ -1167,19 +1176,19 @@ async function startSenses(){
         statusCallback:(text,kind)=>{if(current()&&!state.captureSuspended)setListenState(text,kind);}
       }).then(ready=>{
         if(!ready||!current()||state.captureSuspended)return;
-        $("#systemStatus").textContent=startupText("startupListening");
+        uiSet($("#systemStatus"),startupText("startupListening"));
       }).catch(err=>{
         if(!current())return;
         console.warn("local ASR",err);
         state.recognitionWanted=true;
         if(document.hidden||state.captureSuspended)return;
-        $("#systemStatus").textContent=startupText("startupSpeechFailed");
+        uiSet($("#systemStatus"),startupText("startupSpeechFailed"));
         // Desktop-style Web Speech remains a last automatic fallback if available.
         startListeningCycle(false);
       });
     }else{
       setupSpeechRecognition(true);
-      $("#systemStatus").textContent=startupText("startupMediaActive");
+      uiSet($("#systemStatus"),startupText("startupMediaActive"));
     }
 
     $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("active",state.languageMode)||"Sentidos activos";
@@ -2282,10 +2291,17 @@ function setLanguageMode(mode){
   if(!window.ROBOTITO_I18N?.supported?.(mode))return;
   // A new language invalidates a pending translation of the previous locale.
   // Its eventual promise completion must not revive the old speech bubble.
-  if(mode!==state.languageMode&&state.pendingSpeechLocalization){
+  if(mode!==state.languageMode){
     ++state.speechBubbleToken;
     state.pendingSpeechLocalization=false;
     $("#speechBubble")?.classList.add("hidden");
+    if(state.speaking){
+      state.speechSession=(state.speechSession||0)+1;
+      window.speechSynthesis?.cancel?.();
+      state.speaking=false;
+      state.speechBlocked=false;
+      window.RobotitoLocalASR?.pause?.(false);
+    }
   }
   // A direct selector change also supersedes any queued one-reply language.
   state.nextResponseLanguage=null;
@@ -2435,8 +2451,10 @@ async function handleSayInLanguageCommand(rawText){
   }
   const source=responseLanguage();
   const request=typeof state!=="undefined"?++state.speechBubbleToken:null;
+  const owner=request===null?null:state.currentVoicePerson||state.currentPerson||"local";
   const translated=await translateShortPhrase(phrase,source,target);
   if(request!==null&&request!==state.speechBubbleToken)return true;
+  if(request!==null&&owner!==(state.currentVoicePerson||state.currentPerson||"local"))return true;
   if(!translated){
     const fail=typeof uiText==="function"?uiText("No pude traducir esa frase ahora.",{},source):"No pude traducir esa frase ahora.";
     say(fail);
@@ -2633,7 +2651,7 @@ function prepareDrawing(){
   ctx.lineWidth=5;ctx.lineCap="round";ctx.lineJoin="round";ctx.strokeStyle="#4d4650";
   return {cv,ctx};
 }
-function drawCuteThing(kind,item){
+function drawCuteThing(kind,item,lang=state.languageMode||"es"){
   const prep=prepareDrawing();if(!prep)return;
   const {ctx}=prep,w=440,h=320;
   const circle=(x,y,r,fill=null)=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}ctx.stroke();};
@@ -2649,15 +2667,21 @@ function drawCuteThing(kind,item){
   else if(["cat","dog","panda","rabbit","bear"].includes(kind)){circle(220,155,82,"#fff");if(kind==="cat"){ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(155,105);ctx.lineTo(145,45);ctx.lineTo(195,82);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(285,105);ctx.lineTo(295,45);ctx.lineTo(245,82);ctx.fill();ctx.stroke();}else{circle(165,90,31,kind==="panda"?"#27242a":"#fff");circle(275,90,31,kind==="panda"?"#27242a":"#fff");}if(kind==="panda"){ctx.fillStyle="#27242a";ctx.beginPath();ctx.ellipse(187,145,27,34,.25,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(253,145,27,34,-.25,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";circle(187,145,12,"#fff");circle(253,145,12,"#fff");}eye(188,145);eye(252,145);ctx.fillStyle="#2d2830";ctx.beginPath();ctx.ellipse(220,175,14,10,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(220,183,22,.15,Math.PI-.15);ctx.stroke();}
   else if(kind==="fish"){ctx.fillStyle="#9fd8dc";ctx.beginPath();ctx.ellipse(210,160,95,58,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(300,160);ctx.lineTo(370,105);ctx.lineTo(370,215);ctx.closePath();ctx.fill();ctx.stroke();eye(165,145);ctx.beginPath();ctx.arc(155,176,22,.1,Math.PI-.1);ctx.stroke();}
   else if(kind==="car"){ctx.fillStyle="#ef9eb2";ctxRoundRect(ctx,100,145,240,80,25);ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(145,145);ctx.lineTo(185,100);ctx.lineTo(270,100);ctx.lineTo(310,145);ctx.closePath();ctx.fill();ctx.stroke();circle(155,225,30,"#353039");circle(290,225,30,"#353039");}
-  else if(kind==="book"){ctx.fillStyle="#c8b9ea";ctxRoundRect(ctx,130,70,180,190,16);ctx.fill();ctx.stroke();line(160,70,160,260);ctx.fillStyle="#fff";ctx.font="bold 28px system-ui";ctx.fillText("BOOK",185,160);}
+  else if(kind==="book"){ctx.fillStyle="#c8b9ea";ctxRoundRect(ctx,130,70,180,190,16);ctx.fill();ctx.stroke();line(160,70,160,260);ctx.fillStyle="#fff";ctx.font="bold 28px system-ui";ctx.fillText(objectDisplayName(window.ROBOTITO_OBJECTS?.find?.("book","en"),lang),175,160,125);}
   else if(kind==="cup"){ctx.fillStyle="#f4c8d7";ctxRoundRect(ctx,145,90,145,150,20);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(292,155,48,-Math.PI/2,Math.PI/2);ctx.stroke();ctx.beginPath();ctx.moveTo(175,70);ctx.bezierCurveTo(160,45,190,35,175,10);ctx.stroke();ctx.beginPath();ctx.moveTo(225,70);ctx.bezierCurveTo(210,45,240,35,225,10);ctx.stroke();}
   else if(kind==="cloud"){ctx.fillStyle="#dcebf5";circle(175,165,48,"#dcebf5");circle(225,130,62,"#dcebf5");circle(285,165,52,"#dcebf5");ctx.fillRect(150,165,165,55);ctx.strokeRect(150,165,165,55);}
   else if(kind==="rainbow"){const cols=["#ef8f9d","#f3b86d","#ead86d","#8dcc8b","#83bdd9","#9d91d5"];cols.forEach((col,i)=>{ctx.strokeStyle=col;ctx.lineWidth=18;ctx.beginPath();ctx.arc(220,245,145-i*19,Math.PI,Math.PI*2);ctx.stroke();});}
   else if(kind==="moon"){ctx.fillStyle="#f5e4a8";circle(220,150,90,"#f5e4a8");ctx.fillStyle="#fffdfb";ctx.beginPath();ctx.arc(260,120,88,0,Math.PI*2);ctx.fill();}
   else{
     ctx.font="110px Apple Color Emoji,Segoe UI Emoji,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(item?.emoji||"✨",220,145);
-    ctx.font="700 24px system-ui";ctx.fillStyle="#4d4650";ctx.fillText(objectDisplayName(item,state.lastDetectedLanguage||"es"),220,260);
+    ctx.font="700 24px system-ui";ctx.fillStyle="#4d4650";ctx.fillText(objectDisplayName(item,lang),220,260,400);
   }
+}
+function refreshDrawingLocale(){
+  const drawing=drawRequestedThing.current;
+  if(!drawing||$("#drawingShowcase")?.classList.contains("hidden"))return;
+  drawCuteThing(drawing.kind,drawing.item);
+  uiSet($("#drawingTitle"),"Robotito dibujó {name}",lang=>({name:drawing.item?objectDisplayName(drawing.item,lang):drawing.query}));
 }
 function drawRequestedThing(rawText,lang="es"){
   const text=normalizeText(rawText);
@@ -2675,12 +2699,12 @@ function drawRequestedThing(rawText,lang="es"){
   let kind=null;
   for(const [a,k] of Object.entries(aliases)){if(query===a||query.includes(a)){kind=k;break;}}
   if(!kind&&item)kind=item.id;
-  drawCuteThing(kind||"generic",item);
-  uiSet($("#drawingTitle"),"Robotito dibujó {name}",{name:item?objectDisplayName(item,lang):query});
+  drawRequestedThing.current={kind:kind||"generic",item,query};
   $("#drawingShowcase").classList.remove("hidden");
+  refreshDrawingLocale();
   clearTimeout(drawRequestedThing.t);
   drawRequestedThing.t=setTimeout(()=>$("#drawingShowcase").classList.add("hidden"),8000);
-  say(lang==="en"?"I drew it for you.":"Te lo dibujé.");
+  sayInLanguage(uiText("Te lo dibujé.",{},lang),lang);
   return true;
 }
 
@@ -3812,11 +3836,9 @@ function makeFlashcards(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"&&l.text.length>30).slice(-8);
   const out=$("#classAnswer");
   if(!lines.length){out.innerHTML='<div class="study-chip" data-ui-copy=Todav%C3%ADa%20no%20tengo%20suficiente%20material.>Todavía no tengo suficiente material.</div>';return;}
-  out.innerHTML=lines.map((l,i)=>{
-    const words=contentWords(l.text);
-    const topic=words.slice(0,3).join(" ")||"este punto";
-    return '<div class="study-chip"><strong>Pregunta '+(i+1)+':</strong> ¿Qué explicó la profesora sobre '+escapeHtml(topic)+'?<br><span class="muted">Respuesta: '+escapeHtml(l.text)+'</span></div>';
-  }).join("");
+  out.innerHTML=lines.map(()=>'<div class="study-chip"><strong></strong><p class="flashcard-answer" lang="und"></p></div>').join("");
+  [...out.querySelectorAll(".study-chip strong")].forEach((node,i)=>uiSet(node,"Pregunta {number}: ¿Qué explicó la profesora sobre {topic}?",lang=>({number:i+1,topic:contentWords(lines[i].text).slice(0,3).join(" ")||uiText("este punto",{},lang)})));
+  [...out.querySelectorAll(".flashcard-answer")].forEach((node,i)=>window.ROBOTITO_LOCALIZED_CONTENT?.render(node,lines[i].text,lines[i].language||"und"));
   setMood("proud","Robotito preparó tarjetas para estudiar.");
 }
 function speakerRoleForPerson(name){
@@ -5539,14 +5561,18 @@ function scoreBook(book,prompt){
   },analyzeBookPrompt(prompt)).score+((book["Exclusive Shelf"]||"")==="to-read"?1:0);
 }
 
-function recommendationReason(book,profile,matched=[]){
+function recommendationReasons(book,profile,matched=[]){
   const reasons=[...matched];
   if(!reasons.length){
     profile.concepts.forEach(c=>{
       if(c.terms.concat(c.labels).some(t=>bookText(book).includes(normalizeText(t))))reasons.push(c.labels[0]);
     });
   }
-  if(reasons.length)return "Puede encajar por "+[...new Set(reasons)].slice(0,3).join(", ")+".";
+  return [...new Set(reasons)].slice(0,3);
+}
+function recommendationReason(book,profile,matched=[]){
+  const reasons=recommendationReasons(book,profile,matched);
+  if(reasons.length)return "Puede encajar por "+reasons.join(", ")+".";
   return "Es una alternativa cercana al tipo de lectura que describiste.";
 }
 
@@ -5592,7 +5618,7 @@ async function recommendBook(promptOverride=null){
 
   if(only){
     if(!state.library.length){
-      $("#bookResults").innerHTML='<div class="card"><strong>No hace falta Goodreads para recibir recomendaciones.</strong><p data-ui-copy=Desmarc%C3%A1%20%C2%ABSolo%20de%20mi%20biblioteca%C2%BB%20y%20buscar%C3%A9%20opciones%20nuevas%20a%20partir%20de%20tu%20descripci%C3%B3n.>Desmarcá «Solo de mi biblioteca» y buscaré opciones nuevas a partir de tu descripción.</p></div>';
+      $("#bookResults").innerHTML='<div class="card"><strong data-ui-copy=No%20hace%20falta%20Goodreads%20para%20recibir%20recomendaciones.>No hace falta Goodreads para recibir recomendaciones.</strong><p data-ui-copy=Desmarc%C3%A1%20%C2%ABSolo%20de%20mi%20biblioteca%C2%BB%20y%20buscar%C3%A9%20opciones%20nuevas%20a%20partir%20de%20tu%20descripci%C3%B3n.>Desmarcá «Solo de mi biblioteca» y buscaré opciones nuevas a partir de tu descripción.</p></div>';
       say("No necesitás Goodreads. Desmarcá Solo de mi biblioteca y te recomiendo opciones nuevas.");
       return;
     }
@@ -5601,7 +5627,7 @@ async function recommendBook(promptOverride=null){
       .map(book=>{
         const normalized={
           title:book["Title"],authors:[book["Author"]],categories:String(book["Bookshelves"]||"").split(","),
-          description:book["My Review"]||"Está en tu biblioteca."
+          description:book["My Review"]||"",language:book.language||"und"
         };
         const result=scoreBookCandidate(normalized,profile);
         return {book:normalized,...result,owned:true};
@@ -5627,7 +5653,7 @@ async function recommendBook(promptOverride=null){
   }catch(error){
     const ranked=LOCAL_BOOK_CATALOG
       .filter(book=>!exclude||!readTitles.has(normalizeText(book.title)))
-      .map(book=>({book,...scoreBookCandidate(book,profile),owned:false}))
+      .map(book=>({book:{...book,language:"es"},...scoreBookCandidate(book,profile),owned:false}))
       .sort((a,b)=>b.score-a.score)
       .slice(0,3);
     if(ranked.length){
@@ -5659,9 +5685,16 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
     ${book.infoLink?`<a class="book-more-link" href="${escapeHtml(book.infoLink)}" target="_blank" rel="noopener noreferrer" data-ui-copy=Ver%20m%C3%A1s%20informaci%C3%B3n%20%E2%86%97>Ver más información ↗</a>`:""}
     </div></div>`).join("");
   [...$("#bookResults").querySelectorAll(".book-card")].forEach((card,i)=>{
-    const {book,matched}=results[i];
-    window.ROBOTITO_LOCALIZED_CONTENT?.render(card.querySelector(".book-description"),book.description?.replace(/<[^>]+>/g,"").slice(0,320)||uiText("Sin descripción disponible."),book.description?book.language||"und":state.languageMode);
-    window.ROBOTITO_LOCALIZED_CONTENT?.render(card.querySelector(".book-match-reason"),recommendationReason(book,profile,matched),"es");
+    const {book,matched,owned}=results[i];
+    const description=card.querySelector(".book-description");
+    if(book.description)window.ROBOTITO_LOCALIZED_CONTENT?.render(description,book.description.replace(/<[^>]+>/g,"").slice(0,320),book.language||"und");
+    else uiSet(description,"Sin descripción disponible.");
+    uiSet(card.querySelector(".relation"),owned?"Ya está en tu biblioteca":"Sugerencia nueva");
+    const reasons=recommendationReasons(book,profile,matched);
+    uiSet(card.querySelector(".book-match-reason"),reasons.length?"Puede encajar por {topics}.":"Es una alternativa cercana al tipo de lectura que describiste.",lang=>({topics:reasons.map(reason=>BOOK_CONCEPTS.some(c=>c.labels.includes(reason))?uiText(reason,{},lang):reason).join(", ")}));
+    if(!book.authors?.length)uiSet(card.querySelector("strong + p"),"Autor no disponible");
+    const cover=card.querySelector("img");
+    if(cover)cover.dataset.bookTitle=book.title;
   });
   sayInLanguage(uiText("Encontré {count} opciones. La que más encaja es “{title}”.",{count:results.length,title:first.title},responseLanguage()),responseLanguage(),5200);
 }
@@ -5702,6 +5735,7 @@ function applyDayNightMode(date=new Date()){
   }
 
   const label=$("#dayNightLabel");
+  label?.removeAttribute?.("data-ui-copy");
   if(label)label.textContent=window.ROBOTITO_I18N?.t?.(
     mode==="night"?"uiNightLabel":"uiDayLabel",lang)
     ||(mode==="night"?"noche":"día");

@@ -230,24 +230,266 @@
     ["yellowheart","💛",["corazon amarillo","corazón amarillo"],["yellow heart"],"símbolo"]
   ];
 
+  // Product names for every catalogue item, in addition to the original aliases.
+  const localizedNames=Object.fromEntries(`
+book|livro|livre|libro|Buch
+notebook|caderno|cahier|quaderno|Notizbuch
+pencil|lápis|crayon|matita|Bleistift
+pen|caneta|stylo|penna|Kugelschreiber
+eraser|borracha|gomme|gomma|Radiergummi
+ruler|régua|règle|righello|Lineal
+backpack|mochila|sac à dos|zaino|Rucksack
+scissors|tesoura|ciseaux|forbici|Schere
+calculator|calculadora|calculatrice|calcolatrice|Taschenrechner
+globe|globo terrestre|globe terrestre|mappamondo|Globus
+phone|celular|téléphone|telefono|Telefon
+laptop|computador portátil|ordinateur portable|portatile|Laptop
+computer|computador|ordinateur|computer|Computer
+keyboard|teclado|clavier|tastiera|Tastatur
+mouse|mouse de computador|souris d’ordinateur|mouse del computer|Computermaus
+headphones|fones de ouvido|casque audio|cuffie|Kopfhörer
+camera|câmera|appareil photo|fotocamera|Kamera
+television|televisão|télévision|televisione|Fernseher
+remote|controle remoto|télécommande|telecomando|Fernbedienung
+watch|relógio de pulso|montre|orologio da polso|Armbanduhr
+clock|relógio de parede|horloge|orologio da parete|Wanduhr
+lamp|lâmpada de mesa|lampe|lampada|Lampe
+chair|cadeira|chaise|sedia|Stuhl
+table|mesa|table|tavolo|Tisch
+sofa|sofá|canapé|divano|Sofa
+bed|cama|lit|letto|Bett
+door|porta|porte|porta|Tür
+window|janela|fenêtre|finestra|Fenster
+mirror|espelho|miroir|specchio|Spiegel
+key|chave|clé|chiave|Schlüssel
+bottle|garrafa|bouteille|bottiglia|Flasche
+cup|xícara|tasse|tazza|Tasse
+glass|copo|verre|bicchiere|Glas
+plate|prato|assiette|piatto|Teller
+fork|garfo|fourchette|forchetta|Gabel
+knife|faca|couteau|coltello|Messer
+spoon|colher|cuillère|cucchiaio|Löffel
+pan|frigideira|poêle|padella|Pfanne
+pot|panela|casserole|pentola|Topf
+fridge|geladeira|réfrigérateur|frigorifero|Kühlschrank
+microwave|micro-ondas|micro-ondes|microonde|Mikrowelle
+apple|maçã|pomme|mela|Apfel
+banana|banana|banane|banana|Banane
+orange|laranja|orange|arancia|Orange
+lemon|limão|citron|limone|Zitrone
+strawberry|morango|fraise|fragola|Erdbeere
+grapes|uvas|raisins|uva|Trauben
+watermelon|melancia|pastèque|anguria|Wassermelone
+pear|pera|poire|pera|Birne
+peach|pêssego|pêche|pesca|Pfirsich
+pineapple|abacaxi|ananas|ananas|Ananas
+carrot|cenoura|carotte|carota|Karotte
+tomato|tomate|tomate|pomodoro|Tomate
+potato|batata|pomme de terre|patata|Kartoffel
+bread|pão|pain|pane|Brot
+cheese|queijo|fromage|formaggio|Käse
+egg|ovo|œuf|uovo|Ei
+pizza|pizza|pizza|pizza|Pizza
+hamburger|hambúrguer|hamburger|hamburger|Hamburger
+cookie|biscoito|biscuit|biscotto|Keks
+cake|bolo|gâteau|torta|Kuchen
+icecream|sorvete|glace|gelato|Eiscreme
+dog|cachorro|chien|cane|Hund
+cat|gato|chat|gatto|Katze
+rabbit|coelho|lapin|coniglio|Kaninchen
+hamster|hamster|hamster|criceto|Hamster
+mouse-animal|rato|souris animale|topo|Maus
+cow|vaca|vache|mucca|Kuh
+pig|porco|cochon|maiale|Schwein
+horse|cavalo|cheval|cavallo|Pferd
+sheep|ovelha|mouton|pecora|Schaf
+goat|cabra|chèvre|capra|Ziege
+lion|leão|lion|leone|Löwe
+tiger|tigre|tigre|tigre|Tiger
+bear|urso|ours|orso|Bär
+panda|panda|panda|panda|Panda
+monkey|macaco|singe|scimmia|Affe
+elephant|elefante|éléphant|elefante|Elefant
+giraffe|girafa|girafe|giraffa|Giraffe
+zebra|zebra|zèbre|zebra|Zebra
+deer|cervo|cerf|cervo|Hirsch
+fox|raposa|renard|volpe|Fuchs
+wolf|lobo|loup|lupo|Wolf
+chicken|galinha|poule|gallina|Huhn
+rooster|galo|coq|gallo|Hahn
+duck|pato|canard|anatra|Ente
+penguin|pinguim|manchot|pinguino|Pinguin
+owl|coruja|hibou|gufo|Eule
+eagle|águia|aigle|aquila|Adler
+frog|sapo|grenouille|rana|Frosch
+snake|cobra|serpent|serpente|Schlange
+turtle|tartaruga|tortue|tartaruga|Schildkröte
+fish|peixe|poisson|pesce|Fisch
+dolphin|golfinho|dauphin|delfino|Delfin
+whale|baleia|baleine|balena|Wal
+octopus|polvo|pieuvre|polpo|Oktopus
+butterfly|borboleta|papillon|farfalla|Schmetterling
+bee|abelha|abeille|ape|Biene
+ladybug|joaninha|coccinelle|coccinella|Marienkäfer
+spider|aranha|araignée|ragno|Spinne
+ant|formiga|fourmi|formica|Ameise
+car|carro|voiture|automobile|Auto
+bus|ônibus|bus|autobus|Bus
+train|trem|train|treno|Zug
+airplane|avião|avion|aeroplano|Flugzeug
+bicycle|bicicleta|vélo|bicicletta|Fahrrad
+motorcycle|moto|moto|motocicletta|Motorrad
+boat|barco|bateau|barca|Boot
+truck|caminhão|camion|camion|Lastwagen
+ball|bola|balle|palla|Ball
+soccerball|bola de futebol|ballon de football|pallone da calcio|Fußball
+basketball|bola de basquete|ballon de basket|pallone da basket|Basketball
+tennis|bola de tênis|balle de tennis|pallina da tennis|Tennisball
+guitar|violão|guitare|chitarra|Gitarre
+piano|piano|piano|pianoforte|Klavier
+drum|tambor|tambour|tamburo|Trommel
+violin|violino|violon|violino|Geige
+microphone|microfone|microphone|microfono|Mikrofon
+shirt|camiseta|tee-shirt|maglietta|T-Shirt
+pants|calça|pantalon|pantaloni|Hose
+dress|vestido|robe|vestito|Kleid
+shoe|sapato|chaussure|scarpa|Schuh
+hat|chapéu|chapeau|cappello|Hut
+glasses|óculos|lunettes|occhiali|Brille
+umbrella|guarda-chuva|parapluie|ombrello|Regenschirm
+toothbrush|escova de dentes|brosse à dents|spazzolino|Zahnbürste
+soap|sabão|savon|sapone|Seife
+towel|toalha|serviette|asciugamano|Handtuch
+flower|flor|fleur|fiore|Blume
+tree|árvore|arbre|albero|Baum
+leaf|folha|feuille|foglia|Blatt
+sun|sol|soleil|sole|Sonne
+moon|lua|lune|luna|Mond
+star|estrela|étoile|stella|Stern
+cloud|nuvem|nuage|nuvola|Wolke
+rainbow|arco-íris|arc-en-ciel|arcobaleno|Regenbogen
+heart|coração|cœur|cuore|Herz
+gift|presente|cadeau|regalo|Geschenk
+candle|vela|bougie|candela|Kerze
+balloon|balão|ballon|palloncino|Luftballon
+teddy|ursinho de pelúcia|ours en peluche|orsacchiotto|Teddybär
+house|casa|maison|casa|Haus
+school|escola|école|scuola|Schule
+hospital|hospital|hôpital|ospedale|Krankenhaus
+store|loja|magasin|negozio|Geschäft
+park|parque|parc|parco|Park
+beach|praia|plage|spiaggia|Strand
+mountain|montanha|montagne|montagna|Berg
+volcano|vulcão|volcan|vulcano|Vulkan
+fire|fogo|feu|fuoco|Feuer
+snowflake|neve|neige|neve|Schnee
+snowman|boneco de neve|bonhomme de neige|pupazzo di neve|Schneemann
+rocket|foguete|fusée|razzo|Rakete
+satellite|satélite|satellite|satellite|Satellit
+planet|planeta|planète|pianeta|Planet
+earth|terra|Terre|Terra|Erde
+microscope|microscópio|microscope|microscopio|Mikroskop
+telescope|telescópio|télescope|telescopio|Teleskop
+magnet|ímã|aimant|magnete|Magnet
+testtube|tubo de ensaio|tube à essai|provetta|Reagenzglas
+dna|ADN|ADN|DNA|DNA
+atom|átomo|atome|atomo|Atom
+map|mapa|carte géographique|mappa|Landkarte
+compass|bússola|boussole|bussola|Kompass
+calendar|calendário|calendrier|calendario|Kalender
+envelope|envelope|enveloppe|busta|Briefumschlag
+paperclip|clipe|trombone|graffetta|Büroklammer
+folder|pasta|dossier|cartella|Ordner
+bell|sino|cloche|campana|Glocke
+alarm|despertador|réveil|sveglia|Wecker
+battery|bateria|pile|batteria|Batterie
+bulb|lâmpada|ampoule|lampadina|Glühbirne
+plug|plugue|fiche électrique|spina elettrica|Stecker
+lock|cadeado|cadenas|lucchetto|Vorhängeschloss
+hammer|martelo|marteau|martello|Hammer
+wrench|chave inglesa|clé anglaise|chiave inglese|Schraubenschlüssel
+gear|engrenagem|engrenage|ingranaggio|Zahnrad
+cart|carrinho de compras|chariot de courses|carrello della spesa|Einkaufswagen
+money|dinheiro|argent|denaro|Geld
+coin|moeda|pièce de monnaie|moneta|Münze
+card|cartão|carte bancaire|carta bancaria|Bankkarte
+crown|coroa|couronne|corona|Krone
+diamond|diamante|diamant|diamante|Diamant
+robot|robô|robot|robot|Roboter
+unicorn|unicórnio|licorne|unicorno|Einhorn
+dinosaur|dinossauro|dinosaure|dinosauro|Dinosaurier
+dragon|dragão|dragon|drago|Drache
+crocodile|crocodilo|crocodile|coccodrillo|Krokodil
+shark|tubarão|requin|squalo|Hai
+crab|caranguejo|crabe|granchio|Krabbe
+lobster|lagosta|homard|astice|Hummer
+parrot|papagaio|perroquet|pappagallo|Papagei
+flamingo|flamingo|flamant rose|fenicottero|Flamingo
+swan|cisne|cygne|cigno|Schwan
+peacock|pavão|paon|pavone|Pfau
+kangaroo|canguru|kangourou|canguro|Känguru
+koala|coala|koala|koala|Koala
+sloth|preguiça|paresseux|bradipo|Faultier
+otter|lontra|loutre|lontra|Otter
+seal|foca|phoque|foca|Robbe
+llama|lhama|lama|lama|Lama
+camel|camelo|chameau|cammello|Kamel
+rhino|rinoceronte|rhinocéros|rinoceronte|Nashorn
+hippo|hipopótamo|hippopotame|ippopotamo|Nilpferd
+cactus|cacto|cactus|cactus|Kaktus
+mushroom|cogumelo|champignon|fungo|Pilz
+avocado|abacate|avocat|avocado|Avocado
+corn|milho|maïs|mais|Mais
+broccoli|brócolis|brocoli|broccoli|Brokkoli
+cherries|cerejas|cerises|ciliegie|Kirschen
+kiwi|kiwi|kiwi|kiwi|Kiwi
+donut|rosquinha|beignet|ciambella|Donut
+chocolate|chocolate|chocolat|cioccolato|Schokolade
+popcorn|pipoca|pop-corn|popcorn|Popcorn
+sandwich|sanduíche|sandwich|panino|Sandwich
+hotdog|cachorro-quente|hot-dog|hot dog|Hotdog
+taco|taco|taco|taco|Taco
+coffee|café|café|caffè|Kaffee
+tea|chá|thé|tè|Tee
+juice|suco|jus|succo|Saft
+water|água|eau|acqua|Wasser
+triangle|triângulo|triangle|triangolo|Dreieck
+circle|círculo|cercle|cerchio|Kreis
+square|quadrado|carré|quadrato|Quadrat
+blueheart|coração azul|cœur bleu|cuore blu|blaues Herz
+greenheart|coração verde|cœur vert|cuore verde|grünes Herz
+yellowheart|coração amarelo|cœur jaune|cuore giallo|gelbes Herz
+`.trim().split("\n").map(line=>{const [id,pt,fr,it,de]=line.split("|");return [id,{pt,fr,it,de}];}));
   const catalog=items.map(([id,emoji,es,en,category])=>({id,emoji,es,en,category}));
   const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
 
-  function find(query){
+  function displayName(item,language="es"){
+    if(typeof item==="string")item=catalog.find(candidate=>candidate.id===item);
+    if(!item)return "";
+    if(localizedNames[item.id]?.[language])return localizedNames[item.id][language];
+    if(language==="en")return item.en[0];
+    return item.es.find(alias=>norm(alias)===norm(item.es[0])&&/[áéíóúñü]/.test(alias))||item.es[0];
+  }
+  function aliases(item){return [...item.es.map(label=>({label,language:"es"})),
+    ...item.en.map(label=>({label,language:"en"})),
+    ...Object.entries(localizedNames[item.id]||{}).map(([language,label])=>({label,language}))];}
+  function find(query,language=window.document?.documentElement?.lang){
     const q=norm(query);
-    let best=null,bestLen=0;
+    if(!q)return null;
+    let best=null,bestScore=0;
     for(const item of catalog){
-      for(const alias of [...item.es,...item.en]){
-        const a=norm(alias);
-        if((q===a||q.includes(a)||a.includes(q))&&a.length>bestLen){best=item;bestLen=a.length;}
+      for(const alias of aliases(item)){
+        const a=norm(alias.label);
+        const score=(q===a?10000:0)+a.length*10+(language===alias.language?1:0);
+        if((q===a||(" "+q+" ").includes(" "+a+" "))&&score>bestScore){best=item;bestScore=score;}
       }
     }
     return best;
   }
   function findByModelLabel(label){
     const q=norm(label).replace(/,/g," ");
-    return find(q) || catalog.find(item=>[...item.es,...item.en].some(a=>q.includes(norm(a))));
+    return find(q,"en");
   }
 
-  window.ROBOTITO_OBJECTS={catalog,find,findByModelLabel};
+  window.ROBOTITO_OBJECTS={catalog,find,findByModelLabel,displayName,localizedNames};
 })();

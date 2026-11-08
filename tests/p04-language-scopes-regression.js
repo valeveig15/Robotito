@@ -46,6 +46,6 @@ methods.setLanguageMode("pt"); // Simulates manually choosing Portuguese.
 eq(state.nextResponseLanguage,null,"Manual selector clears previous one-turn language");
 eq(state.languageMode,"pt","Manual selector changes current language");
 eq(env.get("robotito.languageMode.v1"),"pt","Manual selection persists the chosen language");
-assert.ok(source.includes("if(state.nextResponseLanguage&&!spokenLang)state.nextResponseLanguage=null;"));
+assert.ok(source.includes("if(state.nextResponseLanguage)state.nextResponseLanguage=null;"));
 checks++;
 console.log("Robotito P04 persistent/session/one-turn scope:",checks,"checks");

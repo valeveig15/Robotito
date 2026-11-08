@@ -239,14 +239,17 @@ function supported(code){return Object.prototype.hasOwnProperty.call(LOCALES,cod
 function t(key,lang="es"){return LABELS[key]?.[lang]||LABELS[key]?.es||key;}
 // Only application-owned copy belongs here. User names, quotations and stored
 // notes are values, never lookup keys. Formatting never evaluates HTML or code.
-const COPY=new Map(), bindings=new Map();
+const COPY=new Map(), SINGULAR=new Map(), bindings=new Map();
 function addMessages(rows){
  for(const row of rows){
   if(row.length!==6||row.some(value=>typeof value!=="string"||!value))throw new Error("Incomplete UI translation");
   COPY.set(row[0],Object.fromEntries(Object.keys(LOCALES).map((lang,i)=>[lang,row[i]])));
  }
 }
+function addSingular(source,row){addMessages([row]);SINGULAR.set(source,row[0]);}
 function text(source,lang="es",data={}){
+ if(typeof data==="function")data=data(lang);
+ if(Number(data.count)===1&&SINGULAR.has(source))source=SINGULAR.get(source);
  const row=COPY.get(source)||[...COPY.values(),...Object.values(LABELS)].find(row=>Object.values(row).includes(source));
  const template=row?.[lang]||fixedReply(source,lang)||String(source??"");
  return template.replace(/\{(\w+)\}/g,(match,key)=>Object.prototype.hasOwnProperty.call(data,key)?String(data[key]):match);
@@ -265,6 +268,12 @@ function refreshBindings(lang,doc){
  for(const element of doc.querySelectorAll("[data-ui-copy]")){
   const translated=text(decodeURIComponent(element.getAttribute("data-ui-copy")),lang);
   if(element.textContent!==translated)element.textContent=translated;
+ }
+ for(const attribute of ["title","placeholder","aria-label"]){
+  for(const element of doc.querySelectorAll("[data-ui-"+attribute+"]")){
+   const source=decodeURIComponent(element.getAttribute("data-ui-"+attribute));
+   element.setAttribute(attribute,text(source,lang));
+  }
  }
 }
 function languageFromName(value){
@@ -1133,7 +1142,7 @@ Object.assign(LABELS,{
     "de": "Ich bin nicht sicher, ob du das ernst meinst. Soll ich es tun?"
   }
 });
-root.ROBOTITO_I18N={supported,locale:code=>LOCALES[code]||LOCALES.es,t,fixedReply,message,parseCommand,parseTranslation,languageFromName,apply,text,bindText,refreshBindings,addMessages,
+root.ROBOTITO_I18N={supported,locale:code=>LOCALES[code]||LOCALES.es,t,fixedReply,message,parseCommand,parseTranslation,languageFromName,apply,text,bindText,refreshBindings,addMessages,addSingular,
  catalog:()=>[...COPY.entries()].map(([source,translations])=>({source,translations})),languages:Object.keys(LOCALES)};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_I18N;
 })(typeof window!=="undefined"?window:globalThis);

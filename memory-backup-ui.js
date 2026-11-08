@@ -3,7 +3,7 @@
 "use strict";
 const byId=id=>document.getElementById(id);
 const t=key=>root.ROBOTITO_I18N?.t?.(key,document.documentElement.lang||"es")||key;
-function status(key){const el=byId("memoryBackupStatus");if(el)el.textContent=t(key);}
+function status(key){const el=byId("memoryBackupStatus");if(el){if(root.ROBOTITO_I18N?.bindText)root.ROBOTITO_I18N.bindText(el,root.ROBOTITO_I18N.t(key,"es"));else el.textContent=t(key);}}
 function attach(){
  const exporter=byId("downloadMemoryBackup"),chooser=byId("chooseMemoryBackup"),file=byId("memoryBackupFile");
  if(!exporter||!chooser||!file)return;

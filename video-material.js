@@ -98,10 +98,10 @@
       return;
     }
     const material=[
-      "Fuente: "+video.url,
-      "Título: "+video.title,
+      uiText("Fuente: {value}",{value:video.url}),
+      uiText("Título: {value}",{value:video.title}),
       "",
-      "Transcripción del video:",
+      uiText("Transcripción del video:"),
       transcript
     ].join("\n");
     await saveTextMaterial(material,"YouTube_"+safeName(video.title)+".txt");
@@ -109,9 +109,9 @@
     setStatus("Transcripción guardada como material académico de la materia y el tema actuales.","success");
     toast?.("Transcripción del video incorporada.");
   }
-  function translatedObject(label){
+  function translatedObject(label,lang=state.languageMode||"es"){
     const item=window.ROBOTITO_OBJECTS?.findByModelLabel?.(label);
-    return item?.es?.[0]||label;
+    return item?window.ROBOTITO_OBJECTS.displayName(item,lang):label;
   }
   async function inspectFrame(){
     if(!captureActive||visionBusy||document.hidden)return;
@@ -123,7 +123,7 @@
       const predictions=await state.objectModel.detect(preview,12,.52);
       const second=Math.max(0,Math.round((Date.now()-(state.classStartedAt||Date.now()))/1000));
       predictions.filter(x=>Number(x.score)>=.58).forEach(x=>{
-        const name=translatedObject(x.class);
+        const name=x.class;
         const previous=visualObservations.get(name)||{name,count:0,firstAt:second,lastAt:second,best:0};
         previous.count++;
         previous.lastAt=second;
@@ -133,7 +133,7 @@
       const visual=document.querySelector("#youtubeVisualStatus");
       if(visual){
         const names=[...visualObservations.values()].sort((a,b)=>b.count-a.count).slice(0,5).map(x=>x.name);
-        uiSet(visual,names.length?"Objetos vistos: {names}":"Todavía no reconocí objetos generales con suficiente seguridad.",{names:names.join(", ")});
+        uiSet(visual,names.length?"Objetos vistos: {names}":"Todavía no reconocí objetos generales con suficiente seguridad.",lang=>({names:names.map(name=>translatedObject(name,lang)).join(", ")}));
       }
     }catch(e){
       console.warn("video frame vision",e);
@@ -150,12 +150,12 @@
     const rows=[...visualObservations.values()].sort((a,b)=>b.count-a.count);
     if(!rows.length)return;
     const lines=[
-      "Fuente: "+video.url,
-      "Título: "+video.title,
+      uiText("Fuente: {value}",{value:video.url}),
+      uiText("Título: {value}",{value:video.title}),
       "",
-      "Observaciones visuales automáticas:",
-      "Estas observaciones reconocen objetos generales y pueden contener errores. No describen por sí solas toda la explicación visual.",
-      ...rows.map(x=>"- "+x.name+" (detectado entre "+x.firstAt+" s y "+x.lastAt+" s; confianza máxima "+Math.round(x.best*100)+"%)")
+      uiText("Observaciones visuales automáticas:"),
+      uiText("Estas observaciones reconocen objetos generales y pueden contener errores. No describen por sí solas toda la explicación visual."),
+      ...rows.map(x=>uiText("- {name} (detectado entre {start} s y {end} s; confianza máxima {confidence}%)",{name:translatedObject(x.name),start:x.firstAt,end:x.lastAt,confidence:Math.round(x.best*100)}))
     ];
     await saveTextMaterial(lines.join("\n"),"Observaciones_visuales_"+safeName(video.title)+".txt");
   }

@@ -307,7 +307,7 @@ Respondé únicamente JSON válido:
     }
     renderClassTranscript();
     $("#speakerPill")?.classList.remove("hidden");
-    if($("#speakerLabel"))$("#speakerLabel").textContent=speaker==="me"?"vos":speaker==="teacher"?"profesora":"compañero/a";
+    if($("#speakerLabel"))uiSet($("#speakerLabel"),speaker==="me"?"VOS":speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
 
     const verification=await verifyTranscript(line.correctedText,[state.classSubject,state.classTopic].filter(Boolean).join(" — "));
     const live=state.classLines.find(x=>x.id===line.id);
@@ -349,7 +349,7 @@ Respondé únicamente JSON válido:
     state.selectedClassSessionId=state.classSessionId;
     if($("#classSubject"))$("#classSubject").value=state.classSubject;
     if($("#classTopic"))$("#classTopic").value=state.classTopic;
-    $("#classBadge").textContent="escuchando";
+    uiSet($("#classBadge"),"escuchando");
     $("#classBadge").classList.add("on");
     $("#speakerPill")?.classList.remove("hidden");
     setMood("focused","Robotito está concentrado escuchando la clase.");
@@ -371,13 +371,13 @@ Respondé únicamente JSON válido:
     if(!state.classMode)return;
     const endedAt=Date.now();
     state.classMode=false;
-    $("#classBadge").textContent="guardando…";
+    uiSet($("#classBadge"),"guardando…");
     $("#classBadge").classList.remove("on");
     $("#speakerPill")?.classList.add("hidden");
     setMood("proud","Robotito terminó de escuchar la clase y está guardando el audio.");
 
     const recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
-    $("#classBadge").textContent="apagado";
+    uiSet($("#classBadge"),"apagado");
 
     const summary=await window.ROBOTITO_CLASS_ORGANIZER?.generateAndSaveClassSummary?.(endedAt,recording);
     state.selectedClassSessionId=state.classSessionId;

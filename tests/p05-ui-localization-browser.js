@@ -8,7 +8,7 @@ runBrowserTest("p05-ui-localization",async test=>{
   await page.waitForFunction(()=>window.ROBOTITO_I18N&&typeof window.setLanguageMode==="function",null,{timeout:20000});
   const initial=await page.evaluate(()=>[...document.querySelectorAll("#languageGateTitle .startup-language-line")]
    .map(node=>({lang:node.lang,display:getComputedStyle(node).display,text:node.textContent})));
-  assert.deepEqual(initial.map(x=>x.lang),["es","en","pt"]);
+  assert.deepEqual(initial.map(x=>x.lang),["es","en","pt","fr","it","de"]);
   assert.ok(initial.every(x=>x.display==="block"&&x.text.length>10),
    "Multilingual startup phrases must use separate rows");
   for(const lang of ["es","en","pt","fr","it","de"]){

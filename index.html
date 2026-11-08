@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261105-p04-capture" />
+  <link rel="stylesheet" href="style.css?v=20261107-p05" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -14,18 +14,18 @@
   <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs" type="module"></script>
   <script defer src="curriculum.js"></script>
   <script defer src="knowledge.js?v=20261005-routing3"></script>
-  <script defer src="objects.js"></script>
+  <script defer src="objects.js?v=20261107-p05"></script>
   <script defer src="physics-momentum.js"></script>
-  <script defer src="spoken-math.js"></script>
+  <script defer src="spoken-math.js?v=20261107-p05"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="i18n.js?v=20261106-p05"></script>
-  <script defer src="ui-messages.js?v=20261106-p05"></script>
-  <script defer src="localized-content.js?v=20261106-p05"></script>
+  <script defer src="i18n.js?v=20261107-p05"></script>
+  <script defer src="ui-messages.js?v=20261107-p05"></script>
+  <script defer src="localized-content.js?v=20261107-p05"></script>
   <script defer src="voice-system.js?v=20261029-p06-voices2"></script>
   <script defer src="voice-sample-capture.js?v=20261029-p04-release3"></script>
   <script defer src="audio-perception.js?v=20261030-p03-continuity"></script>
   <script defer src="audio-reactions.js?v=20261030-p03-continuity"></script>
-  <script defer src="audio-reaction-trial.js?v=20261028-avatar-field1"></script>
+  <script defer src="audio-reaction-trial.js?v=20261107-p05"></script>
   <script defer src="audio-sound-model.js?v=20261030-p03-continuity"></script>
   <script defer src="audio-script-fallback.js?v=20261028-legacy-pcm1"></script>
   <script defer src="audio-microphone-gate.js?v=20261028-track-guard1"></script>
@@ -35,21 +35,21 @@
   <script defer src="semantic-planner.js?v=20261030-p01-context"></script>
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
   <script defer src="robotito-store.js?v=20261030-p02-portable"></script>
-  <script defer src="memory-backup-ui.js?v=20261029-p07-backup1"></script>
+  <script defer src="memory-backup-ui.js?v=20261107-p05"></script>
   <script defer src="presidents.js"></script>
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
   <script defer src="speech-fallback.js?v=20261105-p04-capture"></script>
-  <script defer src="class-audio.js?v=20261105-p04-capture"></script>
-  <script defer src="class-organizer.js"></script>
-  <script defer src="class-exercises.js?v=20261029-p01-context"></script>
-  <script defer src="class-verification.js"></script>
+  <script defer src="class-audio.js?v=20261107-p05"></script>
+  <script defer src="class-organizer.js?v=20261107-p05"></script>
+  <script defer src="class-exercises.js?v=20261107-p05"></script>
+  <script defer src="class-verification.js?v=20261107-p05"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
-  <script defer src="species-personality.js?v=20261006-robot1"></script>
-  <script defer src="script.js?v=20261106-p05"></script>
-  <script defer src="robotito-vnext.js?v=20261030-p01-context"></script>
-  <script defer src="video-material.js"></script>
+  <script defer src="species-personality.js?v=20261107-p05"></script>
+  <script defer src="script.js?v=20261107-p05"></script>
+  <script defer src="robotito-vnext.js?v=20261107-p05"></script>
+  <script defer src="video-material.js?v=20261107-p05"></script>
   <script defer src="robotito-tests.js?v=20261105-p04-capture"></script>
   <script defer src="robotito-regression-suite.js?v=20261105-p04-capture"></script>
 </head>
@@ -59,8 +59,8 @@
     <div id="startupMascot" class="language-panda" aria-hidden="true">🐼</div>
 
     <section id="languageStep" class="startup-step" aria-labelledby="languageGateTitle">
-      <h2 id="languageGateTitle"><span class="startup-language-line" lang="es">¿Qué idioma preferís?</span><span class="startup-language-line" lang="en">Which language do you prefer?</span><span class="startup-language-line" lang="pt">Qual idioma você prefere?</span></h2>
-      <p class="startup-language-help"><span class="startup-language-line" lang="es">Elegí el idioma en el que querés hablar con Robotito.</span><span class="startup-language-line" lang="en">Choose the language you want to use with Robotito.</span><span class="startup-language-line" lang="pt">Escolha o idioma para falar com o Robotito.</span></p>
+      <h2 id="languageGateTitle"><span class="startup-language-line" lang="es">¿Qué idioma preferís?</span><span class="startup-language-line" lang="en">Which language do you prefer?</span><span class="startup-language-line" lang="pt">Qual idioma você prefere?</span><span class="startup-language-line" lang="fr">Quelle langue préfères-tu ?</span><span class="startup-language-line" lang="it">Quale lingua preferisci?</span><span class="startup-language-line" lang="de">Welche Sprache bevorzugst du?</span></h2>
+      <p class="startup-language-help"><span class="startup-language-line" lang="es">Elegí el idioma en el que querés hablar con Robotito.</span><span class="startup-language-line" lang="en">Choose the language you want to use with Robotito.</span><span class="startup-language-line" lang="pt">Escolha o idioma para falar com o Robotito.</span><span class="startup-language-line" lang="fr">Choisis la langue pour parler avec Robotito.</span><span class="startup-language-line" lang="it">Scegli la lingua per parlare con Robotito.</span><span class="startup-language-line" lang="de">Wähle deine Sprache für Robotito.</span></p>
       <div class="language-gate-actions">
         <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
         <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
@@ -315,7 +315,7 @@
 
       <div id="drawingShowcase" class="drawing-showcase hidden">
         <div class="drawing-card">
-          <canvas id="drawingCanvas" width="440" height="320" aria-label="Dibujo hecho por Robotito"></canvas>
+          <canvas id="drawingCanvas" width="440" height="320" aria-label="Dibujo hecho por Robotito" data-ui-aria-label=Dibujo%20hecho%20por%20Robotito></canvas>
           <strong id="drawingTitle" data-ui-copy=Dibujo>Dibujo</strong>
         </div>
       </div>
@@ -328,7 +328,7 @@
       </div>
 
       <div class="world-controls">
-        <div class="hud" aria-label="Estado de Robotito">
+        <div class="hud" aria-label="Estado de Robotito" data-ui-aria-label=Estado%20de%20Robotito>
           <div class="hud-pill mode-pill"><span data-i18n="uiModeLabel">Modo</span><strong id="dayNightLabel" data-ui-copy=d%C3%ADa>día</strong></div>
           <div class="hud-pill"><span data-i18n="mood">Humor</span><strong id="moodLabel" data-ui-copy=tranquilo>tranquilo</strong></div>
           <div class="hud-pill"><span data-i18n="hunger">Hambre</span><strong id="hungerLabel">0%</strong></div>
@@ -337,7 +337,7 @@
           <div id="speakerPill" class="hud-pill hidden"><span data-i18n="speaker">Habla</span><strong id="speakerLabel">—</strong></div>
         </div>
 
-        <div class="quick-actions" aria-label="Acciones con Robotito">
+        <div class="quick-actions" aria-label="Acciones con Robotito" data-ui-aria-label=Acciones%20con%20Robotito>
           <button type="button" data-action="pet" data-i18n="pet">🤍 Acariciar</button>
           <button type="button" data-action="feed" data-i18n="feed">🍓 Alimentar</button>
           <button type="button" data-action="highfive" data-i18n="highfive">✋ Chocar los cinco</button>
@@ -363,7 +363,7 @@
     </div>
 
     <aside class="panel">
-      <nav class="tabs" aria-label="Panel de Robotito">
+      <nav class="tabs" aria-label="Panel de Robotito" data-ui-aria-label=Panel%20de%20Robotito>
         <button type="button" class="tab active" data-tab="status" data-i18n="status">Estado</button>
         <button type="button" class="tab" data-tab="class" data-i18n="class">Clase</button>
         <button type="button" class="tab" data-tab="tasks" data-i18n="tasks">Tareas</button>
@@ -384,7 +384,7 @@
         </div>
         <div class="meter-card battery-meter-card">
           <div class="meter-head"><span data-i18n="uiBatteryLabel">Batería</span><span id="energyText">100%</span></div>
-          <div class="meter" role="progressbar" aria-label="Batería del dispositivo" aria-valuemin="0" aria-valuemax="100"><span id="energyMeter"></span></div>
+          <div class="meter" role="progressbar" aria-label="Batería del dispositivo" aria-valuemin="0" aria-valuemax="100" data-ui-aria-label=Bater%C3%ADa%20del%20dispositivo><span id="energyMeter"></span></div>
           <p id="batterySourceText" class="battery-source" data-ui-copy=Consultando%20la%20bater%C3%ADa%20del%20dispositivo%E2%80%A6>Consultando la batería del dispositivo…</p>
         </div>
         <div class="meter-card">
@@ -534,7 +534,7 @@
                 <span class="class-editor-kicker" data-ui-copy=CORREGIR%20CLASE%20GUARDADA>CORREGIR CLASE GUARDADA</span>
                 <h2 id="classSessionEditorTitle" data-i18n="uiClassEdit">Editar datos de la clase</h2>
               </div>
-              <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar">×</button>
+              <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar" data-ui-aria-label=Cerrar>×</button>
             </div>
             <p data-i18n="uiClassEditorHelp" class="muted">Podés corregir cómo quedó agendada sin perder la transcripción, el resumen ni la grabación.</p>
             <input id="editClassSessionId" type="hidden" />
@@ -644,7 +644,7 @@
         <div class="card">
           <h2 data-i18n="uiVisualMath">Matemática visual</h2>
           <p class="muted" data-i18n="uiMathHelp">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
-          <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0"></textarea>
+          <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0" data-ui-placeholder=Ej.%20x%C2%B2%20%2B%20y%C2%B2%20-%206x%20%2B%204y%20-%2012%20%3D%200></textarea>
           <button id="solveMathBtn" data-i18n="uiSolveMath" type="button" class="primary full">Resolver y representar</button>
           <div id="mathExplanation" class="study-output"></div>
           <canvas id="mathCanvas" width="520" height="360"></canvas>
