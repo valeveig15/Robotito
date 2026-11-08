@@ -246,11 +246,31 @@ function sayDynamic(key,data={},ms=3000){
  const lang=responseLanguage();
  const translated=window.ROBOTITO_I18N?.message?.(key,lang,data);
  if(!translated)return false;
+ state.nextResponseLanguage=null;
  sayInLanguage(translated,lang,ms);
  return true;
 }
 function languageLocale(lang){
   return window.ROBOTITO_I18N?.locale?.(lang)||"es-UY";
+}
+function uiText(source,data={},lang=state.languageMode||"es"){
+ return window.ROBOTITO_I18N?.text?.(source,lang,data)||source;
+}
+function uiSet(element,source,data={}){
+ if(window.ROBOTITO_I18N?.bindText)window.ROBOTITO_I18N.bindText(element,source,data);
+ else if(element)element.textContent=source;
+}
+function refreshLocalizedUI(){
+  clockTick();
+ renderAvatarChoices();
+ if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatarById(state.avatar));
+ uiSet($("#moodLabel"),({calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"})[state.emotion]||"tranquilo");
+ uiSet($("#startBtn"),window.ROBOTITO_I18N.t(state.started?"active":"start","es"));
+ renderPeople();renderMemories();renderTasks();updateLibraryStats();renderClassTranscript();
+ window.ROBOTITO_CLASS_ORGANIZER?.render?.();
+ window.ROBOTITO_CLASS_ORGANIZER?.renderAcademicMaterials?.();
+ window.ROBOTITO_CLASS_AUDIO?.render?.();
+ if(typeof document.dispatchEvent==="function")document.dispatchEvent(new Event("robotito:languagechange"));
 }
 function languageLabel(lang){
   return ({es:"Español",en:"English",pt:"Português",fr:"Français",it:"Italiano",de:"Deutsch"})[lang]||"Español";
@@ -313,7 +333,7 @@ function isIOSSpeech(){
 }
 function setListenState(text,kind=""){
   const el=$("#listenState");
-  if(el){el.textContent=text;el.className="listen-state"+(kind?" "+kind:"");}
+  if(el){uiSet(el,text);el.className="listen-state"+(kind?" "+kind:"");}
 }
 function discardRecognition(){
   if(state.recognition){
@@ -571,6 +591,8 @@ function localizedSpeechFallback(target){
 async function localizeGeneratedSpeech(text,target=responseLanguage()){
   // Frequent app responses remain correctly translated when the optional
   // on-device model is missing, without sending personal content elsewhere.
+  const catalogued=window.ROBOTITO_I18N?.text?.(text,target);
+  if(catalogued&&catalogued!==text)return catalogued;
   const fixed=window.ROBOTITO_I18N?.fixedReply?.(text,target);
   if(fixed)return fixed;
   const detected=detectGeneratedSpeechLanguage(text);
@@ -646,7 +668,7 @@ window.ROBOTITO_LANGUAGE_PIPELINE={
 };
 function toast(text){
   const t=$("#toast");
-  t.textContent=text;
+  uiSet(t,text);
   t.classList.remove("hidden");
   clearTimeout(toast.t);
   toast.t=setTimeout(()=>t.classList.add("hidden"),2300);
@@ -662,8 +684,8 @@ function setMood(mood, reason=""){
   state.mood=mood;
   state.emotion=mood;
   const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"};
-  $("#moodLabel").textContent=labels[mood]||mood;
-  if(reason) $("#statusText").textContent=reason;
+  uiSet($("#moodLabel"),labels[mood]||mood);
+  if(reason) uiSet($("#statusText"),reason);
   updateAvatarMoodIcon(mood);
 }
 
@@ -734,7 +756,7 @@ function relationText(personOrValue){
 }
 function bondDetail(p){
   const b=ensureBond(p);
-  return `cariño ${Math.round(b.affection)} · confianza ${Math.round(b.trust)} · miedo ${Math.round(b.fear)} · fastidio ${Math.round(b.irritation)}`;
+  return uiText("cariño {affection} · confianza {trust} · miedo {fear} · fastidio {irritation}",{affection:Math.round(b.affection),trust:Math.round(b.trust),fear:Math.round(b.fear),irritation:Math.round(b.irritation)});
 }
 function changeMoodScore(delta){
   state.moodScore=clamp(state.moodScore+delta,0,100);
@@ -832,7 +854,7 @@ async function initDeviceBattery(){
   const source=$("#batterySourceText");
   if(typeof navigator.getBattery!=="function"){
     state.batterySupported=false;
-    if(source)source.textContent="Este navegador no permite consultar la batería; se mostrará una energía estimada.";
+    if(source)uiSet(source,"Este navegador no permite consultar la batería; se mostrará una energía estimada.");
     updateMeters();
     return false;
   }
@@ -844,12 +866,12 @@ async function initDeviceBattery(){
     battery.addEventListener?.("levelchange",sync);
     battery.addEventListener?.("chargingchange",sync);
     syncBatteryState({announce:true});
-    if(source)source.textContent=state.batteryCharging?"Batería real del dispositivo · cargando":"Batería real del dispositivo";
+    if(source)uiSet(source,state.batteryCharging?"Batería real del dispositivo · cargando":"Batería real del dispositivo");
     return true;
   }catch(error){
     console.warn("battery status",error);
     state.batterySupported=false;
-    if(source)source.textContent="No pude consultar la batería; se mostrará una energía estimada.";
+    if(source)uiSet(source,"No pude consultar la batería; se mostrará una energía estimada.");
     updateMeters();
     return false;
   }
@@ -863,7 +885,7 @@ function updateMeters(){
   $("#energyMeter").setAttribute("aria-valuenow",String(Math.round(state.energy)));
   const source=$("#batterySourceText");
   if(source&&state.batterySupported){
-    source.textContent=state.batteryCharging?"Batería real del dispositivo · cargando":"Batería real del dispositivo";
+    uiSet(source,state.batteryCharging?"Batería real del dispositivo · cargando":"Batería real del dispositivo");
   }
   $("#hungerText").textContent=Math.round(state.hunger)+"%";
   $("#hungerMeter").style.width=state.hunger+"%";
@@ -1589,7 +1611,7 @@ function setupAudio(stream){
       const label="sound"+kind.slice(0,1).toUpperCase()+kind.slice(1);
       state.audioKind=i18n?.t?.(label,responseLanguage())||kind;
       state.musicConfidence=Math.round((status.musicConfidence||0)*100);
-      const heard=$("#heardLabel");if(heard)heard.textContent=state.audioKind;
+      const heard=$("#heardLabel");if(heard)uiSet(heard,state.audioKind);
       if(microphoneGate?.isLive()&&rms>.04)state.lastHeardAt=Date.now();
       const dance=!!reactionPolicy?.updateMusic?.(status,{
         now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||
@@ -2063,8 +2085,8 @@ function setAvatarVisual(element,avatar,extraClass=""){
   if(element)element.innerHTML=avatarVisualMarkup(avatar,extraClass);
 }
 
-function speciesProfile(id=state.avatar){
-  return window.ROBOTITO_SPECIES?.profile?.(id) || {
+function speciesProfile(id=state.avatar,lang=avatarLanguage()){
+  return window.ROBOTITO_SPECIES?.profile?.(id,lang) || {
     trait:"tiene una personalidad muy curiosa",
     motion:"bounce",
     lines:{
@@ -2079,7 +2101,7 @@ function speciesProfile(id=state.avatar){
   };
 }
 function speciesLine(action,id=state.avatar){
-  return window.ROBOTITO_SPECIES?.line?.(id,action)
+  return window.ROBOTITO_SPECIES?.line?.(id,action,responseLanguage())
     || speciesProfile(id).lines?.[action]
     || speciesProfile(id).lines?.idle
     || "Estoy acá contigo.";
@@ -2100,8 +2122,8 @@ function speciesAct(action="play",ms=1700){
 }
 function speciesIntroduction(id=state.avatar){
   const avatar=avatarById(id);
-  const profile=speciesProfile(id);
-  return `Soy ${avatarName(avatar,"es")}. ${profile.trait.charAt(0).toUpperCase()+profile.trait.slice(1)}.`;
+  const profile=speciesProfile(id,responseLanguage());
+  return uiText("Soy {name}. {trait}.",{name:avatarName(avatar,responseLanguage()),trait:profile.trait},responseLanguage());
 }
 function handleSpeciesQuestion(rawText){
   const text=normalizeText(rawText);
@@ -2271,11 +2293,15 @@ function setLanguageMode(mode){
   document.documentElement.lang=mode;
   state.lastDetectedLanguage=mode;
   state.autoListenLanguage=mode;
-  if(!setLanguageMode.sessionOnly)localStorage.setItem("robotito.languageMode.v1",mode);
+  if(!setLanguageMode.sessionOnly){
+    try{localStorage.setItem("robotito.languageMode.v1",mode);}
+    catch(error){console.warn("language preference",error);if(typeof toast==="function")toast("No pude guardar el idioma en este dispositivo.");}
+  }
   if($("#languageMode"))$("#languageMode").value=mode;
   window.ROBOTITO_I18N?.apply?.(mode);
   if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
+  if(typeof refreshLocalizedUI==="function")refreshLocalizedUI();
   if(typeof applyDayNightMode==="function")applyDayNightMode(new Date());
   if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.setLanguage(mode);
   if(state.started&&!isMobileSpeech()){discardRecognition();startListeningCycle(true);}
@@ -2327,7 +2353,7 @@ const translationCache=new Map();
 function targetLanguageFromName(name){
   const n=normalizeText(name);
   const names={es:["espanol","castellano","spanish"],en:["ingles","english"],pt:["portugues","portuguese"],fr:["frances","french","francais"],it:["italiano","italian"],de:["aleman","deutsch","german"]};
-  return Object.keys(names).find(code=>names[code].includes(n))||null;
+  return window.ROBOTITO_I18N?.languageFromName?.(name)||Object.keys(names).find(code=>names[code].includes(n))||null;
 }
 function localTranslate(phrase,source,target){
   const n=normalizeText(phrase);
@@ -2343,7 +2369,8 @@ async function translateShortPhrase(phrase,source,target){
   if(!clean||source===target)return clean;
   const local=localTranslate(clean,source,target);
   if(local)return local;
-  const key=`${source}|${target}|${normalizeText(clean)}`;
+  if(window.ROBOTITO_LOCALIZED_CONTENT)return window.ROBOTITO_LOCALIZED_CONTENT.translate(clean,source,target);
+  const key=JSON.stringify([state.currentVoicePerson||state.currentPerson||"local",source,target,clean]);
   if(translationCache.has(key))return translationCache.get(key);
   try{
     if(window.LanguageModel?.create){
@@ -2354,6 +2381,7 @@ async function translateShortPhrase(phrase,source,target){
         out=String(await session.prompt(prompt)||"").trim();
       }finally{session.destroy?.();}
       if(out&&normalizeText(out)!==normalizeText(clean)){
+        if(translationCache.size>=100)translationCache.delete(translationCache.keys().next().value);
         translationCache.set(key,out);return out;
       }
     }
@@ -2367,6 +2395,7 @@ async function translateShortPhrase(phrase,source,target){
       try{
         const out=String(await translator.translate(clean)||"").trim();
         if(out&&normalizeText(out)!==normalizeText(clean)){
+          if(translationCache.size>=100)translationCache.delete(translationCache.keys().next().value);
           translationCache.set(key,out);return out;
         }
       }finally{translator.destroy?.();}
@@ -2375,6 +2404,7 @@ async function translateShortPhrase(phrase,source,target){
   return null;
 }
 async function handleSayInLanguageCommand(rawText){
+  const parsed=typeof window!=="undefined"?window.ROBOTITO_I18N?.parseTranslation?.(rawText):null;
   const text=normalizeText(rawText);
   const aliases="(?:espanol|español|castellano|spanish|espanhol|ingles|english|ingl[eê]s|portugues|portugu[eê]s|portuguese|frances|francais|french|italiano|italian|aleman|deutsch|german)";
   const patterns=[
@@ -2387,11 +2417,11 @@ async function handleSayInLanguageCommand(rawText){
   ];
   let match=null;
   for(const p of patterns){match=text.match(p);if(match)break;}
-  if(!match)return false;
-  const target=targetLanguageFromName(match[2]);
+  if(!match&&!parsed)return false;
+  const target=parsed?.language||targetLanguageFromName(match[2]);
   if(!target)return false;
-  let phrase=match[1].trim();
-  if(["algo","alguna cosa","something","anything","alguma coisa","algo legal"].includes(phrase)){
+  let phrase=parsed?.phrase||match[1].trim();
+  if(["algo","alguna cosa","something","anything","alguma coisa","algo legal","quelque chose","qualcosa","etwas"].includes(normalizeText(phrase))){
     const cute={
       es:["Hoy es un buen día para un abrazo panda.","Tu panda virtual cree que merecés algo lindo hoy.","El bambú mejora cuando hay buena compañía."],
       en:["Today is a good day for a panda hug.","Your virtual panda thinks you deserve something nice today.","Bamboo is better with good company."],
@@ -2404,12 +2434,15 @@ async function handleSayInLanguageCommand(rawText){
     return true;
   }
   const source=responseLanguage();
+  const request=typeof state!=="undefined"?++state.speechBubbleToken:null;
   const translated=await translateShortPhrase(phrase,source,target);
+  if(request!==null&&request!==state.speechBubbleToken)return true;
   if(!translated){
-    const fail=source==="en"?"I couldn't translate that phrase right now.":source==="pt"?"Não consegui traduzir essa frase agora.":"No pude traducir esa frase ahora.";
+    const fail=typeof uiText==="function"?uiText("No pude traducir esa frase ahora.",{},source):"No pude traducir esa frase ahora.";
     say(fail);
     return true;
   }
+  if(typeof state!=="undefined")state.nextResponseLanguage=null;
   sayInLanguage(translated,target,5000);
   return true;
 }
@@ -2643,7 +2676,7 @@ function drawRequestedThing(rawText,lang="es"){
   for(const [a,k] of Object.entries(aliases)){if(query===a||query.includes(a)){kind=k;break;}}
   if(!kind&&item)kind=item.id;
   drawCuteThing(kind||"generic",item);
-  $("#drawingTitle").textContent=lang==="en"?("Robotito drew "+(item?objectDisplayName(item,"en"):query)):("Robotito dibujó "+(item?objectDisplayName(item,"es"):query));
+  uiSet($("#drawingTitle"),"Robotito dibujó {name}",{name:item?objectDisplayName(item,lang):query});
   $("#drawingShowcase").classList.remove("hidden");
   clearTimeout(drawRequestedThing.t);
   drawRequestedThing.t=setTimeout(()=>$("#drawingShowcase").classList.add("hidden"),8000);
@@ -3029,7 +3062,7 @@ function answerEasyQuestion(rawText){
   )){
     const p=state.people.find(x=>x.name===known);
     if(!p)say("Todavía no te conozco lo suficiente como para decirlo.");
-    else say(`Nuestra relación está así: ${relationText(p)}.`);
+    else say(`Nuestra relación está así: ${escapeHtml(uiText(relationText(p)))}.`);
     return true;
   }
 
@@ -3142,7 +3175,7 @@ function answerEasyQuestion(rawText){
   )){
     const p=state.people.find(x=>x.name===known);
     if(!p)say("Todavía no te conozco lo suficiente.");
-    else say(`Ahora mismo ${relationText(p)}. Es un sentimiento bastante estable y cambia de a poquito.`);
+    else say(`Ahora mismo ${escapeHtml(uiText(relationText(p)))}. Es un sentimiento bastante estable y cambia de a poquito.`);
     return true;
   }
 
@@ -3482,7 +3515,7 @@ async function answerClassQuestion(question,{speak=true,render=true,announceMiss
   const found=answerFromClass(question);
   if(!found){
     if(render&&$("#classAnswer")){
-      $("#classAnswer").innerHTML='<div class="study-chip">No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
+      $("#classAnswer").innerHTML='<div class="study-chip" data-ui-copy=No%20encontr%C3%A9%20evidencia%20suficiente%20en%20las%20transcripciones%20ni%20en%20el%20material%20cargado%20para%20responder%20esa%20pregunta.>No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
     }
     if(announceMissing&&speak) say("No encontré evidencia suficiente en las transcripciones para contestar eso.",3600);
     return false;
@@ -3498,7 +3531,8 @@ function renderGeneralAcademicAnswer(question,text,source="",url=""){
   const sourceHtml=source
     ?'<div class="class-origin">Fuente: '+(url?'<a href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(source)+'</a>':escapeHtml(source))+'</div>'
     :"";
-  root.innerHTML='<div class="answer-card"><strong>Respuesta</strong><p class="class-answer-text">'+escapeHtml(text)+'</p>'+sourceHtml+'</div>';
+  root.innerHTML='<div class="answer-card"><strong data-ui-copy=Respuesta>Respuesta</strong><p class="class-answer-text"></p>'+sourceHtml+'</div>';
+  window.ROBOTITO_LOCALIZED_CONTENT?.render(root.querySelector('.class-answer-text'),text,detectGeneratedSpeechLanguage(text));
 }
 async function answerGeneralAcademicQuestion(question,{speak=true,render=true}={}){
   const lang=responseLanguage();
@@ -3631,7 +3665,7 @@ function sourceDetailLabel(e){
     return e.sourceName||e.subject||"archivo cargado";
   }
   const who=classSpeakerLabel(e);
-  const time=e.at?new Date(e.at).toLocaleTimeString("es-UY",{hour:"2-digit",minute:"2-digit"}):"";
+  const time=e.at?new Date(e.at).toLocaleTimeString(languageLocale(state.languageMode),{hour:"2-digit",minute:"2-digit"}):"";
   const subject=e.subject&&e.subject!=="Clase"?e.subject:"";
   const topic=e.topic||"";
   return [subject,topic,who,time].filter(Boolean).join(" · ");
@@ -3692,8 +3726,8 @@ function renderAcademicAnswer(question,answer,evidence){
 
   const citations=shown.map(e=>
     '<div class="class-source-card">'+
-      '<div class="class-source-head"><strong>'+escapeHtml(sourceKindLabel(e))+'</strong><span>'+escapeHtml(sourceDetailLabel(e))+'</span></div>'+
-      '<blockquote>“'+escapeHtml(e.quote)+'”</blockquote>'+
+      '<div class="class-source-head"><strong>'+escapeHtml(uiText(sourceKindLabel(e)))+'</strong><span>'+escapeHtml(sourceDetailLabel(e))+'</span></div>'+
+      '<blockquote lang="und" translate="no">“'+escapeHtml(e.quote)+'”</blockquote>'+
     '</div>'
   ).join("");
 
@@ -3705,12 +3739,13 @@ function renderAcademicAnswer(question,answer,evidence){
 
   root.innerHTML=
     '<div class="answer-card class-grounded-answer">'+
-      '<strong>Respuesta</strong>'+
+      '<strong data-ui-copy=Respuesta>Respuesta</strong>'+
       '<p class="class-answer-text">'+escapeHtml(answer)+'</p>'+
-      '<div class="class-origin">'+escapeHtml(origin)+'</div>'+
-      '<div class="class-quotes-title">Cita textual</div>'+
+      '<div class="class-origin">'+escapeHtml(uiText(origin))+'</div>'+
+      '<div class="class-quotes-title" data-ui-copy=Cita%20textual>Cita textual</div>'+
       citations+
     '</div>';
+  window.ROBOTITO_LOCALIZED_CONTENT?.render(root.querySelector('.class-answer-text'),answer,detectGeneratedSpeechLanguage(answer));
 }
 function spokenAcademicAnswer(question,answer,evidence){
   return answer;
@@ -3719,7 +3754,7 @@ function spokenAcademicAnswer(question,answer,evidence){
 function summarizeClass(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"||l.speaker==="classmate");
   const out=$("#classSummary");
-  if(!lines.length){out.innerHTML='<p class="muted">Todavía no tengo suficientes explicaciones de la profesora guardadas.</p>';return;}
+  if(!lines.length){out.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20tengo%20suficientes%20explicaciones%20de%20la%20profesora%20guardadas.>Todavía no tengo suficientes explicaciones de la profesora guardadas.</p>';return;}
   const candidates=lines.filter(l=>l.text.length>35).slice(-80);
   const seen=new Set();
   const selected=[];
@@ -3729,7 +3764,8 @@ function summarizeClass(){
     if(!seen.has(key)){seen.add(key);selected.push(txt);}
     if(selected.length>=6)break;
   }
-  out.innerHTML=selected.reverse().map(t=>'<div class="study-chip">• '+escapeHtml(t)+'</div>').join("");
+  out.innerHTML=selected.reverse().map(t=>'<div class="study-chip"></div>').join("");
+  [...out.children].forEach((node,i)=>window.ROBOTITO_LOCALIZED_CONTENT?.render(node,selected[i],detectGeneratedSpeechLanguage(selected[i])));
 }
 function semanticClarification(plan){
   const keys={"missing-reference":"p01ClarifyReference","contradictory-actions":"p01ClarifyActions",
@@ -3744,7 +3780,7 @@ async function askClass(){
   robot.classList.add("thinking");
   setTimeout(()=>robot.classList.remove("thinking"),1200);
   setMood("curious","Robotito está buscando una respuesta precisa en lo aprendido.");
-  if(out)out.innerHTML='<div class="study-chip">Entendiendo la pregunta y buscando la fuente correcta…</div>';
+  if(out)out.innerHTML='<div class="study-chip" data-ui-copy=Entendiendo%20la%20pregunta%20y%20buscando%20la%20fuente%20correcta%E2%80%A6>Entendiendo la pregunta y buscando la fuente correcta…</div>';
   try{
     const planned=await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(q,{context:robotitoConversationContext,language:state.languageMode||"es"});
     const understood=window.ROBOTITO_INTENT_ENGINE?.classify?.(q,{plan:planned})||planned||{};
@@ -3753,7 +3789,7 @@ async function askClass(){
       return;
     }
     if(planned&&planned.shouldExecute===false){
-      if(out)out.innerHTML='<div class="study-chip">Eso parece un comentario, no una solicitud para consultar materiales.</div>';
+      if(out)out.innerHTML='<div class="study-chip" data-ui-copy=Eso%20parece%20un%20comentario%2C%20no%20una%20solicitud%20para%20consultar%20materiales.>Eso parece un comentario, no una solicitud para consultar materiales.</div>';
       return;
     }
     const exerciseHandled=understood.intent==="exercise" && await window.ROBOTITO_CLASS_EXERCISES?.handleRequest?.(q,{spoken:true,plan:planned});
@@ -3764,18 +3800,18 @@ async function askClass(){
     }
     const generalAnswered=await answerGeneralAcademicQuestion(q,{speak:true,render:true});
     if(generalAnswered)return;
-    if(out)out.innerHTML='<div class="study-chip">No encontré evidencia suficiente en las clases, los materiales ni las fuentes generales disponibles.</div>';
+    if(out)out.innerHTML='<div class="study-chip" data-ui-copy=No%20encontr%C3%A9%20evidencia%20suficiente%20en%20las%20clases%2C%20los%20materiales%20ni%20las%20fuentes%20generales%20disponibles.>No encontré evidencia suficiente en las clases, los materiales ni las fuentes generales disponibles.</div>';
     say("No encontré información suficiente para contestar eso.",3600);
   }catch(e){
     console.warn("class answer",e);
-    if(out)out.innerHTML='<div class="study-chip">Tuve un problema al buscar en las transcripciones. La pregunta no se perdió: probá de nuevo.</div>';
+    if(out)out.innerHTML='<div class="study-chip" data-ui-copy=Tuve%20un%20problema%20al%20buscar%20en%20las%20transcripciones.%20La%20pregunta%20no%20se%20perdi%C3%B3%3A%20prob%C3%A1%20de%20nuevo.>Tuve un problema al buscar en las transcripciones. La pregunta no se perdió: probá de nuevo.</div>';
     say("Tuve un problema al buscar en las transcripciones. Probá de nuevo.",3500);
   }
 }
 function makeFlashcards(){
   const lines=classLinesForSubject().filter(l=>l.speaker==="teacher"&&l.text.length>30).slice(-8);
   const out=$("#classAnswer");
-  if(!lines.length){out.innerHTML='<div class="study-chip">Todavía no tengo suficiente material.</div>';return;}
+  if(!lines.length){out.innerHTML='<div class="study-chip" data-ui-copy=Todav%C3%ADa%20no%20tengo%20suficiente%20material.>Todavía no tengo suficiente material.</div>';return;}
   out.innerHTML=lines.map((l,i)=>{
     const words=contentWords(l.text);
     const topic=words.slice(0,3).join(" ")||"este punto";
@@ -3813,7 +3849,7 @@ function changeClassLineSpeaker(id,value){
 function speakerSelectHtml(l){
   const current=l.speakerName?"person:"+l.speakerName:l.speaker;
   const base=[
-    ["me","Vos"],["teacher","Profesor/a"],["classmate","Compañero/a"]
+    ["me",uiText("VOS")],["teacher",uiText("PROFESOR/A")],["classmate",uiText("COMPAÑERO/A")]
   ];
   const people=state.people.map(p=>["person:"+p.name,p.name]);
   return '<select class="class-speaker-select" data-line-id="'+escapeHtml(l.id)+'">'+[...base,...people].map(([v,label])=>'<option value="'+escapeHtml(v)+'" '+(v===current?"selected":"")+'>'+escapeHtml(label)+'</option>').join("")+'</select>';
@@ -3826,27 +3862,27 @@ function ensureClassLineIds(){
 function renderClassTranscript(){
   const root=$("#classTranscript");
   const lines=classLinesForSubject().slice(-40);
-  if(!lines.length){root.innerHTML='<p class="muted">Todavía no hay frases guardadas.</p>';return;}
+  if(!lines.length){root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20hay%20frases%20guardadas.>Todavía no hay frases guardadas.</p>';return;}
   const first=lines[0];
   const heading='<div class="class-transcript-context"><strong>'+escapeHtml(first.subject||"Clase")+'</strong>'+(first.topic?' <span>›</span> '+escapeHtml(first.topic):'')+'</div>';
   root.innerHTML=heading+lines.map(l=>{
     const cls=l.speaker==="me"?"me":l.speaker==="teacher"?"teacher":"classmate";
     const tag=l.speakerName?l.speakerName:(l.speaker==="me"?"VOS":l.speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
     const txt=l.correctedText||l.text;
-    const corr=l.correctedText&&l.correctedText!==l.text?'<div class="muted">Oí: '+escapeHtml(l.text)+'</div>':'';
+    const corr=l.correctedText&&l.correctedText!==l.text?'<div class="muted">'+escapeHtml(uiText('Oí: {text}',{text:l.text}))+'</div>':'';
     const confidence=Number(l.voiceScore??l.speakerConfidence);
     const match=Number.isFinite(confidence)
-      ?'<span class="voice-match '+(confidence<.55?'uncertain':'')+'">'+(confidence<.55?'voz dudosa ':'voz ')+Math.round(confidence*100)+'%</span>'
+      ?'<span class="voice-match '+(confidence<.55?'uncertain':'')+'">'+uiText(confidence<.55?'voz dudosa':'voz')+' '+Math.round(confidence*100)+'%</span>'
       :'';
     const verify=l.verificationStatus==="verified"
-      ?'<span class="fact-badge">✓ verificado en web</span>'
+      ?'<span class="fact-badge" data-ui-copy=%E2%9C%93%20verificado%20en%20web>✓ verificado en web</span>'
       :l.verificationStatus==="checking"
-        ?'<span class="fact-badge pending">verificando…</span>'
+        ?'<span class="fact-badge pending" data-ui-copy=verificando%E2%80%A6>verificando…</span>'
         :'';
     const src=(l.verificationSources||[]).length
-      ?'<div class="fact-sources">Fuentes: '+l.verificationSources.map(x=>'<a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener">'+escapeHtml(x.title)+'</a>').join(' · ')+'</div>'
+      ?'<div class="fact-sources">'+uiText('Fuentes')+': '+l.verificationSources.map(x=>'<a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener">'+escapeHtml(x.title)+'</a>').join(' · ')+'</div>'
       :'';
-    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(tag)+'</span>'+speakerSelectHtml(l)+match+verify+'</div>'+escapeHtml(txt)+corr+src+'</div>';
+    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(l.speakerName||uiText(tag))+'</span>'+speakerSelectHtml(l)+match+verify+'</div><span lang="'+(window.ROBOTITO_I18N.supported(l.language)?l.language:'und')+'" translate="no">'+escapeHtml(txt)+'</span>'+corr+src+'</div>';
   }).join("");
   root.querySelectorAll(".class-speaker-select").forEach(sel=>sel.addEventListener("change",()=>changeClassLineSpeaker(sel.dataset.lineId,sel.value)));
   root.scrollTop=root.scrollHeight;
@@ -3889,10 +3925,10 @@ function taskDoneValue(v){
   return ["hecho","completo","completado","done","si","sí","true","x","finalizado","entregado"].includes(s);
 }
 async function refreshTasks(){
-  if(!state.tasksSheetUrl){$("#tasksConnectionStatus").textContent="Sin hoja conectada.";return;}
+  if(!state.tasksSheetUrl){uiSet($("#tasksConnectionStatus"),"Sin hoja conectada.");return;}
   const id=extractSheetId(state.tasksSheetUrl), gid=state.tasksSheetGid||"0";
   if(!id)return;
-  $("#tasksConnectionStatus").textContent="Leyendo la hoja…";
+  uiSet($("#tasksConnectionStatus"),"Leyendo la hoja…");
   try{
     const res=await fetch(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${encodeURIComponent(gid)}`);
     if(!res.ok)throw new Error("No accesible");
@@ -3912,10 +3948,10 @@ async function refreshTasks(){
       row:i+2
     })).filter(t=>t.task);
     save("robotito.tasks.v1",state.tasks);
-    $("#tasksConnectionStatus").textContent=`Conectada: ${state.tasks.length} filas de tareas.`;
+    uiSet($("#tasksConnectionStatus"),"Conectada: {count} filas de tareas.",{count:state.tasks.length});
     renderTasks();
   }catch(e){
-    $("#tasksConnectionStatus").textContent="No pude leerla. La hoja debe estar compartida/publicada para lectura.";
+    uiSet($("#tasksConnectionStatus"),"No pude leerla. La hoja debe estar compartida/publicada para lectura.");
     renderTasks();
   }
 }
@@ -3925,7 +3961,7 @@ function pendingTasks(){
 function renderTasks(){
   const root=$("#tasksList");
   const tasks=pendingTasks();
-  if(!tasks.length){root.innerHTML='<p class="muted">No veo tareas pendientes.</p>';return;}
+  if(!tasks.length){root.innerHTML='<p class="muted" data-ui-copy=No%20veo%20tareas%20pendientes.>No veo tareas pendientes.</p>';return;}
   root.innerHTML=tasks.slice(0,30).map(t=>'<div class="task-row"><strong>'+escapeHtml(t.task)+'</strong><div class="task-meta">'+escapeHtml([t.subject,t.due,t.status].filter(Boolean).join(" · "))+'</div></div>').join("");
 }
 function taskReminderTick(){
@@ -4130,7 +4166,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     const answered=await answerClassQuestion(interpreted,{speak:true,render:true,announceMissing:false});
     if(answered)return;
     const root=$("#classAnswer");
-    if(root)root.innerHTML='<div class="study-chip">No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
+    if(root)root.innerHTML='<div class="study-chip" data-ui-copy=No%20encontr%C3%A9%20evidencia%20suficiente%20en%20las%20transcripciones%20ni%20en%20el%20material%20cargado%20para%20responder%20esa%20pregunta.>No encontré evidencia suficiente en las transcripciones ni en el material cargado para responder esa pregunta.</div>';
     say("No encontré evidencia suficiente en las transcripciones para contestar eso.",3800);
     return;
   }
@@ -4304,12 +4340,12 @@ async function detectLoop(){
     state.lastDetections=dets;
     if(dets.length===1){
       state.lastSeenAt=Date.now();
-      $("#seenLabel").textContent="1 persona";
+      uiSet($("#seenLabel"),"1 persona");
       followFace(dets[0].detection.box);
       recognize(dets[0]);
       detectEating(dets[0]);
     }else{
-      $("#seenLabel").textContent=dets.length?dets.length+" personas":"a nadie";
+      uiSet($("#seenLabel"),dets.length?"{count} personas":"a nadie",{count:dets.length});
       // Missing/crowded frames break consensus even during a brief dropout.
       // A previously confirmed face can last 2.5 s, but cannot be renewed by
       // an empty or frozen camera image.
@@ -5144,7 +5180,7 @@ function checkBirthday(p){
 }
 
 function birthdayParty(name){
-  $("#birthdayText").textContent=`¡Feliz cumpleaños, ${name}! 🎉`;
+  uiSet($("#birthdayText"),"¡Feliz cumpleaños, {name}! 🎉",{name});
   $("#birthdayScene").classList.remove("hidden");
   setMood("happy","Robotito reconoció a alguien que cumple años.");
   confetti(90);
@@ -5318,7 +5354,7 @@ function renderPeople(){
   const root=$("#peopleList");
   root.innerHTML="";
   if(!state.people.length){
-    root.innerHTML='<p class="muted">Todavía no recuerda a nadie.</p>';
+    root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20recuerda%20a%20nadie.>Todavía no recuerda a nadie.</p>';
     return;
   }
 
@@ -5326,9 +5362,9 @@ function renderPeople(){
     const row=document.createElement("div");
     row.className="person-row";
     row.innerHTML=`<strong>${escapeHtml(p.name)}</strong>
-      <div class="relation">${relationText(p)}</div>
-      <div class="muted">${p.birthday?"Cumple: "+formatBirthday(p.birthday):"Sin cumpleaños cargado"} · ${(p.voicePrints||[]).length?"voz aprendida":"voz no registrada"}</div>
-      <div class="muted">cara: ${(p.descriptors||[]).length} muestras · voz: ${(p.voicePrints||[]).length} perfiles${Number.isFinite(p.voiceQuality)?" · calidad "+Math.round(p.voiceQuality*100)+"%":""}</div>
+      <div class="relation">${escapeHtml(uiText(relationText(p)))}</div>
+      <div class="muted">${escapeHtml(p.birthday?uiText("Cumple: {date}",{date:formatBirthday(p.birthday)}):uiText("Sin cumpleaños cargado"))} · ${uiText((p.voicePrints||[]).length?"voz aprendida":"voz no registrada")}</div>
+      <div class="muted">${uiText("cara: {faces} muestras · voz: {voices} perfiles",{faces:(p.descriptors||[]).length,voices:(p.voicePrints||[]).length})}${Number.isFinite(p.voiceQuality)?" · "+uiText("calidad {count}%",{count:Math.round(p.voiceQuality*100)}):""}</div>
       <div class="bond-detail">${bondDetail(p)}</div>`;
     root.appendChild(row);
   });
@@ -5340,16 +5376,16 @@ function renderMemories(){
   const list=[...state.memories].reverse();
 
   if(!list.length){
-    root.innerHTML='<p class="muted">Todavía no guardó recuerdos.</p>';
+    root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20guard%C3%B3%20recuerdos.>Todavía no guardó recuerdos.</p>';
     return;
   }
 
   list.slice(0,120).forEach(m=>{
     const row=document.createElement("div");
     row.className="memory-row";
-    row.innerHTML=`<strong>${escapeHtml(m.person||"Alguien")}</strong>
-      <p>${escapeHtml(m.text)}</p>
-      <span class="muted">${m.source==="auto"?"Escuchado · ":"Manual · "}${new Date(m.at).toLocaleString(languageLocale(state.languageMode||"es"))}</span>`;
+    row.innerHTML=`<strong>${escapeHtml(m.person||uiText("Alguien"))}</strong>
+      <p lang="${window.ROBOTITO_I18N.supported(m.language)?m.language:"und"}" translate="no">${escapeHtml(m.text)}</p>
+      <span class="muted">${uiText(m.source==="auto"?"Escuchado":"Manual")} · ${new Date(m.at).toLocaleString(languageLocale(state.languageMode||"es"))}</span>`;
     root.appendChild(row);
   });
 }
@@ -5358,7 +5394,7 @@ function rememberManual(){
   const text=$("#memoryInput").value.trim();
   if(!text)return;
   const at=Date.now();
-  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at,source:"manual"});
+  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at,language:state.languageMode,source:"manual"});
   save(KEYS.memories,state.memories);
   window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
     source:"manual",timestamp:at,language:state.languageMode||"es",data:{text,person:state.currentPerson||"local"}})
@@ -5398,12 +5434,12 @@ async function importGoodreads(file){
 
 function updateLibraryStats(){
   if(!state.library.length){
-    $("#libraryStats").textContent="Biblioteca todavía no importada.";
+    uiSet($("#libraryStats"),"Biblioteca todavía no importada.");
     return;
   }
   const read=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="read").length;
   const tbr=state.library.filter(b=>(b["Exclusive Shelf"]||"").toLowerCase()==="to-read").length;
-  $("#libraryStats").textContent=`${state.library.length} libros · ${read} leídos · ${tbr} por leer`;
+  uiSet($("#libraryStats"),"{count} libros · {read} leídos · {pending} por leer",{count:state.library.length,read,pending:tbr});
 }
 
 function bookText(book){
@@ -5518,7 +5554,7 @@ async function fetchBookCandidates(profile){
   const queries=[profile.query,profile.concepts.map(c=>c.query).join(" ")].filter(Boolean);
   const all=[];
   for(const query of [...new Set(queries)].slice(0,2)){
-    const response=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&printType=books&langRestrict=es`);
+    const response=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&printType=books&langRestrict=${state.languageMode||"es"}`);
     if(!response.ok)throw new Error("No se pudo consultar el catálogo");
     const data=await response.json();
     all.push(...(data.items||[]).map(item=>({
@@ -5548,7 +5584,7 @@ async function recommendBook(promptOverride=null){
   const only=$("#onlyOwned").checked;
   const exclude=$("#excludeRead").checked;
   const profile=analyzeBookPrompt(prompt);
-  $("#bookResults").innerHTML='<div class="card">Pensando en tus gustos… 📚</div>';
+  $("#bookResults").innerHTML='<div class="card" data-ui-copy=Pensando%20en%20tus%20gustos%E2%80%A6%20%F0%9F%93%9A>Pensando en tus gustos… 📚</div>';
 
   const readTitles=new Set(state.library
     .filter(book=>(book["Exclusive Shelf"]||"").toLowerCase()==="read")
@@ -5556,7 +5592,7 @@ async function recommendBook(promptOverride=null){
 
   if(only){
     if(!state.library.length){
-      $("#bookResults").innerHTML='<div class="card"><strong>No hace falta Goodreads para recibir recomendaciones.</strong><p>Desmarcá «Solo de mi biblioteca» y buscaré opciones nuevas a partir de tu descripción.</p></div>';
+      $("#bookResults").innerHTML='<div class="card"><strong>No hace falta Goodreads para recibir recomendaciones.</strong><p data-ui-copy=Desmarc%C3%A1%20%C2%ABSolo%20de%20mi%20biblioteca%C2%BB%20y%20buscar%C3%A9%20opciones%20nuevas%20a%20partir%20de%20tu%20descripci%C3%B3n.>Desmarcá «Solo de mi biblioteca» y buscaré opciones nuevas a partir de tu descripción.</p></div>';
       say("No necesitás Goodreads. Desmarcá Solo de mi biblioteca y te recomiendo opciones nuevas.");
       return;
     }
@@ -5598,7 +5634,7 @@ async function recommendBook(promptOverride=null){
       showBookRecommendations(ranked,profile,prompt,true);
       return;
     }
-    $("#bookResults").innerHTML='<div class="card">No pude buscar libros ahora. Probá describiendo el género, el tono o algún libro parecido.</div>';
+    $("#bookResults").innerHTML='<div class="card" data-ui-copy=No%20pude%20buscar%20libros%20ahora.%20Prob%C3%A1%20describiendo%20el%20g%C3%A9nero%2C%20el%20tono%20o%20alg%C3%BAn%20libro%20parecido.>No pude buscar libros ahora. Probá describiendo el género, el tono o algún libro parecido.</div>';
     say("No pude encontrar una recomendación ahora mismo.");
   }
 }
@@ -5611,18 +5647,23 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
     source:"books",timestamp:Date.now(),topic:prompt,language:state.languageMode||"es",
     data:{title:first.title,authors:first.authors||[],prompt}}).catch(e=>console.warn("recommendation memory",e));
   const intro=localFallback
-    ? '<p class="recommendation-note">No pude consultar el catálogo en línea, así que usé una selección disponible en Robotito.</p>'
+    ? '<p class="recommendation-note" data-ui-copy=No%20pude%20consultar%20el%20cat%C3%A1logo%20en%20l%C3%ADnea%2C%20as%C3%AD%20que%20us%C3%A9%20una%20selecci%C3%B3n%20disponible%20en%20Robotito.>No pude consultar el catálogo en línea, así que usé una selección disponible en Robotito.</p>'
     : "";
   $("#bookResults").innerHTML=intro+results.map(({book,matched,owned})=>`<div class="book-card">
-    ${book.thumbnail?`<img src="${book.thumbnail.replace("http:","https:")}" alt="Portada de ${escapeHtml(book.title)}">`:"<div class=\"book-placeholder\">📖</div>"}
+    ${book.thumbnail?`<img src="${book.thumbnail.replace("http:","https:")}" alt="${escapeHtml(uiText("Portada de {title}",{title:book.title}))}">`:"<div class=\"book-placeholder\">📖</div>"}
     <div><strong>${escapeHtml(book.title)}</strong>
-    <p>${escapeHtml((book.authors||[]).join(", ")||"Autor no disponible")}</p>
-    <p class="book-match-reason">${escapeHtml(recommendationReason(book,profile,matched))}</p>
-    <p>${escapeHtml((book.description||"Sin descripción disponible.").replace(/<[^>]+>/g,"").slice(0,320))}${book.description?.length>320?"…":""}</p>
-    <span class="relation">${owned?"Ya está en tu biblioteca":"Sugerencia nueva"}</span>
-    ${book.infoLink?`<a class="book-more-link" href="${escapeHtml(book.infoLink)}" target="_blank" rel="noopener noreferrer">Ver más información ↗</a>`:""}
+    <p>${escapeHtml((book.authors||[]).join(", ")||uiText("Autor no disponible"))}</p>
+    <p class="book-match-reason"></p>
+    <p class="book-description"></p>
+    <span class="relation">${uiText(owned?"Ya está en tu biblioteca":"Sugerencia nueva")}</span>
+    ${book.infoLink?`<a class="book-more-link" href="${escapeHtml(book.infoLink)}" target="_blank" rel="noopener noreferrer" data-ui-copy=Ver%20m%C3%A1s%20informaci%C3%B3n%20%E2%86%97>Ver más información ↗</a>`:""}
     </div></div>`).join("");
-  say(`Encontré tres opciones. La que más encaja es “${first.title}” 📚`,5200);
+  [...$("#bookResults").querySelectorAll(".book-card")].forEach((card,i)=>{
+    const {book,matched}=results[i];
+    window.ROBOTITO_LOCALIZED_CONTENT?.render(card.querySelector(".book-description"),book.description?.replace(/<[^>]+>/g,"").slice(0,320)||uiText("Sin descripción disponible."),book.description?book.language||"und":state.languageMode);
+    window.ROBOTITO_LOCALIZED_CONTENT?.render(card.querySelector(".book-match-reason"),recommendationReason(book,profile,matched),"es");
+  });
+  sayInLanguage(uiText("Encontré {count} opciones. La que más encaja es “{title}”.",{count:results.length,title:first.title},responseLanguage()),responseLanguage(),5200);
 }
 
 function routinePromptTick(){
@@ -5800,7 +5841,7 @@ function bindUI(){
   $("#rememberBtn").addEventListener("click",rememberManual);
 
   $("#clearMemoryBtn").addEventListener("click",async()=>{
-    if(!confirm("¿Querés borrar todos los recuerdos que Robotito guardó?"))return;
+    if(!confirm(uiText("¿Querés borrar todos los recuerdos que Robotito guardó?")))return;
     try{
       await window.ROBOTITO_STORE?.clearRecordsByType?.("memories");
       await window.ROBOTITO_STORE?.set?.(KEYS.memories,[]);

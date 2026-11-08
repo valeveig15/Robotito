@@ -347,33 +347,33 @@ ${useful.join("\n").slice(0,7000)}`;
     if(!root)return;
     const grouped=groupSessions();
     if(!grouped.size){
-      root.innerHTML='<p class="muted">Todavía no hay clases organizadas.</p>';
+      root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20hay%20clases%20organizadas.>Todavía no hay clases organizadas.</p>';
       return;
     }
     root.innerHTML=[...grouped.entries()]
-      .sort((a,b)=>a[0].localeCompare(b[0],"es"))
+      .sort((a,b)=>a[0].localeCompare(b[0],state.languageMode))
       .map(([subject,topics])=>
         '<details class="class-subject-group" open>'+
           '<summary><span>📚</span> '+esc(subject)+'</summary>'+
           '<div class="class-topic-groups">'+
           [...topics.entries()]
-            .sort((a,b)=>a[0].localeCompare(b[0],"es"))
+            .sort((a,b)=>a[0].localeCompare(b[0],state.languageMode))
             .map(([topic,sessions])=>
               '<details class="class-topic-group" open>'+
-                '<summary>'+esc(topic)+' <span class="muted">('+sessions.length+' clase'+(sessions.length===1?'':'s')+')</span></summary>'+
+                '<summary>'+esc(topic)+' <span class="muted">('+uiText('{count} clases',{count:sessions.length})+')</span></summary>'+
                 '<div class="class-session-list">'+
                 sessions.sort((a,b)=>(b.startedAt||0)-(a.startedAt||0)).map(session=>{
-                  const date=new Date(session.startedAt||Date.now()).toLocaleString("es-UY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+                  const date=new Date(session.startedAt||Date.now()).toLocaleString(window.ROBOTITO_I18N.locale(state.languageMode),{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
                   const duration=session.endedAt&&session.startedAt?Math.max(0,Math.round((session.endedAt-session.startedAt)/60000)):null;
                   const point=(session.points||[])[0]||"";
                   return '<div class="class-session-row">'+
                     '<button type="button" class="class-session-item" data-session-id="'+esc(session.sessionId)+'">'+
                       '<span class="class-session-date">'+esc(date)+'</span>'+
                       '<strong>'+esc(topic)+'</strong>'+
-                      '<span class="muted">'+session.lineCount+' fragmentos'+(duration!==null?' · '+duration+' min':'')+'</span>'+
+                      '<span class="muted">'+uiText('{count} fragmentos',{count:session.lineCount})+(duration!==null?' · '+duration+' min':'')+'</span>'+
                       (point?'<span class="class-session-preview">'+esc(point.slice(0,150))+(point.length>150?'…':'')+'</span>':'')+
                     '</button>'+
-                    '<button type="button" class="ghost class-session-edit" data-session-id="'+esc(session.sessionId)+'" aria-label="Editar '+esc(topic)+'">✏️ Editar</button>'+
+                    '<button type="button" class="ghost class-session-edit" data-session-id="'+esc(session.sessionId)+'" aria-label="'+esc(uiText('Editar')+' '+topic)+'">✏️ '+uiText('Editar')+'</button>'+
                   '</div>';
                 }).join("")+
                 '</div>'+
@@ -466,7 +466,7 @@ ${useful.join("\n").slice(0,7000)}`;
     if(!root)return;
     const mats=state.academicMaterials||[];
     if(!mats.length){
-      root.innerHTML='<p class="muted">Todavía no cargaste material.</p>';
+      root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20cargaste%20material.>Todavía no cargaste material.</p>';
       return;
     }
     const grouped=new Map();
@@ -484,8 +484,8 @@ ${useful.join("\n").slice(0,7000)}`;
         '<div class="academic-topic-group"><span class="academic-topic-title">'+esc(topic)+'</span>'+
         items.map(m=>
           '<div class="academic-file-row">'+
-            '<span>📄 '+esc(m.name)+(Array.isArray(m.exercises)&&m.exercises.length?' · '+m.exercises.length+' ejercicios detectados':'')+'</span>'+
-            '<button type="button" class="ghost delete-academic-file" data-id="'+esc(m.id)+'">Borrar</button>'+
+            '<span>📄 '+esc(m.name)+(Array.isArray(m.exercises)&&m.exercises.length?' · '+uiText('{count} ejercicios detectados',{count:m.exercises.length}):'')+'</span>'+
+            '<button type="button" class="ghost delete-academic-file" data-id="'+esc(m.id)+'" data-ui-copy=Borrar>Borrar</button>'+
           '</div>'
         ).join("")+
         '</div>'
@@ -504,7 +504,7 @@ ${useful.join("\n").slice(0,7000)}`;
     const subject=(document.querySelector("#classSubject")?.value||state.classSubject||"Material").trim()||"Material";
     const topic=(document.querySelector("#classTopic")?.value||state.classTopic||"").trim();
     const root=document.querySelector("#academicFilesList");
-    if(root)root.innerHTML='<p class="muted">Procesando material…</p>';
+    if(root)root.innerHTML='<p class="muted" data-ui-copy=Procesando%20material%E2%80%A6>Procesando material…</p>';
 
     for(const file of files){
       try{
@@ -527,7 +527,7 @@ ${useful.join("\n").slice(0,7000)}`;
         });
       }catch(e){
         console.warn("academic file",file.name,e);
-        if(typeof toast==="function")toast("No pude leer "+file.name+".");
+        if(typeof toast==="function")toast(uiText("No pude leer {name}.",{name:file.name}));
       }
     }
     state.academicMaterials=state.academicMaterials.slice(-80);

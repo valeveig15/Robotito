@@ -203,7 +203,7 @@
   async function detectObjectNow(){
     if(!state.started){toast("Primero despertá los sentidos.");return false;}
     const out=document.querySelector("#objectResult");
-    if(out)out.innerHTML='<div class="study-chip">Mirando el objeto…</div>';
+    if(out)out.innerHTML='<div class="study-chip" data-ui-copy=Mirando%20el%20objeto%E2%80%A6>Mirando el objeto…</div>';
     try{
       await loadObjectModels();
       if(camera.readyState<2)throw new Error("camera-not-ready");
@@ -250,7 +250,7 @@
       return true;
     }catch(e){
       console.warn("object recognition",e);
-      if(out)out.innerHTML='<div class="study-chip">No pude usar el reconocimiento visual en este momento.</div>';
+      if(out)out.innerHTML='<div class="study-chip" data-ui-copy=No%20pude%20usar%20el%20reconocimiento%20visual%20en%20este%20momento.>No pude usar el reconocimiento visual en este momento.</div>';
       say("No pude usar bien la cámara para reconocerlo.",3800);
       return true;
     }

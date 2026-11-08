@@ -40,7 +40,7 @@
   function setStatus(text,kind=""){
     const el=document.querySelector("#youtubeCaptureStatus");
     if(!el)return;
-    el.textContent=text;
+    uiSet(el,text);
     el.dataset.kind=kind;
   }
   function setButtons(active){
@@ -133,7 +133,7 @@
       const visual=document.querySelector("#youtubeVisualStatus");
       if(visual){
         const names=[...visualObservations.values()].sort((a,b)=>b.count-a.count).slice(0,5).map(x=>x.name);
-        visual.textContent=names.length?"Objetos vistos: "+names.join(", "):"Todavía no reconocí objetos generales con suficiente seguridad.";
+        uiSet(visual,names.length?"Objetos vistos: {names}":"Todavía no reconocí objetos generales con suficiente seguridad.",{names:names.join(", ")});
       }
     }catch(e){
       console.warn("video frame vision",e);
@@ -298,7 +298,7 @@
     if(preview){preview.pause();preview.srcObject=null;preview.hidden=true;}
     setButtons(false);
     const visual=document.querySelector("#youtubeVisualStatus");
-    if(visual&&visualObservations.size===0)visual.textContent="No se guardaron observaciones visuales.";
+    if(visual&&visualObservations.size===0)uiSet(visual,"No se guardaron observaciones visuales.");
     setStatus(
       endedByBrowser
         ?"La pestaña dejó de compartirse. Guardé la transcripción obtenida."

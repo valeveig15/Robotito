@@ -14,10 +14,10 @@ function fixture(){
  const faceapi={TinyFaceDetectorOptions:class{},detectAllFaces:()=>({withFaceLandmarks(){return this;},
   withFaceDescriptors:()=>new Promise((resolve,reject)=>requests.push({resolve,reject}))})};
  const run=new Function("state","document","camera","faceapi","$","followFace","recognize","detectEating",
-  "resetEyes","setTimeout","clearTimeout","Date","console","stopSenses",source.slice(from,to)+"\nreturn detectLoop;")(
+  "resetEyes","setTimeout","clearTimeout","Date","console","stopSenses","uiSet",source.slice(from,to)+"\nreturn detectLoop;")(
   state,document,camera,faceapi,()=>({}),()=>calls.followed++,()=>calls.recognized++,()=>{},()=>{},
   (fn,ms)=>{timers.set(++id,{fn,ms});return id;},id=>timers.delete(id),{now:()=>now},{warn(){}},
-  reason=>{calls.stopped.push(reason);state.started=false;state.captureEpoch++;state.currentPerson=null;});
+  reason=>{calls.stopped.push(reason);state.started=false;state.captureEpoch++;state.currentPerson=null;},(el,text)=>{el.textContent=text;});
  return {state,document,camera,timers,requests,calls,run,advance:ms=>now+=ms,
   fire(ms){for(const [key,t]of [...timers])if(t.ms===ms){timers.delete(key);t.fn();}}};
 }
