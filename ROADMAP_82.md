@@ -144,7 +144,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [x] **02.** Pruebas automáticas generativas, combinatorias y de navegador — COMPLETADO según aceptación comprobable, con límites de simulación documentados
 - [ ] **03.** Clasificación de sonidos y reacciones naturales — EN PROGRESO (PR #30–32, #34–38, #40–41, #43–46, #48–50, #52–53, #55–56, #58–60, #62, #64, #66 y #67 integradas; faltan corpus real, mediciones físicas y reacciones observadas)
 - [ ] **04.** Escucha, voz y rostro: captación de calidad — AUDITADO; captación y cancelación reforzadas, pendiente validación física y de precisión; ver [P04-STATUS.md](P04-STATUS.md)
-- [ ] **05.** Internacionalización completa de interfaz y conversación — POR AUDITAR
+- [ ] **05.** Internacionalización completa de interfaz y conversación — AUDITADO; interfaz y contenido dinámico ampliados a seis idiomas, originales preservados y pruebas incorporadas; pendiente traducción libre sin modelo compatible y validación física de pronunciación; ver [P05-STATUS.md](P05-STATUS.md)
 - [ ] **06.** Voces nuevas, estilos y eliminación de «Gravedad» — POR AUDITAR
 - [ ] **07.** Memoria contextual, fechas y datos durables — POR AUDITAR
 - [ ] **08.** Identificación rigurosa de personas registradas — POR AUDITAR
