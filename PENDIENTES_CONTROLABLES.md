@@ -1,6 +1,6 @@
 # Robotito — limitaciones controlables que siguen pendientes
 
-Actualizado: 30/10/2026. **No borrar este registro al cerrar una aceptación parcial.** Incluir un resumen de estas tareas pendientes al final de las respuestas del chat y actualizar cada entrada cuando se implemente y pase la CI. La prioridad de ejecución de los 82 pedidos sigue determinada por [ROADMAP_82.md](ROADMAP_82.md).
+Actualizado: 8/11/2026. **No borrar este registro al cerrar una aceptación parcial.** Incluir un resumen de estas tareas pendientes al final de las respuestas del chat y actualizar cada entrada cuando se implemente y pase la CI. La prioridad de ejecución de los 82 pedidos sigue determinada por [ROADMAP_82.md](ROADMAP_82.md).
 
 Las tareas siguientes son **mejorables mediante desarrollo**, aunque no se garantiza resolver literalmente todas las expresiones humanas ni certificar funcionamiento perfecto en cualquier hardware. Se diferencian de la mera capacidad de abrir GitHub: una página HTTPS se puede abrir desde múltiples dispositivos, pero cámara, micrófono, Web Audio, Web Worker y modelos locales también requieren permisos y APIs compatibles.
 
@@ -67,11 +67,11 @@ Para impedir reacciones humanas no autorizadas, la política del avatar ahora ex
 
 ## P05 — Inicio y contenido dinámico en los seis idiomas
 
-**Estado: pendiente de su punto en el orden.** El selector incluye seis idiomas, pero una condición del inicio en `script.js` todavía restringe el arranque a español, inglés y portugués. También quedan textos dinámicos sin localizar. Resolver y probar los seis idiomas, sin afirmar que un contenido traducido permanece en español. No adelantar este punto mientras P03 siga abierto.
+**Estado: auditado y ampliado por pedido expreso; cierre integral condicionado.** El arranque admite los seis idiomas desde la revisión del 29/10; la restricción antigua ya no existe. La revisión del 8/11 completa las seis frases iniciales separadas, añade el catálogo dinámico, avatares, objetos, libros incluidos y procedencia del contenido. Las pruebas verifican cambios de idioma, originales intactos y descarte de traducciones atrasadas. Falta probar pronunciación y modelos en equipos reales y ofrecer traducción libre privada donde no existan APIs locales. Véase [P05-STATUS.md](P05-STATUS.md). Se mantienen los pendientes físicos de P03/P04.
 
 ## P06 — Selector de voces y control visible «Gravedad»
 
-**Estado: pendiente de su punto en el orden.** La interfaz todavía incluye un control visible con la etiqueta «Gravedad» y la experiencia de voces depende de las voces del sistema. Retirar el control visible al abordar P06 y verificar estilos, muestras consentidas y soporte real sin prometer clonación de voz.
+**Estado: auditoría integral pendiente.** La etiqueta «Gravedad» ya se sustituyó por «Tono» en la revisión del 29/10, protegida por las pruebas de P06. La experiencia depende de las voces del sistema. Siguen pendientes estilos y reproducción real por dispositivo, muestras consentidas y soporte efectivo; los preajustes no equivalen a actores garantizados ni clonación de voz.
 
 ---
 

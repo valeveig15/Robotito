@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261105-p04-capture" />
+  <link rel="stylesheet" href="style.css?v=20261107-p05" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -14,16 +14,18 @@
   <script defer src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs" type="module"></script>
   <script defer src="curriculum.js"></script>
   <script defer src="knowledge.js?v=20261005-routing3"></script>
-  <script defer src="objects.js"></script>
+  <script defer src="objects.js?v=20261107-p05"></script>
   <script defer src="physics-momentum.js"></script>
-  <script defer src="spoken-math.js"></script>
+  <script defer src="spoken-math.js?v=20261107-p05"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="i18n.js?v=20261105-p04-capture"></script>
+  <script defer src="i18n.js?v=20261107-p05"></script>
+  <script defer src="ui-messages.js?v=20261107-p05"></script>
+  <script defer src="localized-content.js?v=20261107-p05"></script>
   <script defer src="voice-system.js?v=20261029-p06-voices2"></script>
   <script defer src="voice-sample-capture.js?v=20261029-p04-release3"></script>
   <script defer src="audio-perception.js?v=20261030-p03-continuity"></script>
   <script defer src="audio-reactions.js?v=20261030-p03-continuity"></script>
-  <script defer src="audio-reaction-trial.js?v=20261028-avatar-field1"></script>
+  <script defer src="audio-reaction-trial.js?v=20261107-p05"></script>
   <script defer src="audio-sound-model.js?v=20261030-p03-continuity"></script>
   <script defer src="audio-script-fallback.js?v=20261028-legacy-pcm1"></script>
   <script defer src="audio-microphone-gate.js?v=20261028-track-guard1"></script>
@@ -33,21 +35,21 @@
   <script defer src="semantic-planner.js?v=20261030-p01-context"></script>
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
   <script defer src="robotito-store.js?v=20261030-p02-portable"></script>
-  <script defer src="memory-backup-ui.js?v=20261029-p07-backup1"></script>
+  <script defer src="memory-backup-ui.js?v=20261107-p05"></script>
   <script defer src="presidents.js"></script>
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
   <script defer src="speech-fallback.js?v=20261105-p04-capture"></script>
-  <script defer src="class-audio.js?v=20261105-p04-capture"></script>
-  <script defer src="class-organizer.js"></script>
-  <script defer src="class-exercises.js?v=20261029-p01-context"></script>
-  <script defer src="class-verification.js"></script>
+  <script defer src="class-audio.js?v=20261107-p05"></script>
+  <script defer src="class-organizer.js?v=20261107-p05"></script>
+  <script defer src="class-exercises.js?v=20261107-p05"></script>
+  <script defer src="class-verification.js?v=20261107-p05"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
-  <script defer src="species-personality.js?v=20261006-robot1"></script>
-  <script defer src="script.js?v=20261105-p04-capture"></script>
-  <script defer src="robotito-vnext.js?v=20261030-p01-context"></script>
-  <script defer src="video-material.js"></script>
+  <script defer src="species-personality.js?v=20261107-p05"></script>
+  <script defer src="script.js?v=20261107-p05"></script>
+  <script defer src="robotito-vnext.js?v=20261107-p05"></script>
+  <script defer src="video-material.js?v=20261107-p05"></script>
   <script defer src="robotito-tests.js?v=20261105-p04-capture"></script>
   <script defer src="robotito-regression-suite.js?v=20261105-p04-capture"></script>
 </head>
@@ -57,8 +59,8 @@
     <div id="startupMascot" class="language-panda" aria-hidden="true">🐼</div>
 
     <section id="languageStep" class="startup-step" aria-labelledby="languageGateTitle">
-      <h2 id="languageGateTitle"><span class="startup-language-line" lang="es">¿Qué idioma preferís?</span><span class="startup-language-line" lang="en">Which language do you prefer?</span><span class="startup-language-line" lang="pt">Qual idioma você prefere?</span></h2>
-      <p class="startup-language-help"><span class="startup-language-line" lang="es">Elegí el idioma en el que querés hablar con Robotito.</span><span class="startup-language-line" lang="en">Choose the language you want to use with Robotito.</span><span class="startup-language-line" lang="pt">Escolha o idioma para falar com o Robotito.</span></p>
+      <h2 id="languageGateTitle"><span class="startup-language-line" lang="es">¿Qué idioma preferís?</span><span class="startup-language-line" lang="en">Which language do you prefer?</span><span class="startup-language-line" lang="pt">Qual idioma você prefere?</span><span class="startup-language-line" lang="fr">Quelle langue préfères-tu ?</span><span class="startup-language-line" lang="it">Quale lingua preferisci?</span><span class="startup-language-line" lang="de">Welche Sprache bevorzugst du?</span></h2>
+      <p class="startup-language-help"><span class="startup-language-line" lang="es">Elegí el idioma en el que querés hablar con Robotito.</span><span class="startup-language-line" lang="en">Choose the language you want to use with Robotito.</span><span class="startup-language-line" lang="pt">Escolha o idioma para falar com o Robotito.</span><span class="startup-language-line" lang="fr">Choisis la langue pour parler avec Robotito.</span><span class="startup-language-line" lang="it">Scegli la lingua per parlare con Robotito.</span><span class="startup-language-line" lang="de">Wähle deine Sprache für Robotito.</span></p>
       <div class="language-gate-actions">
         <button type="button" class="primary" data-start-language="es">🇺🇾 Español</button>
         <button type="button" class="primary" data-start-language="en">🇬🇧 English</button>
@@ -70,10 +72,10 @@
     </section>
 
     <section id="avatarStep" class="startup-step hidden" aria-labelledby="avatarStepTitle" hidden>
-      <h2 id="avatarStepTitle">Elegí el avatar de Robotito</h2>
-      <p id="avatarStepDescription">Podés cambiar su aspecto ahora. La elección quedará guardada en este dispositivo.</p>
+      <h2 id="avatarStepTitle" data-i18n="avatarStepTitle" data-ui-copy=Eleg%C3%AD%20el%20avatar%20de%20Robotito>Elegí el avatar de Robotito</h2>
+      <p id="avatarStepDescription" data-i18n="avatarStepDescription">Podés cambiar su aspecto ahora. La elección quedará guardada en este dispositivo.</p>
       <div id="avatarChoices" class="avatar-choice-grid" role="listbox" aria-label="Avatares disponibles"></div>
-      <button id="backToLanguage" type="button" class="avatar-back-button">Volver al idioma</button>
+      <button id="backToLanguage" data-i18n="avatarBack" type="button" class="avatar-back-button" data-ui-copy=Volver%20al%20idioma>Volver al idioma</button>
     </section>
   </div>
 </div>
@@ -123,7 +125,7 @@
     </div>
     <div class="top-actions">
       <span id="clock" class="clock"></span>
-      <button id="startBtn" class="primary" type="button">Despertar sentidos</button>
+      <button id="startBtn" class="primary" type="button" data-ui-copy=Despertar%20sentidos>Despertar sentidos</button>
       <button id="stopSensesBtn" type="button" data-i18n="captureStop" disabled>Detener cámara y micrófono</button>
     </div>
   </header>
@@ -306,15 +308,15 @@
       <div id="objectShowcase" class="object-showcase hidden">
         <div class="object-showcase-card">
           <div id="objectShowEmoji" class="object-show-emoji">✨</div>
-          <strong id="objectShowName">Objeto</strong>
+          <strong id="objectShowName" data-ui-copy=Objeto>Objeto</strong>
           <span id="objectShowInfo"></span>
         </div>
       </div>
 
       <div id="drawingShowcase" class="drawing-showcase hidden">
         <div class="drawing-card">
-          <canvas id="drawingCanvas" width="440" height="320" aria-label="Dibujo hecho por Robotito"></canvas>
-          <strong id="drawingTitle">Dibujo</strong>
+          <canvas id="drawingCanvas" width="440" height="320" aria-label="Dibujo hecho por Robotito" data-ui-aria-label=Dibujo%20hecho%20por%20Robotito></canvas>
+          <strong id="drawingTitle" data-ui-copy=Dibujo>Dibujo</strong>
         </div>
       </div>
 
@@ -326,16 +328,16 @@
       </div>
 
       <div class="world-controls">
-        <div class="hud" aria-label="Estado de Robotito">
-          <div class="hud-pill mode-pill"><span data-i18n="uiModeLabel">Modo</span><strong id="dayNightLabel">día</strong></div>
-          <div class="hud-pill"><span data-i18n="mood">Humor</span><strong id="moodLabel">tranquilo</strong></div>
+        <div class="hud" aria-label="Estado de Robotito" data-ui-aria-label=Estado%20de%20Robotito>
+          <div class="hud-pill mode-pill"><span data-i18n="uiModeLabel">Modo</span><strong id="dayNightLabel" data-ui-copy=d%C3%ADa>día</strong></div>
+          <div class="hud-pill"><span data-i18n="mood">Humor</span><strong id="moodLabel" data-ui-copy=tranquilo>tranquilo</strong></div>
           <div class="hud-pill"><span data-i18n="hunger">Hambre</span><strong id="hungerLabel">0%</strong></div>
-          <div class="hud-pill"><span data-i18n="vision">Veo</span><strong id="seenLabel">a nadie</strong></div>
-          <div class="hud-pill"><span data-i18n="hearing">Escucho</span><strong id="heardLabel">silencio</strong></div>
+          <div class="hud-pill"><span data-i18n="vision">Veo</span><strong id="seenLabel" data-ui-copy=a%20nadie>a nadie</strong></div>
+          <div class="hud-pill"><span data-i18n="hearing">Escucho</span><strong id="heardLabel" data-ui-copy=silencio>silencio</strong></div>
           <div id="speakerPill" class="hud-pill hidden"><span data-i18n="speaker">Habla</span><strong id="speakerLabel">—</strong></div>
         </div>
 
-        <div class="quick-actions" aria-label="Acciones con Robotito">
+        <div class="quick-actions" aria-label="Acciones con Robotito" data-ui-aria-label=Acciones%20con%20Robotito>
           <button type="button" data-action="pet" data-i18n="pet">🤍 Acariciar</button>
           <button type="button" data-action="feed" data-i18n="feed">🍓 Alimentar</button>
           <button type="button" data-action="highfive" data-i18n="highfive">✋ Chocar los cinco</button>
@@ -361,7 +363,7 @@
     </div>
 
     <aside class="panel">
-      <nav class="tabs" aria-label="Panel de Robotito">
+      <nav class="tabs" aria-label="Panel de Robotito" data-ui-aria-label=Panel%20de%20Robotito>
         <button type="button" class="tab active" data-tab="status" data-i18n="status">Estado</button>
         <button type="button" class="tab" data-tab="class" data-i18n="class">Clase</button>
         <button type="button" class="tab" data-tab="tasks" data-i18n="tasks">Tareas</button>
@@ -373,33 +375,33 @@
       <section class="tabpage active" id="tab-status">
         <div class="card intro-card">
           <h2 data-i18n="whatsHappening">¿Qué está pasando?</h2>
-          <p id="statusText">Robotito está esperando que despiertes sus sentidos.</p>
+          <p id="statusText" data-ui-copy=Robotito%20est%C3%A1%20esperando%20que%20despiertes%20sus%20sentidos.>Robotito está esperando que despiertes sus sentidos.</p>
         </div>
 
         <div class="meter-card">
-          <div class="meter-head"><span>Ánimo</span><span id="moodScoreText">55 / 100</span></div>
+          <div class="meter-head"><span data-ui-copy=%C3%81nimo>Ánimo</span><span id="moodScoreText">55 / 100</span></div>
           <div class="meter"><span id="moodMeter"></span></div>
         </div>
         <div class="meter-card battery-meter-card">
           <div class="meter-head"><span data-i18n="uiBatteryLabel">Batería</span><span id="energyText">100%</span></div>
-          <div class="meter" role="progressbar" aria-label="Batería del dispositivo" aria-valuemin="0" aria-valuemax="100"><span id="energyMeter"></span></div>
-          <p id="batterySourceText" class="battery-source">Consultando la batería del dispositivo…</p>
+          <div class="meter" role="progressbar" aria-label="Batería del dispositivo" aria-valuemin="0" aria-valuemax="100" data-ui-aria-label=Bater%C3%ADa%20del%20dispositivo><span id="energyMeter"></span></div>
+          <p id="batterySourceText" class="battery-source" data-ui-copy=Consultando%20la%20bater%C3%ADa%20del%20dispositivo%E2%80%A6>Consultando la batería del dispositivo…</p>
         </div>
         <div class="meter-card">
-          <div class="meter-head"><span>Hambre</span><span id="hungerText">0%</span></div>
+          <div class="meter-head"><span data-ui-copy=Hambre>Hambre</span><span id="hungerText">0%</span></div>
           <div class="meter"><span id="hungerMeter"></span></div>
         </div>
 
         <div class="card small">
           <div class="section-head">
             <h3 data-i18n="uiUnderstood">Última cosa que entendí</h3>
-            <span id="listenState" class="listen-state">apagado</span>
+            <span id="listenState" class="listen-state" data-ui-copy=apagado>apagado</span>
           </div>
           <p id="transcript">—</p>
-          <p id="mobileSpeechHint" class="muted hidden">En celular Robotito mantiene la escucha activa y la reinicia automáticamente si el navegador corta el servicio.</p>
+          <p id="mobileSpeechHint" class="muted hidden" data-ui-copy=En%20celular%20Robotito%20mantiene%20la%20escucha%20activa%20y%20la%20reinicia%20autom%C3%A1ticamente%20si%20el%20navegador%20corta%20el%20servicio.>En celular Robotito mantiene la escucha activa y la reinicia automáticamente si el navegador corta el servicio.</p>
         </div>
         <div class="card small">
-          <h3>Hoy</h3>
+          <h3 data-ui-copy=Hoy>Hoy</h3>
           <p id="dateInfo"></p>
         </div>
         <div class="card small">
@@ -411,16 +413,16 @@
           <p id="audioModelStatus" role="status" class="muted" data-i18n="audioModelOff">Clasificador avanzado desactivado.</p>
           <details class="reaction-trial-panel">
             <summary data-i18n="uiTrialSummary">Prueba voluntaria de reacciones del avatar</summary>
-            <p class="muted">Registrá solo cantidades de sonidos detectados, acciones ejecutadas y bailes. No se guardan grabaciones, transcripciones, horas exactas ni datos del micrófono. La medición comienza únicamente cuando la activás; se descarta al ocultar o abandonar la página. Las cifras no prueban por sí solas precisión ni latencia desde el comienzo del sonido.</p>
+            <p class="muted" data-ui-copy=Registr%C3%A1%20solo%20cantidades%20de%20sonidos%20detectados%2C%20acciones%20ejecutadas%20y%20bailes.%20No%20se%20guardan%20grabaciones%2C%20transcripciones%2C%20horas%20exactas%20ni%20datos%20del%20micr%C3%B3fono.%20La%20medici%C3%B3n%20comienza%20%C3%BAnicamente%20cuando%20la%20activ%C3%A1s%3B%20se%20descarta%20al%20ocultar%20o%20abandonar%20la%20p%C3%A1gina.%20Las%20cifras%20no%20prueban%20por%20s%C3%AD%20solas%20precisi%C3%B3n%20ni%20latencia%20desde%20el%20comienzo%20del%20sonido.>Registrá solo cantidades de sonidos detectados, acciones ejecutadas y bailes. No se guardan grabaciones, transcripciones, horas exactas ni datos del micrófono. La medición comienza únicamente cuando la activás; se descarta al ocultar o abandonar la página. Las cifras no prueban por sí solas precisión ni latencia desde el comienzo del sonido.</p>
             <div class="reaction-trial-controls">
               <button type="button" id="reactionTrialStart" data-i18n="uiTrialStart">Iniciar registro local</button>
               <button type="button" id="reactionTrialStop" data-i18n="uiTrialStop" disabled>Detener</button>
               <button type="button" id="reactionTrialExport" data-i18n="uiTrialExport" disabled>Descargar recuentos</button>
               <button type="button" id="reactionTrialClear" data-i18n="uiTrialClear">Descartar</button>
             </div>
-            <p id="reactionTrialStatus" class="muted" role="status" aria-live="polite">Registro apagado.</p>
+            <p id="reactionTrialStatus" class="muted" role="status" aria-live="polite" data-ui-copy=Registro%20apagado.>Registro apagado.</p>
           </details>
-          <label>Idioma / Language / Idioma
+          <label><span data-ui-copy=Idioma>Idioma</span>
             <select id="languageMode">
               <option value="es">Español</option>
               <option value="en">English</option>
@@ -465,7 +467,7 @@
 
         <div class="card small">
           <h3 data-i18n="uiTryAsking">Probá preguntarle</h3>
-          <p class="muted">Podés hablarle en español, inglés, portugués, francés, italiano o alemán. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
+          <p class="muted" data-ui-copy=Pod%C3%A9s%20hablarle%20en%20espa%C3%B1ol%2C%20ingl%C3%A9s%2C%20portugu%C3%A9s%2C%20franc%C3%A9s%2C%20italiano%20o%20alem%C3%A1n.%20Adem%C3%A1s%20de%20preguntas%20personales%20y%20conocimiento%20com%C3%BAn%2C%20ahora%20tiene%20un%20m%C3%B3dulo%20especial%20de%20F%C3%ADsica%20sobre%20impulso%2C%20cantidad%20de%20movimiento%2C%20conservaci%C3%B3n%20y%20choques%2C%20y%20puede%20resolver%20ejercicios%20t%C3%ADpicos%20del%20tema.>Podés hablarle en español, inglés, portugués, francés, italiano o alemán. Además de preguntas personales y conocimiento común, ahora tiene un módulo especial de Física sobre impulso, cantidad de movimiento, conservación y choques, y puede resolver ejercicios típicos del tema.</p>
         </div>
       </section>
 
@@ -474,9 +476,9 @@
           <div class="section-head">
             <div>
               <h2 data-i18n="uiClassMode">Modo clase</h2>
-              <p class="muted">Robotito intenta distinguir voces registradas, profesora, compañeros y tu voz. Si se equivoca, podés corregir cada frase después y esa corrección ayuda a mejorar su reconocimiento.</p>
+              <p class="muted" data-ui-copy=Robotito%20intenta%20distinguir%20voces%20registradas%2C%20profesora%2C%20compa%C3%B1eros%20y%20tu%20voz.%20Si%20se%20equivoca%2C%20pod%C3%A9s%20corregir%20cada%20frase%20despu%C3%A9s%20y%20esa%20correcci%C3%B3n%20ayuda%20a%20mejorar%20su%20reconocimiento.>Robotito intenta distinguir voces registradas, profesora, compañeros y tu voz. Si se equivoca, podés corregir cada frase después y esa corrección ayuda a mejorar su reconocimiento.</p>
             </div>
-            <span id="classBadge" class="status-badge">apagado</span>
+            <span id="classBadge" class="status-badge" data-ui-copy=apagado>apagado</span>
           </div>
 
           <label><span data-i18n="uiSubject">Materia</span>
@@ -503,9 +505,9 @@
 
           <label class="check class-web-check">
             <input id="verifyClassWeb" type="checkbox" checked />
-            Verificar posibles errores de transcripción con fuentes web
+            <span data-ui-copy=Verificar%20posibles%20errores%20de%20transcripci%C3%B3n%20con%20fuentes%20web>Verificar posibles errores de transcripción con fuentes web</span>
           </label>
-          <p class="muted">Robotito conserva siempre lo que oyó. Solo cambia la versión corregida cuando encuentra evidencia suficientemente clara y muestra la fuente usada.</p>
+          <p class="muted" data-ui-copy=Robotito%20conserva%20siempre%20lo%20que%20oy%C3%B3.%20Solo%20cambia%20la%20versi%C3%B3n%20corregida%20cuando%20encuentra%20evidencia%20suficientemente%20clara%20y%20muestra%20la%20fuente%20usada.>Robotito conserva siempre lo que oyó. Solo cambia la versión corregida cuando encuentra evidencia suficientemente clara y muestra la fuente usada.</p>
 
           <div class="live-class-box">
             <div class="section-head"><h3 data-i18n="uiLiveTranscript">Transcripción en vivo</h3><span id="classDuration">00:00</span></div>
@@ -529,10 +531,10 @@
           <form id="classSessionEditorForm" method="dialog">
             <div class="class-editor-head">
               <div>
-                <span class="class-editor-kicker">CORREGIR CLASE GUARDADA</span>
+                <span class="class-editor-kicker" data-ui-copy=CORREGIR%20CLASE%20GUARDADA>CORREGIR CLASE GUARDADA</span>
                 <h2 id="classSessionEditorTitle" data-i18n="uiClassEdit">Editar datos de la clase</h2>
               </div>
-              <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar">×</button>
+              <button id="closeClassSessionEditor" class="ghost class-editor-close" type="button" aria-label="Cerrar" data-ui-aria-label=Cerrar>×</button>
             </div>
             <p data-i18n="uiClassEditorHelp" class="muted">Podés corregir cómo quedó agendada sin perder la transcripción, el resumen ni la grabación.</p>
             <input id="editClassSessionId" type="hidden" />
@@ -558,7 +560,7 @@
               <h2 data-i18n="uiClassRecordings">Grabaciones de clase</h2>
               <p data-i18n="uiClassAudioHelp" class="muted">El audio se guarda en este navegador para que puedas volver a escuchar la clase completa.</p>
             </div>
-            <span id="classRecordingLive" class="recording-live">sin grabar</span>
+            <span id="classRecordingLive" class="recording-live" data-ui-copy=sin%20grabar>sin grabar</span>
           </div>
           <p data-i18n="uiClassEmptyAudio" id="classRecordingStatus" class="muted">Todavía no hay grabaciones guardadas en este dispositivo.</p>
           <div id="classRecordingsList" class="class-recordings-list">
@@ -600,19 +602,19 @@
             <button id="startYoutubeCaptureBtn" data-i18n="uiYouTubeListen" type="button" class="primary">🎧 Escuchar pestaña con audio</button>
             <button id="stopYoutubeCaptureBtn" type="button" class="ghost" disabled data-i18n="uiVideoStop">■ Terminar video</button>
           </div>
-          <p id="youtubeCaptureStatus" class="video-capture-status muted">Pegá un enlace para comenzar.</p>
+          <p id="youtubeCaptureStatus" class="video-capture-status muted" data-ui-copy=Peg%C3%A1%20un%20enlace%20para%20comenzar.>Pegá un enlace para comenzar.</p>
           <video id="youtubeCapturePreview" class="youtube-capture-preview" muted autoplay playsinline hidden></video>
-          <p id="youtubeVisualStatus" class="muted">La visión del video reconocerá objetos generales cuando compartas la pestaña.</p>
+          <p id="youtubeVisualStatus" class="muted" data-ui-copy=La%20visi%C3%B3n%20del%20video%20reconocer%C3%A1%20objetos%20generales%20cuando%20compartas%20la%20pesta%C3%B1a.>La visión del video reconocerá objetos generales cuando compartas la pestaña.</p>
 
           <details class="youtube-transcript-help">
             <summary data-i18n="uiYouTubeTranscriptSummary">Usar la transcripción o los subtítulos</summary>
             <ol>
-              <li>Abrí el video en YouTube.</li>
-              <li>En la descripción o menú del video elegí <strong data-i18n="uiYouTubeTranscriptShow">Mostrar transcripción</strong>, si está disponible.</li>
-              <li>Copiá el texto completo y pegalo aquí. También podés cargar archivos <code>.srt</code> o <code>.vtt</code> en «Cargar material académico».</li>
+              <li data-ui-copy=Abr%C3%AD%20el%20video%20en%20YouTube.>Abrí el video en YouTube.</li>
+              <li data-i18n="uiYouTubeTranscriptShow">En el menú del video elegí «Mostrar transcripción», si está disponible.</li>
+              <li data-ui-copy=Copi%C3%A1%20y%20peg%C3%A1%20la%20transcripci%C3%B3n%20completa%20aqu%C3%AD.%20Tambi%C3%A9n%20pod%C3%A9s%20cargar%20archivos%20.srt%20o%20.vtt%20en%20%C2%ABCargar%20material%20acad%C3%A9mico%C2%BB.>Copiá y pegá la transcripción completa aquí. También podés cargar archivos .srt o .vtt en «Cargar material académico».</li>
             </ol>
           </details>
-          <label>Transcripción del video
+          <label><span data-ui-copy=Transcripci%C3%B3n%20del%20video>Transcripción del video</span>
             <textarea id="youtubeTranscript" data-i18n-placeholder="uiVideoTranscriptPrompt" rows="7" placeholder="Pegá aquí la transcripción o los subtítulos…"></textarea>
           </label>
           <button id="saveYoutubeTranscriptBtn" data-i18n="uiYouTubeSaveTranscript" type="button" class="primary full">Guardar transcripción como material</button>
@@ -623,7 +625,7 @@
           <h2 data-i18n="uiUploadMaterials">Cargar material académico</h2>
           <p data-i18n="uiClassMaterialHelp" class="muted">Podés cargar apuntes o material de apoyo en TXT, Markdown, CSV, JSON, PDF, SRT o VTT. Robotito lo suma a lo que sabe de la materia.</p>
           <label class="file-label">
-            Cargar material
+            <span data-ui-copy=Cargar%20material>Cargar material</span>
             <input id="academicFiles" type="file" multiple accept=".txt,.md,.csv,.json,.pdf,.srt,.vtt,text/plain,text/markdown,text/csv,application/json,application/pdf,text/vtt,application/x-subrip" />
           </label>
           <div id="academicFilesList" class="study-output"><p class="muted" data-i18n="uiAcademicNoFiles">Todavía no cargaste material.</p></div>
@@ -642,7 +644,7 @@
         <div class="card">
           <h2 data-i18n="uiVisualMath">Matemática visual</h2>
           <p class="muted" data-i18n="uiMathHelp">Para circunferencias, escribí una ecuación o datos como centro y radio. Robotito intenta resolverla, explicarla y dibujarla.</p>
-          <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0"></textarea>
+          <textarea id="mathPrompt" rows="3" placeholder="Ej. x² + y² - 6x + 4y - 12 = 0" data-ui-placeholder=Ej.%20x%C2%B2%20%2B%20y%C2%B2%20-%206x%20%2B%204y%20-%2012%20%3D%200></textarea>
           <button id="solveMathBtn" data-i18n="uiSolveMath" type="button" class="primary full">Resolver y representar</button>
           <div id="mathExplanation" class="study-output"></div>
           <canvas id="mathCanvas" width="520" height="360"></canvas>
@@ -660,10 +662,10 @@
         <div class="card">
           <h2 data-i18n="uiTasksSheet">Tu hoja de tareas</h2>
           <p class="muted" data-i18n="uiTaskSheetHelp">Pegá el enlace de Google Sheets. Robotito intentará leer una hoja publicada/compartida para lectura. Tus datos quedan guardados en este navegador.</p>
-          <label>Enlace de Google Sheet
+          <label><span data-ui-copy=Enlace%20de%20Google%20Sheet>Enlace de Google Sheet</span>
             <input id="tasksSheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/..." />
           </label>
-          <label>GID de la pestaña (opcional)
+          <label><span data-ui-copy=GID%20de%20la%20pesta%C3%B1a%20%28opcional%29>GID de la pestaña (opcional)</span>
             <input id="tasksSheetGid" type="text" placeholder="0" />
           </label>
           <button id="connectTasksBtn" type="button" class="primary full" data-i18n="uiConnectTasks">Conectar tareas</button>
@@ -690,10 +692,10 @@
           <label><span data-i18n="uiBirthday">Cumpleaños</span>
             <input id="personBirthday" data-i18n-placeholder="uiBirthdayPlaceholder" type="text" inputmode="numeric" placeholder="DD/MM/AAAA" maxlength="10" autocomplete="off" />
           </label>
-          <label>En clase esta persona es
+          <label><span data-ui-copy=En%20clase%20esta%20persona%20es>En clase esta persona es</span>
             <select id="personRole">
               <option value="other" data-i18n="uiRoleOther">Persona / otro</option>
-              <option value="me">Yo</option>
+              <option value="me" data-ui-copy=Yo>Yo</option>
               <option value="teacher" data-i18n="uiRoleTeacher">Profesor/a</option>
               <option value="classmate" data-i18n="uiRoleClassmate">Compañero/a</option>
             </select>
@@ -719,23 +721,22 @@
       <section class="tabpage" id="tab-books">
         <div class="card">
           <h2 data-i18n="uiMyBooks">Tu biblioteca (opcional)</h2>
-          <p class="muted"><strong>No necesitás Goodreads para recibir recomendaciones.</strong> Si querés, podés importar el CSV únicamente para que Robotito conozca tus lecturas, evite repetirlas y también busque entre tus pendientes.</p>
+          <p class="muted"><strong data-ui-copy=No%20necesit%C3%A1s%20Goodreads%20para%20recibir%20recomendaciones.>No necesitás Goodreads para recibir recomendaciones.</strong> <span data-ui-copy=Si%20quer%C3%A9s%2C%20pod%C3%A9s%20importar%20el%20CSV%20%C3%BAnicamente%20para%20que%20Robotito%20conozca%20tus%20lecturas%2C%20evite%20repetirlas%20y%20tambi%C3%A9n%20busque%20entre%20tus%20pendientes.>Si querés, podés importar el CSV únicamente para que Robotito conozca tus lecturas, evite repetirlas y también busque entre tus pendientes.</span></p>
           <label class="file-label">
-            Importar CSV
+            <span data-ui-copy=Importar%20CSV>Importar CSV</span>
             <input id="goodreadsFile" type="file" accept=".csv,text/csv" />
           </label>
           <button id="goodreadsHelpBtn" type="button" class="ghost full help-button" data-i18n="uiGoodreadsButton">❔ No sé cómo pasarle mis datos de Goodreads</button>
           <div id="goodreadsHelp" class="help-panel hidden">
             <h3 data-i18n="uiGoodreadsHow">Cómo pasarle tu Goodreads a Robotito</h3>
             <ol>
-              <li>Abrí Goodreads desde una computadora.</li>
-              <li>Entrá a <strong>My Books</strong>.</li>
-              <li>En la columna izquierda, dentro de <strong>Tools</strong>, elegí <strong>Import and export</strong>.</li>
-              <li>En <strong>Export Your Books</strong>, tocá <strong>Export Library</strong>.</li>
-              <li>Esperá a que Goodreads genere el archivo y descargá el CSV.</li>
-              <li>Volvé acá y tocá <strong>Importar CSV</strong> para elegir ese archivo.</li>
+              <li data-ui-copy=Abr%C3%AD%20Goodreads%20desde%20una%20computadora.>Abrí Goodreads desde una computadora.</li>
+              <li data-ui-copy=En%20Goodreads%2C%20abr%C3%AD%20My%20Books%20%E2%86%92%20Tools%20%E2%86%92%20Import%20and%20export.>En Goodreads, abrí My Books → Tools → Import and export.</li>
+              <li data-ui-copy=En%20Export%20Your%20Books%2C%20eleg%C3%AD%20Export%20Library.>En Export Your Books, elegí Export Library.</li>
+              <li data-ui-copy=Esper%C3%A1%20a%20que%20Goodreads%20genere%20el%20archivo%20y%20descarg%C3%A1%20el%20CSV.>Esperá a que Goodreads genere el archivo y descargá el CSV.</li>
+              <li data-ui-copy=Volv%C3%A9%20ac%C3%A1%20y%20eleg%C3%AD%20ese%20archivo%20con%20%C2%ABImportar%20CSV%C2%BB.>Volvé acá y elegí ese archivo con «Importar CSV».</li>
             </ol>
-            <a class="goodreads-link" href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer">Abrir Import / Export de Goodreads ↗</a>
+            <a class="goodreads-link" href="https://www.goodreads.com/review/import" target="_blank" rel="noopener noreferrer" data-ui-copy=Abrir%20Import%20%2F%20Export%20de%20Goodreads%20%E2%86%97>Abrir Import / Export de Goodreads ↗</a>
             <p class="muted" data-i18n="uiGoodreadsData">Robotito usa ese CSV para saber qué leíste, qué tenés pendiente, tus estanterías, autores y calificaciones. El archivo se procesa en tu navegador.</p>
           </div>
           <p data-i18n="uiNoLibrary" id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
@@ -747,8 +748,8 @@
             <textarea id="bookPrompt" data-i18n-placeholder="uiBookPromptExample" rows="4" placeholder="Ej. Quiero una fantasía tierna, con aventura y familia encontrada, no demasiado larga y sin final triste. Me gustó El castillo ambulante."></textarea>
           </label>
           <div class="book-options">
-            <label class="check"><input id="onlyOwned" type="checkbox" /> Solo de mi biblioteca</label>
-            <label class="check"><input id="excludeRead" type="checkbox" checked /> Evitar leídos</label>
+            <label class="check"><input id="onlyOwned" type="checkbox" /> <span data-ui-copy=Solo%20de%20mi%20biblioteca>Solo de mi biblioteca</span></label>
+            <label class="check"><input id="excludeRead" type="checkbox" checked /> <span data-ui-copy=Evitar%20le%C3%ADdos>Evitar leídos</span></label>
           </div>
           <button id="recommendBtn" type="button" class="primary full" data-i18n="uiBookRecommendations">Buscar recomendaciones</button>
           <p data-i18n="uiBooksHelp" class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
@@ -760,7 +761,7 @@
         <div class="card memory-info">
           <h2 data-i18n="uiAutoMemory">Memoria automática</h2>
           <p data-i18n="uiMemoryHelp">Robotito guarda por su cuenta las frases que logra entender y, en modo clase, conserva las explicaciones como material de estudio.</p>
-          <p class="muted">En Modo clase guarda la transcripción y, si el navegador lo permite, también el audio completo de cada sesión. Todo queda organizado localmente por materia y tema.</p>
+          <p class="muted" data-ui-copy=En%20Modo%20clase%20guarda%20la%20transcripci%C3%B3n%20y%2C%20si%20el%20navegador%20lo%20permite%2C%20tambi%C3%A9n%20el%20audio%20completo%20de%20cada%20sesi%C3%B3n.%20Todo%20queda%20organizado%20localmente%20por%20materia%20y%20tema.>En Modo clase guarda la transcripción y, si el navegador lo permite, también el audio completo de cada sesión. Todo queda organizado localmente por materia y tema.</p>
         </div>
         <div class="card">
           <h2 data-i18n="uiAddMemory">Agregar un recuerdo manual</h2>

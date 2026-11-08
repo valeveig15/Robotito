@@ -21,12 +21,12 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
    async withFaceDescriptors(){return detections;}
   };}};
  const detectLoop=new Function("state","document","faceapi","camera","$","followFace","recognize",
-  "detectEating","resetEyes","setTimeout","Date",
+  "detectEating","resetEyes","setTimeout","Date","uiSet",
   body+"\nreturn detectLoop;")(state,document,faceapi,camera,
    selector=>{assert.equal(selector,"#seenLabel");return label;},
    box=>calls.followed.push(box),det=>calls.recognized.push(det),
    det=>calls.eating.push(det),()=>{calls.reset++;},()=>{calls.schedules++;},
-   {now:()=>5000});
+   {now:()=>5000},(el,source,data={})=>{el.textContent=require("../i18n.js").text(source,"es",data);});
  await detectLoop();
  return {state,label,calls};
 }

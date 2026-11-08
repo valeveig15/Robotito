@@ -101,7 +101,7 @@
   function fmt(n,lang){
     if(!Number.isFinite(n))return String(n);
     const v=Math.abs(n)<1e-12?0:Number(n.toFixed(10));
-    return new Intl.NumberFormat(lang==="en"?"en-US":lang==="pt"?"pt-BR":"es-UY",{
+    return new Intl.NumberFormat(({es:"es-UY",en:"en-US",pt:"pt-BR",fr:"fr-FR",it:"it-IT",de:"de-DE"})[lang]||"es-UY",{
       maximumFractionDigits:10,useGrouping:false
     }).format(v);
   }

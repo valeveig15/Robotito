@@ -21,7 +21,8 @@ const state={currentPerson:"Ada",currentVoicePerson:"Bruno",memories:[],
  languageMode:"es",speechBubbleToken:1,pendingSpeechLocalization:true};
 const KEYS={memories:"memories"};
 const DateStub={now:()=>50000};
-const bubble={textContent:"",classList:{remove(){}}};
+let hidden=false;
+const bubble={textContent:"",classList:{remove(){hidden=false;},add(){hidden=true;}}};
 const remember=new Function("state","window","save","KEYS","renderMemories","Date",
  speechSource+"\nreturn autoRemember;")(state,window,()=>{},KEYS,()=>{},DateStub);
 const reply=new Function("state","window","robotitoReplyByOwner","$",
@@ -47,4 +48,11 @@ state.currentPerson=null;
 checkSpeech("Una persona desconocida está hablando","local");
 eq(writes.every(row=>typeof row.owner==="string"&&row.owner.length>0),true,
  "Records always have a nonempty owner");
+const before=writes.length,lastText=bubble.textContent;
+state.currentVoicePerson="Bruno";
+reply("Private delayed reply for Ada",2000,"en",1,"Ada");
+eq(writes.length,before,"A delayed translation must not be stored under the new speaker");
+eq(bubble.textContent,lastText,"A delayed translation must not replace the active reply");
+eq(hidden,true,"A delayed translation is hidden after the owner changes");
+eq(state.pendingSpeechLocalization,false,"Dropped translation clears the pending indicator");
 console.log("P04 cross-modal memory isolation:",checks,"checks");

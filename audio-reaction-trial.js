@@ -71,7 +71,8 @@ function attachControls({isReady=()=>true}={}){
   startBtn.disabled=status.active;
   stopBtn.disabled=!status.active;
   exportBtn.disabled=!status.canExport;
-  label.textContent=message;
+  if(root.ROBOTITO_I18N?.bindText)root.ROBOTITO_I18N.bindText(label,message);
+  else label.textContent=message;
  };
  startBtn.addEventListener("click",()=>{
   if(!isReady()){update("Iniciá Robotito y autorizá su micrófono antes de registrar reacciones.");return;}

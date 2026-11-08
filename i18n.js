@@ -9,7 +9,7 @@ const NAMES={
  pt:["portugues","português","portuguese","portugais","portoghese","portugiesisch"],
  fr:["frances","français","francais","french","francese","franzosisch"],
  it:["italiano","italian","italien","italienisch"],
- de:["aleman","alemán","german","allemand","tedesco","deutsch"]
+ de:["aleman","alemán","alemao","alemão","german","allemand","tedesco","deutsch"]
 };
 const LABELS={
  captureVisionTimeout:{es:"La cámara tardó demasiado. Podés volver a iniciar los sentidos.",en:"The camera took too long. You can start the senses again.",pt:"A câmera demorou demais. Você pode iniciar os sentidos novamente.",fr:"La caméra a mis trop de temps. Tu peux réactiver les sens.",it:"La fotocamera ha impiegato troppo tempo. Puoi riattivare i sensi.",de:"Die Kamera hat zu lange gebraucht. Du kannst die Sinne erneut starten."},
@@ -237,8 +237,70 @@ function fixedReply(text,language="es"){
 function fold(x){return String(x||"").toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 function supported(code){return Object.prototype.hasOwnProperty.call(LOCALES,code);}
 function t(key,lang="es"){return LABELS[key]?.[lang]||LABELS[key]?.es||key;}
+// Only application-owned copy belongs here. User names, quotations and stored
+// notes are values, never lookup keys. Formatting never evaluates HTML or code.
+const COPY=new Map(), SINGULAR=new Map(), bindings=new Map();
+function addMessages(rows){
+ for(const row of rows){
+  if(row.length!==6||row.some(value=>typeof value!=="string"||!value))throw new Error("Incomplete UI translation");
+  COPY.set(row[0],Object.fromEntries(Object.keys(LOCALES).map((lang,i)=>[lang,row[i]])));
+ }
+}
+function addSingular(source,row){addMessages([row]);SINGULAR.set(source,row[0]);}
+function text(source,lang="es",data={}){
+ if(typeof data==="function")data=data(lang);
+ if(Number(data.count)===1&&SINGULAR.has(source))source=SINGULAR.get(source);
+ const row=COPY.get(source)||[...COPY.values(),...Object.values(LABELS)].find(row=>Object.values(row).includes(source));
+ const template=row?.[lang]||fixedReply(source,lang)||String(source??"");
+ return template.replace(/\{(\w+)\}/g,(match,key)=>Object.prototype.hasOwnProperty.call(data,key)?String(data[key]):match);
+}
+function bindText(element,source,data={}){
+ if(!element)return;
+ element.removeAttribute?.("data-ui-copy");
+ bindings.set(element,{source,data});
+ element.textContent=text(source,root.document?.documentElement?.lang||"es",data);
+}
+function refreshBindings(lang,doc){
+ for(const [element,value] of bindings){
+  if(element.isConnected===false){bindings.delete(element);continue;}
+  element.textContent=text(value.source,lang,value.data);
+ }
+ for(const element of doc.querySelectorAll("[data-ui-copy]")){
+  const translated=text(decodeURIComponent(element.getAttribute("data-ui-copy")),lang);
+  if(element.textContent!==translated)element.textContent=translated;
+ }
+ for(const attribute of ["title","placeholder","aria-label"]){
+  for(const element of doc.querySelectorAll("[data-ui-"+attribute+"]")){
+   const source=decodeURIComponent(element.getAttribute("data-ui-"+attribute));
+   element.setAttribute(attribute,text(source,lang));
+  }
+ }
+}
+function languageFromName(value){
+ const name=fold(value).trim();
+ return Object.keys(NAMES).find(code=>NAMES[code].some(alias=>fold(alias)===name))||null;
+}
+function parseTranslation(raw){
+ const input=String(raw||"").trim().replace(/^[¿¡]/,"").replace(/[?！!]$/,"");
+ // Capture from the original, not a lowercased/accent-stripped command.
+ const patterns=[
+  /^(?:decime|dime|decí|deci|di|pronunciá|pronuncia|repetí|repeti|repite|c[oó]mo se dice|traduc[ií]|traduce)\s+(.+?)\s+(?:en|al)\s+([^?]+)$/iu,
+  /^(?:say|tell me|how do you say|translate)\s+(.+?)\s+(?:in|into|to)\s+([^?]+)$/iu,
+  /^(?:diga|me diga|fala|fale|como se diz|traduza)\s+(.+?)\s+(?:em|para)\s+([^?]+)$/iu,
+  /^(?:dis|dites|comment (?:dit-on|dire)|traduis|traduisez)\s+(.+?)\s+en\s+([^?]+)$/iu,
+  /^(?:di[’']?|dimmi|come si dice|traduci)\s+(.+?)\s+in\s+([^?]+)$/iu,
+  /^(?:sag|sage|wie sagt man|übersetze|ubersetze)\s+(.+?)\s+(?:auf|ins)\s+([^?]+)$/iu
+ ];
+ for(const pattern of patterns){
+  const match=input.match(pattern),language=match&&languageFromName(match[2].replace(/[.!?]+$/,"").trim());
+  if(language)return {phrase:match[1].replace(/^[“„«"]|[”»"]$/g,"").trim(),language};
+ }
+ return null;
+}
 function parseCommand(raw){
- const q=fold(raw).trim().replace(/^[¿?¡!\s]+/,""),words=q.split(/\s+/);
+ if(parseTranslation(raw))return null;
+ let q=fold(raw).trim().replace(/^[¿?¡!\s]+/,"");
+ const words=q.split(/\s+/);
  if(words.length>24||words.length===0)return null;
  // Refusal of a language is not an instruction to activate that language.
  // A later affirmative correction after a comma is handled by the existing
@@ -246,13 +308,15 @@ function parseCommand(raw){
  const refused=/^(?:(?:por favor|please)[,\s]+)?(?:no\s+(?:quiero|deseo|pienso|pretendo|tengo\s+ganas\s+de)\b|je\s+ne\s+(?:veux|souhaite|desire)\s+pas\b|je\s+ne\s+veux\s+plus\b)/;
  const affirmativeCorrection=/(?:,|;)\s*(?:(?:pero|but|mais|ma|sondern)\s+)?(?:quiero|prefiero|hablame|cambia|speak|switch|change|parla|sprich)\b/;
  if(refused.test(q)&&!affirmativeCorrection.test(q))return null;
+ const corrected=refused.test(q)&&affirmativeCorrection.test(q);
+ if(corrected)q=q.slice(q.search(affirmativeCorrection)+1).trim();
  const desire=/\b(habl(?:a|ame|ar|amos|e)?|respond(?:e|eme|er|a)?|contest(?:a|ame|ar)|cambi(?:a|ame|ar|emos)|pas(?:emos|amos)|desde ahora|a partir de ahora|quiero practicar|quiero aprender|volv(?:e|er|amos)|solamente|solo en|english please|please speak|speak|switch|change|answer|from now on|parler|parlez|fale|responda|francais svp|deutsch bitte|auf|parla|sprich|sprech(?:e|en|t|st)?|antwort(?:e|en|est|et)?|repond(?:s|ez|re)?|praticar|practicar|practise|practice)\b/;
  // Reported commands and explicit negative requests are not language changes.
  if(/\b(?:teacher|profesora?|maestra?|dijo|dijeron|said|told|quoted|lehrer|professeur)\b/.test(q))return null;
  const prohibited=/(?:^|\s)(?:don't|do not|never|nao|non|nicht|nunca)\b(?:[\s,]+\S+){0,3}[\s,]+(?:speak\w*|switch\w*|change\w*|answer\w*|fal\w*|parl\w*|repond\w*|habl\w*|respond\w*|cambi\w*|sprech\w*|sprich|antwort\w*|auf)\b/;
  if(prohibited.test(q)||/\bno\s+(?:(?:me|nos|les|te)\s+)?(?:habl\w*|respond\w*|contest\w*|cambi\w*)\b/.test(q)||
     /\bne\s+(?:me\s+)?(?:parl\w*|repond\w*)\s+pas\b/.test(q))return null;
- if(!desire.test(q))return null;
+ if(!corrected&&!desire.test(q)&&! /\b(?:parle|passe|passons|parlami|rispondi|passa|mude|mudar|wechsle|wechseln)\b/.test(q))return null;
  let lang=null;for(const [code,names] of Object.entries(NAMES)){
   if(names.some(name=>new RegExp("(?:^|\\s)"+fold(name)+"(?:\\s|[.!?]|$)").test(q))){lang=code;break;}
  }
@@ -677,13 +741,13 @@ Object.assign(LABELS,{
   "de": "Transkript oder Untertitel verwenden"
  },
  "uiYouTubeTranscriptShow": {
-  "es": "Mostrar transcripción",
-  "en": "Show transcript",
-  "pt": "Mostrar transcrição",
-  "fr": "Afficher la transcription",
-  "it": "Mostra trascrizione",
-  "de": "Transkript anzeigen"
- },
+  "es": "En el menú del video elegí «Mostrar transcripción», si está disponible.",
+  "en": "Choose “Show transcript” in the video menu, if available.",
+  "pt": "No menu do vídeo, escolha “Mostrar transcrição”, se disponível.",
+  "fr": "Choisis « Afficher la transcription » dans le menu, si disponible.",
+  "it": "Nel menu del video, scegli «Mostra trascrizione», se disponibile.",
+  "de": "Wähle im Videomenü „Transkript anzeigen“, falls verfügbar."
+},
  "uiYouTubeSaveTranscript": {
   "es": "Guardar transcripción como material",
   "en": "Save transcript as material",
@@ -1024,6 +1088,7 @@ function apply(lang,rootElement){
    else el[targetAttribute]=translated;
   }
  }
+ refreshBindings(lang,doc);
  return true;
 }
 // P01: concise clarification choices, shared by voice, chat and class questions.
@@ -1077,6 +1142,7 @@ Object.assign(LABELS,{
     "de": "Ich bin nicht sicher, ob du das ernst meinst. Soll ich es tun?"
   }
 });
-root.ROBOTITO_I18N={supported,locale:code=>LOCALES[code]||LOCALES.es,t,fixedReply,message,parseCommand,apply,languages:Object.keys(LOCALES)};
+root.ROBOTITO_I18N={supported,locale:code=>LOCALES[code]||LOCALES.es,t,fixedReply,message,parseCommand,parseTranslation,languageFromName,apply,text,bindText,refreshBindings,addMessages,addSingular,
+ catalog:()=>[...COPY.entries()].map(([source,translations])=>({source,translations})),languages:Object.keys(LOCALES)};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_I18N;
 })(typeof window!=="undefined"?window:globalThis);

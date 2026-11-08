@@ -1,6 +1,6 @@
 # Robotito — pendientes permanentes y seguimiento
 
-Actualizado: 5 de noviembre de 2026.
+Actualizado: 8 de noviembre de 2026.
 
 > Este documento **no reemplaza los 82 pedidos originales**, cuyo orden de implementación se mantiene. Sirve para conservar las limitaciones solucionables que se detectan al desarrollar y probar cada punto. Nunca eliminar una limitación por pasar al siguiente punto; marcarla resuelta únicamente con evidencia y pruebas.
 
@@ -13,6 +13,7 @@ Actualizado: 5 de noviembre de 2026.
 2. **Alternativa privada para traducción.**
    - Proveer una opción útil cuando el modelo local no esté disponible, con consentimiento explícito antes de enviar información a servicios externos.
    - No fingir que se tradujo texto que quedó en el idioma original.
+   - **Revisión 8/11:** catálogo de aplicación sin modelo y traducción local optativa con conservación del original, límites de tiempo y descarte de resultados atrasados. La traducción libre en navegadores sin esas APIs sigue pendiente; [P05-STATUS.md](P05-STATUS.md).
 3. **Punto 3: percepción avanzada de sonidos.**
    - La ingeniería de detección y protección temporal está integrada. **Pendiente de validación real:** corpus autorizado de sonidos humanos, etiquetas auditadas, fuentes independientes, negativos y casos ambiguos.
    - Medir precisión, recuperación, confusiones, falsos avisos por hora y latencia.
@@ -26,6 +27,7 @@ Actualizado: 5 de noviembre de 2026.
 5. **Puntos 4 y 5: ASR/TTS, seis idiomas y traducción dinámica.**
    - Completar todas las respuestas dinámicas, clases, tareas, libros, clima, cumpleaños, estados de ánimo y mensajes de error en español, inglés, portugués, francés, italiano y alemán.
    - Probar ASR, TTS, cambio por selector/texto/voz y las modalidades persistente, sesión y una sola respuesta en navegadores reales.
+   - **Revisión 8/11:** seis versiones de inicio separadas, rasgos de 50 avatares, 227 objetos, paneles dinámicos, ayudas, fechas, libros incluidos, dibujos, tarjetas y mensajes localizados. Se preservan notas/títulos/citas y reproducción de audio al cambiar de idioma; una traducción tardía no se asigna a otra persona. Regresión específica: 9.061 comprobaciones de lógica más pruebas de aplicación; [P05-STATUS.md](P05-STATUS.md). La pronunciación física, la calidad de modelos y la traducción libre sin API no quedan certificadas.
    - **Aplicado 29/10:** inicio de los seis idiomas; avisos iniciales de micrófono/cámara y bienvenida localizados; impedir usar una voz de otro idioma. Pruebas específicas P04: 1.770 comprobaciones de lógica y localización, además de consentimiento (16), cambios de sesión ASR (8) y alcance persistente/sesión/una respuesta (27), órdenes multilingües (21), descarte de traducciones atrasadas (12), diagnóstico privado (30) y manejador de síntesis (68), manejo de eventos ASR del navegador en seis idiomas (85) y almacenamiento atómico/borrado de muestras (19). Integradas selecciones de los seis idiomas, 50 avatares, diez estilos, traducción privada y grupos prioritarios de mensajes. Se agregaron plantillas de fechas, cumpleaños, clases, tareas y biblioteca, traducción del registro de cara y voz, y localización de estados y errores del reconocimiento nativo de voz. Las respuestas dinámicas no cubiertas siguen dependiendo de modelos locales disponibles; la suite de CI y las pruebas de voz físicas todavía requieren validación. Se incorporó [p04-device-check.html](p04-device-check.html) para comprobar micrófono y voces reales sin almacenar audio. El audio de muestras voluntarias y su consentimiento se guardan atómicamente; el borrado elimina también blobs huérfanos anteriores.
 6. **Voces, muestras y consentimiento.**
    - Mantener diez estilos de voz como preajustes de síntesis; no presentarlos como diez actores garantizados ni como clonación.

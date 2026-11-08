@@ -408,8 +408,16 @@
       "Abrazo robótico iniciado: suave, calentito y con muchos bips.")
   };
 
-  function profile(id){return profiles[id]||profiles.panda;}
-  function line(id,action){
+  function profile(id,lang="es"){
+    const item=profiles[id]||profiles.panda;
+    if(lang==="es")return item;
+    return {...item,trait:window.ROBOTITO_I18N.text(item.trait,lang)};
+  }
+  function line(id,action,lang="es"){
+    if(lang!=="es"){
+      const messages={pet:"Me gustan los mimos tranquilos.",feed:"¡Gracias por darme de comer!",play:"¡Vamos a jugar!",highfive:"¡Chocá esos cinco!",surprise:"¡Qué susto!",poke:"Eso no era una caricia.",social:"Me gusta estar contigo.",hug:"Me gusta estar contigo."};
+      return window.ROBOTITO_I18N.text(messages[action]||profiles[id]?.trait||profiles.panda.trait,lang);
+    }
     const item=profile(id);
     const key=action==="hug"?"social":action==="highfive"?"play":action;
     const value=item.lines[key]||item.lines.idle;

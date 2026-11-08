@@ -8,6 +8,7 @@
   let active=null;
   let captureRequest=0;
   let objectUrls=[];
+  let renderVersion=0;
 
   function openDb(){
     return new Promise((resolve,reject)=>{
@@ -212,16 +213,15 @@
   function setLiveStatus(text,activeNow=false){
     const el=document.querySelector("#classRecordingLive");
     if(el){
-      el.textContent=text;
+      uiSet(el,text);
       el.classList.toggle("recording",activeNow);
     }
   }
   async function storageText(){
     try{
       const est=await navigator.storage?.estimate?.();
-      if(!est?.usage)return "";
-      return " · almacenamiento usado "+prettyBytes(est.usage);
-    }catch{return "";}
+      return Number(est?.usage)||0;
+    }catch{return 0;}
   }
   function revokeUrls(){
     objectUrls.forEach(u=>URL.revokeObjectURL(u));
@@ -230,21 +230,31 @@
   async function render(){
     const root=document.querySelector("#classRecordingsList");
     if(!root)return;
-    revokeUrls();
+    const version=++renderVersion;
     let rows=[];
     try{rows=await listRecordings();}
     catch(e){
-      root.innerHTML='<p class="muted">No pude abrir las grabaciones guardadas en este navegador.</p>';
+      if(version!==renderVersion)return;
+      root.innerHTML='<p class="muted" data-ui-copy=No%20pude%20abrir%20las%20grabaciones%20guardadas%20en%20este%20navegador.>No pude abrir las grabaciones guardadas en este navegador.</p>';
       return;
     }
     const extra=await storageText();
+    if(version!==renderVersion)return;
+    revokeUrls();
     const stat=document.querySelector("#classRecordingStatus");
-    if(stat)stat.textContent=rows.length
-      ?rows.length+" grabación"+(rows.length===1?"":"es")+" guardada"+(rows.length===1?"":"s")+" en este dispositivo"+extra+"."
-      :"Todavía no hay grabaciones guardadas en este dispositivo.";
+    if(stat){
+      stat.removeAttribute("data-i18n");
+      const count=document.createElement("span");
+      stat.replaceChildren(count);
+      uiSet(count,rows.length?"{count} grabaciones guardadas en este dispositivo.":"Todavía no hay grabaciones guardadas en este dispositivo.",{count:rows.length});
+      if(extra){
+        const usage=document.createElement("span");stat.append(" · ",usage);
+        uiSet(usage,"Almacenamiento usado: {size}",{size:prettyBytes(extra)});
+      }
+    }
 
     if(!rows.length){
-      root.innerHTML='<p class="muted">Cuando termines una clase, el audio aparecerá acá para volver a escucharlo.</p>';
+      root.innerHTML='<p class="muted" data-ui-copy=Cuando%20termines%20una%20clase%2C%20el%20audio%20aparecer%C3%A1%20ac%C3%A1%20para%20volver%20a%20escucharlo.>Cuando termines una clase, el audio aparecerá acá para volver a escucharlo.</p>';
       return;
     }
 
@@ -267,17 +277,17 @@
             recs.map(r=>{
               const url=URL.createObjectURL(r.blob);
               objectUrls.push(url);
-              const date=new Date(r.startedAt).toLocaleString("es-UY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+              const date=new Date(r.startedAt).toLocaleString(window.ROBOTITO_I18N.locale(state.languageMode),{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
               const filename=safeFilename(r.subject,r.startedAt,r.mimeType,r.topic);
               return '<article class="class-recording" data-recording-id="'+String(r.id).replace(/"/g,"&quot;")+'">'+
                 '<div class="class-recording-head">'+
-                  '<div><strong>'+escapeHtml(topic)+'</strong><div class="muted">'+escapeHtml(date)+' · '+escapeHtml(prettyDuration(r.durationMs))+' · '+escapeHtml(prettyBytes(r.size))+'</div></div>'+
-                  '<span class="recording-saved">● guardada</span>'+
+                  '<div><strong>'+escapeHtml(topic)+'</strong><div class="muted"><span data-recording-date="'+Number(r.startedAt)+'">'+escapeHtml(date)+'</span> · '+escapeHtml(prettyDuration(r.durationMs))+' · '+escapeHtml(prettyBytes(r.size))+'</div></div>'+
+                  '<span class="recording-saved" data-ui-copy=%E2%97%8F%20guardada>● guardada</span>'+
                 '</div>'+
                 '<audio controls preload="metadata" src="'+url+'"></audio>'+
                 '<div class="class-recording-actions">'+
-                  '<a class="button-link" href="'+url+'" download="'+escapeHtml(filename)+'">Guardar archivo</a>'+
-                  '<button type="button" class="ghost delete-class-recording" data-id="'+escapeHtml(r.id)+'">Borrar</button>'+
+                  '<a class="button-link" href="'+url+'" download="'+escapeHtml(filename)+'" data-ui-copy=Guardar%20archivo>Guardar archivo</a>'+
+                  '<button type="button" class="ghost delete-class-recording" data-id="'+escapeHtml(r.id)+'" data-ui-copy=Borrar>Borrar</button>'+
                 '</div>'+
               '</article>';
             }).join("")+
@@ -288,7 +298,7 @@
 
     root.querySelectorAll(".delete-class-recording").forEach(btn=>btn.addEventListener("click",async()=>{
       const id=btn.dataset.id;
-      if(!confirm("¿Querés borrar esta grabación de clase de este dispositivo?"))return;
+      if(!confirm(uiText("¿Querés borrar esta grabación de clase de este dispositivo?")))return;
       await removeRecording(id);
       await render();
       window.ROBOTITO_CLASS_ORGANIZER?.render?.();
@@ -406,8 +416,14 @@
     }
   }
   function isRecording(){return !!active&&active.recorder?.state==="recording";}
+  function refreshLocale(){
+    for(const node of document.querySelectorAll("[data-recording-date]")){
+      node.textContent=new Date(Number(node.dataset.recordingDate)).toLocaleString(
+        window.ROBOTITO_I18N.locale(state.languageMode),{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+    }
+  }
 
-  window.ROBOTITO_CLASS_AUDIO={start,stop,render,isRecording,listRecordings,removeRecording,updateMetadata,migrateAudio};
+  window.ROBOTITO_CLASS_AUDIO={start,stop,render,refreshLocale,isRecording,listRecordings,removeRecording,updateMetadata,migrateAudio};
 
   document.addEventListener("DOMContentLoaded",()=>{
     void migrateAudio().finally(()=>render());

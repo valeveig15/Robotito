@@ -3065,3 +3065,8 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 }
 .language-gate-card h2 .startup-language-line:not(:first-child){font-size:.68em;}
 .language-gate-card p .startup-language-line{font-size:.92em;}
+
+/* Language provenance stays readable in narrow panels. */
+.localized-content-text{white-space:pre-line;overflow-wrap:anywhere}
+.localized-content-status{display:block;color:var(--muted,#5e5665);font-size:.78rem;margin-top:.35rem}
+.local-translation-button{display:block;margin-top:.35rem;max-width:100%;white-space:normal}

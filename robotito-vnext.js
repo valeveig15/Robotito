@@ -172,13 +172,14 @@
     const root=document.querySelector("#mathExplanation");
     const sol=parseCirclePrompt(raw);
     if(!sol){
-      if(root)root.innerHTML='<div class="study-chip">No pude reconocer esta circunferencia con seguridad. Puedo trabajar con centro y radio, forma canónica o una ecuación general como x² + y² - 6x + 4y - 12 = 0.</div>';
+      if(root)root.innerHTML='<div class="study-chip" data-ui-copy=No%20pude%20reconocer%20esta%20circunferencia%20con%20seguridad.%20Puedo%20trabajar%20con%20centro%20y%20radio%2C%20forma%20can%C3%B3nica%20o%20una%20ecuaci%C3%B3n%20general%20como%20x%C2%B2%20%2B%20y%C2%B2%20-%206x%20%2B%204y%20-%2012%20%3D%200.>No pude reconocer esta circunferencia con seguridad. Puedo trabajar con centro y radio, forma canónica o una ecuación general como x² + y² - 6x + 4y - 12 = 0.</div>';
       return false;
     }
     const explanation=circleExplanation(sol);
     if(root){
-      root.innerHTML='<div class="answer-card circle-solution"><strong>Resolución paso a paso</strong><p>'+escapeHtml(explanation).replace(/\n/g,"<br>")+'</p>'+(sol.r===null?'<div class="study-chip">No hay representación real para dibujar.</div>':'')+'</div>';
+      root.innerHTML='<div class="answer-card circle-solution"><strong data-ui-copy=Resoluci%C3%B3n%20paso%20a%20paso>Resolución paso a paso</strong><p>'+escapeHtml(explanation).replace(/\n/g,"<br>")+'</p>'+(sol.r===null?'<div class="study-chip" data-ui-copy=No%20hay%20representaci%C3%B3n%20real%20para%20dibujar.>No hay representación real para dibujar.</div>':'')+'</div>';
     }
+    if(root)window.ROBOTITO_LOCALIZED_CONTENT?.render(root.querySelector(".circle-solution p"),explanation,"es");
     if(sol.r!==null)drawCircle(sol);
     if(typeof setMood==="function")setMood("proud","Robotito resolvió la circunferencia y comprobó la representación.");
     if(typeof say==="function")say(sol.r===null?"La ecuación no representa una circunferencia real.":"Listo. La resolví paso a paso y también hice la representación visual.",5200);
@@ -186,7 +187,7 @@
   }
 
   function objectDisplay(item,label){
-    if(item?.es?.[0])return item.es[0];
+    if(item)return window.ROBOTITO_OBJECTS.displayName(item,state.languageMode||"es");
     return String(label||"objeto").replace(/_/g," ");
   }
 
@@ -203,7 +204,7 @@
   async function detectObjectNow(){
     if(!state.started){toast("Primero despertá los sentidos.");return false;}
     const out=document.querySelector("#objectResult");
-    if(out)out.innerHTML='<div class="study-chip">Mirando el objeto…</div>';
+    if(out)out.innerHTML='<div class="study-chip" data-ui-copy=Mirando%20el%20objeto%E2%80%A6>Mirando el objeto…</div>';
     try{
       await loadObjectModels();
       if(camera.readyState<2)throw new Error("camera-not-ready");
@@ -229,28 +230,30 @@
       }
 
       if(!chosen&&!item){
-        if(out)out.innerHTML='<div class="study-chip">No reconozco un objeto con suficiente claridad. Acercalo, iluminá bien y dejalo quieto un segundo.</div>';
+        if(out)out.innerHTML='<div class="study-chip" data-ui-copy=No%20reconozco%20un%20objeto%20con%20suficiente%20claridad.%20Acercalo%2C%20ilumin%C3%A1%20bien%20y%20dejalo%20quieto%20un%20segundo.>No reconozco un objeto con suficiente claridad. Acercalo, iluminá bien y dejalo quieto un segundo.</div>';
         say("No lo reconozco con suficiente claridad todavía.",4200);
         return true;
       }
 
       const name=objectDisplay(item,modelLabel);
       const pct=Math.round(Math.max(0,Math.min(1,confidence))*100);
-      if(out)out.innerHTML='<div class="object-box"><div class="object-icon">'+escapeHtml(item?.emoji||"👀")+'</div><div><strong>Creo que es '+escapeHtml(name)+'</strong><div class="muted">Confianza aproximada: '+pct+'%</div></div></div>';
+      if(out)out.innerHTML='<div class="object-box"><div class="object-icon">'+escapeHtml(item?.emoji||"👀")+'</div><div><strong>'+escapeHtml(uiText('Creo que es {name}.',{name}))+'</strong><div class="muted">'+uiText('Confianza aproximada: {count}%',{count:pct})+'</div></div></div>';
+      uiSet(out?.querySelector("strong"),"Creo que es {name}.",lang=>({name:item?window.ROBOTITO_OBJECTS.displayName(item,lang):name}));
+      uiSet(out?.querySelector(".muted"),"Confianza aproximada: {count}%",{count:pct});
       const show=document.querySelector("#objectShowcase");
       if(show&&item){
         document.querySelector("#objectShowEmoji").textContent=item.emoji||"✨";
-        document.querySelector("#objectShowName").textContent=name;
-        document.querySelector("#objectShowInfo").textContent="Reconocido por cámara";
+        uiSet(document.querySelector("#objectShowName"),"{name}",lang=>({name:window.ROBOTITO_OBJECTS.displayName(item,lang)}));
+        uiSet(document.querySelector("#objectShowInfo"),"Reconocido por cámara");
         show.classList.remove("hidden");
         clearTimeout(detectObjectNow.t);
         detectObjectNow.t=setTimeout(()=>show.classList.add("hidden"),4200);
       }
-      say("Creo que es "+name+".",4200);
+      sayInLanguage(uiText("Creo que es {name}.",{name}),state.languageMode,4200);
       return true;
     }catch(e){
       console.warn("object recognition",e);
-      if(out)out.innerHTML='<div class="study-chip">No pude usar el reconocimiento visual en este momento.</div>';
+      if(out)out.innerHTML='<div class="study-chip" data-ui-copy=No%20pude%20usar%20el%20reconocimiento%20visual%20en%20este%20momento.>No pude usar el reconocimiento visual en este momento.</div>';
       say("No pude usar bien la cámara para reconocerlo.",3800);
       return true;
     }
