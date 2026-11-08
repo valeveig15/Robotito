@@ -73,10 +73,10 @@ const choose=new Function("normalizeText","responseLanguage",
  x=>String(x||"").toLowerCase(),()=> "es");
 eq(choose([voices[0]],"fr"),null,"Legacy selection must not substitute Spanish for French");
 eq(choose(voices,"de")?.voiceURI,"local-de","German selection in legacy adapter");
-ok(source.includes("if(!chosen)return false;"),
+ok(source.includes('if(!chosen){notify("unavailable");return false;}'),
  "Unavailable language voices must not be spoken with a different accent");
-ok(html.includes('data-i18n="pitch"')&&!html.includes(">Gravedad <input"),
- "Old Gravedad label replaced with localized Tono");
+ok(!html.includes('id="voicePitch"')&&!html.includes(">Gravedad <input"),
+ "P06 removes the visible pitch control while preserving internal tuning");
 ok(html.includes('data-i18n="speed"'),"Speed control localized");
 ok(html.includes('data-start-language="de"'),"German remains in initial language choices");
 ok(html.includes('data-i18n="highfive"'),"Chocar los cinco remains in the interface");
@@ -103,7 +103,7 @@ const pickerSynthesis={getVoices:()=>pickerVoices};
 const picker=new Function("$","window","speechSynthesis","state","responseLanguage",
  "voiceMatchesLanguage","chooseDefaultVoice","escapeHtml","localStorage",
  source.slice(populateBegin,populateEnd)+"return populateVoiceSelect;")(
- ()=>dropdown,{ROBOTITO_I18N:i18n,speechSynthesis:pickerSynthesis},
+ ()=>dropdown,{ROBOTITO_I18N:i18n,ROBOTITO_VOICE_SYSTEM:voice,speechSynthesis:pickerSynthesis},
  pickerSynthesis,pickerState,()=>pickerTarget,
  (v,lang)=>!!v&&new RegExp("^"+lang+"([-_]|$)","i").test(v.lang),
  choose,x=>String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;"),pickerStorage);
@@ -138,9 +138,10 @@ for(const code of langs){
 for(const key of ["voiceSampleRequesting","voiceSampleRecording","voiceSampleSaving","voiceSampleSaved","voiceSampleDiscarded","voiceSampleDeleted","voiceSampleError","voiceSampleNeedsName","voiceSampleNeedsConsent"]){
  for(const lang of langs)ok(i18n.t(key,lang).length>8,"Voice sample message "+key+"/"+lang);
 }
-ok(source.includes("ROBOTITO_VOICE_SAMPLE_CAPTURE"),"Private capture controller integrated");
+const sampleUI=fs.readFileSync(path.join(__dirname,"..","voice-sample-ui.js"),"utf8");
+ok(source.includes("ROBOTITO_VOICE_SAMPLE_UI")&&sampleUI.includes("ROBOTITO_VOICE_SAMPLE_CAPTURE"),"Private capture controller integrated");
 ok(html.includes("voice-sample-capture.js"),"Private capture loaded before UI script");
-ok(source.includes("voiceSamples?.cancel()"),"Consent and navigation can cancel recording");
+ok(sampleUI.includes("capture.cancel()"),"Consent and navigation can cancel recording");
 ok(!source.includes("api.mymemory.translated.net"),"No unconsented translation service");
 ok(source.includes("session.destroy?.();"),"LLM session teardown");
 ok(source.includes("normalizeText(out)!==normalizeText(clean)"),"Echo rejection");
@@ -178,9 +179,9 @@ eq(i18n.parseCommand("Parla italiano per questa sessione")?.scope,"session",
 ok(source.includes('t?.("prepareLocalized",target)'),"Six-language translation progress");
 ok(!source.includes("if(forcedLang)return false;"),"Forced language cannot bypass strong mismatch");
 ok(source.includes("francais|french|italiano|italian|aleman|deutsch|german"),"Six-language say command vocabulary");
-ok(source.includes('window.addEventListener("pagehide",()=>voiceSamples?.cancel());'),
+ok(sampleUI.includes('root.addEventListener("pagehide",()=>{++view;capture.cancel();clearPlayer();});'),
  "BFCache return must permit a new voice sample recording");
-for(const version of ["i18n.js?v=20261107-p05","script.js?v=20261107-p05","speech-fallback.js?v=20261105-p04-capture","voice-sample-capture.js?v=20261029-p04-release3"])
+for(const version of ["i18n.js?v=20261107-p05","script.js?v=20261108-p06","speech-fallback.js?v=20261105-p04-capture","voice-sample-capture.js?v=20261108-p06"])
  ok(html.includes(version),"Assets load updated P04 implementation "+version);
 // Frequent class, tasks and library messages work without a downloaded model.
 for(const original of ["Ya puedo hablar de nuevo.","Todavía no importaste tu biblioteca de Goodreads.","No tengo tu cumpleaños registrado.","Hoy todavía no escuché ninguna clase.","Ahora mismo no veo a nadie.","Ahora mismo no veo ninguna mano.","No tengo una edad humana. Soy una mascota virtual.","Soy Robotito, un panda virtual.","Estoy durmiendo.","Estoy bailando porque detecté música.","No encontré información suficiente para contestar eso.","No encontré evidencia suficiente en las transcripciones para contestar eso.","No encontré ese cumpleaños entre las personas registradas.","No veo tareas pendientes en la hoja conectada.","No tengo registrada una comida todavía.","No pude encontrar una recomendación ahora mismo.","Entendido, no voy a hacer eso.","Todavía no había dicho nada."]){

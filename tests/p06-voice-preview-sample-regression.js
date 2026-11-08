@@ -5,7 +5,7 @@ const source=fs.readFileSync(path.join(__dirname,"..","script.js"),"utf8");
 const voiceSource=fs.readFileSync(path.join(__dirname,"..","voice-system.js"),"utf8");
 let count=0;
 function eq(actual,wanted,reason){assert.deepEqual(actual,wanted,reason);count++;}
-const start=source.indexOf("function speakResponse(text,forcedLang=null){"),
+const start=source.indexOf("function speakResponse("),
  end=source.indexOf("function readingDisplayTime(",start);
 assert.ok(start>=0&&end>start,"Production TTS handler can be tested");
 const state={classMode:false,voiceEnabled:true,voiceURI:"es-voice",voiceStyle:"natural",

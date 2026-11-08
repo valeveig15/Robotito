@@ -326,6 +326,9 @@ Respondé únicamente JSON válido:
     // Enter Class Mode in absolute silence. If Robotito was speaking, stop it
     // before recording and immediately give the microphone back to listening.
     state.classMode=true;
+    state.cancelVoiceSample?.();
+    state.stopVoiceSamplePlayback?.();
+    state.finishVoicePlayback?.("stopped");
     clearTimeout(state.speechRestartTimer);
     if("speechSynthesis" in window){
       try{speechSynthesis.cancel();}catch{}

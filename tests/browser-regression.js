@@ -117,7 +117,7 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
          !voice?.saveProfileFromRecording||!voice?.deleteProfile)
         throw new Error("Atomic voice profile storage unavailable");
       const sample=new Blob([new Uint8Array(128)],{type:"audio/webm"});
-      await voice.saveProfileFromRecording(sample,{subject:"self"});
+      await voice.saveProfileFromRecording(sample,{subject:"self",explicitConsent:true});
       const record=await db.getRecord("voice-profile-local");
       const audio=await db.getBlob("voice-sample-local");
       if(record?.blobId!=="voice-sample-local"||audio?.size!==128)

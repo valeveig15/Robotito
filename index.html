@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261107-p05" />
+  <link rel="stylesheet" href="style.css?v=20261108-p06" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -19,10 +19,11 @@
   <script defer src="spoken-math.js?v=20261107-p05"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
   <script defer src="i18n.js?v=20261107-p05"></script>
-  <script defer src="ui-messages.js?v=20261107-p05"></script>
+  <script defer src="ui-messages.js?v=20261108-p06"></script>
   <script defer src="localized-content.js?v=20261107-p05"></script>
-  <script defer src="voice-system.js?v=20261029-p06-voices2"></script>
-  <script defer src="voice-sample-capture.js?v=20261029-p04-release3"></script>
+  <script defer src="voice-system.js?v=20261108-p06"></script>
+  <script defer src="voice-sample-capture.js?v=20261108-p06"></script>
+  <script defer src="voice-sample-ui.js?v=20261108-p06"></script>
   <script defer src="audio-perception.js?v=20261030-p03-continuity"></script>
   <script defer src="audio-reactions.js?v=20261030-p03-continuity"></script>
   <script defer src="audio-reaction-trial.js?v=20261107-p05"></script>
@@ -42,12 +43,12 @@
   <script defer src="class-audio.js?v=20261107-p05"></script>
   <script defer src="class-organizer.js?v=20261107-p05"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
-  <script defer src="class-verification.js?v=20261107-p05"></script>
+  <script defer src="class-verification.js?v=20261108-p06"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
-  <script defer src="script.js?v=20261107-p05"></script>
+  <script defer src="script.js?v=20261108-p06"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
   <script defer src="video-material.js?v=20261107-p05"></script>
   <script defer src="robotito-tests.js?v=20261105-p04-capture"></script>
@@ -438,8 +439,7 @@
           <p id="voiceAvailability" class="muted" role="status" aria-live="polite" data-i18n="voiceUnavailable">Esperando voces compatibles…</p>
           <p class="muted" data-i18n="voiceRemotePrivacy">Algunas voces no locales podrían procesar el texto fuera del dispositivo. Evitá probarlas con datos privados.</p>
           <div class="voice-controls">
-            <label><span data-i18n="pitch">Tono</span> <input id="voicePitch" type="range" min="0.5" max="1.1" step="0.05" value="0.65" /></label>
-            <label><span data-i18n="speed">Velocidad</span> <input id="voiceRate" type="range" min="0.65" max="1.1" step="0.05" value="0.82" /></label>
+            <label><span data-i18n="speed">Velocidad</span> <input id="voiceRate" type="range" min="0.65" max="1.1" step="0.01" value="0.82" /></label>
           </div>
           <label><span data-i18n="voiceStyle">Estilo de voz</span>
             <select id="voiceStyle">
@@ -452,15 +452,27 @@
           </label>
           <p class="muted" data-i18n="voicePresetExplanation">Los diez estilos son ajustes de tono, velocidad y volumen sobre la voz del navegador. No son diez voces nuevas ni una clonación.</p>
           <button id="testVoiceBtn" type="button" class="ghost full" data-i18n="testVoice">Probar voz</button>
+          <div class="voice-action-row">
+            <button id="stopVoiceBtn" type="button" class="ghost" disabled data-ui-copy=Detener%20voz>Detener voz</button>
+            <button id="refreshVoicesBtn" type="button" class="ghost" data-ui-copy=Actualizar%20voces>Actualizar voces</button>
+            <button id="resetVoiceBtn" type="button" class="ghost" data-ui-copy=Restablecer%20estilo>Restablecer estilo</button>
+          </div>
+          <p id="voicePlaybackStatus" class="muted" role="status" aria-live="polite"></p>
           <details class="voice-sample-options">
             <summary data-i18n="uiVoiceSampleTitle">Muestra voluntaria de voz (sin clonación)</summary>
             <p class="muted" data-i18n="voiceSampleExplanation">Esta opción guarda una grabación real solo con consentimiento. No la usa para clonar la voz ni crear una voz nueva para las respuestas.</p>
-            <label><input id="voiceSampleThirdParty" type="checkbox" /> <span data-i18n="voiceThirdParty">La voz pertenece a otra persona</span></label>
+            <label class="check"><input id="voiceSampleThirdParty" type="checkbox" /> <span data-i18n="voiceThirdParty">La voz pertenece a otra persona</span></label>
             <label><span data-i18n="voiceThirdPartyName">Nombre de esa persona</span> <input id="voiceSampleName" type="text" autocomplete="off" /></label>
-            <label><input id="voiceSampleConsent" type="checkbox" /> <span data-i18n="voiceConsent">Tengo consentimiento explícito para registrar esta muestra de audio.</span></label>
+            <label class="check"><input id="voiceSampleConsent" type="checkbox" /> <span data-i18n="voiceConsent">Tengo consentimiento explícito para registrar esta muestra de audio.</span></label>
             <button id="recordVoiceSample" type="button" class="ghost" data-i18n="uiRecordSample">Grabar muestra (3 segundos)</button>
+            <button id="stopVoiceSample" type="button" class="ghost" disabled data-ui-copy=Detener%20y%20guardar>Detener y guardar</button>
+            <button id="cancelVoiceSample" type="button" class="ghost" disabled data-ui-copy=Descartar%20grabaci%C3%B3n>Descartar grabación</button>
             <button id="deleteVoiceSample" type="button" class="ghost" data-i18n="uiDeleteSample">Eliminar muestra</button>
             <p id="voiceSampleStatus" role="status" class="muted"></p>
+            <div id="voiceSamplePlayback" hidden>
+              <p id="voiceSampleDetails" class="muted"></p>
+              <audio id="voiceSampleAudio" controls preload="metadata" data-ui-aria-label=Muestra%20de%20voz%20guardada aria-label="Muestra de voz guardada"></audio>
+            </div>
           </details>
           <p class="muted" data-i18n="voiceLanguageHelp">Podés cambiar el idioma por voz, texto o selector. La síntesis y el reconocimiento dependen de los idiomas disponibles en el navegador.</p>
         </div>

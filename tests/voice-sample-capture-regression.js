@@ -107,11 +107,47 @@ function fixture({deferPermission=false,deferSave=false}={}){
   stale.cancel();
   eq(await stale.start(),true,"New session starts after cancellation");
   const cancelledBefore=cancelled;
-  oldRecorder.onstop();
+  oldRecorder.onstop();oldRecorder.onerror();
   eq(stale.getStatus().phase,"recording","Old callback does not reset new session");
   eq(cancelled,cancelledBefore,"Old callback does not cancel new timer");
   eq(writes,0,"Old callback does not save stale sample");
   stale.cancel();
+ }
+ // A missing stop event releases the mic immediately and exits via watchdog.
+ {
+  let timer,stops=0,writes=0;
+  const track={stop(){stops++;}},rec={mimeType:"audio/webm",state:"recording",start(){},stop(){this.state="inactive";}};
+  const c=create({getConsent:()=>true,requestStream:async()=>({getTracks:()=>[track]}),recorderFactory:()=>rec,
+   save:async()=>{writes++;},schedule:fn=>(timer=fn,1),cancelSchedule:()=>{timer=null;}});
+  await c.start();rec.ondataavailable({data:new Blob([new Uint8Array(150)])});c.stop();
+  eq(stops,1,"Microphone released without waiting for stop event");timer();
+  eq(c.getStatus().phase,"idle","Lost stop event cannot block the next recording");
+  rec.onstop();await tick();eq(writes,0,"Late stop cannot save after timeout");eq(stops,1,"Track released exactly once");
+ }
+ // Deletion serializes with save and blocks a new recording until it settles.
+ {
+  let finish,removes=0;const events=[];
+  const c=create({getConsent:()=>true,remove:()=>{removes++;return new Promise(r=>finish=r);},onStatus:s=>events.push(s)});
+  const first=c.removeSample(),second=c.removeSample();
+  eq(await c.start(),false,"No new recording during deletion");eq(removes,1,"Concurrent deletes share one operation");
+  finish();await Promise.all([first,second]);eq(c.getStatus().phase,"idle");eq(events.at(-1),"deleted");
+ }
+ // Hardware disconnection/muting invalidates the complete recording, not just its final chunk.
+ for(const event of ["ended","mute"]){
+  const track=new EventTarget();let stops=0,writes=0;track.stop=()=>{stops++;};
+  const rec={mimeType:"audio/webm",state:"recording",start(){},stop(){this.state="inactive";this.onstop();}};
+  const c=create({getConsent:()=>true,requestStream:async()=>({getTracks:()=>[track]}),recorderFactory:()=>rec,save:async()=>{writes++;}});
+  await c.start();rec.ondataavailable({data:new Blob([new Uint8Array(150)])});track.dispatchEvent(new Event(event));await tick();
+  eq(c.getStatus().phase,"idle",event+": capture cancelled");eq(writes,0,event+": interrupted sample not kept");eq(stops,1);
+ }
+ // A failed atomic replacement must not delete an older, authorized sample.
+ {
+  let fail,removes=0;
+  const rec={state:"recording",mimeType:"audio/webm",start(){},stop(){this.state="inactive";this.onstop();}};
+  const c=create({getConsent:()=>true,requestStream:async()=>({getTracks:()=>[{stop(){}}]}),recorderFactory:()=>rec,
+   save:()=>new Promise((_,reject)=>fail=reject),remove:async()=>{removes++;}});
+  await c.start();rec.ondataavailable({data:new Blob([new Uint8Array(150)])});c.stop();c.cancel();fail(Error("quota"));await tick();
+  eq(removes,0,"Failed replacement preserves previous saved sample");eq(c.getStatus().phase,"idle");
  }
  console.log("Voice sample lifecycle:",checked,"assertions");
 })().catch(e=>{console.error(e);process.exitCode=1});
