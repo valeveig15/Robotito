@@ -2,7 +2,7 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const i18n=require("../i18n.js"),voiceSystem=require("../voice-system.js");
 const source=fs.readFileSync(path.join(__dirname,"..","script.js"),"utf8");
-const start=source.indexOf("function speakResponse(text,forcedLang=null){");
+const start=source.indexOf("function speakResponse(");
 const end=source.indexOf("function readingDisplayTime(",start);
 assert.ok(start>=0&&end>start,"Find production TTS handler");
 let checks=0;const eq=(a,b,msg)=>{assert.equal(a,b,msg);checks++};

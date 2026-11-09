@@ -298,10 +298,11 @@ function voiceMatchesLanguage(voice,targetLang=responseLanguage()){
 }
 function populateVoiceSelect(){
   const select=$("#voiceSelect");
-  if(!select||!window.speechSynthesis?.getVoices)return;
+  if(!select)return;
   // A one-answer language override does not replace the user's UI voice.
   const target=state.languageMode||responseLanguage();
-  const voices=speechSynthesis.getVoices().filter(v=>voiceMatchesLanguage(v,target));
+  let voices=[];
+  try{voices=window.ROBOTITO_VOICE_SYSTEM?.compatibleVoiceCatalog?.(window.speechSynthesis?.getVoices?.()||[],target)||[];}catch{}
   const preferred=window.ROBOTITO_VOICE_SYSTEM?.preferredVoiceForLanguage?.(
     key=>localStorage.getItem(key),target);
   const previous=preferred||state.voiceURI;
@@ -323,11 +324,11 @@ function populateVoiceSelect(){
   select.innerHTML=voices.map(v=>'<option value="'+escapeHtml(v.voiceURI)+'">'
     +escapeHtml(v.name+" — "+v.lang+(v.localService===true?" · "+localLabel:
       v.localService===false?" · "+remoteLabel:""))+'</option>').join("");
-  const chosen=voices.find(v=>v.voiceURI===previous)||chooseDefaultVoice(voices,target);
+  const chosen=window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,target,previous)||chooseDefaultVoice(voices,target);
   if(chosen){
     state.voiceURI=chosen.voiceURI;
     select.value=chosen.voiceURI;
-    localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
+    try{localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);}catch{}
   }
 }
 function isMobileSpeech(){
@@ -352,7 +353,7 @@ function discardRecognition(){
   pendingRecognitionMeta=null;
 }
 function restartRecognitionAfterSpeech(){
-  if(!state.started||state.speechBlocked||document.hidden||state.captureSuspended||!state.recognitionWanted)return;
+  if(!state.started||state.speechBlocked||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||document.hidden||state.captureSuspended||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
   
   setListenState(state.languageMode==="en"?"reconnecting…":state.languageMode==="pt"?"reconectando…":"reconectando…");
@@ -403,7 +404,8 @@ function beginSpeechSilence(rawText){
   const duration=parseSilenceDuration(rawText);
   clearTimeout(state.silenceTimer);
   state.silentUntil=duration===Infinity?Infinity:Date.now()+duration;
-  if("speechSynthesis" in window)speechSynthesis.cancel();
+  stopSpeaking();
+  state.stopVoiceSamplePlayback?.();
   state.speaking=false;
   const label=silenceDurationLabel(duration);
   say("🤫 Está bien. Me quedo callado "+label+".",Math.min(duration===Infinity?5000:duration,5000));
@@ -441,11 +443,32 @@ window.ROBOTITO_SILENCE={
   defaultMs:DEFAULT_SILENCE_MS
 };
 
-function speakResponse(text,forcedLang=null){
+function setVoicePlaybackStatus(status){
+  const messages={idle:"",preparing:"Preparando la voz…",playing:"Reproduciendo voz…",ended:"Reproducción de voz terminada.",
+    stopped:"Voz detenida.",failed:"No pude reproducir la voz. Probá otra voz o volvé a intentar.",
+    timeout:"La voz no respondió. Podés volver a intentar.",blocked:"El navegador bloqueó la reproducción. Pulsá Probar voz otra vez.",
+    unavailable:"No hay una voz compatible disponible. Actualizá la lista o elegí otro idioma.",
+    muted:"La voz permanece en silencio durante Modo Clase o un silencio solicitado.",
+    recording:"Terminá o descartá la muestra antes de probar una voz."};
+  state.voicePlaybackStatus=status;
+  uiSet($("#voicePlaybackStatus"),messages[status]??messages.failed);
+  if($("#stopVoiceBtn"))$("#stopVoiceBtn").disabled=!state.speaking;
+}
+function stopSpeaking(){
+  state.finishVoicePlayback?.("stopped");
+  state.speechSession=(state.speechSession||0)+1;
+  state.speaking=false;
+  try{window.speechSynthesis?.cancel?.();}catch{}
+  setVoicePlaybackStatus("stopped");
+}
+function speakResponse(text,forcedLang=null,{preview=false}={}){
+  const notify=status=>{if(typeof setVoicePlaybackStatus==="function")setVoicePlaybackStatus(status);};
   // Class Mode and requested quiet periods are intentionally silent: Robotito
   // keeps listening, learning and showing text without speaking aloud.
-  if(state.classMode||isSpeechMuted())return false;
-  if(!state.voiceEnabled||!window.speechSynthesis?.getVoices)return false;
+  if(state.classMode||isSpeechMuted()){if(preview)notify("muted");return false;}
+  if(state.voiceSampleCaptureActive){notify("recording");return false;}
+  if((typeof document!=="undefined"&&document.hidden)||(!state.voiceEnabled&&!preview))return false;
+  if(!window.speechSynthesis?.getVoices){notify("unavailable");return false;}
   const clean=cleanSpeechText(text);
   if(!clean)return false;
   const lang=forcedLang||responseLanguage();
@@ -458,7 +481,8 @@ function speakResponse(text,forcedLang=null){
     return false;
   }
   // Until a compatible system voice is actually enumerated, keep the reply as text.
-  const voices=speechSynthesis.getVoices();
+  let voices;
+  try{voices=Array.from(speechSynthesis.getVoices()||[]);}catch{notify("failed");return false;}
   // A one-answer language override uses the voice explicitly selected for
   // that language, without altering the main UI voice or its saved setting.
   const preferredVoiceURI=window.ROBOTITO_VOICE_SYSTEM?.preferredVoiceForLanguage?.(
@@ -466,40 +490,52 @@ function speakResponse(text,forcedLang=null){
   const selected=voices.find(v=>v.voiceURI===preferredVoiceURI);
   const selectedMatches=voiceMatchesLanguage(selected,lang);
   const chosen=selectedMatches?selected:
-    window.ROBOTITO_VOICE_SYSTEM?.selectVoice?.(voices,lang,preferredVoiceURI)||chooseDefaultVoice(voices,lang);
-  if(!chosen)return false;
+    (window.ROBOTITO_VOICE_SYSTEM?.selectVoice
+      ?window.ROBOTITO_VOICE_SYSTEM.selectVoice(voices,lang,preferredVoiceURI):chooseDefaultVoice(voices,lang));
+  if(!chosen){notify("unavailable");return false;}
+  state.stopVoiceSamplePlayback?.();
+  state.finishVoicePlayback?.("stopped");
   const speechSession=state.speechSession=(state.speechSession||0)+1;
-  speechSynthesis.cancel();
+  try{speechSynthesis.cancel();}catch{notify("failed");return false;}
+  let utter;
+  try{
+    utter=new SpeechSynthesisUtterance(clean);
+    window.ROBOTITO_VOICE_SYSTEM?.configureUtterance?.(utter,{style:state.voiceStyle,language:lang,voices,voiceURI:chosen.voiceURI,basePitch:state.voicePitch/.65,baseRate:state.voiceRate/.82});
+    if(!window.ROBOTITO_VOICE_SYSTEM){
+      utter.voice=chosen;utter.lang=chosen.lang||languageLocale(lang);
+      utter.pitch=clamp(state.voicePitch,.5,1.8);utter.rate=clamp(state.voiceRate,.5,1.5);utter.volume=.92;
+    }
+  }catch{notify("failed");return false;}
   state.recentVoicePrints=[];
   state.speaking=true;
-  if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
-    window.RobotitoLocalASR.pause(true);
-  }else{
-    discardRecognition();
-  }
+  if(isMobileSpeech()&&window.RobotitoLocalASR?.active)window.RobotitoLocalASR.pause(true);
+  else discardRecognition();
   setListenState(window.ROBOTITO_I18N?.t?.("voiceResponding",lang)||"respondiendo");
-  const utter=new SpeechSynthesisUtterance(clean);
-  window.ROBOTITO_VOICE_SYSTEM?.configureUtterance?.(utter,{style:state.voiceStyle,language:lang,voices,voiceURI:chosen?.voiceURI,basePitch:state.voicePitch/.65,baseRate:state.voiceRate/.82});
-  if(!window.ROBOTITO_VOICE_SYSTEM){
-    if(chosen)utter.voice=chosen;
-    utter.lang=chosen?.lang||languageLocale(lang);
-    utter.pitch=clamp(state.voicePitch,.5,1.8);
-    utter.rate=clamp(state.voiceRate,.5,1.5);
-    utter.volume=.92;
-  }
-  const done=()=>{
+  let timer,settled=false;
+  const done=(status="ended")=>{
+    if(settled)return;
+    settled=true;clearTimeout(timer);
     if(state.speechSession!==speechSession)return;
+    state.finishVoicePlayback=null;
     state.speaking=false;
+    notify(status);
     const epoch=state.captureEpoch;
     if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
-      setTimeout(()=>{if(state.started&&state.captureEpoch===epoch&&!document.hidden&&!state.captureSuspended&&!state.speaking&&!state.enrollmentActive)window.RobotitoLocalASR.pause(false);},320);
+      setTimeout(()=>{if(state.started&&state.captureEpoch===epoch&&!document.hidden&&!state.captureSuspended&&!state.speaking&&!state.speechBlocked&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.enrollmentActive)window.RobotitoLocalASR.pause(false);},320);
     }else{
       restartRecognitionAfterSpeech();
     }
   };
-  utter.onend=done;
-  utter.onerror=done;
-  speechSynthesis.speak(utter);
+  const watchdog=ms=>{clearTimeout(timer);timer=setTimeout(()=>{
+    if(state.speechSession!==speechSession)return;
+    done("timeout");try{speechSynthesis.cancel();}catch{}
+  },ms);timer?.unref?.();};
+  state.finishVoicePlayback=done;
+  utter.onstart=()=>{if(state.speechSession!==speechSession||settled)return;notify("playing");watchdog(Math.min(180000,Math.max(15000,clean.length*100/Math.max(.5,utter.rate))));};
+  utter.onend=()=>done("ended");
+  utter.onerror=event=>done(event?.error==="not-allowed"?"blocked":["canceled","interrupted"].includes(event?.error)?"stopped":"failed");
+  notify("preparing");watchdog(15000);
+  try{speechSynthesis.resume?.();speechSynthesis.speak(utter);}catch{done("failed");return false;}
   return true;
 }
 function readingDisplayTime(text,minMs=3000){
@@ -1034,8 +1070,9 @@ function stopSenses(reason="captureStopped"){
   state.captureRevision=(state.captureRevision||0)+1;
   state.captureSuspended=false;
   state.captureReady=false;
+  state.finishVoicePlayback?.("stopped");
   state.speechSession=(state.speechSession||0)+1;
-  window.speechSynthesis?.cancel?.();state.speaking=false;
+  try{window.speechSynthesis?.cancel?.();}catch{}state.speaking=false;
   clearTimeout(state.speechRestartTimer);clearTimeout(state.faceLoopTimer);
   state.captureCleanup?.();state.captureCleanup=null;
   state.handsCleanup?.();state.handsCleanup=null;
@@ -1043,6 +1080,7 @@ function stopSenses(reason="captureStopped"){
   window.RobotitoLocalASR?.stop();
   void window.ROBOTITO_CLASS_AUDIO?.stop?.();
   state.cancelVoiceSample?.();
+  state.stopVoiceSamplePlayback?.();
   if($("#personEnrollmentConsent"))$("#personEnrollmentConsent").checked=false;
   state.audioCleanup?.();state.audioCleanup=null;
   try{Promise.resolve(state.audioContext?.close?.()).catch(()=>{});}catch{}
@@ -1079,7 +1117,7 @@ function reconcileCaptureState(){
   }else{
     if(!state.captureReady)return;
     try{Promise.resolve(state.audioContext?.resume?.()).catch(()=>{});}catch{}
-    if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.pause(state.speaking);
+    if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.pause(Boolean(state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive));
     else if(!state.speaking)startListeningCycle(false);
   }
 }
@@ -1168,7 +1206,7 @@ async function startSenses(){
         stream:state.stream,
         lang:state.languageMode,
         onTranscript:(text,meta)=>{
-          if(!current()||document.hidden||state.captureSuspended||state.speaking)return;
+          if(!current()||document.hidden||state.captureSuspended||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive)return;
           if((state.stream?.getTracks?.()||[]).some(t=>t.readyState==="ended"||t.muted||t.enabled===false))return;
           updateDetectedLanguage(text);
           processSpeechResult(text,meta);
@@ -1176,6 +1214,7 @@ async function startSenses(){
         statusCallback:(text,kind)=>{if(current()&&!state.captureSuspended)setListenState(text,kind);}
       }).then(ready=>{
         if(!ready||!current()||state.captureSuspended)return;
+        if(state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive)window.RobotitoLocalASR.pause(true);
         uiSet($("#systemStatus"),startupText("startupListening"));
       }).catch(err=>{
         if(!current())return;
@@ -1382,13 +1421,13 @@ function setupAudio(stream){
       // Stream permissions can be revoked without stopping the Robotito UI.
       // Drop the PCM and all cached evidence before a stale buffer can count.
       if(!microphoneGate?.isLive()){soundModel?.clearAudio();return;}
-      if(state.speaking||state.classMode||state.sleeping||document.hidden||state.captureSuspended)
+      if(state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classMode||state.sleeping||document.hidden||state.captureSuspended)
         soundModel.clearAudio();
       else soundModel.pushPCM(samples,rate);
     };
     const allowedToCapture=()=>state.started&&state.audioContext===ctx&&
       microphoneGate?.isLive()&&soundModelToggle?.checked&&
-      soundModel?.getStatus().state==="ready"&&!state.speaking&&
+      soundModel?.getStatus().state==="ready"&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&
       !state.classMode&&!state.sleeping&&!document.hidden&&!state.captureSuspended;
     // This is used only if AudioWorklet is absent or cannot initialize.
     // Unlike polling AnalyserNode, ScriptProcessor delivers ordered,
@@ -1524,7 +1563,7 @@ function setupAudio(stream){
       classifier:window.ROBOTITO_AUDIO_EVENT_MODEL||null,
       onEvent:event=>{
         const now=Date.now();
-        const suppressed=state.classMode||state.sleeping||state.speaking||
+        const suppressed=state.classMode||state.sleeping||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||
           document.hidden||state.captureSuspended||!microphoneGate?.isLive();
         const reaction=reactionPolicy?.decide?.(event,{now,suppressed});
         if(!reaction){
@@ -1606,13 +1645,13 @@ function setupAudio(stream){
         state.ambientRms=state.ambientRms*.96+rms*.04;
       }
       state.voiceThreshold=clamp(Math.max(.028,state.ambientRms*2.35),.028,.07);
-      if(microphoneGate?.isLive()&&!state.speaking&&rms>state.voiceThreshold&&
+      if(microphoneGate?.isLive()&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&rms>state.voiceThreshold&&
          Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
         state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
         state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<45000);
       }
       const status=perception?.process({rms,flat,zcr,low,mid,high,centroid,harmonic},
-        {now:Date.now(),suppress:state.speaking||state.classMode||state.sleeping||
+        {now:Date.now(),suppress:state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classMode||state.sleeping||
           document.hidden||!microphoneGate?.isLive()})
         ||{kind:"unknown",musicConfidence:0};
       const i18n=window.ROBOTITO_I18N;
@@ -1623,7 +1662,7 @@ function setupAudio(stream){
       const heard=$("#heardLabel");if(heard)uiSet(heard,state.audioKind);
       if(microphoneGate?.isLive()&&rms>.04)state.lastHeardAt=Date.now();
       const dance=!!reactionPolicy?.updateMusic?.(status,{
-        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||
+        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||
           document.hidden||!microphoneGate?.isLive()
       });
       robot.classList.toggle("dancing",dance);
@@ -1669,7 +1708,7 @@ function flushRecognitionChunks(){
   const meta=pendingRecognitionMeta;
   pendingRecognitionText="";
   pendingRecognitionMeta=null;
-  if(!state.started||document.hidden||state.captureSuspended||state.speaking||state.speechBlocked||
+  if(!state.started||document.hidden||state.captureSuspended||state.speaking||state.speechBlocked||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||
      (state.stream?.getTracks?.()||[]).some(t=>t.readyState==="ended"||t.muted||t.enabled===false))return;
   if(text){
     updateDetectedLanguage(text);
@@ -1769,7 +1808,7 @@ function createSpeechRecognition(){
   r.interimResults=true;
   r.maxAlternatives=5;
   const current=()=>state.recognition===r&&state.started&&!document.hidden&&
-    !state.captureSuspended&&!state.speechBlocked&&!state.speaking;
+    !state.captureSuspended&&!state.speechBlocked&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive;
 
   r.onstart=()=>{
     if(!current())return;
@@ -1850,7 +1889,7 @@ function createSpeechRecognition(){
 }
 
 function startListeningCycle(userGesture=false){
-  if(!state.started||document.hidden||state.captureSuspended||state.speechBlocked||state.speaking||!state.recognitionWanted)return;
+  if(!state.started||document.hidden||state.captureSuspended||state.speechBlocked||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||!state.recognitionWanted)return;
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
@@ -2296,6 +2335,7 @@ function setLanguageMode(mode){
     state.pendingSpeechLocalization=false;
     $("#speechBubble")?.classList.add("hidden");
     if(state.speaking){
+      state.finishVoicePlayback?.("stopped");
       state.speechSession=(state.speechSession||0)+1;
       window.speechSynthesis?.cancel?.();
       state.speaking=false;
@@ -5798,16 +5838,15 @@ function bindUI(){
   });
   $("#voiceEnabled")?.addEventListener("change",e=>{
     state.voiceEnabled=e.target.checked;
-    localStorage.setItem("robotito.voiceEnabled.v1",String(state.voiceEnabled));
+    try{localStorage.setItem("robotito.voiceEnabled.v1",String(state.voiceEnabled));}catch{}
     if(!state.voiceEnabled&&"speechSynthesis" in window){
-      speechSynthesis.cancel();
-      state.speaking=false;
+      stopSpeaking();
       restartRecognitionAfterSpeech();
     }
   });
   $("#voiceSelect")?.addEventListener("change",e=>{
-    state.voiceURI=e.target.value;
-    localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);
+    stopSpeaking();state.voiceURI=e.target.value;
+    try{localStorage.setItem("robotito.voiceURI.v1",state.voiceURI);}catch{}
     // Explicit choices survive language switches without forcing a voice from
     // another language. Auto-selected fallbacks are never saved as preferences.
     window.ROBOTITO_VOICE_SYSTEM?.savePreferredVoice?.(
@@ -5815,53 +5854,31 @@ function bindUI(){
       (key,value)=>localStorage.setItem(key,value),
       state.languageMode||"es",state.voiceURI);
   });
-  $("#voicePitch")?.addEventListener("input",e=>{
-    state.voicePitch=Number(e.target.value);
-    localStorage.setItem("robotito.voicePitch.v1",String(state.voicePitch));
-  });
   $("#voiceRate")?.addEventListener("input",e=>{
-    state.voiceRate=Number(e.target.value);
-    localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));
+    stopSpeaking();state.voiceRate=Number(e.target.value);
+    try{localStorage.setItem("robotito.voiceRate.v1",String(state.voiceRate));}catch{}
   });
   $("#voiceStyle")?.addEventListener("change",e=>{
-    state.voiceStyle=e.target.value;
-    localStorage.setItem("robotito.voiceStyle.v1",state.voiceStyle);
+    stopSpeaking();state.voiceStyle=e.target.value;
+    try{localStorage.setItem("robotito.voiceStyle.v1",state.voiceStyle);}catch{}
   });
-  const voiceSamples=window.ROBOTITO_VOICE_SAMPLE_CAPTURE?.create?.({
-    getConsent:()=>$("#voiceSampleConsent")?.checked===true,
-    save:(blob,details)=>window.ROBOTITO_VOICE_SYSTEM.saveProfileFromRecording(blob,details),
-    remove:()=>window.ROBOTITO_VOICE_SYSTEM.deleteProfile(),
-    onStatus:status=>{
-      const label=$("#voiceSampleStatus");
-      if(label)label.textContent=window.ROBOTITO_I18N?.t?.("voiceSample"+status[0].toUpperCase()+status.slice(1),responseLanguage())||status;
-    }
-  });
-  state.cancelVoiceSample=()=>voiceSamples?.cancel();
-  // Permission may arrive after the user changed their mind: cancel and close
-  // the track, even before MediaRecorder starts. Never retain canceled PCM.
-  $("#voiceSampleConsent")?.addEventListener("change",e=>{if(!e.target.checked)voiceSamples?.cancel();});
-  $("#voiceSampleThirdParty")?.addEventListener("change",()=>voiceSamples?.cancel());
-  $("#voiceSampleName")?.addEventListener("input",()=>voiceSamples?.cancel());
-  document.addEventListener("visibilitychange",()=>{if(document.hidden)voiceSamples?.cancel();});
-  window.addEventListener("pagehide",()=>voiceSamples?.cancel());
-  $("#deleteVoiceSample")?.addEventListener("click",async()=>{
-    try{await voiceSamples?.removeSample();}catch(e){console.warn("sample delete",e);}
-  });
-  $("#recordVoiceSample")?.addEventListener("click",async()=>{
-    const third=$("#voiceSampleThirdParty")?.checked;
-    const consent=$("#voiceSampleConsent")?.checked===true;
-    const name=$("#voiceSampleName")?.value.trim()||"";
-    if(!consent||(third&&!name)){
-      const label=$("#voiceSampleStatus");
-      if(label)label.textContent=window.ROBOTITO_I18N?.t?.(third?"voiceSampleNeedsName":"voiceSampleNeedsConsent",responseLanguage())||"Confirmá el consentimiento.";
-      return;
-    }
-    await voiceSamples?.start({subject:third?"other":"self",explicitConsent:consent,consentLabel:third?name:"self"});
-  });
+  window.ROBOTITO_VOICE_SAMPLE_UI?.init({state,$,uiSet,stopSpeaking,setVoicePlaybackStatus,isSpeechMuted,discardRecognition,restartRecognitionAfterSpeech});
   $("#testVoiceBtn")?.addEventListener("click",()=>{
-    const lang=responseLanguage();
+    const lang=state.languageMode||"es";
+    state.stopVoiceSamplePlayback?.();
     const text=window.ROBOTITO_I18N?.t?.("greeting",lang)||"¡Hola! Soy Robotito.";
-    speakResponse(text,lang);
+    speakResponse(text,lang,{preview:true});
+  });
+  $("#stopVoiceBtn")?.addEventListener("click",stopSpeaking);
+  document.addEventListener("visibilitychange",()=>{if(document.hidden&&state.speaking)stopSpeaking();});
+  window.addEventListener("pagehide",()=>{if(state.speaking)stopSpeaking();});
+  $("#refreshVoicesBtn")?.addEventListener("click",populateVoiceSelect);
+  $("#resetVoiceBtn")?.addEventListener("click",()=>{
+    stopSpeaking();state.voicePitch=.65;state.voiceRate=.82;state.voiceStyle="natural";
+    $("#voiceRate").value="0.82";$("#voiceStyle").value="natural";
+    for(const [key,value] of [["voicePitch",.65],["voiceRate",.82],["voiceStyle","natural"]]){
+      try{localStorage.setItem("robotito."+key+".v1",String(value));}catch{}
+    }
   });
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personEnrollmentConsent")?.addEventListener("change",()=>{
@@ -6082,7 +6099,9 @@ async function init(){
     $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
   }else if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
-  if($("#voicePitch"))$("#voicePitch").value=String(state.voicePitch);
+  if(!Number.isFinite(state.voicePitch)||state.voicePitch<=0)state.voicePitch=.65;
+  if(!Number.isFinite(state.voiceRate)||state.voiceRate<.65||state.voiceRate>1.1)state.voiceRate=.82;
+  if(!Object.prototype.hasOwnProperty.call(window.ROBOTITO_VOICE_SYSTEM?.styles||{},state.voiceStyle))state.voiceStyle="natural";
   if($("#voiceRate"))$("#voiceRate").value=String(state.voiceRate);
   if($("#voiceStyle"))$("#voiceStyle").value=state.voiceStyle;
   populateVoiceSelect();

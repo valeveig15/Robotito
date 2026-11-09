@@ -52,12 +52,14 @@ function savePreferredVoice(read,write,language,uri){
 function compatibleVoiceCatalog(voices,language){
  const code=voiceLanguage(language);
  if(!code)return [];
+ const seen=new Set();
  return Array.from(voices||[]).filter(v=>v&&typeof v.lang==="string"&&
-  v.lang.toLowerCase().split(/[-_]/)[0]===code&&typeof v.voiceURI==="string");
+  v.lang.toLowerCase().split(/[-_]/)[0]===code&&typeof v.voiceURI==="string"&&v.voiceURI.trim())
+  .filter(v=>{const key=v.voiceURI+"\n"+v.lang.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;});
 }
 function clamp(x,a,b){return Math.min(b,Math.max(a,x));}
 function settings(style,basePitch=1,baseRate=1){
- const s=STYLES[style]||STYLES.natural;
+ const s=Object.prototype.hasOwnProperty.call(STYLES,style)?STYLES[style]:STYLES.natural;
  const pitch=Number.isFinite(basePitch)&&basePitch>0?basePitch:1;
  const rate=Number.isFinite(baseRate)&&baseRate>0?baseRate:1;
  return {pitch:clamp(s.pitch*pitch,.5,2),rate:clamp(s.rate*rate,.5,2),volume:s.volume};
@@ -68,6 +70,8 @@ function selectVoice(voices,language,preferredURI){
  const pool=compatibleVoiceCatalog(voices,requested);
  const requestedLocale=String(language||"es").toLowerCase().replace(/_/g,"-");
  return pool.find(v=>v.voiceURI===preferredURI)
+  ||pool.find(v=>v.localService===true&&v.lang.toLowerCase().replace(/_/g,"-")===requestedLocale)
+  ||pool.find(v=>v.localService===true)
   ||pool.find(v=>v.lang.toLowerCase().replace(/_/g,"-")===requestedLocale&&/natural|neural/i.test(v.name||""))
   ||pool.find(v=>v.lang.toLowerCase().replace(/_/g,"-")===requestedLocale)
   ||pool.find(v=>/natural|neural/i.test(v.name||""))
@@ -83,14 +87,24 @@ function configureUtterance(utter,{style="natural",language="es",voices=[],voice
  return utter;
 }
 async function saveProfileFromRecording(blob,{owner="local",subject="self",explicitConsent=false,consentLabel=""}={}){
- if(!(blob instanceof Blob)||blob.size<50)throw new TypeError("Recorded audio is required");
- if(subject!=="self"&&!explicitConsent)throw new Error("Explicit consent required for another person's recording");
+ if(!(blob instanceof Blob)||blob.size<50||blob.size>16*1024*1024||!/^audio\//i.test(blob.type))throw new TypeError("Recorded audio is required");
+ if(!["self","other"].includes(subject)||explicitConsent!==true)throw new Error("Explicit consent required for every recording");
  if(subject!=="self"&&!String(consentLabel).trim())throw new Error("Document the consenting person's name");
  const db=root.ROBOTITO_STORE;
  if(!db?.putRecordWithBlob)throw new Error("Atomic voice storage is unavailable");
  return db.putRecordWithBlob({id:SAMPLE_ID,type:"preferences",owner,source:"voice-opt-in",blobId:BLOB_ID,
-  data:{subject,consentRecorded:subject==="self"||Boolean(explicitConsent),consentLabel:subject==="self"?"self":String(consentLabel),
+  data:{subject,consentRecorded:true,consentVersion:2,consentLabel:subject==="self"?"self":String(consentLabel).trim().slice(0,160),
    createdAt:new Date().toISOString(),recordedFromMicrophone:true,synthesized:false,cloned:false}},blob,{type:"audio"});
+}
+async function loadProfile(){
+ const db=root.ROBOTITO_STORE;
+ if(!db?.getRecord||!db?.getBlob)throw new Error("Storage not available");
+ const record=await db.getRecord(SAMPLE_ID);
+ if(!record)return null;
+ // Legacy recordings may be deleted, but are not played without recorded consent.
+ if(record.data?.consentRecorded!==true)return {record,blob:null,unverified:true};
+ const blob=await db.getBlob(record.blobId||BLOB_ID);
+ return {record,blob:blob instanceof Blob&&/^audio\//i.test(blob.type)?blob:null};
 }
 async function deleteProfile(){
  const db=root.ROBOTITO_STORE;
@@ -106,6 +120,6 @@ function syntheticNotice(language="es"){
 }
 root.ROBOTITO_VOICE_SYSTEM={styles:STYLES,labels:LABELS,settings,selectVoice,configureUtterance,
  compatibleVoiceCatalog,readVoicePreferences,preferredVoiceForLanguage,savePreferredVoice,
- saveProfileFromRecording,deleteProfile,syntheticNotice};
+ saveProfileFromRecording,loadProfile,deleteProfile,syntheticNotice};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_VOICE_SYSTEM;
 })(typeof window!=="undefined"?window:globalThis);

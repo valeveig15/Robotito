@@ -18,8 +18,7 @@ const variations=new Set(presets.map(style=>{
 }));
 eq(variations.size,10,"Ten presets have distinct pitch/rate/volume parameters, not ten cloned voices");
 ok(!html.includes("Gravedad"),"The removed visible Gravity control must not reappear");
-ok(html.includes('id="voicePitch"')&&html.includes('data-i18n="pitch">Tono'),
- "Pitch remains available internally as a user-facing Tone control");
+ok(!html.includes('id="voicePitch"'),"The removed pitch control stays internal instead of being renamed");
 ok(html.includes('id="testVoiceBtn"'),"Users can preview the selected voice");
 ok(html.includes('data-i18n="voicePresetExplanation"'),"Clearly identify presets as synthesis adjustments");
 ok(html.includes('data-i18n="voiceRemotePrivacy"'),"Explain possible non-local voice processing");

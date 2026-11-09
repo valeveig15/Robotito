@@ -139,13 +139,17 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 **Registro transversal de las limitaciones que podemos mejorar por código:** [PENDIENTES_CONTROLABLES.md](PENDIENTES_CONTROLABLES.md). Las aspiraciones abiertas de puntos ya aceptados, especialmente 999.999 preguntas × 50 variantes, **no deben desaparecer** por marcar su aceptación mínima como completada.
 
+## Pedido 06 — revisión del 8/11/2026 por petición expresa
+
+[PR #117](https://github.com/valeveig15/Robotito/pull/117): retira el control visible de Gravedad/Tono, conserva el ajuste interno, completa prueba/parada/restablecimiento y preferencias de voces reales por idioma. Añade revisión local, recarga y borrado de muestras consentidas, controles de cancelación y aislamiento de reconocimiento/reacciones. La suite P06 se ejecuta en los tres motores de navegador. Véanse [P06-STATUS.md](P06-STATUS.md) para evidencia y [P06-VOICE-ACCEPTANCE.md](P06-VOICE-ACCEPTANCE.md) para diferencias audibles y hardware todavía sin verificar. No se marcan como resueltos los pendientes físicos anteriores ni se inicia P07.
+
 ## Los 82 puntos en orden
 - [x] **01.** Cerebro semántico y generalización de formulaciones — COMPLETADO según los criterios de aceptación comprobables; ver límites y evidencia anteriores
 - [x] **02.** Pruebas automáticas generativas, combinatorias y de navegador — COMPLETADO según aceptación comprobable, con límites de simulación documentados
 - [ ] **03.** Clasificación de sonidos y reacciones naturales — EN PROGRESO (PR #30–32, #34–38, #40–41, #43–46, #48–50, #52–53, #55–56, #58–60, #62, #64, #66 y #67 integradas; faltan corpus real, mediciones físicas y reacciones observadas)
 - [ ] **04.** Escucha, voz y rostro: captación de calidad — AUDITADO; captación y cancelación reforzadas, pendiente validación física y de precisión; ver [P04-STATUS.md](P04-STATUS.md)
 - [ ] **05.** Internacionalización completa de interfaz y conversación — AUDITADO; interfaz y contenido dinámico ampliados a seis idiomas, originales preservados y pruebas incorporadas; pendiente traducción libre sin modelo compatible y validación física de pronunciación; ver [P05-STATUS.md](P05-STATUS.md)
-- [ ] **06.** Voces nuevas, estilos y eliminación de «Gravedad» — POR AUDITAR
+- [ ] **06.** Voces nuevas, estilos y eliminación de «Gravedad» — AUDITADO; control retirado, selección/prueba y muestras locales completadas en el alcance automatizado; pendiente validación acústica y de dispositivos; ver [P06-STATUS.md](P06-STATUS.md)
 - [ ] **07.** Memoria contextual, fechas y datos durables — POR AUDITAR
 - [ ] **08.** Identificación rigurosa de personas registradas — POR AUDITAR
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — POR AUDITAR

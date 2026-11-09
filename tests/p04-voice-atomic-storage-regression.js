@@ -48,7 +48,7 @@ let count=0;const eq=(a,b,m)=>{assert.deepEqual(a,b,m);count++;};
  }};
  const mod={exports:{}};
  new Function("window","module","Blob",voiceSource)(root,mod,Blob);
- await mod.exports.saveProfileFromRecording(blob,{subject:"self"});
+ await mod.exports.saveProfileFromRecording(blob,{subject:"self",explicitConsent:true});
  eq(actions[0].row.blobId,"voice-sample-local","Audio metadata linked");
  eq(actions[0].audio.size,128,"Audio bytes passed atomically");
  eq(actions[0].options.type,"audio","Correct blob type");
