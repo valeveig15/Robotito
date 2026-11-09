@@ -35,6 +35,17 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Install target browser and host libraries
         run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Provide a virtual audio output for native Firefox playback
+        if: matrix.engine == 'firefox'
+        # Firefox needs a functioning audio backend even for a synthetic WAV.
+        # Discard output in a clocked null sink; no microphone or human audio.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pulseaudio pulseaudio-utils
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=robotito_ci
+          pactl set-default-sink robotito_ci
+          pactl info
       - name: Run application UI and fault matrix with three seeds
         run: npm run test:browser:matrix
       - name: Verify dialogue, localization, backup and concurrent storage

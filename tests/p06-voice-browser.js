@@ -124,7 +124,11 @@ runBrowserTest("p06-voices",async test=>{
  test.report.artifacts.voiceControls=imageName;
  await page.selectOption('#languageMode','es');await page.setViewportSize({width:1280,height:900});
  await page.evaluate(async()=>{state.speechBlocked=true;await document.querySelector('#voiceSampleAudio').play();});
- await page.waitForFunction(()=>state.voiceSamplePlaybackActive===true);eq(await page.evaluate(()=>p06.pauses.at(-1)),true,"Playback pauses recognition");
+ await page.waitForFunction(()=>{
+  const audio=document.querySelector('#voiceSampleAudio');
+  if(audio.error)throw Error("Native sample playback failed: "+audio.error.code+" "+audio.error.message);
+  return state.voiceSamplePlaybackActive===true&&audio.currentTime>0;
+ });eq(await page.evaluate(()=>p06.pauses.at(-1)),true,"Playback pauses recognition");
  await page.evaluate(()=>document.querySelector('#voiceSampleAudio').pause());
  await page.waitForFunction(()=>state.voiceSamplePlaybackActive===false);eq(await page.evaluate(()=>state.speechBlocked),true,"Playback must preserve unrelated ASR permission failure");
  await page.evaluate(async()=>{state.speechBlocked=false;state.classMode=true;await document.querySelector('#voiceSampleAudio').play().catch(()=>{});});
