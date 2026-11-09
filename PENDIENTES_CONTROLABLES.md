@@ -71,7 +71,7 @@ Para impedir reacciones humanas no autorizadas, la política del avatar ahora ex
 
 ## P06 — Selector de voces y control visible «Gravedad»
 
-**Estado: auditoría integral pendiente.** La etiqueta «Gravedad» ya se sustituyó por «Tono» en la revisión del 29/10, protegida por las pruebas de P06. La experiencia depende de las voces del sistema. Siguen pendientes estilos y reproducción real por dispositivo, muestras consentidas y soporte efectivo; los preajustes no equivalen a actores garantizados ni clonación de voz.
+**Estado: implementación auditada y ampliada; aceptación física pendiente.** La revisión del 8/11 retira el control visible, conserva el tono interno, completa prueba/parada/restablecimiento y preferencias por idioma, y permite grabar, descartar, revisar localmente y borrar muestras consentidas. Se cubren errores, eventos atrasados, recarga y aislamiento de escucha/reacciones con pruebas de aplicación. Véanse [P06-STATUS.md](P06-STATUS.md) y [P06-VOICE-ACCEPTANCE.md](P06-VOICE-ACCEPTANCE.md). Falta medir diferencias audibles, pronunciación, latencia, permisos y formatos reales por dispositivo; los preajustes no equivalen a actores garantizados ni clonación.
 
 ---
 

@@ -28,12 +28,29 @@
 | V13 | Grabación permitida y borrado | La muestra queda local con metadatos de consentimiento y se elimina al pulsar borrar |
 | V14 | Voces/grabaciones | No afirmar clonación, no reproducir muestras guardadas como si fueran una voz sintética disponible |
 
+| V15 | Controles de síntesis | Probar, detener, actualizar voces y restablecer funcionan; la velocidad inicial es 0,82 y no hay deslizador visible de Gravedad/Tono |
+| V16 | Fin o error de síntesis | La voz no deja la escucha bloqueada; un evento antiguo no corta la prueba siguiente; registrar latencia real |
+| V17 | Revisión de muestra | Detener y guardar permite escuchar el formato real del navegador; recargar muestra el audio sin reproducirlo automáticamente |
+| V18 | Cancelación y cierre | Descartar, revocar permiso, ocultar página y detener sentidos liberan el micrófono; un permiso tardío no crea una muestra |
+| V19 | Escucha y reproducción | La muestra no se interpreta como una orden ni activa identificación/reacciones; Modo Clase y silencio detienen o bloquean el reproductor |
+| V20 | Recuperación y borrado | Un fallo de almacenamiento permite reintentar; se informa un borrado fallido; un borrado correcto persiste tras recargar |
+| V21 | Preferencia ausente y retorno | Desinstalar/deshabilitar una voz provoca alternativa del mismo idioma; al volver la voz se recupera la preferencia |
+| V22 | Accesibilidad | Recorrer controles con teclado y lector de pantalla; escuchar estados y operar el reproductor nativo sin desbordes en móvil |
+
 **Resultados permitidos:** PASS, FAIL, BLOCKED, NOT RUN. Adjuntar solo modelo de dispositivo y versiones, sin transcripciones privadas. Los ensayos deben incluir al menos un navegador/escritorio, un Android y un iPhone **si se pretende certificar esas plataformas**.
 
 ## Cómo documentar diferencias acústicas
 
 Calificar con oyentes consentidos y a volumen similar; aleatorizar el orden de los diez estilos. Medir si pueden distinguir pares, latencia y naturalidad, sin afirmar una precisión del 100 %. El motor Web Speech puede ignorar ajustes de pitch/rate; si un sistema trata dos estilos igual, documentarlo como limitación real y no disfrazarlo cambiando la etiqueta.
 
-**Referencia para uso inmediato:** [Robotito](https://valeveig15.github.io/Robotito/) y [diagnóstico de voces, micrófono y cámara](https://valeveig15.github.io/Robotito/p04-device-check.html). El diagnóstico comprueba capacidades de navegador y no equivale a la evaluación subjetiva V01–V14.
+**Referencia para uso inmediato:** [Robotito](https://valeveig15.github.io/Robotito/) y [diagnóstico de voces, micrófono y cámara](https://valeveig15.github.io/Robotito/p04-device-check.html). El diagnóstico comprueba capacidades de navegador y no equivale a la evaluación subjetiva V01–V22.
 
-Conservar «¡Chocar los cinco!» y el control de Tono. El punto 06 no se declara completado por una CI verde.
+Conservar «¡Chocar los cinco!». El control visible «Gravedad»/«Tono» debe estar ausente; el ajuste interno se conserva. El punto 06 no se declara completado por una CI verde. Ver implementación y pruebas de aplicación en [P06-STATUS.md](P06-STATUS.md).
+
+## Registro de una ejecución física
+
+Usar una fila por caso/dispositivo/idioma. Dejar `NOT RUN` hasta probarlo; no reemplazarlo por el resultado de Playwright.
+
+| Fecha | Caso | Dispositivo / SO | Navegador y versión | Idioma / voz del sistema | Resultado | Observación sin audio ni datos personales |
+| --- | --- | --- | --- | --- | --- | --- |
+| — | V01–V22 | — | — | — | NOT RUN | Sin ejecución física documentada |

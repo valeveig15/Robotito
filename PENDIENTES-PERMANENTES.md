@@ -33,6 +33,7 @@ Actualizado: 8 de noviembre de 2026.
    - Mantener diez estilos de voz como preajustes de síntesis; no presentarlos como diez actores garantizados ni como clonación.
    - Verificar disponibilidad, ajustes y reproducción real por sistema operativo; eliminar muestras voluntarias correctamente y revisar consentimiento para audios de terceros.
    - **Aplicado 29/10:** sustituido «Gravedad» por «Tono»; grabación cancelable con consentimiento revocable y borrado local de muestras, con controles de autorización traducidos a seis idiomas.
+   - **Revisión 8/11:** retirado también el deslizador visible de Tono para cumplir el pedido original; ajustes internos conservados. Se completan prueba/parada/restablecimiento, catálogo por idioma, revisión de muestras con reproductor local, recarga, borrado y cancelaciones. Muestras aisladas de reconocimiento/reacciones; regresiones de interfaz y fallos incorporadas a los tres motores. Véase [P06-STATUS.md](P06-STATUS.md). Sigue pendiente la aceptación acústica y de permisos con hardware real; los preajustes no certifican timbres distintos.
 
 ## Reglas de integración
 
