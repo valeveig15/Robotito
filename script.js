@@ -133,6 +133,7 @@ const state = {
   recentAudioFeatures: [],
   recentVoicePrints: [],
   currentVoicePerson: null,
+  lastVoiceConfirmedAt: 0,
   ambientRms: .012,
   voiceThreshold: .035,
   faceMatchHistory: [],
@@ -1056,6 +1057,7 @@ function primeMobileSpeechFromGesture(){
 
 function clearCaptureIdentity(){
   state.currentPerson=null;state.currentVoicePerson=null;
+  state.lastVoiceConfirmedAt=0;
   state.faceMatchHistory=[];state.lastFaceConfirmedAt=0;
   state.lastDetections=[];state.recentVoicePrints=[];state.recentAudioFeatures=[];
   state.visibleHands=0;state.visibleFingers=0;state.handNearMouth=false;
@@ -1737,12 +1739,14 @@ function processSpeechResult(text,speechMeta=null){
   const print=speechMeta?.startedAt
     ?voicePrintForWindow(speechMeta.startedAt,speechMeta.endedAt)
     :recentVoicePrint();
-  const voiceMatch=recognizeVoicePerson(print,state.currentPerson);
+  const faceAtUtterance=state.currentPerson;
+  const voiceMatch=recognizeVoicePerson(print,faceAtUtterance);
   state.currentVoicePerson=voiceMatch?.name||null;
-  if(!voiceMatch){
-    // Seeing one face does not prove that this person uttered the phrase.
-    // An off-camera speaker or an unclear voice must not inherit that face's
-    // private memories, birthday or reply context.
+  state.lastVoiceConfirmedAt=voiceMatch?Date.now():0;
+  if(!voiceMatch||faceAtUtterance&&faceAtUtterance!==voiceMatch.name){
+    // A different independently recognized speaker NEVER inherits the
+    // visible person's face, memories, relationships or birthday.
+    // Rebuild visual consensus independently after any mismatch.
     state.currentPerson=null;
     state.faceMatchHistory=[];
     state.lastFaceConfirmedAt=0;
@@ -3893,17 +3897,14 @@ function changeClassLineSpeaker(id,value){
     line.speakerName=name;
     line.speaker=speakerRoleForPerson(name);
     line.speakerConfidence=1;
-    const p=state.people.find(x=>x.name===name);
-    if(p&&line.voicePrint){
-      p.voicePrints=[...(p.voicePrints||[]),line.voicePrint].slice(-5);
-      save(KEYS.people,state.people);
-    }
-    if(p&&line.feature&&["me","teacher","classmate"].includes(p.role))learnSpeaker(p.role,line.feature);
+    // Manual attribution corrects the transcript label only; it cannot
+    // silently enroll a biometric voiceprint into someone else's profile.
+    // A voice refresh must go through explicit consented enrollment.
   }else{
     line.speaker=value;
     line.speakerName=null;
     line.speakerConfidence=1;
-    if(line.feature&&["me","teacher","classmate"].includes(value))learnSpeaker(value,line.feature);
+    // This correction does not retrain a biometric speaker model.
   }
   save("robotito.classLines.v1",state.classLines);
   renderClassTranscript();
@@ -4425,6 +4426,15 @@ async function detectLoop(){
 }
 
 function buildMatcher(){
+  // Saved people must remain readable when the optional face library cannot
+  // load (offline, blocked CDN, denied camera or unsupported browser).
+  // Missing models mean no recognition, NEVER a synthetic identity.
+  if(typeof faceapi==="undefined"||!faceapi||
+     typeof faceapi.LabeledFaceDescriptors!=="function"||
+     typeof faceapi.FaceMatcher!=="function"){
+    state.faceMatcher=null;
+    return;
+  }
   const labeled=[];
   for(const p of state.people){
     // A legacy single-image profile cannot authorize access to another
@@ -4646,7 +4656,13 @@ function recognize(det){
   state.lastFaceConfirmedAt=now;
   const lastGreeting=p.lastGreetingAt||0;
 
-  if(changed && now-lastGreeting>25000){
+  // A camera match alone is not proof of identity: withhold names,
+  // personal greetings and birthdays until independently verified recent
+  // speaker evidence agrees with the same registered person.
+  const voiceConfirmed=state.currentVoicePerson===best.label&&
+    Number.isFinite(state.lastVoiceConfirmedAt)&&
+    now>=state.lastVoiceConfirmedAt&&now-state.lastVoiceConfirmedAt<=4000;
+  if(changed && voiceConfirmed && now-lastGreeting>25000){
     p.lastGreetingAt=now;
     save(KEYS.people,state.people);
     say(greetingFor(p));
@@ -5100,6 +5116,30 @@ function enrollmentIdentityCheck(samples,name){
   return {ok:true,existing:existing||null};
 }
 
+
+function enrollmentVoiceConflict(prints,name){
+  if(!Array.isArray(prints)||prints.length<3)return false;
+  const target=String(name||"").trim().toLocaleLowerCase();
+  const normalized=prints.filter(v=>Array.isArray(v)&&v.length>1&&
+    v.every(Number.isFinite)&&Math.hypot(...v)>.01);
+  if(normalized.length<3)return true;
+  const average=averageVoiceVectors(normalized);
+  if(!average)return true;
+  for(const person of state.people){
+    if(String(person.name||"").trim().toLocaleLowerCase()===target)continue;
+    const stored=(person.voicePrints||[]).filter(v=>v?.length===average.length);
+    if(stored.length<3)continue;
+    const similarities=normalized.map(print=>Math.max(...stored.map(v=>
+      cosineSimilarity(print,v)))).filter(Number.isFinite);
+    // Consistent similarity to another enrolled speaker is ambiguous,
+    // even if the camera seems to match a different name.
+    if(similarities.filter(s=>s>=.86).length>=2 &&
+       similarities.reduce((a,b)=>a+b,0)/similarities.length>=.84)
+      return true;
+  }
+  return false;
+}
+
 async function enrollPerson(){
   const name=$("#personName").value.trim();
   const birthdayRaw=$("#personBirthday").value.trim();
@@ -5152,6 +5192,11 @@ async function enrollPerson(){
     const voiceCapture=await captureEnrollmentVoice();
     if(!current()||voiceCapture?.error==="canceled")return;
     const voicePrints=voiceCapture?.prints||[];
+    if(enrollmentVoiceConflict(voicePrints,name)){
+      setEnrollProgress(0,window.ROBOTITO_I18N?.t?.("p08VoiceCollision",responseLanguage())
+        ||"Esta voz se parece a la de otra persona registrada. No guardé ninguna muestra.");
+      return;
+    }
     const existing=identity.existing;
     // When refreshing a known person's voice, verify the newly collected
     // speech against their prior samples before attaching it to their identity.
@@ -5169,6 +5214,7 @@ async function enrollPerson(){
       existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-36);
       existing.birthday=birthday||existing.birthday;
       existing.role=role;
+      existing.biometricConsent={granted:true,recordedAt:Date.now(),scope:voicePrints.length?"face-and-voice":"face"};
       existing.faceEnrolledAt=Date.now();
       existing.faceSampleCount=existing.descriptors.length;
       if(voicePrints.length){
@@ -5183,6 +5229,7 @@ async function enrollPerson(){
         voicePrints,
         voiceQuality:voicePrints.length?voiceCapture.quality:null,
         faceSampleCount:samples.length,
+        biometricConsent:{granted:true,recordedAt:Date.now(),scope:voicePrints.length?"face-and-voice":"face"},
         faceEnrolledAt:Date.now(),
         voiceEnrolledAt:voicePrints.length?Date.now():null,
         relationship:50,
@@ -5412,6 +5459,33 @@ function inactivityTick(){
   }
 }
 
+async function deleteRegisteredPerson(name){
+  if(state.enrollmentActive){
+    toast(window.ROBOTITO_I18N?.t?.("p08DeleteDuringEnrollment",responseLanguage())
+      ||"Cancelá el registro primero.");
+    return;
+  }
+  const person=state.people.find(p=>p.name===name);
+  if(!person||!window.ROBOTITO_STORE?.deleteRegisteredProfile)return;
+  const msg=key=>window.ROBOTITO_I18N?.t?.(key,responseLanguage())||key;
+  if(!window.confirm(msg("p08DeleteProfileConfirm")+"\n"+person.name))return;
+  if(window.prompt(msg("p08DeleteProfileType"))!=="BORRAR")return;
+  try{
+    await window.ROBOTITO_STORE.deleteRegisteredProfile(name,{confirmation:"BORRAR"});
+    // Names used only in the old local greeting mirror must also be cleared.
+    delete state.greetingHistory[name];
+    save(KEYS.greetings,state.greetingHistory);
+    clearCaptureIdentity();
+    toast(msg("p08DeleteProfileDone"));
+    // Restart the camera matcher, in-memory class history and cached privacy
+    // context from the already committed, redacted IndexedDB contents.
+    window.location.reload();
+  }catch(error){
+    console.warn("Profile deletion refused",error?.name);
+    toast(msg("p08DeleteProfileFailed"));
+  }
+}
+
 function renderPeople(){
   const root=$("#peopleList");
   root.innerHTML="";
@@ -5428,13 +5502,27 @@ function renderPeople(){
       <div class="muted">${escapeHtml(p.birthday?uiText("Cumple: {date}",{date:formatBirthday(p.birthday)}):uiText("Sin cumpleaños cargado"))} · ${uiText((p.voicePrints||[]).length?"voz aprendida":"voz no registrada")}</div>
       <div class="muted">${uiText("cara: {faces} muestras · voz: {voices} perfiles",{faces:(p.descriptors||[]).length,voices:(p.voicePrints||[]).length})}${Number.isFinite(p.voiceQuality)?" · "+uiText("calidad {count}%",{count:Math.round(p.voiceQuality*100)}):""}</div>
       <div class="bond-detail">${bondDetail(p)}</div>`;
+    const actions=document.createElement("div");
+    actions.className="actions p08-profile-actions";
+    const remove=document.createElement("button");
+    remove.type="button";remove.className="ghost danger";
+    remove.textContent=window.ROBOTITO_I18N?.t?.("p08DeleteProfileLabel",responseLanguage())
+      ||"Eliminar perfil y biometría";
+    remove.addEventListener("click",()=>deleteRegisteredPerson(p.name));
+    actions.appendChild(remove);row.appendChild(actions);
     root.appendChild(row);
   });
 }
 
 // A UI profile may edit only the owner's own typed records. Historical
 // unlabelled memories remain local, never guessed to belong to a person.
-function activeMemoryOwner(){return state.currentPerson||"local";}
+function activeMemoryOwner(){
+ const recent=Number.isFinite(state.lastVoiceConfirmedAt)&&
+  Date.now()>=state.lastVoiceConfirmedAt&&Date.now()-state.lastVoiceConfirmedAt<=8000;
+ return recent&&state.currentVoicePerson&&
+  (!state.currentPerson||state.currentVoicePerson===state.currentPerson)
+   ?state.currentVoicePerson:"local";
+}
 function p07Message(key){
  const lang=state.languageMode||"es";
  const t={

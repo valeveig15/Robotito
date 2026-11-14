@@ -79,11 +79,12 @@ async function scenario(detections,{hidden=false,started=true,lastFaceConfirmedA
  eq(faceState.currentPerson,null,"One matching frame does not grant identity");
  match={label:"Ada",distance:.41};recognize(frame(.5));
  eq(faceState.currentPerson,"Ada","Two strong matching frames confirm identity");
- eq(calls.greet,1,"Confirmed known face receives one greeting");
+ eq(calls.greet,0,"Face-only consensus cannot announce a name or birthday");
+eq(calls.birthday,0,"A face alone does not reveal private birthdays");
  match={label:"unknown",distance:.99};time+=100;
  recognize(frame(.9));
  eq(faceState.currentPerson,null,"Unknown face immediately revokes private identity");
- eq(calls.greet,1,"Unknown face never gets a known person's greeting");
+ eq(calls.greet,0,"Unknown face never gets a known person's greeting");
  match={label:"Ada",distance:.65};time+=100;
  recognize(frame(.7));
  eq(faceState.currentPerson,null,"Poor score cannot authorize a known identity");
