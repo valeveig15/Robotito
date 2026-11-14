@@ -1399,6 +1399,56 @@ Object.assign(LABELS,{
     "de": "Ich habe deine Regeln im Aufgabenbereich angezeigt."
   }
 });
+Object.assign(LABELS,{
+  "p11Priority": {
+    "es": "Prioridad (0–5)",
+    "en": "Priority (0–5)",
+    "pt": "Prioridade (0–5)",
+    "fr": "Priorité (0–5)",
+    "it": "Priorità (0–5)",
+    "de": "Priorität (0–5)"
+  },
+  "p11Cooldown": {
+    "es": "Espera mínima entre ejecuciones",
+    "en": "Minimum time between actions",
+    "pt": "Intervalo mínimo entre ações",
+    "fr": "Intervalle minimal entre actions",
+    "it": "Intervallo minimo tra le azioni",
+    "de": "Mindestabstand zwischen Ausführungen"
+  },
+  "p11Settings": {
+    "es": "Prioridad y frecuencia",
+    "en": "Priority and frequency",
+    "pt": "Prioridade e frequência",
+    "fr": "Priorité et fréquence",
+    "it": "Priorità e frequenza",
+    "de": "Priorität und Häufigkeit"
+  },
+  "p11PriorityPrompt": {
+    "es": "Prioridad de esta regla (0–5)",
+    "en": "This rule's priority (0–5)",
+    "pt": "Prioridade desta regra (0–5)",
+    "fr": "Priorité de cette règle (0–5)",
+    "it": "Priorità della regola (0–5)",
+    "de": "Priorität der Regel (0–5)"
+  },
+  "p11CooldownPrompt": {
+    "es": "Minutos de espera entre ejecuciones (1–1440)",
+    "en": "Minutes between actions (1–1440)",
+    "pt": "Minutos entre ações (1–1440)",
+    "fr": "Minutes entre actions (1–1440)",
+    "it": "Minuti fra azioni (1–1440)",
+    "de": "Minuten zwischen Ausführungen (1–1440)"
+  },
+  "p11InvalidSettings": {
+    "es": "Usá prioridad de 0 a 5 y espera entre 1 y 1440 minutos.",
+    "en": "Use priority 0–5 and cooldown of 1–1440 minutes.",
+    "pt": "Use prioridade 0–5 e intervalo de 1–1440 minutos.",
+    "fr": "Priorité 0–5 et intervalle 1–1440 minutes.",
+    "it": "Priorità 0–5 e intervallo di 1–1440 minuti.",
+    "de": "Priorität 0–5 und Intervall 1–1440 Minuten."
+  }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
