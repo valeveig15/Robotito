@@ -153,7 +153,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **07.** Memoria contextual, fechas y datos durables — EN PROGRESO (búsqueda por fechas y propietario, respaldo local y edición/borrado acotados; ver [P07-STATUS.md](P07-STATUS.md); pendientes copias grandes/cifradas, restauración reversible, vinculación consentida y hardware)
 - [ ] **08.** Identificación rigurosa de personas registradas — EN PROGRESO (seguridad de rostros y voces, aislamiento frente a caras y hablantes distintos, borrado biométrico con consentimiento y regresiones; ver [P08-STATUS.md](P08-STATUS.md); pendiente evaluación física con personas parecidas, calibración y hardware real)
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — POR AUDITAR
-- [ ] **10.** Órdenes temporales, reproducción y repetición — POR AUDITAR
+- [ ] **10.** Órdenes temporales, reproducción y repetición — EN PROGRESO (grabaciones reales filtradas por fecha, recomendaciones del propietario, repetición literal y faltantes honestos; ver [P10-STATUS.md](P10-STATUS.md); faltan pruebas ASR y reproducción física)
 - [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — POR AUDITAR
 - [ ] **12.** Modo Clase: audio completo, silencio y reproducción — POR AUDITAR
 - [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — POR AUDITAR
