@@ -9,7 +9,7 @@ const policyEnd=source.indexOf("\nasync function enrollPerson(){",policyStart);
 const voiceConflictStart=source.indexOf("function enrollmentVoiceConflict(");
 assert.ok(voiceConflictStart>policyStart&&voiceConflictStart<policyEnd);
 const distanceStart=source.indexOf("function descriptorDistance(");
-const distanceEnd=source.indexOf("\nasync function captureFaceEnrollment(){",distanceStart);
+const distanceEnd=source.indexOf("\nasync function captureFaceEnrollment(",distanceStart);
 const cosineStart=source.indexOf("function cosineSimilarity(");
 const cosineEnd=source.indexOf("\nfunction recentVoicePrint(",cosineStart);
 const state={started:true,people:[],faceMatchHistory:[],enrollmentActive:false};
