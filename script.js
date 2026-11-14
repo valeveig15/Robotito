@@ -1931,13 +1931,13 @@ function autoRemember(text){
   const person=state.currentVoicePerson||state.currentPerson||"persona no reconocida";
   const last=state.memories[state.memories.length-1];
   if(last && last.text.toLowerCase()===clean.toLowerCase() && Date.now()-last.at<15000)return;
-  const savedAt=Date.now();
-  state.memories.push({person,text:clean,at:savedAt,source:"auto"});
-  save(KEYS.memories,state.memories);
-  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentVoicePerson||state.currentPerson||"local",
-    source:"speech",timestamp:savedAt,language:state.languageMode||"es",data:{person,text:clean,source:"auto"}})
-    .catch(e=>console.warn("typed memory",e));
-  renderMemories();
+  const savedAt=Date.now(),owner=state.currentVoicePerson||state.currentPerson||"local";
+  if(autoRemember.pending?.text===clean&&savedAt-autoRemember.pending.at<15000)return;
+  autoRemember.pending={text:clean,at:savedAt};
+  window.ROBOTITO_STORE.appendMemory({owner,person,text:clean,at:savedAt,
+    source:"auto",language:state.languageMode||"es"}).then(({memories})=>{
+     state.memories=memories;renderMemories();
+    }).catch(e=>console.warn("typed memory",e));
 }
 
 const INTENT_ALIASES=[
@@ -5432,38 +5432,100 @@ function renderPeople(){
   });
 }
 
-function renderMemories(){
-  const root=$("#memoryList");
-  root.innerHTML="";
-  const list=[...state.memories].reverse();
-
-  if(!list.length){
-    root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20guard%C3%B3%20recuerdos.>Todavía no guardó recuerdos.</p>';
-    return;
-  }
-
-  list.slice(0,120).forEach(m=>{
-    const row=document.createElement("div");
-    row.className="memory-row";
-    row.innerHTML=`<strong>${escapeHtml(m.person||uiText("Alguien"))}</strong>
-      <p lang="${window.ROBOTITO_I18N.supported(m.language)?m.language:"und"}" translate="no">${escapeHtml(m.text)}</p>
-      <span class="muted">${uiText(m.source==="auto"?"Escuchado":"Manual")} · ${new Date(m.at).toLocaleString(languageLocale(state.languageMode||"es"))}</span>`;
-    root.appendChild(row);
-  });
+// A UI profile may edit only the owner's own typed records. Historical
+// unlabelled memories remain local, never guessed to belong to a person.
+function activeMemoryOwner(){return state.currentPerson||"local";}
+function p07Message(key){
+ const lang=state.languageMode||"es";
+ const t={
+  edit:{es:"Corregir",en:"Edit",pt:"Corrigir",fr:"Corriger",it:"Modifica",de:"Bearbeiten"},
+  remove:{es:"Eliminar",en:"Delete",pt:"Excluir",fr:"Supprimer",it:"Elimina",de:"Löschen"},
+  editPrompt:{es:"Corregí este recuerdo:",en:"Edit this memory:",pt:"Corrija esta lembrança:",fr:"Corrigez ce souvenir :",it:"Correggi questo ricordo:",de:"Diese Erinnerung korrigieren:"},
+  removePrompt:{es:"¿Eliminar este recuerdo de forma permanente?",en:"Permanently delete this memory?",pt:"Excluir esta lembrança definitivamente?",fr:"Supprimer définitivement ce souvenir ?",it:"Eliminare definitivamente questo ricordo?",de:"Diese Erinnerung dauerhaft löschen?"},
+  saveFailed:{es:"No pude modificar el recuerdo. Actualizá la página y probá de nuevo.",en:"Could not change the memory. Refresh and try again.",pt:"Não foi possível alterar a lembrança. Atualize e tente novamente.",fr:"Impossible de modifier le souvenir. Rechargez puis réessayez.",it:"Impossibile modificare il ricordo. Ricarica e riprova.",de:"Erinnerung konnte nicht geändert werden. Bitte neu laden."},
+  clearPrompt:{es:"¿Borrar todos los recuerdos de este perfil? Los de otras personas se conservarán.",en:"Delete all memories for this profile? Other people's memories will be kept.",pt:"Excluir todas as lembranças deste perfil? As de outras pessoas serão mantidas.",fr:"Supprimer tous les souvenirs de ce profil ? Ceux des autres personnes seront conservés.",it:"Eliminare tutti i ricordi di questo profilo? Quelli delle altre persone resteranno.",de:"Alle Erinnerungen dieses Profils löschen? Die der anderen Personen bleiben erhalten."},
+  clearDone:{es:"Recuerdos de este perfil borrados.",en:"Memories for this profile deleted.",pt:"Lembranças deste perfil excluídas.",fr:"Souvenirs de ce profil supprimés.",it:"Ricordi di questo profilo eliminati.",de:"Erinnerungen dieses Profils gelöscht."}
+ };
+ return t[key]?.[lang]||t[key]?.es||key;
 }
-
-function rememberManual(){
-  const text=$("#memoryInput").value.trim();
-  if(!text)return;
-  const at=Date.now();
-  state.memories.push({person:state.currentPerson||"persona no reconocida",text,at,language:state.languageMode,source:"manual"});
-  save(KEYS.memories,state.memories);
-  window.ROBOTITO_STORE?.putRecord?.({type:"memories",owner:state.currentPerson||"local",
-    source:"manual",timestamp:at,language:state.languageMode||"es",data:{text,person:state.currentPerson||"local"}})
-    .catch(e=>console.warn("typed manual memory",e));
-  $("#memoryInput").value="";
+async function changeDisplayedMemory(m,{remove=false}={}){
+ const owner=activeMemoryOwner();
+ if(!m.id||m.owner!==owner)return;
+ let text;
+ if(remove){
+  if(!window.confirm(p07Message("removePrompt")))return;
+ }else{
+  text=window.prompt(p07Message("editPrompt"),m.text);
+  if(text===null)return;
+  text=text.trim();
+  if(!text||text.length>3000)return;
+ }
+ try{
+  const options={id:m.id,owner,expectedVersion:Number(m.version)||1};
+  const result=remove
+   ?await window.ROBOTITO_STORE.deleteOwnedMemory(options)
+   :await window.ROBOTITO_STORE.updateOwnedMemory({...options,text});
+  if(Array.isArray(result.memories))state.memories=result.memories;
+  else if(remove)state.memories=state.memories.filter(row=>row.id!==m.id);
+  else state.memories=state.memories.map(row=>row.id===m.id?
+   {...row,text,version:result.record.version}:row);
   renderMemories();
-  say("Listo. Eso también lo guardo.");
+ }catch(error){console.warn("Memory edit rejected",error);toast(p07Message("saveFailed"));}
+}
+function renderMemories(){
+ const root=$("#memoryList");
+ root.innerHTML="";
+ const owner=activeMemoryOwner();
+ const list=state.memories.filter(m=>m&&m.text&&(m.owner||"local")===owner).reverse();
+ if(!list.length){
+  root.innerHTML='<p class="muted" data-ui-copy=Todav%C3%ADa%20no%20guard%C3%B3%20recuerdos.>Todavía no guardó recuerdos.</p>';
+  return;
+ }
+ list.slice(0,120).forEach(m=>{
+  const row=document.createElement("div");
+  row.className="memory-row";
+  row.innerHTML=`<strong>${escapeHtml(m.person||uiText("Alguien"))}</strong>
+   <p lang="${window.ROBOTITO_I18N.supported(m.language)?m.language:"und"}" translate="no">${escapeHtml(m.text)}</p>
+   <span class="muted">${uiText(m.source==="auto"?"Escuchado":"Manual")} · ${new Date(m.at).toLocaleString(languageLocale(state.languageMode||"es"))}</span>`;
+  if(m.id&&window.ROBOTITO_STORE?.updateOwnedMemory){
+   const actions=document.createElement("div");actions.className="actions p07-memory-actions";
+   for(const action of ["edit","remove"]){
+    const button=document.createElement("button");button.type="button";
+    button.className=action==="remove"?"ghost danger":"ghost";
+    button.textContent=p07Message(action);
+    button.addEventListener("click",()=>changeDisplayedMemory(m,{remove:action==="remove"}));
+    actions.appendChild(button);
+   }
+   row.appendChild(actions);
+  }
+  root.appendChild(row);
+ });
+}
+async function prepareLegacyMemoryIds(){
+ const store=window.ROBOTITO_STORE;
+ if(!store||!Array.isArray(state.memories)||!state.memories.length)return;
+ const typed=await store.queryRecords({type:"memories",owner:"local",limit:5000});
+ const byId=new Map(typed.map(row=>[row.id,row]));
+ let changed=false;
+ state.memories=state.memories.map((m,i)=>{
+  if(!m||typeof m!=="object"||!m.text||m.id)return m;
+  const id="legacy:local:robotito.memories.v2:"+i,row=byId.get(id);
+  if(!row||row.timestamp!==m.at||row.data?.text!==m.text)return m;
+  changed=true;return {...m,id,owner:"local",version:Number(row.version)||1};
+ });
+ if(changed)await store.set(KEYS.memories,state.memories);
+}
+async function rememberManual(){
+ const input=$("#memoryInput"),text=input.value.trim();
+ if(!text)return;
+ try{
+  const {memories}=await window.ROBOTITO_STORE.appendMemory({
+   owner:activeMemoryOwner(),person:state.currentPerson||"persona no reconocida",
+   text,at:Date.now(),language:state.languageMode||"es",source:"manual"
+  });
+  state.memories=memories;
+  input.value="";renderMemories();say("Listo. Eso también lo guardo.");
+ }catch(error){console.warn("Manual memory failed",error);toast(p07Message("saveFailed"));}
 }
 
 function parseCSV(text){
@@ -5892,14 +5954,14 @@ function bindUI(){
   $("#rememberBtn").addEventListener("click",rememberManual);
 
   $("#clearMemoryBtn").addEventListener("click",async()=>{
-    if(!confirm(uiText("¿Querés borrar todos los recuerdos que Robotito guardó?")))return;
+    const owner=activeMemoryOwner();
+    if(!confirm(p07Message("clearPrompt")))return;
     try{
-      await window.ROBOTITO_STORE?.clearRecordsByType?.("memories");
-      await window.ROBOTITO_STORE?.set?.(KEYS.memories,[]);
-      state.memories=[];
+      const result=await window.ROBOTITO_STORE.clearOwnedMemories(owner);
+      state.memories=result.memories||state.memories.filter(m=>(m.owner||"local")!==owner);
       renderMemories();
-      toast("Recuerdos borrados.");
-    }catch(e){console.warn("clear memories",e);toast("No pude borrar toda la memoria del dispositivo.");}
+      toast(p07Message("clearDone"));
+    }catch(e){console.warn("clear owned memories",e);toast(p07Message("saveFailed"));}
   });
 
   $("#goodreadsHelpBtn")?.addEventListener("click",()=>$("#goodreadsHelp")?.classList.toggle("hidden"));
@@ -6060,6 +6122,7 @@ async function init(){
   migrateOldData();
   // Do not silently delete people or memories based on their names.
   await window.ROBOTITO_STORE?.migrateTypedLegacy?.().catch(e=>console.warn("Typed migration",e));
+  await prepareLegacyMemoryIds().catch(e=>console.warn("Memory legacy IDs",e));
   bindUI();
   bindPandaReferenceViews();
   applyAvatar(state.avatar,{persist:false});

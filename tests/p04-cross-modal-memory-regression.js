@@ -16,7 +16,13 @@ const replySource=functionBody("function commitSpeechMessage(","\nfunction say("
 let checks=0;
 function eq(value,expected,message){assert.deepEqual(value,expected,message);checks++;}
 const writes=[],memoryWrites=[],ephemeral=new Map();
-const window={ROBOTITO_STORE:{putRecord(row){writes.push(row);return Promise.resolve(row);}}};
+const window={ROBOTITO_STORE:{
+ appendMemory(row){
+  writes.push({type:"memories",owner:row.owner,data:{person:row.person,text:row.text}});
+  return Promise.resolve({memories:[]});
+ },
+ putRecord(row){writes.push(row);return Promise.resolve(row);}
+}};
 const state={currentPerson:"Ada",currentVoicePerson:"Bruno",memories:[],
  languageMode:"es",speechBubbleToken:1,pendingSpeechLocalization:true};
 const KEYS={memories:"memories"};

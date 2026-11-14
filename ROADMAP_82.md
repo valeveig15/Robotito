@@ -150,7 +150,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **04.** Escucha, voz y rostro: captación de calidad — AUDITADO; captación y cancelación reforzadas, pendiente validación física y de precisión; ver [P04-STATUS.md](P04-STATUS.md)
 - [ ] **05.** Internacionalización completa de interfaz y conversación — AUDITADO; interfaz y contenido dinámico ampliados a seis idiomas, originales preservados y pruebas incorporadas; pendiente traducción libre sin modelo compatible y validación física de pronunciación; ver [P05-STATUS.md](P05-STATUS.md)
 - [ ] **06.** Voces nuevas, estilos y eliminación de «Gravedad» — AUDITADO; control retirado, selección/prueba y muestras locales completadas en el alcance automatizado; pendiente validación acústica y de dispositivos; ver [P06-STATUS.md](P06-STATUS.md)
-- [ ] **07.** Memoria contextual, fechas y datos durables — POR AUDITAR
+- [ ] **07.** Memoria contextual, fechas y datos durables — EN PROGRESO (búsqueda por fechas y propietario, respaldo local y edición/borrado acotados; ver [P07-STATUS.md](P07-STATUS.md); pendientes copias grandes/cifradas, restauración reversible, vinculación consentida y hardware)
 - [ ] **08.** Identificación rigurosa de personas registradas — POR AUDITAR
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — POR AUDITAR
 - [ ] **10.** Órdenes temporales, reproducción y repetición — POR AUDITAR
