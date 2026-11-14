@@ -56,12 +56,17 @@ runBrowserTest("p07-owned-memory",async test=>{
  const secondPage=await context.newPage();
  await secondPage.goto(baseURL,{waitUntil:"domcontentloaded"});
  await secondPage.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.updateOwnedMemory));
- const changes=await Promise.allSettled([page,secondPage].map((p,i)=>p.evaluate(
-  async({id,text})=>window.ROBOTITO_STORE.updateOwnedMemory({
-    id,owner:"local",expectedVersion:1,text
-  }),{id:fixture.second,text:"Resultado "+i}
- )));
- assert.equal(changes.filter(x=>x.status==="fulfilled").length,1,
+ const changes=await Promise.all([page,secondPage].map((p,i)=>p.evaluate(
+  async({id,text})=>{
+   try{
+    await window.ROBOTITO_STORE.updateOwnedMemory({
+     id,owner:"local",expectedVersion:1,text
+    });
+    return "updated";
+   }catch(error){return "conflict";}
+  },{id:fixture.second,text:"Resultado "+i}
+  )));
+ assert.equal(changes.filter(x=>x==="updated").length,1,
   "Only one version-1 edit may commit across tabs");
  const final=await page.evaluate(async id=>window.ROBOTITO_STORE.getRecord(id),fixture.second);
  assert.equal(final.version,2);
