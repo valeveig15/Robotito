@@ -4426,6 +4426,15 @@ async function detectLoop(){
 }
 
 function buildMatcher(){
+  // Saved people must remain readable when the optional face library cannot
+  // load (offline, blocked CDN, denied camera or unsupported browser).
+  // Missing models mean no recognition, NEVER a synthetic identity.
+  if(typeof faceapi==="undefined"||!faceapi||
+     typeof faceapi.LabeledFaceDescriptors!=="function"||
+     typeof faceapi.FaceMatcher!=="function"){
+    state.faceMatcher=null;
+    return;
+  }
   const labeled=[];
   for(const p of state.people){
     // A legacy single-image profile cannot authorize access to another
