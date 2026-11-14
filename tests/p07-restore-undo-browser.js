@@ -74,7 +74,12 @@ runBrowserTest("p07-restore-undo",async test=>{
   window.confirm=()=>{window.__p07UndoConfirmed++;return true;};
   window.prompt=()=>"DESHACER";
  });
- await page.locator("#undoMemoryRestore").click();
+ // Undo intentionally reloads the page. Await the new document rather than
+ // evaluating the next step in a navigation-destroyed execution context.
+ await Promise.all([
+  page.waitForEvent("domcontentloaded",{timeout:20000}),
+  page.locator("#undoMemoryRestore").click()
+ ]);
  await page.waitForFunction(async()=>{
   const s=window.ROBOTITO_STORE;
   return !!s?.getRestoreUndoInfo&&!(await s.getRestoreUndoInfo())&&
