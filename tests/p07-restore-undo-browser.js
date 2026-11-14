@@ -49,7 +49,10 @@ runBrowserTest("p07-restore-undo",async test=>{
   await s.restoreBackup(base,{confirmation:"RESTAURAR"});
   await s.deleteRecord("p07-before");
   const invalidatedAfterDelete=(await s.getRestoreUndoInfo())===null;
-  // Recreate checkpoint for the visible undo button.
+  // Recreate a distinct post-backup state for the visible undo button.
+  await s.putRecord({id:"p07-after",type:"memories",owner:"Bob",
+   data:{text:"Bob's memory before the next restore"}});
+  await s.set("p07-undo-custom",{phase:"after"});
   await s.restoreBackup(base,{confirmation:"RESTAURAR"});
   return {rejectedCheckpoint,unchanged,undoPreservesBob,originalRestored,
    noUndoLeak,badConfirmation,undoWorks,singleUse,
