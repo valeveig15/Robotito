@@ -8,6 +8,11 @@ runBrowserTest("p10-temporal-playback",async test=>{
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_TEMPORAL_COMMANDS?.handle &&
   window.ROBOTITO_CLASS_AUDIO?.listRecordings && window.ROBOTITO_STORE?.putRecordWithBlob));
  const result=await page.evaluate(async()=>{
+  // Random test bytes are not a valid encoded WebM stream. Stub only the
+  // autoplay policy so WebKit does not open a never-decoding media pipeline.
+  // The Blob, IndexedDB retrieval and native audio controls are still real.
+  HTMLMediaElement.prototype.play=()=>Promise.reject(
+    new DOMException("User gesture required","NotAllowedError"));
   const s=window.ROBOTITO_STORE,t=window.ROBOTITO_TEMPORAL_COMMANDS;
   const d=new Date(),yesterday=new Date(d);
   yesterday.setDate(yesterday.getDate()-1);
