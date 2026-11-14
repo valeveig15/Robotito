@@ -68,7 +68,7 @@ const det=(center,confidence=.91)=>({descriptor:face(center),detection:{score:co
  assert.equal(linked.people[0].name,"Ada");
  assert.equal(visitors.info().count,1,"Link deletes only matched pseudonymous entry");
  assert.equal(await visitors.offerLink("Bruno",frames(.2),{review:()=>true}),false);
- await assert.rejects(()=>visitors.forgetAll({confirmation:"BORRAR"}),/confirmation/i);
+ await assert.rejects(()=>visitors.forgetAll({confirmation:"BORRAR"}),/deletion|confirmation/i);
  await visitors.forgetAll({confirmation:"BORRAR VISITAS"});
  assert.equal(deleted,1);
  assert.equal(state.has("robotito.visitors.v1"),false);
