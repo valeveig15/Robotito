@@ -4189,7 +4189,8 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   }
   // P10 resolves concrete recordings and recommendations before generic
   // memory summaries. Date parsing is shared; missing media is never invented.
-  if(interpretation?.shouldExecute!==false&&!interpretation?.needsClarification){
+  const explicitTemporal=window.ROBOTITO_TEMPORAL_COMMANDS?.parse?.(rawText);
+  if(explicitTemporal&&!interpretation?.negative&&!interpretation?.needsClarification){
     const done=await window.ROBOTITO_TEMPORAL_COMMANDS?.handle?.(rawText,{
       owner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
       classAudio:window.ROBOTITO_CLASS_AUDIO,clock:window.ROBOTITO_TEMPORAL,
