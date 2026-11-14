@@ -385,6 +385,9 @@ async function audit(){
 // P07: a whole-device, explicitly requested, local-only backup. A subset
 // export would silently lose old class state or audio and is NOT acceptable.
 const BACKUP_STORES=["state","records","blobs","migrations"];
+// This is internal IndexedDB state, never included in exported backup files.
+const RESTORE_UNDO_KEY="robotito.restore.undo.v1";
+const RESTORE_UNDO_MAX_BYTES=64*1024*1024;
 const BACKUP_MAX_BYTES=32*1024*1024, BACKUP_MAX_SINGLE_BLOB=12*1024*1024;
 function validateBackup(raw){
  if(!raw||typeof raw!=="object"||Array.isArray(raw)||raw.format!=="robotito-local-backup"||
@@ -398,7 +401,11 @@ function validateBackup(raw){
   ids[key].add(value);
  };
  for(const name of BACKUP_STORES)ids[name]=new Set();
- for(const row of raw.state){if(!row||typeof row!=="object")throw new TypeError("Invalid state");check("state",row.key);}
+ for(const row of raw.state){
+  if(!row||typeof row!=="object"||row.key===RESTORE_UNDO_KEY)
+   throw new TypeError("Invalid or reserved backup state key");
+  check("state",row.key);
+ }
  for(const row of raw.records){
   if(!row||typeof row!=="object"||!TYPES.has(row.type)||typeof row.owner!=="string"||!row.owner.trim())
    throw new TypeError("Invalid typed backup record");
@@ -462,7 +469,10 @@ async function exportBackup(){
  let totalBytes=0;
  for(let i=0;i<BACKUP_STORES.length;i++){
   const name=BACKUP_STORES[i];
-  if(name!=="blobs"){snapshot[name]=rows[i];continue;}
+  if(name!=="blobs"){
+   snapshot[name]=name==="state"?rows[i].filter(row=>row.key!==RESTORE_UNDO_KEY):rows[i];
+   continue;
+  }
   snapshot.blobs=[];
   for(const item of rows[i]){
    const blob=storedBlob(item);
@@ -480,8 +490,91 @@ async function exportBackup(){
   throw new Error("Backup exceeds the 32 MiB safe JSON limit; nothing was exported");
  return snapshot;
 }
+// Snapshot size is limited so creating an undo never silently consumes all
+// available quota. ArrayBuffers/Blobs remain typed: no base64 conversion while
+// an IndexedDB transaction is active.
+function validateUndoSnapshot(snapshot){
+ if(!snapshot||snapshot.format!=="robotito-restore-undo"||
+    snapshot.schema!==1||snapshot.dbVersion!==VERSION)
+  throw new TypeError("Unsupported local restore checkpoint");
+ const stores=snapshot.stores;
+ if(!stores||BACKUP_STORES.some(name=>!Array.isArray(stores[name])||
+    stores[name].length>20000))throw new TypeError("Invalid local restore checkpoint");
+ const distinct={};
+ for(const name of BACKUP_STORES){
+  distinct[name]=new Set();
+  for(const row of stores[name]){
+   const key=name==="state"?row?.key:row?.id;
+   if(typeof key!=="string"||!key||distinct[name].has(key)||
+      (name==="state"&&key===RESTORE_UNDO_KEY))
+    throw new TypeError("Invalid checkpoint key");
+   distinct[name].add(key);
+  }
+ }
+ for(const row of stores.records){
+  if(!TYPES.has(row?.type)||typeof row.owner!=="string"||!row.owner.trim()||
+     (row.blobId!=null&&typeof row.blobId!=="string"))
+   throw new TypeError("Invalid checkpoint typed record");
+ }
+ const blobs=new Map(stores.blobs.map(row=>[row.id,row]));
+ for(const row of stores.records){
+  if(!row.blobId)continue;
+  const blob=blobs.get(row.blobId);
+  if(!blob||blob.owner!==row.owner||blob.recordId!==row.id)
+   throw new TypeError("Checkpoint audio ownership mismatch");
+ }
+ for(const row of stores.blobs){
+  if(!row||typeof row.owner!=="string"||!row.owner.trim()||!storedBlob(row))
+   throw new TypeError("Invalid checkpoint binary data");
+  if(row.recordId!=null){
+   const record=stores.records.find(r=>r.id===row.recordId);
+   if(!record||record.blobId!==row.id||record.owner!==row.owner)
+    throw new TypeError("Checkpoint contains an invalid linked blob");
+  }
+ }
+ return {at:snapshot.at,records:stores.records.length,
+  blobs:stores.blobs.length,owners:[...new Set(stores.records.map(row=>row.owner))].sort()};
+}
+function checkpointBytes(stores){
+ let total=0;
+ for(const row of stores.blobs){
+  const blob=storedBlob(row);
+  if(!blob)throw new TypeError("Cannot checkpoint a damaged binary file");
+  total+=blob.size;
+  if(total>RESTORE_UNDO_MAX_BYTES)throw new Error("Current data is too large for automatic undo");
+ }
+ try{
+  total+=new Blob([JSON.stringify({state:stores.state,records:stores.records,
+   migrations:stores.migrations})]).size;
+ }catch{throw new TypeError("Current state is not safely checkpointable");}
+ if(total>RESTORE_UNDO_MAX_BYTES)
+  throw new Error("Current data is too large for automatic undo");
+}
+function checkpointFromRows(rows){
+ const stores={};
+ for(let i=0;i<BACKUP_STORES.length;i++){
+  const name=BACKUP_STORES[i];
+  stores[name]=name==="state"?rows[i].filter(row=>row.key!==RESTORE_UNDO_KEY):rows[i];
+ }
+ checkpointBytes(stores);
+ const snapshot={format:"robotito-restore-undo",schema:1,dbVersion:VERSION,
+  at:Date.now(),stores};
+ validateUndoSnapshot(snapshot);
+ return snapshot;
+}
+async function getRestoreUndoInfo(){
+ const db=await openDb(),row=await request(db.transaction("state","readonly")
+  .objectStore("state").get(RESTORE_UNDO_KEY));
+ return row?.value?validateUndoSnapshot(row.value):null;
+}
+async function discardRestoreUndo(){
+ const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx);
+ tx.objectStore("state").delete(RESTORE_UNDO_KEY);
+ await finished;return true;
+}
 // Restore replaces the ENTIRE same-browser dataset, never merging anonymous,
-// pseudonymous or known profiles. IndexedDB commits all stores atomically.
+// pseudonymous or known profiles. The previous state is checkpointed in THE SAME
+// transaction as the replacement, preventing partial backup or cross-tab races.
 async function restoreBackup(raw,{confirmation}={}){
  if(confirmation!=="RESTAURAR")throw new Error("Explicit restore confirmation required");
  const summary=validateBackup(raw);
@@ -499,12 +592,31 @@ async function restoreBackup(raw,{confirmation}={}){
     db.objectStoreNames.length!==BACKUP_STORES.length)
   throw new Error("Incompatible storage schema");
  const tx=db.transaction(BACKUP_STORES,"readwrite"),finished=complete(tx);
- for(const name of BACKUP_STORES)tx.objectStore(name).clear();
- for(const name of BACKUP_STORES){
-  for(const item of name==="blobs"?decoded:raw[name])tx.objectStore(name).put(item);
- }
- await finished;
- return summary;
+ try{
+  const before=await Promise.all(BACKUP_STORES.map(name=>request(
+   tx.objectStore(name).getAll())));
+  const undo=checkpointFromRows(before);
+  for(const name of BACKUP_STORES)tx.objectStore(name).clear();
+  for(const name of BACKUP_STORES)
+   for(const item of name==="blobs"?decoded:raw[name])tx.objectStore(name).put(item);
+  tx.objectStore("state").put({key:RESTORE_UNDO_KEY,value:undo,updatedAt:Date.now()});
+  await finished;return summary;
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
+// Undo is one-use and deliberately discards changes made AFTER the restore.
+// Its source is the browser's own preserved checkpoint, never an uploaded file.
+async function undoLastRestore({confirmation}={}){
+ if(confirmation!=="DESHACER")throw new Error("Explicit undo confirmation required");
+ const db=await openDb(),tx=db.transaction(BACKUP_STORES,"readwrite"),finished=complete(tx);
+ try{
+  const stored=await request(tx.objectStore("state").get(RESTORE_UNDO_KEY));
+  if(!stored?.value)throw new Error("No reversible restore checkpoint exists");
+  const summary=validateUndoSnapshot(stored.value);
+  for(const name of BACKUP_STORES)tx.objectStore(name).clear();
+  for(const name of BACKUP_STORES)
+   for(const item of stored.value.stores[name])tx.objectStore(name).put(item);
+  await finished;return summary;
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
 }
 
 async function stats(){
@@ -514,5 +626,5 @@ async function stats(){
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
  heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,putBlob,putRecordWithBlob,getBlob,deleteBlob,
- migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,recordTypes:[...TYPES],dbVersion:VERSION};
+ migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,getRestoreUndoInfo,undoLastRestore,discardRestoreUndo,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
