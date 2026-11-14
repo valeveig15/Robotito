@@ -34,7 +34,7 @@ function parse(raw){
   return exact?{action:"say",literal:exact}:{action:"arm"};
  }
  m=input.match(/^(?:dec[ií]|d[ií]|dime|repet[ií]|repite|say|repeat|diz|repete|dis|r[eé]p[eè]te|ripeti|sag|wiederhole)\s+(?:(?:esto|this|isso|ceci|questo|das)\s*[:,-]?\s*)?(.+)?$/iu);
- if(m&&/^(?:dec[ií]|d[ií]|dime|say|diz|dis|sag|repet[ií]|repite|repeat|repete|r[eé]p[eè]te|ripeti|wiederhole)\b/iu.test(input))
+ if(m&&/^(?:dec[ií]|d[ií]|dime|say|diz|dis|sag|repet[ií]|repite|repeat|repete|r[eé]p[eè]te|ripeti|wiederhole)(?:\s|$)/iu.test(input))
   return m[1]?.trim()?{action:"say",literal:m[1].trim()}:{action:"ask-literal"};
  const play=/^(?:pon[eé]|pon|ponme|reproduc[ií]|reproduce|escuch[aá]|quiero escuchar|mostrame|mu[eé]strame|play|listen to|show me|reproduz|toque|mostre|joue|lance|montre|riproduci|fammi ascoltare|spiele|spiel|zeig)\b/i;
  const hasRecording=/(?:grabacion|grabaci[oó]n|recording|recorded class|audio de|class audio|grava[cç][aã]o|enregistrement|registrazione|aufnahme|clase grabada|aula gravada|cours enregistr[eé]|lezione registrata)/i.test(q);
