@@ -699,6 +699,12 @@
           <p class="muted" data-i18n="p11Help">Escribí una regla simple como «si digo hola, decí buen día» o «cuando son las 18:00, recordame estudiar». Solo funciona mientras Robotito está abierto. No ejecuta aplicaciones externas ni notificaciones con el navegador cerrado.</p>
           <label><span data-i18n="p11RuleLabel">Nueva regla</span>
             <textarea id="customRuleText" rows="2" maxlength="800" data-i18n-placeholder="p11Example" placeholder="Si digo hola, decí buen día"></textarea></label>
+          <div class="grid two">
+            <label><span data-i18n="p11Priority">Prioridad (0–5)</span>
+              <select id="customRulePriority"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label><span data-i18n="p11Cooldown">Espera mínima entre ejecuciones</span>
+              <select id="customRuleCooldown"><option value="1">1 min</option><option value="5" selected>5 min</option><option value="15">15 min</option><option value="60">60 min</option><option value="1440">24 h</option></select></label>
+          </div>
           <button type="button" id="customRuleAdd" class="primary full" data-i18n="p11Add">Guardar regla</button>
           <p id="customRuleStatus" role="status" aria-live="polite" class="mini-status"></p>
           <div id="customRuleList" class="tasks-list"></div>
