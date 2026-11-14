@@ -4130,7 +4130,8 @@ function selectRobotitoContext(owner){
 // P11 — a rule never executes arbitrary code and never owns a global
 // background timer. State/permissions are checked on every real event.
 const p11Engines=new Map();
-function p11Owner(){return state.currentVoicePerson||state.currentPerson||"local";}
+let p11VisibleOwner=null;
+function p11Owner(){return activeMemoryOwner();}
 function p11Text(key){
  return window.ROBOTITO_I18N?.t?.(key,responseLanguage())||key;
 }
@@ -4139,6 +4140,7 @@ function p11Status(value){
 }
 function p11Render(rows){
  const root=$("#customRuleList");if(!root)return;
+ p11VisibleOwner=p11Owner();
  root.replaceChildren();
  if(!rows.length){const empty=document.createElement("p");empty.className="muted";
    empty.textContent=p11Text("p11Empty");root.appendChild(empty);return;}
@@ -4193,7 +4195,11 @@ function p11Render(rows){
 }
 async function p11Engine(owner=p11Owner()){
  if(!window.ROBOTITO_CUSTOM_RULES||!window.ROBOTITO_STORE?.updatePersonalRules)return null;
- if(p11Engines.has(owner))return p11Engines.get(owner);
+ if(p11Engines.has(owner)){
+  const engine=p11Engines.get(owner);
+  if(owner===p11Owner())p11Render(engine.list());
+  return engine;
+ }
  const engine=window.ROBOTITO_CUSTOM_RULES.create({
   store:window.ROBOTITO_STORE,owner,
   now:()=>Date.now(),
@@ -4266,7 +4272,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
      owner,lang:responseLanguage(),speak:literal=>sayInLanguage(literal,responseLanguage())
    }))return;
   selectRobotitoContext(owner);
-  if(!atomic&&await p11HandleSpeech(rawText,owner))return;
+  if(!atomic&&await p11HandleSpeech(rawText,p11Owner()))return;
   // User speech may trigger a rule, but its generated answer never re-enters
   // this function or the speech parser.
   if(channel!=="rule"&&!atomic)void p11Emit({type:"speech",phrase:normalizeText(rawText)});
@@ -6214,6 +6220,8 @@ function applyDayNightMode(date=new Date()){
 function clockTick(){
   const d=new Date();
   applyDayNightMode(d);
+  if(typeof p11VisibleOwner!=="undefined"&&p11VisibleOwner!==null&&
+     p11VisibleOwner!==p11Owner())p11Render([]);
   if(d.getSeconds()===0&&typeof p11Emit==="function")void p11Emit({type:"clock",hhmm:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")});
   const lang=state.languageMode||"es";
   const locale=languageLocale(lang);
@@ -6310,6 +6318,7 @@ function bindUI(){
     }
   });
   $("#customRuleAdd")?.addEventListener("click",()=>void p11AddFromUI());
+  $(".p11-rules-panel summary")?.addEventListener("click",()=>void p11Engine());
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personEnrollmentConsent")?.addEventListener("change",()=>{
     state.enrollmentRevision=(state.enrollmentRevision||0)+1;
