@@ -20,6 +20,14 @@ Estado auditado el 14/11/2026: **EN PROGRESO**. Este documento separa funcionami
 
 Las etiquetas de propietario evitan mezclas accidentales en el uso normal del panel y la recuperación, **pero no son autenticación ni aislamiento criptográfico** entre personas que comparten el mismo perfil de navegador.
 
+## Incremento de copia cifrada opcional (PR posterior a #118)
+
+- Exportación optativa a archivo cifrado localmente con Web Crypto AES-256-GCM, sal y nonce aleatorios por copia, PBKDF2-HMAC-SHA-256 con 310.000 iteraciones. Sin servidores, sin librerías externas ni almacenamiento de la contraseña.
+- Importación de respaldos cifrados y archivos JSON originales sin cifrar; rechazo de contraseña errónea, contenido alterado, formato y parámetros inesperados. Confirmación destructiva original conservada.
+- Botones, contraseñas y advertencias localizados a seis idiomas; contraseña nueva confirmada para evitar errores involuntarios.
+- `tests/p07-encrypted-backup-browser.js` prueba un ciclo completo con audio binario y perfiles, adulteración de archivo y UI real en navegadores.
+- No da protección criptográfica a los datos que siguen en IndexedDB, ni supera el límite de tamaño existente.
+
 ## Puertas de calidad
 
 - Repetir `npm run test:memory`, `npm run test:p07:browser` y `npm run test:ci` en la rama.
@@ -29,7 +37,7 @@ Las etiquetas de propietario evitan mezclas accidentales en el uso normal del pa
 ## Limitaciones y tareas sin resolver: no declarar P07 completo
 
 1. **Archivos grandes:** respaldo JSON tiene tope de 32 MiB y 12 MiB por blob. Falta empaquetado o transmisión fragmentada, importación/exportación bajo cuota y prueba con archivos realmente grandes.
-2. **Privacidad de respaldo:** JSON sin cifrado. Falta alternativa cifrada opcional (claves gestionadas por el usuario, integridad, recuperación si contraseña errónea).
+2. **Privacidad de respaldo:** disponible exportación cifrada voluntaria, cuya aceptación multiplataforma depende de CI. El JSON antiguo no cifrado sigue disponible para compatibilidad. Falta cifrado en reposo de datos dentro de IndexedDB y políticas claras de contraseñas/custodia; si se olvida la contraseña de un respaldo cifrado, no se puede recuperar.
 3. **Datos complementarios y versiones:** localStorage y archivos externos no se incluyen; restauración de versiones futuras/antiguas no compatible aún. Probar cambios de versión e interrupciones de migración.
 4. **Deshacer sin archivo previo:** la restauración total actual es transaccional, pero el usuario debe conservar manualmente la copia anterior; falta restauración reversible sin exigir que se gestione un segundo archivo.
 5. **Concurrencia y resiliencia:** faltan pruebas de exportación/restauración con escritura en otra pestaña, bloqueo/recarga y fallos de cuota o energía; el control de versión del PR solo cubre mutaciones individuales de recuerdos.

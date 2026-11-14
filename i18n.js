@@ -977,12 +977,12 @@ Object.assign(LABELS,{
   "de": "Lokale Speicher-Sicherung und Wiederherstellung"
  },
  "p07BackupWarning": {
-  "es": "El archivo JSON puede incluir recuerdos privados, rostros, audios y transcripciones. No está cifrado: guardalo en un lugar privado y no lo compartas.",
-  "en": "The JSON file may contain private memories, faces, audio and transcripts. It is not encrypted: keep it private and do not share it.",
-  "pt": "O arquivo JSON pode incluir lembranças privadas, rostos, áudios e transcrições. Não é criptografado: guarde-o em local privado.",
-  "fr": "Le fichier JSON peut contenir des souvenirs privés, des visages, des audios et des transcriptions. Il n'est pas chiffré : ne le partage pas.",
-  "it": "Il file JSON può contenere ricordi privati, volti, audio e trascrizioni. Non è cifrato: conservalo in modo privato.",
-  "de": "Die JSON-Datei kann private Erinnerungen, Gesichter, Audio und Transkripte enthalten. Sie ist nicht verschlüsselt: privat aufbewahren."
+  "es": "La copia puede incluir rostros, audios, transcripciones y recuerdos de varias personas. Si no activás el cifrado, el JSON queda sin protección; no lo compartas.",
+  "en": "Backups may include faces, audio, transcripts and multiple people's memories. Unless you enable encryption, the JSON is unprotected; do not share it.",
+  "pt": "A cópia pode incluir rostos, áudios, transcrições e lembranças de várias pessoas. Sem criptografia, o JSON fica desprotegido; não o compartilhe.",
+  "fr": "La copie peut contenir visages, audios, transcriptions et souvenirs de plusieurs personnes. Sans chiffrement, le JSON n'est pas protégé ; ne le partage pas.",
+  "it": "La copia può contenere volti, audio, trascrizioni e ricordi di più persone. Senza cifratura, il JSON non è protetto; non condividerlo.",
+  "de": "Die Sicherung kann Gesichter, Audio, Transkripte und Erinnerungen mehrerer Personen enthalten. Ohne Verschlüsselung ist JSON ungeschützt; nicht teilen."
  },
  "p07BackupScope": {
   "es": "La copia contiene los datos de IndexedDB de este navegador, de todas las personas y sesiones guardadas. No incluye archivos ni preferencias fuera de IndexedDB.",
@@ -1064,6 +1064,73 @@ Object.assign(LABELS,{
   "it": "Ripristino completato. Robotito ricaricherà i dati.",
   "de": "Wiederherstellung abgeschlossen. Robotito lädt die Daten neu."
  }
+});
+// P07: optional, local-only backup encryption controls.
+Object.assign(LABELS,{
+  "p07BackupEncryptLabel": {
+    "es": "Cifrar esta copia con una contraseña",
+    "en": "Encrypt this backup with a password",
+    "pt": "Criptografar esta cópia com senha",
+    "fr": "Chiffrer cette sauvegarde avec un mot de passe",
+    "it": "Cifra questa copia con una password",
+    "de": "Diese Sicherung mit einem Passwort verschlüsseln"
+  },
+  "p07BackupPasswordLabel": {
+    "es": "Contraseña nueva (12 caracteres o más)",
+    "en": "New password (at least 12 characters)",
+    "pt": "Nova senha (pelo menos 12 caracteres)",
+    "fr": "Nouveau mot de passe (12 caractères minimum)",
+    "it": "Nuova password (almeno 12 caratteri)",
+    "de": "Neues Passwort (mindestens 12 Zeichen)"
+  },
+  "p07BackupConfirmPassword": {
+    "es": "Repetir contraseña",
+    "en": "Repeat password",
+    "pt": "Repetir senha",
+    "fr": "Répéter le mot de passe",
+    "it": "Ripeti la password",
+    "de": "Passwort wiederholen"
+  },
+  "p07BackupPasswordWarning": {
+    "es": "La contraseña no se guarda. Si la perdés, no podremos recuperar esta copia cifrada.",
+    "en": "This password is not saved. If you lose it, the encrypted backup cannot be recovered.",
+    "pt": "A senha não é salva. Se você a perder, não será possível recuperar a cópia criptografada.",
+    "fr": "Ce mot de passe n'est pas enregistré. Sans lui, la sauvegarde chiffrée est irrécupérable.",
+    "it": "La password non viene salvata. Se la perdi, non potrai recuperare la copia cifrata.",
+    "de": "Dieses Passwort wird nicht gespeichert. Ohne es kann die verschlüsselte Sicherung nicht wiederhergestellt werden."
+  },
+  "p07BackupRestorePassword": {
+    "es": "Contraseña para restaurar una copia cifrada (si corresponde)",
+    "en": "Password for restoring an encrypted backup (if applicable)",
+    "pt": "Senha para restaurar uma cópia criptografada (se necessário)",
+    "fr": "Mot de passe pour restaurer une sauvegarde chiffrée (si nécessaire)",
+    "it": "Password per ripristinare una copia cifrata (se necessario)",
+    "de": "Passwort zum Wiederherstellen einer verschlüsselten Sicherung (falls nötig)"
+  },
+  "p07BackupPasswordError": {
+    "es": "Ingresá y repetí una contraseña de al menos 12 caracteres.",
+    "en": "Enter and confirm a password of at least 12 characters.",
+    "pt": "Digite e confirme uma senha de pelo menos 12 caracteres.",
+    "fr": "Saisis et confirme un mot de passe d'au moins 12 caractères.",
+    "it": "Inserisci e conferma una password di almeno 12 caratteri.",
+    "de": "Ein Passwort mit mindestens 12 Zeichen eingeben und bestätigen."
+  },
+  "p07EncryptedBackupReady": {
+    "es": "Copia cifrada preparada. Guardá el archivo y conservá la contraseña en un lugar seguro antes de restaurar.",
+    "en": "Encrypted backup prepared. Save the file and keep its password somewhere safe before restoring.",
+    "pt": "Cópia criptografada preparada. Guarde o arquivo e mantenha a senha em local seguro.",
+    "fr": "Sauvegarde chiffrée préparée. Enregistre le fichier et conserve son mot de passe en lieu sûr.",
+    "it": "Copia cifrata pronta. Salva il file e conserva la password in un luogo sicuro.",
+    "de": "Verschlüsselte Sicherung erstellt. Datei speichern und Passwort sicher aufbewahren."
+  },
+  "p07EncryptedRestoreFailed": {
+    "es": "No se pudo abrir la copia cifrada. Revisá la contraseña, el archivo y la versión. No se restauró nada.",
+    "en": "Could not unlock the encrypted backup. Check the password, file and version. Nothing was restored.",
+    "pt": "Não foi possível abrir a cópia criptografada. Verifique a senha, o arquivo e a versão. Nada foi restaurado.",
+    "fr": "Impossible d'ouvrir la sauvegarde chiffrée. Vérifie le mot de passe, le fichier et la version. Rien n'a été restauré.",
+    "it": "Impossibile aprire la copia cifrata. Controlla password, file e versione. Nessun dato è stato ripristinato.",
+    "de": "Verschlüsselte Sicherung konnte nicht geöffnet werden. Passwort, Datei und Version prüfen. Keine Daten wiederhergestellt."
+  }
 });
 // P08: identity consent, near-relative conflicts and refused biometric updates.
 Object.assign(LABELS,{"p08ConsentLabel":{"es":"La persona que aparece frente a la cámara acepta explícitamente registrar su rostro y voz en este dispositivo. Puede solicitar borrar sus datos.","en":"The person in front of the camera explicitly agrees to enroll their face and voice on this device. They can request deletion.","pt":"A pessoa diante da câmera concorda explicitamente em registrar rosto e voz neste dispositivo. Ela pode solicitar a exclusão.","fr":"La personne devant la caméra accepte explicitement l'enregistrement de son visage et de sa voix sur cet appareil. Elle peut demander l'effacement.","it":"La persona davanti alla fotocamera acconsente esplicitamente alla registrazione di volto e voce sul dispositivo. Può richiederne l'eliminazione.","de":"Die Person vor der Kamera stimmt ausdrücklich zu, Gesicht und Stimme auf diesem Gerät zu registrieren. Sie kann die Löschung verlangen."},"p08EnrollmentWarning":{"es":"Si ya existe un perfil con ese nombre, Robotito comprobará que sea la misma persona. Si se parece a otra persona registrada, detendrá el registro para evitar confundir identidades.","en":"If a profile with that name exists, Robotito will check whether it is the same person. It will stop if the face looks too similar to another enrolled person.","pt":"Se já existir um perfil com esse nome, o Robotito verificará se é a mesma pessoa. Se o rosto parecer de outra pessoa registrada, o registro será interrompido.","fr":"Si un profil porte déjà ce nom, Robotito vérifiera qu'il s'agit de la même personne. L'enregistrement sera interrompu si le visage ressemble trop à un autre profil.","it":"Se esiste già un profilo con lo stesso nome, Robotito verificherà che sia la stessa persona. Se il volto somiglia a un altro profilo registrato, interromperà l'operazione.","de":"Wenn bereits ein Profil mit diesem Namen existiert, prüft Robotito die Übereinstimmung. Bei zu großer Ähnlichkeit mit einer anderen registrierten Person wird abgebrochen."},"p08ConsentRequired":{"es":"Para registrar a alguien, necesitás su consentimiento explícito.","en":"Explicit consent from the person is required before enrollment.","pt":"É necessário o consentimento explícito da pessoa para o cadastro.","fr":"Le consentement explicite de la personne est requis pour l'enregistrement.","it":"Per la registrazione è necessario il consenso esplicito della persona.","de":"Vor der Registrierung ist die ausdrückliche Einwilligung der Person erforderlich."},"p08Collision":{"es":"La cara se parece demasiado a la de otro perfil registrado. No guardé ni mezclé muestras: verificá las identidades por separado.","en":"The face is too similar to another enrolled profile. No samples were saved or merged. Verify the identities separately.","pt":"O rosto é muito semelhante ao de outro perfil. Nenhuma amostra foi salva ou mesclada. Verifique as identidades separadamente.","fr":"Le visage ressemble trop à un autre profil. Aucun échantillon n'a été enregistré ni fusionné. Vérifiez les identités séparément.","it":"Il volto è troppo simile a un altro profilo. Non sono stati salvati né uniti campioni. Verifica le identità separatamente.","de":"Das Gesicht ähnelt einem anderen Profil zu stark. Es wurden keine Proben gespeichert oder zusammengeführt. Prüfe die Identitäten getrennt."},"p08ExistingUnverified":{"es":"No pude verificar con suficientes muestras que sea la misma persona registrada. No modifiqué el perfil.","en":"Not enough matching samples to verify the existing person's identity. The profile was not changed.","pt":"Não há amostras suficientes para confirmar a pessoa já cadastrada. O perfil não foi alterado.","fr":"Pas assez d'échantillons concordants pour vérifier la personne déjà enregistrée. Profil inchangé.","it":"Campioni insufficienti per verificare la persona già registrata. Il profilo non è stato modificato.","de":"Zu wenige übereinstimmende Proben für die vorhandene Person. Das Profil wurde nicht verändert."},"p08VoiceMismatch":{"es":"La voz nueva no coincide suficientemente con la voz guardada. No modifiqué las muestras de esta persona.","en":"The new voice does not sufficiently match the saved voice. This person's samples were left unchanged.","pt":"A nova voz não corresponde suficientemente à voz salva. As amostras da pessoa não foram alteradas.","fr":"La nouvelle voix ne correspond pas suffisamment à la voix enregistrée. Aucun échantillon modifié.","it":"La nuova voce non corrisponde sufficientemente a quella salvata. Nessun campione modificato.","de":"Die neue Stimme passt nicht ausreichend zur gespeicherten Stimme. Die Proben dieser Person blieben unverändert."}});
