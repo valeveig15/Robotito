@@ -4275,6 +4275,22 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(window.ROBOTITO_TEMPORAL_COMMANDS?.consumePending?.(rawText,{
      owner,lang:responseLanguage(),speak:literal=>sayInLanguage(literal,responseLanguage())
    }))return;
+  // An empty "repeat after me" is a prompt to listen, not missing content.
+  // Arm it BEFORE the semantic planner requests clarification for an empty
+  // repeat payload, and avoid interrupting Class Mode or atomic sub-actions.
+  const preliminaryTemporal=window.ROBOTITO_TEMPORAL_COMMANDS?.parse?.(rawText);
+  if(!atomic&&!state.classMode&&
+     ["arm","stop"].includes(preliminaryTemporal?.action)){
+    const handled=await window.ROBOTITO_TEMPORAL_COMMANDS.handle(rawText,{
+      owner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
+      classAudio:window.ROBOTITO_CLASS_AUDIO,clock:window.ROBOTITO_TEMPORAL,
+      classMode:false,at:new Date(),
+      activeOwner:()=>state.currentVoicePerson||state.currentPerson||"local",
+      container:$("#temporalPlaybackResult"),
+      speak:literal=>sayInLanguage(literal,responseLanguage())
+    });
+    if(handled)return;
+  }
   selectRobotitoContext(owner);
   if(!atomic&&await p11HandleSpeech(rawText,p11Owner()))return;
   // User speech may trigger a rule, but its generated answer never re-enters
