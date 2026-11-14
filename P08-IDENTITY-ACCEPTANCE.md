@@ -27,10 +27,20 @@ La selección de una cara conocida no autoriza por sí sola a atribuirle una fra
 | I13 | Registro con una única muestra antigua | No autorizar identidad sin nuevo registro suficiente |
 | I14 | Visitante pseudónimo sin registro que luego se presenta | No fusionar su historial sin decisión explícita, reversible y verificable |
 | I15 | Repetir pruebas en Android y iPhone reales | Documentar bloqueos del navegador o faltas de permisos por dispositivo |
+| I16 | Recargar con perfiles guardados pero sin librería facial disponible | Mostrar y permitir borrar perfiles; no autorizar ninguna identidad |
+| I17 | Revocar un registro con memoria y audios asociados | Eliminar datos claramente asociados, invalidar deshacer; preservar recuerdos de otras personas y anónimos |
+| I18 | La cara visible pertenece a una persona y la voz a otra | No usar el contexto de la cara para atribuir ni divulgar datos de la voz |
+| I19 | Saludo o cumpleaños desde coincidencia facial sin voz suficiente | No pronunciar identidad ni cumpleaños solo por cara |
+| I20 | Medir FAR, FRR y abstenciones de familiares/voces similares en dispositivos reales | Separar calibración/prueba, verificar consentimiento, numeradores, denominadores e intervalos; no afirmar error cero |
+| I21 | Abrir dos pestañas con un perfil que se borra en una | Investigar cachés, posibles escrituras simultáneas y ausencia de reaparición de datos |
 
 **Anotar únicamente**: ID del caso, navegador/versión, dispositivo, PASS/FAIL/BLOCKED/NOT RUN, número de intentos, rechazos correctos e incorrectos, confusiones entre perfiles y consentimiento. Mantener los archivos faciales/vocales privados y fuera de GitHub. Usar conjuntos de calibración y prueba **separados**, al menos dos personas distintas y, para semejanza, participantes reales que hayan consentido participar.
 
 ## Métricas de aceptación
+
+La herramienta local [P08-IDENTITY-EVALUATION.md](P08-IDENTITY-EVALUATION.md) admite exclusivamente resultados de ensayos consentidos sin archivos biométricos ni nombres; facilita tasas e intervalos de confianza. El ejemplo del repositorio es **sintético** y no constituye prueba física.
+
+
 
 - Tasa de falsa aceptación = impostores aceptados / intentos impostores elegibles.
 - Tasa de falso rechazo = personas correctas rechazadas / intentos genuinos elegibles.

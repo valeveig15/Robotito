@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "synthetic": true,
+  "note": "SYNTHETIC ONLY. Do not infer real-world identity accuracy.",
+  "trials": [
+    {
+      "id": "cal1",
+      "split": "calibration",
+      "consent": true,
+      "claimed": "p01",
+      "actual": "p01",
+      "decision": "accept",
+      "modality": "face",
+      "scenario": "normal",
+      "device": "desktop",
+      "latencyMs": 100
+    },
+    {
+      "id": "cal2",
+      "split": "calibration",
+      "consent": true,
+      "claimed": "p02",
+      "actual": "p01",
+      "decision": "reject",
+      "modality": "voice",
+      "scenario": "noise",
+      "device": "desktop",
+      "latencyMs": 240
+    },
+    {
+      "id": "test1",
+      "split": "test",
+      "consent": true,
+      "claimed": "p01",
+      "actual": "p01",
+      "decision": "accept",
+      "modality": "face",
+      "scenario": "normal",
+      "device": "desktop",
+      "latencyMs": 200
+    },
+    {
+      "id": "test2",
+      "split": "test",
+      "consent": true,
+      "claimed": "p02",
+      "actual": "p02",
+      "decision": "abstain",
+      "modality": "face",
+      "scenario": "glasses",
+      "device": "iphone",
+      "latencyMs": 300
+    },
+    {
+      "id": "test3",
+      "split": "test",
+      "consent": true,
+      "claimed": "p01",
+      "actual": "p02",
+      "decision": "accept",
+      "modality": "voice",
+      "scenario": "similar-voice",
+      "device": "desktop",
+      "latencyMs": 400
+    },
+    {
+      "id": "test4",
+      "split": "test",
+      "consent": true,
+      "claimed": "p01",
+      "actual": "unknown",
+      "decision": "reject",
+      "modality": "voice",
+      "scenario": "replay",
+      "device": "android",
+      "latencyMs": 500
+    }
+  ]
+}
