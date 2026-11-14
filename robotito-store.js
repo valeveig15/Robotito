@@ -77,7 +77,14 @@ async function putRecord(record){
  const row=normalizeRecord(record);
  return serial("record:"+row.id,async()=>{
   const db=await openDb(),tx=db.transaction("records","readwrite"),finished=complete(tx);
-  tx.objectStore("records").put(row);await finished;return row;
+  const store=tx.objectStore("records");
+  try{
+   const previous=await request(store.get(row.id));
+   if(previous&&(previous.owner!==row.owner||previous.type!==row.type))
+    throw new Error("Record ID already belongs to another owner or type");
+   store.put(row);
+   await finished;return row;
+  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
  });
 }
 async function getRecord(id){const db=await openDb();return (await request(db.transaction("records","readonly").objectStore("records").get(String(id))))||null;}
@@ -169,6 +176,74 @@ async function deleteRecord(id){
   });
   await finished;return Boolean(row);
  });
+}
+// P07: owner-checked, optimistic-concurrency memory changes. The typed row
+// and the legacy memory mirror are changed in ONE transaction so editing cannot
+// resurrect a stale answer after reload. Unknown legacy entries stay local.
+const MEMORY_MIRROR_KEY="robotito.memories.v2";
+function mirrorMemoryIndex(memories,id,record){
+ const direct=memories.findIndex(m=>m&&m.id===id);
+ if(direct!==-1)return direct;
+ const match=/^legacy:local:robotito\.memories\.v2:(\d+)$/.exec(id);
+ if(!match||record.owner!=="local")return -1;
+ const i=Number(match[1]),candidate=memories[i];
+ return candidate&&candidate.at===record.timestamp&&candidate.text===record.data?.text?i:-1;
+}
+async function changeOwnedMemory({id,owner,text,expectedVersion,remove=false}={}){
+ if(typeof id!=="string"||!id||typeof owner!=="string"||!owner.trim()||
+    !Number.isSafeInteger(expectedVersion)||expectedVersion<1)
+  throw new TypeError("Memory identity and expected version are required");
+ if(!remove&&(typeof text!=="string"||!text.trim()||text.trim().length>3000))
+  throw new TypeError("Memory text must be between 1 and 3000 characters");
+ return serial("record:"+id,async()=>{
+  const db=await openDb(),tx=db.transaction(["records","state","blobs"],"readwrite"),
+   finished=complete(tx),records=tx.objectStore("records"),state=tx.objectStore("state");
+  try{
+   const old=await request(records.get(id));
+   if(!old||old.owner!==owner||old.type!=="memories")
+    throw new Error("Memory not found for the current owner");
+   if((Number(old.version)||1)!==expectedVersion)
+    throw new Error("Memory changed in another tab; refresh before editing");
+   const stored=await request(state.get(MEMORY_MIRROR_KEY));
+   const memories=Array.isArray(stored?.value)?stored.value:null;
+   const index=memories?mirrorMemoryIndex(memories,id,old):-1;
+   const now=Date.now();
+   let updated=null,mirror=null;
+   if(remove){
+    if(old.blobId)tx.objectStore("blobs").delete(old.blobId);
+    records.delete(id);
+    // A deleted memory must not remain as a dangling relation.
+    await new Promise((resolve,reject)=>{
+     const cursor=records.index("byRelation").openCursor(IDBKeyRange.only(id));
+     cursor.onerror=()=>reject(cursor.error);
+     cursor.onsuccess=()=>{
+      const current=cursor.result;if(!current){resolve();return;}
+      current.update({...current.value,
+       relatedIds:(current.value.relatedIds||[]).filter(related=>related!==id)});
+      current.continue();
+     };
+    });
+   }else{
+    updated={...old,version:expectedVersion+1,updatedAt:now,
+     data:{...(old.data&&typeof old.data==="object"?old.data:{}),text:text.trim()}};
+    records.put(updated);
+   }
+   if(index!==-1){
+    mirror=memories.slice();
+    if(remove)mirror.splice(index,1);
+    else mirror[index]={...mirror[index],text:text.trim(),version:updated.version,id,owner};
+    state.put({...stored,value:mirror,updatedAt:now});
+   }
+   await finished;
+   return {record:updated,memories:mirror};
+  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+ });
+}
+async function updateOwnedMemory({id,owner,text,expectedVersion}){
+ return changeOwnedMemory({id,owner,text,expectedVersion});
+}
+async function deleteOwnedMemory({id,owner,expectedVersion}){
+ return changeOwnedMemory({id,owner,expectedVersion,remove:true});
 }
 async function clearRecordsByType(type,{owner}={}){
  if(!TYPES.has(type))throw new TypeError("Invalid record type");
@@ -381,6 +456,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,putBlob,putRecordWithBlob,getBlob,deleteBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,updateOwnedMemory,deleteOwnedMemory,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
