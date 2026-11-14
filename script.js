@@ -5450,6 +5450,33 @@ function inactivityTick(){
   }
 }
 
+async function deleteRegisteredPerson(name){
+  if(state.enrollmentActive){
+    toast(window.ROBOTITO_I18N?.t?.("p08DeleteDuringEnrollment",responseLanguage())
+      ||"Cancelá el registro primero.");
+    return;
+  }
+  const person=state.people.find(p=>p.name===name);
+  if(!person||!window.ROBOTITO_STORE?.deleteRegisteredProfile)return;
+  const msg=key=>window.ROBOTITO_I18N?.t?.(key,responseLanguage())||key;
+  if(!window.confirm(msg("p08DeleteProfileConfirm")+"\n"+person.name))return;
+  if(window.prompt(msg("p08DeleteProfileType"))!=="BORRAR")return;
+  try{
+    await window.ROBOTITO_STORE.deleteRegisteredProfile(name,{confirmation:"BORRAR"});
+    // Names used only in the old local greeting mirror must also be cleared.
+    delete state.greetingHistory[name];
+    save(KEYS.greetings,state.greetingHistory);
+    clearCaptureIdentity();
+    toast(msg("p08DeleteProfileDone"));
+    // Restart the camera matcher, in-memory class history and cached privacy
+    // context from the already committed, redacted IndexedDB contents.
+    window.location.reload();
+  }catch(error){
+    console.warn("Profile deletion refused",error?.name);
+    toast(msg("p08DeleteProfileFailed"));
+  }
+}
+
 function renderPeople(){
   const root=$("#peopleList");
   root.innerHTML="";
@@ -5466,6 +5493,14 @@ function renderPeople(){
       <div class="muted">${escapeHtml(p.birthday?uiText("Cumple: {date}",{date:formatBirthday(p.birthday)}):uiText("Sin cumpleaños cargado"))} · ${uiText((p.voicePrints||[]).length?"voz aprendida":"voz no registrada")}</div>
       <div class="muted">${uiText("cara: {faces} muestras · voz: {voices} perfiles",{faces:(p.descriptors||[]).length,voices:(p.voicePrints||[]).length})}${Number.isFinite(p.voiceQuality)?" · "+uiText("calidad {count}%",{count:Math.round(p.voiceQuality*100)}):""}</div>
       <div class="bond-detail">${bondDetail(p)}</div>`;
+    const actions=document.createElement("div");
+    actions.className="actions p08-profile-actions";
+    const remove=document.createElement("button");
+    remove.type="button";remove.className="ghost danger";
+    remove.textContent=window.ROBOTITO_I18N?.t?.("p08DeleteProfileLabel",responseLanguage())
+      ||"Eliminar perfil y biometría";
+    remove.addEventListener("click",()=>deleteRegisteredPerson(p.name));
+    actions.appendChild(remove);row.appendChild(actions);
     root.appendChild(row);
   });
 }
