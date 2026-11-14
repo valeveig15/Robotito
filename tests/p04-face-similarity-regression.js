@@ -4,7 +4,7 @@ const fs=require("node:fs"),path=require("node:path");
 const source=fs.readFileSync(path.join(__dirname,"..","script.js"),"utf8");
 function extract(start,end){const a=source.indexOf(start),b=source.indexOf(end,a);assert.ok(a>=0&&b>a,start);return source.slice(a,b);}
 const helper=extract("function competingFaceTooClose(","\nfunction recognize(det){");
-const distanceSource=extract("function descriptorDistance(","\nasync function captureFaceEnrollment(){");
+const distanceSource=extract("function descriptorDistance(","\nasync function captureFaceEnrollment(");
 let state={people:[]},checks=0;
 const check=(actual,expected,message)=>{assert.deepEqual(actual,expected,message);checks++;};
 const ambiguous=new Function("state",distanceSource+"\n"+helper+"\nreturn competingFaceTooClose;")(state);

@@ -1058,6 +1058,7 @@ function primeMobileSpeechFromGesture(){
 function clearCaptureIdentity(){
   state.currentPerson=null;state.currentVoicePerson=null;
   state.lastVoiceConfirmedAt=0;
+  window.ROBOTITO_VISITORS?.clearObservation?.();
   state.faceMatchHistory=[];state.lastFaceConfirmedAt=0;
   state.lastDetections=[];state.recentVoicePrints=[];state.recentAudioFeatures=[];
   state.visibleHands=0;state.visibleFingers=0;state.handNearMouth=false;
@@ -4375,7 +4376,7 @@ async function detectLoop(){
   clearTimeout(state.faceLoopTimer);
   const current=()=>state.started&&state.captureEpoch===epoch;
   const schedule=()=>{if(current())state.faceLoopTimer=setTimeout(detectLoop,700);};
-  const revoke=()=>{state.currentPerson=null;state.faceMatchHistory=[];
+  const revoke=()=>{if(typeof window!=="undefined")window.ROBOTITO_VISITORS?.clearObservation?.();state.currentPerson=null;state.faceMatchHistory=[];
     state.lastFaceConfirmedAt=0;state.lastDetections=[];resetEyes();};
   if(document.hidden||state.captureSuspended){schedule();return;}
   if(state.faceInferencePending&&state.faceInferencePending.epoch===epoch)return;
@@ -4406,6 +4407,16 @@ async function detectLoop(){
       uiSet($("#seenLabel"),"1 persona");
       followFace(dets[0].detection.box);
       recognize(dets[0]);
+      // The visitor vault is opt-in and locked by default. Never persist a
+      // face from this passive observation, and never treat a registered face
+      // as an anonymous visitor.
+      const face=dets[0];
+      const nearRegistered=(state.people||[]).some(person=>(person.descriptors||[])
+        .some(vector=>descriptorDistance(face.descriptor,vector)<.52));
+      if(typeof window!=="undefined")window.ROBOTITO_VISITORS?.observe?.(face,{
+        singleFace:true,now:Date.now(),
+        registered:!!state.currentPerson||nearRegistered
+      });
       detectEating(dets[0]);
     }else{
       uiSet($("#seenLabel"),dets.length?"{count} personas":"a nadie",{count:dets.length});
@@ -4413,6 +4424,7 @@ async function detectLoop(){
       // A previously confirmed face can last 2.5 s, but cannot be renewed by
       // an empty or frozen camera image.
       state.faceMatchHistory=[];
+      if(typeof window!=="undefined")window.ROBOTITO_VISITORS?.clearObservation?.();
       if(dets.length>1||Date.now()-state.lastFaceConfirmedAt>2500)revoke();
       else resetEyes();
     }
@@ -4817,13 +4829,13 @@ function descriptorDistance(a,b){
   for(let i=0;i<a.length;i++){const d=a[i]-b[i];sum+=d*d;}
   return Math.sqrt(sum);
 }
-async function captureFaceEnrollment(){
+async function captureFaceEnrollment({consentSelector="#personEnrollmentConsent",progress=setEnrollProgress}={}){
   const epoch=state.captureEpoch,revision=state.captureRevision;
   const consentRevision=state.enrollmentRevision;
   const current=()=>state.started&&!document.hidden&&!state.captureSuspended&&
     state.captureEpoch===epoch&&state.captureRevision===revision&&
     state.enrollmentRevision===consentRevision&&
-    $("#personEnrollmentConsent")?.checked===true;
+    $(consentSelector)?.checked===true;
   let lastFrame=null;
   const stages=[
     {
@@ -4847,7 +4859,7 @@ async function captureFaceEnrollment(){
   const samples=[];
   for(let stageIndex=0;stageIndex<stages.length;stageIndex++){
     const stage=stages[stageIndex];
-    setEnrollProgress(stageIndex*10,stage.msg);
+    progress(stageIndex*10,stage.msg);
     await waitMs(1050);
 
     let got=0;
@@ -4875,7 +4887,7 @@ async function captureFaceEnrollment(){
         const msg=dets.length>1
           ?enrollText("Necesito una sola cara en cámara.","I need exactly one face in the camera.","Preciso de apenas um rosto na câmera.")
           :enrollText("No veo la cara con suficiente claridad. Acercate un poco y buscá buena luz.","I can't see the face clearly enough. Move a little closer and use better light.","Não vejo o rosto com clareza suficiente. Chegue um pouco mais perto e procure boa luz.");
-        setEnrollProgress(stageIndex*10+(got/stage.count)*10,msg);
+        progress(stageIndex*10+(got/stage.count)*10,msg);
         await waitMs(420);
         continue;
       }
@@ -4890,7 +4902,7 @@ async function captureFaceEnrollment(){
       const box=det.detection.box;
       const largeEnough=box.width/vw>=.17 && box.height/vh>=.20;
       if(!largeEnough){
-        setEnrollProgress(stageIndex*10+(got/stage.count)*10,
+        progress(stageIndex*10+(got/stage.count)*10,
           enrollText("Acercate un poquito más a la cámara.","Move a little closer to the camera.","Chegue um pouquinho mais perto da câmera."));
         await waitMs(420);
         continue;
@@ -4902,20 +4914,20 @@ async function captureFaceEnrollment(){
       if(!tooCloseToLast||Date.now()+1200>deadline){
         samples.push(descriptor);
         got++;
-        setEnrollProgress(stageIndex*10+(got/stage.count)*10,stage.msg+"  "+got+"/"+stage.count);
+        progress(stageIndex*10+(got/stage.count)*10,stage.msg+"  "+got+"/"+stage.count);
       }
       await waitMs(360);
     }
 
     if(got<2){
-      setEnrollProgress(stageIndex*10,
+      progress(stageIndex*10,
         enrollText("No conseguí suficientes muestras buenas de esa posición. Probá otra vez con más luz.","I couldn't get enough good samples from that angle. Try again with better light.","Não consegui amostras boas suficientes desse ângulo. Tente novamente com mais luz."));
       return null;
     }
   }
 
   if(!current()||samples.length<9)return null;
-  setEnrollProgress(45,enrollText("Cara aprendida. Ahora voy con la voz.","Face learned. Now I'll learn the voice.","Rosto aprendido. Agora vou aprender a voz."));
+  progress(45,enrollText("Cara aprendida. Ahora voy con la voz.","Face learned. Now I'll learn the voice.","Rosto aprendido. Agora vou aprender a voz."));
   return samples;
 }
 function collectNewVoiceSamples(startAt,map){
@@ -5140,6 +5152,73 @@ function enrollmentVoiceConflict(prints,name){
   return false;
 }
 
+// P09 — separate consent from registered-person enrollment.
+// The passphrase is never stored or sent; the visitor's anonymous face
+// templates remain encrypted in IndexedDB and hidden from the people list.
+function visitorStatus(key,extra=""){
+ const el=$("#visitorStatus");if(!el)return;
+ const lang=responseLanguage();
+ el.textContent=(window.ROBOTITO_I18N?.t?.(key,lang)||key)+(extra?" "+extra:"");
+}
+async function unlockVisitorVault(){
+ const input=$("#visitorPassphrase");
+ const pass=input?.value||"";
+ if(input)input.value="";
+ try{
+  const result=await window.ROBOTITO_VISITORS.open(pass);
+  visitorStatus("p09VaultReady",String(result.count));
+ }catch(error){console.warn("P09 unlock failed",error?.name);visitorStatus("p09VaultFailed");}
+}
+async function enrollVisitor(){
+ const consent=$("#visitorConsent"),btn=$("#visitorSaveBtn");
+ if(consent?.checked!==true){visitorStatus("p09ConsentRequired");return;}
+ if(!state.started||document.hidden||state.captureSuspended||state.enrollmentActive){
+  visitorStatus("p09CameraNeeded");return;
+ }
+ const pass=$("#visitorPassphrase")?.value||"";
+ if($("#visitorPassphrase"))$("#visitorPassphrase").value="";
+ const epoch=state.captureEpoch,rev=state.enrollmentRevision;
+ state.enrollmentActive=true;
+ if(btn)btn.disabled=true;
+ try{
+  if(window.ROBOTITO_VISITORS.locked())await window.ROBOTITO_VISITORS.open(pass);
+  const samples=await captureFaceEnrollment({
+   consentSelector:"#visitorConsent",
+   progress:(pct,msg)=>{const label=$("#visitorStatus");if(label)label.textContent=msg;}
+  });
+  if(!samples||state.captureEpoch!==epoch||state.enrollmentRevision!==rev||
+     consent.checked!==true||!state.started||document.hidden||state.captureSuspended){
+   visitorStatus("p09CaptureCanceled");return;
+  }
+  await window.ROBOTITO_VISITORS.remember(samples,{consent:true,people:state.people});
+  visitorStatus("p09Saved");
+ }catch(error){
+  console.warn("P09 visitor enrollment",error?.name);
+  visitorStatus("p09CaptureRejected");
+ }finally{
+  state.enrollmentActive=false;
+  if(btn)btn.disabled=false;
+  if(consent)consent.checked=false;
+  state.enrollmentRevision=(state.enrollmentRevision||0)+1;
+ }
+}
+async function forgetVisitorVault(){
+ if(!window.confirm(window.ROBOTITO_I18N?.t?.("p09ForgetWarning",responseLanguage())||
+    "¿Borrar los visitantes anónimos guardados?"))return;
+ if(window.prompt(window.ROBOTITO_I18N?.t?.("p09ForgetType",responseLanguage())||
+    "Escribí BORRAR VISITAS")!=="BORRAR VISITAS")return;
+ try{
+  await window.ROBOTITO_VISITORS.forgetAll({confirmation:"BORRAR VISITAS"});
+  visitorStatus("p09Forgotten");
+ }catch(error){console.warn("P09 vault erasure",error?.name);visitorStatus("p09VaultFailed");}
+}
+function recordVisitorInteraction(kind){
+ if(!$("#visitorAttributeActions")?.checked||!state.started||document.hidden||
+    state.captureSuspended||state.lastDetections?.length!==1)return;
+ void window.ROBOTITO_VISITORS?.interaction?.(kind,{
+   now:Date.now(),singleFace:true
+ }).catch(error=>console.warn("P09 interaction not saved",error?.name));
+}
 async function enrollPerson(){
   const name=$("#personName").value.trim();
   const birthdayRaw=$("#personBirthday").value.trim();
@@ -5243,6 +5322,27 @@ async function enrollPerson(){
     buildMatcher();
     renderPeople();
     state.faceMatchHistory=[];
+    // Voluntary visitor history association needs a second, explicit choice
+    // and a fresh unambiguous match to the newly consented enrollment.
+    if($("#visitorLinkConsent")?.checked){
+      try{
+        await window.ROBOTITO_STORE?.persistStateKey?.(KEYS.people,state.people);
+        const linked=await window.ROBOTITO_VISITORS?.offerLink?.(name,samples,{
+          review:summary=>{
+            const language=responseLanguage();
+            const promptText=window.ROBOTITO_I18N?.t?.("p09LinkReview",language)||
+              "¿Vincular la relación anónima consentida a este perfil?";
+            const approved=window.confirm(promptText+"\n"+
+              "cariño "+Math.round(summary.bond.affection)+
+              " · confianza "+Math.round(summary.bond.trust));
+            return approved&&window.prompt(window.ROBOTITO_I18N?.t?.("p09LinkType",language)
+              ||"Escribí VINCULAR") ==="VINCULAR";
+          }
+        });
+        if(linked?.people){state.people=linked.people;renderPeople();visitorStatus("p09LinkDone");}
+      }catch(error){console.warn("P09 linking refused",error?.name);visitorStatus("p09LinkFailed");}
+    }
+    if($("#visitorLinkConsent"))$("#visitorLinkConsent").checked=false;
 
     if(voicePrints.length){
       const q=voiceCapture.quality>=.84
@@ -5334,6 +5434,7 @@ function feedRobot(shared=false){
   state.hunger=0;
   changeMoodScore(shared?2:4);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.35:.60,trust:shared?.25:.45,irritation:-.18});
+  recordVisitorInteraction("feed");
   const line=shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed");
   setMood("happy",line);
   speciesAct("feed",1600);
@@ -5345,6 +5446,7 @@ function feedRobot(shared=false){
 function petRobot(){
   changeMoodScore(5);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.75,trust:.50,fear:-.18,irritation:-.30});
+  recordVisitorInteraction("pet");
   const line=speciesLine("pet");
   setMood("happy",line);
   speciesAct("pet",1500);
@@ -5362,6 +5464,7 @@ function temporaryRobotClass(cls,ms=1400){
 function highFiveRobot(){
   changeMoodScore(3);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.35,trust:.30,irritation:-.10});
+  recordVisitorInteraction("highfive");
   setMood("excited","Robotito celebró a su manera.");
   temporaryRobotClass("highfive",1200);
   speciesAct("highfive",1300);
@@ -5372,6 +5475,7 @@ function playRobot(){
   changeMoodScore(4);
   if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
+  recordVisitorInteraction("play");
   const line=speciesLine("play");
   setMood("excited",line);
   temporaryRobotClass("playing",2300);
@@ -5382,6 +5486,7 @@ function playRobot(){
 
 function scareRobot(){
   adjustBond(state.currentVoicePerson||state.currentPerson,{fear:2.40,trust:-.45,irritation:.40});
+  recordVisitorInteraction("scare");
   const line=speciesLine("surprise");
   setMood("scared",line);
   speciesAct("surprise",1000);
@@ -5392,6 +5497,7 @@ function scareRobot(){
 function pokeRobot(){
   changeMoodScore(-2);
   adjustBond(state.currentVoicePerson||state.currentPerson,{irritation:1.15,trust:-.35,affection:-.20});
+  recordVisitorInteraction("poke");
   const line=speciesLine("poke");
   setMood("annoyed",line);
   speciesAct("poke",1200);
@@ -6034,6 +6140,11 @@ function bindUI(){
   $("#personEnrollmentConsent")?.addEventListener("change",()=>{
     state.enrollmentRevision=(state.enrollmentRevision||0)+1;
   });
+  $("#visitorConsent")?.addEventListener("change",()=>{state.enrollmentRevision=(state.enrollmentRevision||0)+1;});
+  $("#visitorUnlockBtn")?.addEventListener("click",unlockVisitorVault);
+  $("#visitorSaveBtn")?.addEventListener("click",enrollVisitor);
+  $("#visitorForgetBtn")?.addEventListener("click",forgetVisitorVault);
+
   $("#personBirthday")?.addEventListener("input",e=>{
     const digits=e.target.value.replace(/\D/g,"").slice(0,8);
     e.target.value=digits.length<=2?digits:digits.length<=4?digits.slice(0,2)+"/"+digits.slice(2):digits.slice(0,2)+"/"+digits.slice(2,4)+"/"+digits.slice(4);

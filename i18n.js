@@ -1268,6 +1268,201 @@ Object.assign(LABELS,{
     "de": "Gesicht erkannt: Identität noch nicht unabhängig durch Stimme bestätigt."
   }
 });
+// P09: private visitor opt-in, encrypted storage and revocation.
+Object.assign(LABELS,{
+  "p09Section": {
+    "es": "Privacidad de visitantes sin registrar",
+    "en": "Privacy for unregistered visitors",
+    "pt": "Privacidade de visitantes não cadastrados",
+    "fr": "Confidentialité des visiteurs non inscrits",
+    "it": "Privacy dei visitatori non registrati",
+    "de": "Datenschutz für nicht registrierte Besucher"
+  },
+  "p09Privacy": {
+    "es": "Sin permiso, solo hay seguimiento temporal en esta sesión. Con consentimiento y contraseña, se cifra una referencia facial reducida y un vínculo anónimo; no se guardan fotos, nombres ni voces ni se envían datos. Si olvidás la contraseña no se podrá recuperar.",
+    "en": "Without consent, tracking lasts only this session. With explicit consent and a password, reduced facial references and an anonymous bond are encrypted locally; no photos, names or audio are saved or sent. A lost password cannot be recovered.",
+    "pt": "Sem consentimento, o acompanhamento dura apenas esta sessão. Com autorização e senha, referências faciais reduzidas e vínculo anônimo são criptografados localmente; sem guardar ou enviar fotos, nomes ou voz. A senha perdida não pode ser recuperada.",
+    "fr": "Sans accord, le suivi ne dure que cette session. Avec consentement et mot de passe, des références faciales réduites et un lien anonyme sont chiffrés localement. Aucune photo, voix ou nom n'est conservé ni envoyé. Sans mot de passe, pas de récupération.",
+    "it": "Senza consenso, il tracciamento dura solo la sessione. Con consenso e password, riferimenti facciali ridotti e un legame anonimo sono cifrati localmente. Nessuna foto, nome o voce viene salvata o inviata. La password persa non è recuperabile.",
+    "de": "Ohne Zustimmung bleibt die Erkennung auf diese Sitzung beschränkt. Mit Einwilligung und Passwort werden reduzierte Gesichtsmerkmale und eine anonyme Beziehung lokal verschlüsselt. Keine Fotos, Namen oder Stimmen werden gespeichert oder übertragen. Ein verlorenes Passwort ist nicht wiederherstellbar."
+  },
+  "p09Passphrase": {
+    "es": "Contraseña privada (12 caracteres o más; no se guarda)",
+    "en": "Private passphrase (12+ characters; not saved)",
+    "pt": "Senha privada (mínimo 12 caracteres; não salva)",
+    "fr": "Mot de passe privé (12 caractères minimum; non enregistré)",
+    "it": "Password privata (almeno 12 caratteri; non salvata)",
+    "de": "Privates Passwort (mindestens 12 Zeichen; nicht gespeichert)"
+  },
+  "p09Consent": {
+    "es": "La persona sola frente a la cámara consiente expresamente almacenar una referencia facial cifrada y un vínculo anónimo revocable en este navegador.",
+    "en": "The sole person in camera explicitly agrees to storing an encrypted facial reference and revocable anonymous bond on this browser.",
+    "pt": "A única pessoa diante da câmera aceita armazenar referência facial criptografada e vínculo anônimo revogável neste navegador.",
+    "fr": "La seule personne devant la caméra accepte explicitement le stockage d'une référence faciale chiffrée et d'un lien anonyme révocable.",
+    "it": "L'unica persona davanti alla fotocamera consente esplicitamente a salvare un riferimento facciale cifrato e un legame anonimo revocabile.",
+    "de": "Die einzige Person vor der Kamera stimmt ausdrücklich einem verschlüsselten Gesichtsmerkmal und einer widerrufbaren anonymen Beziehung zu."
+  },
+  "p09ActionsConsent": {
+    "es": "Atribuir interacciones al visitante visible solo si hay una cara clara y coincidencia confirmada.",
+    "en": "Attribute interactions to the visible visitor only with a single clear, confirmed face.",
+    "pt": "Atribuir interações ao visitante visível apenas com um rosto claro e confirmado.",
+    "fr": "Attribuer les interactions au visiteur visible seulement si un visage est clairement confirmé.",
+    "it": "Attribuire le interazioni al visitatore visibile solo con un volto chiaramente confermato.",
+    "de": "Interaktionen nur bei einem einzelnen, klar bestätigten Gesicht dem sichtbaren Besucher zuordnen."
+  },
+  "p09LinkConsent": {
+    "es": "Opcional: revisar y vincular un historial anónimo consentido si coincide de forma inequívoca. Nunca automático.",
+    "en": "Optional: review and link a consented anonymous history only if it clearly matches. Never automatic.",
+    "pt": "Opcional: revisar e vincular histórico anônimo consentido só com correspondência inequívoca. Nunca automático.",
+    "fr": "Facultatif : examiner et associer un historique anonyme consenti si la correspondance est sûre. Jamais automatique.",
+    "it": "Facoltativo: rivedere e collegare una cronologia anonima autorizzata con corrispondenza certa. Mai automaticamente.",
+    "de": "Optional: eine freiwillige anonyme Historie bei eindeutiger Übereinstimmung prüfen und verknüpfen. Nie automatisch."
+  },
+  "p09Unlock": {
+    "es": "Desbloquear visitas consentidas",
+    "en": "Unlock consented visits",
+    "pt": "Desbloquear visitas consentidas",
+    "fr": "Déverrouiller les visites consenties",
+    "it": "Sblocca le visite autorizzate",
+    "de": "Einwilligte Besuche entsperren"
+  },
+  "p09Remember": {
+    "es": "Guardar visitante con consentimiento",
+    "en": "Save visitor with consent",
+    "pt": "Salvar visitante com consentimento",
+    "fr": "Enregistrer le visiteur avec son accord",
+    "it": "Salva visitatore con consenso",
+    "de": "Besucher mit Einwilligung speichern"
+  },
+  "p09Forget": {
+    "es": "Borrar todas las visitas anónimas",
+    "en": "Delete all anonymous visits",
+    "pt": "Excluir todas as visitas anônimas",
+    "fr": "Effacer toutes les visites anonymes",
+    "it": "Elimina tutte le visite anonime",
+    "de": "Alle anonymen Besuche löschen"
+  },
+  "p09DefaultStatus": {
+    "es": "Memoria de visitantes bloqueada. No se guarda ningún rostro desconocido por defecto.",
+    "en": "Visitor memory locked. No unknown face is saved by default.",
+    "pt": "Memória de visitantes bloqueada. Nenhum rosto desconhecido é salvo por padrão.",
+    "fr": "Mémoire des visiteurs verrouillée. Aucun visage inconnu n'est enregistré par défaut.",
+    "it": "Memoria visitatori bloccata. Nessun volto sconosciuto viene salvato per impostazione predefinita.",
+    "de": "Besucherspeicher gesperrt. Unbekannte Gesichter werden standardmäßig nicht gespeichert."
+  },
+  "p09VaultReady": {
+    "es": "Memoria privada desbloqueada. Visitas consentidas:",
+    "en": "Private memory unlocked. Consented visits:",
+    "pt": "Memória privada desbloqueada. Visitas consentidas:",
+    "fr": "Mémoire privée déverrouillée. Visites consenties :",
+    "it": "Memoria privata sbloccata. Visite autorizzate:",
+    "de": "Privatspeicher entsperrt. Einwilligte Besuche:"
+  },
+  "p09VaultFailed": {
+    "es": "No pude abrir o borrar la memoria cifrada. Revisá la contraseña o el almacenamiento.",
+    "en": "Could not open or delete the encrypted memory. Check passphrase or storage.",
+    "pt": "Não foi possível abrir ou excluir a memória criptografada. Verifique a senha e o armazenamento.",
+    "fr": "Impossible d'ouvrir ou de supprimer la mémoire chiffrée. Vérifie le mot de passe ou le stockage.",
+    "it": "Impossibile aprire o cancellare la memoria cifrata. Verifica password e archivio.",
+    "de": "Verschlüsselter Speicher konnte nicht geöffnet oder gelöscht werden. Passwort oder Speicher prüfen."
+  },
+  "p09ConsentRequired": {
+    "es": "Necesito el consentimiento explícito de esa persona antes de guardar su rostro.",
+    "en": "I need the person's explicit consent before saving their face.",
+    "pt": "Preciso do consentimento explícito dessa pessoa antes de salvar seu rosto.",
+    "fr": "Il faut le consentement explicite de cette personne avant d'enregistrer son visage.",
+    "it": "Serve il consenso esplicito della persona prima di salvare il volto.",
+    "de": "Ich benötige die ausdrückliche Einwilligung der Person, bevor ihr Gesicht gespeichert wird."
+  },
+  "p09CameraNeeded": {
+    "es": "Activá cámara y micrófono con una sola persona visible y sin otro registro activo.",
+    "en": "Enable camera and microphone with only one person visible and no other enrollment active.",
+    "pt": "Ative câmera e microfone com apenas uma pessoa visível e sem outro cadastro ativo.",
+    "fr": "Active la caméra et le microphone avec une seule personne visible et aucune autre inscription active.",
+    "it": "Attiva fotocamera e microfono con una sola persona visibile e nessuna altra registrazione attiva.",
+    "de": "Kamera und Mikrofon mit nur einer sichtbaren Person und ohne andere Registrierung aktivieren."
+  },
+  "p09CaptureCanceled": {
+    "es": "Registro de visitante cancelado; no se guardó la nueva muestra.",
+    "en": "Visitor capture canceled; the new sample was not saved.",
+    "pt": "Cadastro de visitante cancelado; nova amostra não salva.",
+    "fr": "Enregistrement du visiteur annulé ; nouvel échantillon non enregistré.",
+    "it": "Registrazione visitatore annullata; nuovo campione non salvato.",
+    "de": "Besucherregistrierung abgebrochen; neue Probe nicht gespeichert."
+  },
+  "p09CaptureRejected": {
+    "es": "No pude guardar el visitante con seguridad: podría haber otra persona similar, faltar calidad o haber cambiado la memoria.",
+    "en": "Cannot safely save this visitor: someone may look similar, samples may be insufficient, or memory may have changed.",
+    "pt": "Não foi possível salvar com segurança: possível pessoa parecida, amostras insuficientes ou memória alterada.",
+    "fr": "Enregistrement non sécurisé : visage ressemblant, échantillons insuffisants ou mémoire modifiée.",
+    "it": "Impossibile salvare in sicurezza: volto simile, campioni insufficienti o memoria cambiata.",
+    "de": "Besucher konnte nicht sicher gespeichert werden: Ähnlichkeit, unzureichende Proben oder veränderter Speicher."
+  },
+  "p09Saved": {
+    "es": "Visitante guardado cifrado y sin nombre. Podés revocar el consentimiento borrando las visitas anónimas.",
+    "en": "Visitor encrypted and saved without a name. You can revoke consent by deleting anonymous visits.",
+    "pt": "Visitante salvo criptografado e sem nome. Você pode revogar o consentimento excluindo visitas anônimas.",
+    "fr": "Visiteur chiffré et enregistré sans nom. L'accord peut être retiré en supprimant les visites anonymes.",
+    "it": "Visitatore salvato cifrato e senza nome. Il consenso si revoca eliminando le visite anonime.",
+    "de": "Besucher verschlüsselt und ohne Namen gespeichert. Einwilligung durch Löschen anonymer Besuche widerrufbar."
+  },
+  "p09ForgetWarning": {
+    "es": "¿Borrar todas las visitas anónimas cifradas en este dispositivo? No podrás deshacerlo ni recuperar su relación.",
+    "en": "Delete all encrypted anonymous visits on this device? This cannot be undone and their bonds cannot be recovered.",
+    "pt": "Excluir todas as visitas anônimas criptografadas neste dispositivo? Não será possível desfazer.",
+    "fr": "Effacer toutes les visites anonymes chiffrées sur cet appareil ? Ceci est irréversible.",
+    "it": "Eliminare tutte le visite anonime cifrate su questo dispositivo? Non si può annullare.",
+    "de": "Alle verschlüsselten anonymen Besuche auf diesem Gerät löschen? Kann nicht rückgängig gemacht werden."
+  },
+  "p09ForgetType": {
+    "es": "Escribí BORRAR VISITAS para confirmar la eliminación.",
+    "en": "Type BORRAR VISITAS to confirm deletion.",
+    "pt": "Digite BORRAR VISITAS para confirmar.",
+    "fr": "Saisis BORRAR VISITAS pour confirmer.",
+    "it": "Digita BORRAR VISITAS per confermare.",
+    "de": "BORRAR VISITAS zur Bestätigung eingeben."
+  },
+  "p09Forgotten": {
+    "es": "Visitas anónimas eliminadas del almacenamiento local; no se pueden restaurar desde el punto de deshacer.",
+    "en": "Anonymous visits deleted from local storage; the undo checkpoint cannot restore them.",
+    "pt": "Visitas anônimas excluídas do armazenamento local; o ponto de desfazer não as restaura.",
+    "fr": "Visites anonymes effacées du stockage local ; le point d'annulation ne peut pas les restaurer.",
+    "it": "Visite anonime eliminate localmente; il punto di annullamento non può ripristinarle.",
+    "de": "Anonyme Besuche lokal gelöscht; der Wiederherstellungspunkt kann sie nicht zurückbringen."
+  },
+  "p09LinkReview": {
+    "es": "¿Querés vincular esta relación anónima a la persona recién registrada? Revisá los indicadores. No se atribuyen conversaciones anónimas.",
+    "en": "Link this anonymous bond to the newly registered person? Review the indicators. Anonymous conversations will not be claimed.",
+    "pt": "Vincular este vínculo anônimo à pessoa recém-cadastrada? Revise os indicadores. Conversas anônimas não serão atribuídas.",
+    "fr": "Associer ce lien anonyme à la personne inscrite ? Examine les indicateurs. Les conversations anonymes ne seront pas attribuées.",
+    "it": "Collegare questo legame anonimo alla persona registrata? Controlla gli indicatori. Le conversazioni anonime non saranno attribuite.",
+    "de": "Diese anonyme Beziehung mit der neuen Person verknüpfen? Indikatoren prüfen. Anonyme Gespräche werden nicht zugeordnet."
+  },
+  "p09LinkType": {
+    "es": "Escribí VINCULAR exactamente para confirmar la asociación.",
+    "en": "Type VINCULAR exactly to confirm the link.",
+    "pt": "Digite VINCULAR para confirmar a associação.",
+    "fr": "Saisis VINCULAR exactement pour confirmer.",
+    "it": "Digita VINCULAR per confermare.",
+    "de": "Zur Bestätigung VINCULAR eingeben."
+  },
+  "p09LinkDone": {
+    "es": "Relación anónima vinculada al perfil después de tu confirmación.",
+    "en": "Anonymous bond linked to the profile after explicit confirmation.",
+    "pt": "Vínculo anônimo associado ao perfil após confirmação.",
+    "fr": "Lien anonyme associé au profil après confirmation.",
+    "it": "Legame anonimo collegato al profilo dopo la conferma.",
+    "de": "Anonyme Beziehung nach ausdrücklicher Bestätigung verknüpft."
+  },
+  "p09LinkFailed": {
+    "es": "No pude confirmar la vinculación; conservé los datos separados.",
+    "en": "Could not confirm the link; the histories remain separate.",
+    "pt": "Não foi possível confirmar a associação; os históricos continuam separados.",
+    "fr": "Association non confirmée ; les historiques restent séparés.",
+    "it": "Collegamento non confermato; le cronologie restano separate.",
+    "de": "Verknüpfung nicht bestätigt; die Verläufe bleiben getrennt."
+  }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
