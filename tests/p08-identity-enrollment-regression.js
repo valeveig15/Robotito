@@ -8,7 +8,7 @@ function section(from,to){
  const a=src.indexOf(from),b=src.indexOf(to,a+from.length);
  assert.ok(a>=0&&b>a,"Missing production function "+from);return src.slice(a,b);
 }
-const distSource=section("function descriptorDistance(","\nasync function captureFaceEnrollment(){");
+const distSource=section("function descriptorDistance(","\nasync function captureFaceEnrollment(");
 const cosineSource=section("function cosineSimilarity(","\nfunction recentVoicePrint(");
 const checkSource=section("function enrollmentIdentityCheck(","\nasync function enrollPerson(){");
 const voiceSource=section("function recognizeVoicePerson(","\nfunction ");

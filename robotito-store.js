@@ -372,6 +372,81 @@ async function deleteRegisteredProfile(name,{confirmation}={}){
    blobsDeleted:deletedBlobs.size};
  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
 }
+// P09 — transactional, revision-checked updates to the encrypted visitor vault.
+// No raw face descriptors or names are stored at this key, and no visitor is
+// automatically associated with a registered person.
+const VISITOR_VAULT_KEY="robotito.visitors.v1";
+function checkVisitorEnvelope(next,expectedRevision){
+ if(!next||next.format!=="robotito-p09-encrypted-vault"||next.schema!==1||
+  !Number.isSafeInteger(next.revision)||next.revision!==expectedRevision+1||
+  next.cipher!=="AES-256-GCM"||next.kdf!=="PBKDF2-SHA256"||
+  next.iterations!==310000||typeof next.ciphertext!=="string"||
+  next.ciphertext.length>Math.ceil(262160/3)*4||
+  typeof next.salt!=="string"||typeof next.iv!=="string")
+  throw new TypeError("Invalid private visitor envelope");
+}
+async function updateVisitorEnvelope(envelope,{expectedRevision}={}){
+ if(!Number.isSafeInteger(expectedRevision)||expectedRevision<0)
+  throw new TypeError("Missing expected visitor vault revision");
+ checkVisitorEnvelope(envelope,expectedRevision);
+ const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+  state=tx.objectStore("state");
+ try{
+  const prior=await request(state.get(VISITOR_VAULT_KEY));
+  if((prior?.value?.revision||0)!==expectedRevision)
+   throw new Error("Visitor vault changed in another tab; lock and reopen it");
+  state.put({key:VISITOR_VAULT_KEY,value:envelope,updatedAt:Date.now()});
+  await finished;return true;
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
+async function deleteVisitorVault({confirmation}={}){
+ if(confirmation!=="BORRAR VISITAS")throw new Error("Explicit visitor deletion required");
+ const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+  state=tx.objectStore("state");
+ state.delete(VISITOR_VAULT_KEY);
+ // Undo must never resurrect biometrics the visitor chose to delete.
+ state.delete(RESTORE_UNDO_KEY);
+ await finished;return true;
+}
+async function linkVisitorProfile({name,bond,expectedRevision,envelope,confirmation}={}){
+ if(confirmation!=="VINCULAR"||typeof name!=="string"||!name.trim()||
+   !Number.isSafeInteger(expectedRevision)||expectedRevision<1||
+   !bond||["affection","trust","fear","irritation"].some(k=>
+    !Number.isFinite(bond[k])||bond[k]<0||bond[k]>100))
+  throw new TypeError("Verified explicit association required");
+ checkVisitorEnvelope(envelope,expectedRevision);
+ const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+  state=tx.objectStore("state");
+ try{
+  const [oldVault,oldPeople]=await Promise.all([
+   request(state.get(VISITOR_VAULT_KEY)),request(state.get("robotito.people.v2"))]);
+  if(oldVault?.value?.revision!==expectedRevision)
+   throw new Error("Visitor history changed during association");
+  if(!Array.isArray(oldPeople?.value))
+   throw new Error("People were not durably saved");
+  const match=oldPeople.value.filter(p=>
+    String(p?.name||"").trim().toLocaleLowerCase()===name.trim().toLocaleLowerCase());
+  if(match.length!==1)throw new Error("Registered person not uniquely found");
+  const old=match[0];
+  const b=old.bond&&["affection","trust","fear","irritation"].every(k=>
+    Number.isFinite(old.bond[k]))?old.bond:{
+     affection:50,trust:50,fear:8,irritation:8};
+  // Never overwrite a registered relationship using an unverified face alone.
+  // Only the latest explicitly reviewed encrypted visitor profile can add
+  // cautious influence to each dimension, bounded to avoid abrupt jumps.
+  const merged={...b};
+  for(const k of ["affection","trust","fear","irritation"])
+   merged[k]=Math.max(0,Math.min(100,b[k]+Math.max(-12,Math.min(12,(bond[k]-b[k])*.30))));
+  merged.updatedAt=Date.now();
+  const people=oldPeople.value.map(p=>p===old?{...p,bond:merged,
+   relationship:Math.round((merged.affection+merged.trust+(100-merged.fear)+(100-merged.irritation))/4),
+   visitorBondLinkedAt:Date.now()}:p);
+  state.put({...oldPeople,value:people,updatedAt:Date.now()});
+  state.put({key:VISITOR_VAULT_KEY,value:envelope,updatedAt:Date.now()});
+  state.delete(RESTORE_UNDO_KEY);
+  await finished;return people;
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
 // P11: single-transaction compare-and-swap for the active profile's
 // foreground rules. No executable JavaScript or external actions stored here.
 async function updatePersonalRules(owner,{expectedRevision,value}={}){
@@ -714,6 +789,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,deleteRegisteredProfile,updatePersonalRules,putBlob,putRecordWithBlob,getBlob,deleteBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,deleteRegisteredProfile,updatePersonalRules,updateVisitorEnvelope,deleteVisitorVault,linkVisitorProfile,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,getRestoreUndoInfo,undoLastRestore,discardRestoreUndo,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);

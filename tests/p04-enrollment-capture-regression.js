@@ -2,7 +2,7 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const source=fs.readFileSync(path.join(__dirname,"..","script.js"),"utf8");
 function extract(start,end){const a=source.indexOf(start),b=source.indexOf(end,a);assert.ok(a>=0&&b>a);return source.slice(a,b);}
-const faceSource=extract("async function captureFaceEnrollment(){","\nfunction collectNewVoiceSamples(");
+const faceSource=extract("async function captureFaceEnrollment(","\nfunction collectNewVoiceSamples(");
 const voiceSource=extract("async function captureEnrollmentVoice(){","\n// Fail closed on a profile collision.");
 let checks=0;
 const eq=(a,b,why)=>{assert.deepEqual(a,b,why);checks++;};
