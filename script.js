@@ -5107,6 +5107,30 @@ function enrollmentIdentityCheck(samples,name){
   return {ok:true,existing:existing||null};
 }
 
+
+function enrollmentVoiceConflict(prints,name){
+  if(!Array.isArray(prints)||prints.length<3)return false;
+  const target=String(name||"").trim().toLocaleLowerCase();
+  const normalized=prints.filter(v=>Array.isArray(v)&&v.length>1&&
+    v.every(Number.isFinite)&&Math.hypot(...v)>.01);
+  if(normalized.length<3)return true;
+  const average=averageVoiceVectors(normalized);
+  if(!average)return true;
+  for(const person of state.people){
+    if(String(person.name||"").trim().toLocaleLowerCase()===target)continue;
+    const stored=(person.voicePrints||[]).filter(v=>v?.length===average.length);
+    if(stored.length<3)continue;
+    const similarities=normalized.map(print=>Math.max(...stored.map(v=>
+      cosineSimilarity(print,v)))).filter(Number.isFinite);
+    // Consistent similarity to another enrolled speaker is ambiguous,
+    // even if the camera seems to match a different name.
+    if(similarities.filter(s=>s>=.86).length>=2 &&
+       similarities.reduce((a,b)=>a+b,0)/similarities.length>=.84)
+      return true;
+  }
+  return false;
+}
+
 async function enrollPerson(){
   const name=$("#personName").value.trim();
   const birthdayRaw=$("#personBirthday").value.trim();
@@ -5159,6 +5183,11 @@ async function enrollPerson(){
     const voiceCapture=await captureEnrollmentVoice();
     if(!current()||voiceCapture?.error==="canceled")return;
     const voicePrints=voiceCapture?.prints||[];
+    if(enrollmentVoiceConflict(voicePrints,name)){
+      setEnrollProgress(0,window.ROBOTITO_I18N?.t?.("p08VoiceCollision",responseLanguage())
+        ||"Esta voz se parece a la de otra persona registrada. No guardé ninguna muestra.");
+      return;
+    }
     const existing=identity.existing;
     // When refreshing a known person's voice, verify the newly collected
     // speech against their prior samples before attaching it to their identity.
@@ -5176,6 +5205,7 @@ async function enrollPerson(){
       existing.descriptors=[...(existing.descriptors||[]),...samples].slice(-36);
       existing.birthday=birthday||existing.birthday;
       existing.role=role;
+      existing.biometricConsent={granted:true,recordedAt:Date.now(),scope:voicePrints.length?"face-and-voice":"face"};
       existing.faceEnrolledAt=Date.now();
       existing.faceSampleCount=existing.descriptors.length;
       if(voicePrints.length){
@@ -5190,6 +5220,7 @@ async function enrollPerson(){
         voicePrints,
         voiceQuality:voicePrints.length?voiceCapture.quality:null,
         faceSampleCount:samples.length,
+        biometricConsent:{granted:true,recordedAt:Date.now(),scope:voicePrints.length?"face-and-voice":"face"},
         faceEnrolledAt:Date.now(),
         voiceEnrolledAt:voicePrints.length?Date.now():null,
         relationship:50,
