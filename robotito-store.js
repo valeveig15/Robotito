@@ -269,6 +269,39 @@ async function updateOwnedMemory({id,owner,text,expectedVersion}){
 async function deleteOwnedMemory({id,owner,expectedVersion}){
  return changeOwnedMemory({id,owner,expectedVersion,remove:true});
 }
+// Clear only the selected owner's memories, in a single write transaction.
+// Never erase a different person's record because one profile requested cleanup.
+async function clearOwnedMemories(owner){
+ if(typeof owner!=="string"||!owner.trim())throw new TypeError("Memory owner required");
+ const db=await openDb(),tx=db.transaction(["records","blobs","state"],"readwrite"),
+  finished=complete(tx),records=tx.objectStore("records"),state=tx.objectStore("state");
+ try{
+  const rows=await request(records.index("byTypeOwner").getAll(IDBKeyRange.only(["memories",owner])));
+  const ids=new Set(rows.map(row=>row.id));
+  for(const row of rows){
+   if(row.blobId)tx.objectStore("blobs").delete(row.blobId);
+   records.delete(row.id);
+  }
+  // Remove any relations to deleted memories without touching other content.
+  if(ids.size)await new Promise((resolve,reject)=>{
+   const cursor=records.openCursor();
+   cursor.onerror=()=>reject(cursor.error);
+   cursor.onsuccess=()=>{
+    const current=cursor.result;if(!current){resolve();return;}
+    const prev=current.value,related=prev.relatedIds||[];
+    if(related.some(id=>ids.has(id)))
+     current.update({...prev,relatedIds:related.filter(id=>!ids.has(id))});
+    current.continue();
+   };
+  });
+  const mirror=await request(state.get(MEMORY_MIRROR_KEY));
+  const memories=Array.isArray(mirror?.value)?
+   mirror.value.filter(m=>m&&(m.owner||"local")!==owner):null;
+  if(memories)state.put({...mirror,value:memories,updatedAt:Date.now()});
+  await finished;
+  return {deleted:rows.length,memories};
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
 async function clearRecordsByType(type,{owner}={}){
  if(!TYPES.has(type))throw new TypeError("Invalid record type");
  let total=0;
@@ -480,6 +513,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,putBlob,putRecordWithBlob,getBlob,deleteBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
