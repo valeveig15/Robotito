@@ -37,6 +37,8 @@ assert.throws(()=>ensureManifest(bad),/duplicate/i);checks++;
 bad.trials[1].id="cal2";
 bad.trials=bad.trials.filter(t=>t.split==="calibration");
 assert.throws(()=>ensureManifest(bad),/separate/i);checks++;
+const leaked={...fixture,faces:[{embedding:[.1,.2]}]};
+assert.throws(()=>ensureManifest(leaked),/Invalid P08 local evaluation manifest/i);checks++;
 assert.equal(JSON.stringify(r).includes("p01"),false);checks++;
 assert.equal(JSON.stringify(r).includes("p02"),false);checks++;
 console.log("P08 private metadata evaluator:",checks,"checks; no biometric export or false physical validation");
