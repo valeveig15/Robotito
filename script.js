@@ -4130,7 +4130,7 @@ function selectRobotitoContext(owner){
 // P11 — a rule never executes arbitrary code and never owns a global
 // background timer. State/permissions are checked on every real event.
 const p11Engines=new Map();
-let p11VisibleOwner=null;
+let p11VisibleOwner=null,p11ExecutingOwnEffect=false;
 function p11Owner(){return activeMemoryOwner();}
 function p11Text(key){
  return window.ROBOTITO_I18N?.t?.(key,responseLanguage())||key;
@@ -4209,7 +4209,10 @@ async function p11Engine(owner=p11Owner()){
    render:rows=>{if(p11Owner()===owner)p11Render(rows);},
    say:async text=>sayInLanguage(text,responseLanguage()),
    mood:async mood=>setMood(mood),
-   highfive:async()=>highFiveRobot(),
+   highfive:async()=>{
+    p11ExecutingOwnEffect=true;
+    try{highFiveRobot();}finally{p11ExecutingOwnEffect=false;}
+   },
    error:err=>console.warn("P11 rule refused",err?.name)
   }
  });
@@ -4226,6 +4229,7 @@ function p11Environment(){
   dayNightMode:state.dayNightMode};
 }
 async function p11Emit(event){
+ if(p11ExecutingOwnEffect)return;
  try{
   const engine=await p11Engine();
   if(!engine)return;
