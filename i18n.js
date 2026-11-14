@@ -1201,6 +1201,73 @@ Object.assign(LABELS,{
 });
 // P08: identity consent, near-relative conflicts and refused biometric updates.
 Object.assign(LABELS,{"p08ConsentLabel":{"es":"La persona que aparece frente a la cámara acepta explícitamente registrar su rostro y voz en este dispositivo. Puede solicitar borrar sus datos.","en":"The person in front of the camera explicitly agrees to enroll their face and voice on this device. They can request deletion.","pt":"A pessoa diante da câmera concorda explicitamente em registrar rosto e voz neste dispositivo. Ela pode solicitar a exclusão.","fr":"La personne devant la caméra accepte explicitement l'enregistrement de son visage et de sa voix sur cet appareil. Elle peut demander l'effacement.","it":"La persona davanti alla fotocamera acconsente esplicitamente alla registrazione di volto e voce sul dispositivo. Può richiederne l'eliminazione.","de":"Die Person vor der Kamera stimmt ausdrücklich zu, Gesicht und Stimme auf diesem Gerät zu registrieren. Sie kann die Löschung verlangen."},"p08EnrollmentWarning":{"es":"Si ya existe un perfil con ese nombre, Robotito comprobará que sea la misma persona. Si se parece a otra persona registrada, detendrá el registro para evitar confundir identidades.","en":"If a profile with that name exists, Robotito will check whether it is the same person. It will stop if the face looks too similar to another enrolled person.","pt":"Se já existir um perfil com esse nome, o Robotito verificará se é a mesma pessoa. Se o rosto parecer de outra pessoa registrada, o registro será interrompido.","fr":"Si un profil porte déjà ce nom, Robotito vérifiera qu'il s'agit de la même personne. L'enregistrement sera interrompu si le visage ressemble trop à un autre profil.","it":"Se esiste già un profilo con lo stesso nome, Robotito verificherà che sia la stessa persona. Se il volto somiglia a un altro profilo registrato, interromperà l'operazione.","de":"Wenn bereits ein Profil mit diesem Namen existiert, prüft Robotito die Übereinstimmung. Bei zu großer Ähnlichkeit mit einer anderen registrierten Person wird abgebrochen."},"p08ConsentRequired":{"es":"Para registrar a alguien, necesitás su consentimiento explícito.","en":"Explicit consent from the person is required before enrollment.","pt":"É necessário o consentimento explícito da pessoa para o cadastro.","fr":"Le consentement explicite de la personne est requis pour l'enregistrement.","it":"Per la registrazione è necessario il consenso esplicito della persona.","de":"Vor der Registrierung ist die ausdrückliche Einwilligung der Person erforderlich."},"p08Collision":{"es":"La cara se parece demasiado a la de otro perfil registrado. No guardé ni mezclé muestras: verificá las identidades por separado.","en":"The face is too similar to another enrolled profile. No samples were saved or merged. Verify the identities separately.","pt":"O rosto é muito semelhante ao de outro perfil. Nenhuma amostra foi salva ou mesclada. Verifique as identidades separadamente.","fr":"Le visage ressemble trop à un autre profil. Aucun échantillon n'a été enregistré ni fusionné. Vérifiez les identités séparément.","it":"Il volto è troppo simile a un altro profilo. Non sono stati salvati né uniti campioni. Verifica le identità separatamente.","de":"Das Gesicht ähnelt einem anderen Profil zu stark. Es wurden keine Proben gespeichert oder zusammengeführt. Prüfe die Identitäten getrennt."},"p08ExistingUnverified":{"es":"No pude verificar con suficientes muestras que sea la misma persona registrada. No modifiqué el perfil.","en":"Not enough matching samples to verify the existing person's identity. The profile was not changed.","pt":"Não há amostras suficientes para confirmar a pessoa já cadastrada. O perfil não foi alterado.","fr":"Pas assez d'échantillons concordants pour vérifier la personne déjà enregistrée. Profil inchangé.","it":"Campioni insufficienti per verificare la persona già registrata. Il profilo non è stato modificato.","de":"Zu wenige übereinstimmende Proben für die vorhandene Person. Das Profil wurde nicht verändert."},"p08VoiceMismatch":{"es":"La voz nueva no coincide suficientemente con la voz guardada. No modifiqué las muestras de esta persona.","en":"The new voice does not sufficiently match the saved voice. This person's samples were left unchanged.","pt":"A nova voz não corresponde suficientemente à voz salva. As amostras da pessoa não foram alteradas.","fr":"La nouvelle voix ne correspond pas suffisamment à la voix enregistrée. Aucun échantillon modifié.","it":"La nuova voce non corrisponde sufficientemente a quella salvata. Nessun campione modificato.","de":"Die neue Stimme passt nicht ausreichend zur gespeicherten Stimme. Die Proben dieser Person blieben unverändert."}});
+// P08: conservative recognition, owner erasure and explicit consent feedback.
+Object.assign(LABELS,{
+  "p08VoiceCollision": {
+    "es": "La voz es demasiado parecida a la de otro perfil registrado. No guardé ni mezclé las muestras.",
+    "en": "The voice is too similar to another enrolled profile. No samples were saved or merged.",
+    "pt": "A voz é muito parecida com a de outro perfil. Nenhuma amostra foi salva ou mesclada.",
+    "fr": "La voix ressemble trop à celle d'un autre profil. Aucun échantillon n'a été enregistré ni fusionné.",
+    "it": "La voce somiglia troppo a un altro profilo. Nessun campione è stato salvato o unito.",
+    "de": "Die Stimme ähnelt einem anderen registrierten Profil zu stark. Keine Probe wurde gespeichert oder vermischt."
+  },
+  "p08DeleteProfileLabel": {
+    "es": "Eliminar perfil y biometría",
+    "en": "Delete profile and biometrics",
+    "pt": "Excluir perfil e biometria",
+    "fr": "Supprimer le profil et les données biométriques",
+    "it": "Elimina profilo e dati biometrici",
+    "de": "Profil und biometrische Daten löschen"
+  },
+  "p08DeleteProfileConfirm": {
+    "es": "¿Eliminar el perfil, las muestras biométricas y los datos claramente asociados de esta persona en este navegador? No se puede deshacer.",
+    "en": "Delete this person's profile, biometric samples and clearly linked data in this browser? This cannot be undone.",
+    "pt": "Excluir perfil, amostras biométricas e dados associados desta pessoa neste navegador? Isto não pode ser desfeito.",
+    "fr": "Supprimer le profil, les données biométriques et les données liées de cette personne dans ce navigateur ? Cette action est irréversible.",
+    "it": "Eliminare profilo, campioni biometrici e dati collegati di questa persona in questo browser? L'azione è irreversibile.",
+    "de": "Profil, biometrische Proben und zugeordnete Daten dieser Person in diesem Browser löschen? Das kann nicht rückgängig gemacht werden."
+  },
+  "p08DeleteProfileType": {
+    "es": "Escribí BORRAR exactamente para confirmar. La eliminación también invalida el punto de recuperación anterior.",
+    "en": "Type BORRAR exactly to confirm. This also invalidates the previous restore checkpoint.",
+    "pt": "Digite BORRAR exatamente para confirmar. Isso também invalida o ponto de recuperação anterior.",
+    "fr": "Saisis BORRAR exactement. Cela invalide également le point de restauration précédent.",
+    "it": "Digita BORRAR esattamente. Questo invalida anche il punto di recupero precedente.",
+    "de": "Zur Bestätigung BORRAR eingeben. Der vorherige Wiederherstellungspunkt wird ungültig."
+  },
+  "p08DeleteProfileDone": {
+    "es": "Perfil y datos asociados eliminados de este navegador.",
+    "en": "Profile and linked data deleted from this browser.",
+    "pt": "Perfil e dados associados removidos deste navegador.",
+    "fr": "Profil et données associées supprimés de ce navigateur.",
+    "it": "Profilo e dati collegati eliminati da questo browser.",
+    "de": "Profil und zugehörige Daten aus diesem Browser gelöscht."
+  },
+  "p08DeleteProfileFailed": {
+    "es": "No se pudo eliminar el perfil completo. No se confirmó el borrado. Revisá el almacenamiento y volvé a intentar.",
+    "en": "Could not fully delete the profile. Deletion was not confirmed. Check storage and retry.",
+    "pt": "Não foi possível excluir completamente o perfil. A exclusão não foi confirmada.",
+    "fr": "Impossible de supprimer complètement le profil. Suppression non confirmée.",
+    "it": "Impossibile eliminare completamente il profilo. Eliminazione non confermata.",
+    "de": "Profil konnte nicht vollständig gelöscht werden. Löschung nicht bestätigt."
+  },
+  "p08DeleteDuringEnrollment": {
+    "es": "Terminá o cancelá el registro antes de borrar un perfil.",
+    "en": "Finish or cancel enrollment before deleting a profile.",
+    "pt": "Conclua ou cancele o registro antes de excluir um perfil.",
+    "fr": "Termine ou annule l'enregistrement avant de supprimer un profil.",
+    "it": "Completa o annulla la registrazione prima di eliminare un profilo.",
+    "de": "Registrierung abschließen oder abbrechen, bevor ein Profil gelöscht wird."
+  },
+  "p08UnverifiedFace": {
+    "es": "Rostro detectado: identidad aún sin confirmar por voz.",
+    "en": "Face detected: identity not yet independently confirmed by voice.",
+    "pt": "Rosto detectado: identidade ainda não confirmada pela voz.",
+    "fr": "Visage détecté : identité non encore confirmée par la voix.",
+    "it": "Volto rilevato: identità non ancora confermata dalla voce.",
+    "de": "Gesicht erkannt: Identität noch nicht unabhängig durch Stimme bestätigt."
+  }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
