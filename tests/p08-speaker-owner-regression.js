@@ -69,4 +69,9 @@ eq(calls.matches[0].threshold,.50,"Existing face distance ceiling preserved");
 state.people=[{name:"Legacy",descriptors:[vectors()]}];
 matcher();
 eq(state.faceMatcher,null,"No valid multi-sample identity means no face matcher");
+const missingModel=new Function("state","faceapi",matcherCode+
+ "\nreturn buildMatcher;")(state,undefined);
+state.people=[{name:"Ada",descriptors:valid}];
+missingModel();
+eq(state.faceMatcher,null,"An unavailable facial library cannot break a saved-profile session");
 console.log("P08 verified speech owner and legacy face gating:",checks,"checks");
