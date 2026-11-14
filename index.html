@@ -18,6 +18,7 @@
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js?v=20261107-p05"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
+  <script defer src="temporal-commands.js?v=20261114-p10"></script>
   <script defer src="i18n.js?v=20261107-p05"></script>
   <script defer src="ui-messages.js?v=20261108-p06"></script>
   <script defer src="localized-content.js?v=20261107-p05"></script>
@@ -46,6 +47,7 @@
   <script defer src="class-organizer.js?v=20261107-p05"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
   <script defer src="class-verification.js?v=20261108-p06"></script>
+  <script defer src="custom-rules.js?v=20261114-p11-safe"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
@@ -577,6 +579,8 @@
             <span id="classRecordingLive" class="recording-live" data-ui-copy=sin%20grabar>sin grabar</span>
           </div>
           <p data-i18n="uiClassEmptyAudio" id="classRecordingStatus" class="muted">Todavía no hay grabaciones guardadas en este dispositivo.</p>
+          <div id="temporalPlaybackResult" class="class-recordings-list" role="region"
+            aria-label="Reproducción pedida por fecha" data-i18n-aria-label="p10ResultLabel"></div>
           <div id="classRecordingsList" class="class-recordings-list">
             <p data-i18n="uiClassFinishHint" class="muted">Cuando termines una clase, el audio aparecerá acá.</p>
           </div>
@@ -694,6 +698,21 @@
           <div id="tasksList" class="tasks-list"><p class="muted" data-i18n="uiNoTasksHelp">Conectá tu hoja para ver tareas.</p></div>
           <p data-i18n="uiTaskReminderHelp" class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
         </div>
+        <details class="card p11-rules-panel">
+          <summary data-i18n="p11Title">Reglas personalizadas de Robotito</summary>
+          <p class="muted" data-i18n="p11Help">Escribí una regla simple como «si digo hola, decí buen día» o «cuando son las 18:00, recordame estudiar». Solo funciona mientras Robotito está abierto. No ejecuta aplicaciones externas ni notificaciones con el navegador cerrado.</p>
+          <label><span data-i18n="p11RuleLabel">Nueva regla</span>
+            <textarea id="customRuleText" rows="2" maxlength="800" data-i18n-placeholder="p11Example" placeholder="Si digo hola, decí buen día"></textarea></label>
+          <div class="grid two">
+            <label><span data-i18n="p11Priority">Prioridad (0–5)</span>
+              <select id="customRulePriority"><option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label><span data-i18n="p11Cooldown">Espera mínima entre ejecuciones</span>
+              <select id="customRuleCooldown"><option value="1">1 min</option><option value="5" selected>5 min</option><option value="15">15 min</option><option value="60">60 min</option><option value="1440">24 h</option></select></label>
+          </div>
+          <button type="button" id="customRuleAdd" class="primary full" data-i18n="p11Add">Guardar regla</button>
+          <p id="customRuleStatus" role="status" aria-live="polite" class="mini-status"></p>
+          <div id="customRuleList" class="tasks-list"></div>
+        </details>
       </section>
 
       <section class="tabpage" id="tab-people">

@@ -1463,6 +1463,188 @@ Object.assign(LABELS,{
     "de": "Verknüpfung nicht bestätigt; die Verläufe bleiben getrennt."
   }
 });
+Object.assign(LABELS,{p10ResultLabel:{"es":"Reproducción de grabaciones buscadas","en":"Requested recording playback","pt":"Reprodução de gravações solicitadas","fr":"Lecture des enregistrements demandés","it":"Riproduzione delle registrazioni richieste","de":"Wiedergabe angeforderter Aufnahmen"}});
+// P11: safe owner-scoped foreground rule management.
+Object.assign(LABELS,{
+  "p11Title": {
+    "es": "Reglas personalizadas de Robotito",
+    "en": "Robotito's custom rules",
+    "pt": "Regras personalizadas do Robotito",
+    "fr": "Règles personnalisées de Robotito",
+    "it": "Regole personalizzate di Robotito",
+    "de": "Eigene Regeln für Robotito"
+  },
+  "p11Help": {
+    "es": "Definí «si digo hola, decí buen día» o «cuando son las 18:00, recordame estudiar». Solo funciona con esta pestaña abierta y activa; no puede ejecutar aplicaciones externas ni enviar avisos con el navegador cerrado.",
+    "en": "Try 'if I say hello, say good morning' or 'when it is 18:00, remind me to study'. Rules work only with this tab open and active, never with the browser closed.",
+    "pt": "Use 'se eu digo olá, diz bom dia' ou 'quando são 18:00, lembre-me de estudar'. Só funciona com esta aba aberta.",
+    "fr": "Essaie 'si je dis bonjour, dis salut' ou 'quand il est 18:00, rappelle-moi d'étudier'. Onglet ouvert requis.",
+    "it": "Prova 'se dico ciao, di buongiorno' oppure 'quando sono le 18:00, ricordami di studiare'. Funziona solo con la scheda aperta.",
+    "de": "Beispiel: 'wenn ich hallo sage, sag guten Morgen'. Funktioniert nur bei geöffnetem Tab."
+  },
+  "p11RuleLabel": {
+    "es": "Nueva regla",
+    "en": "New rule",
+    "pt": "Nova regra",
+    "fr": "Nouvelle règle",
+    "it": "Nuova regola",
+    "de": "Neue Regel"
+  },
+  "p11Example": {
+    "es": "Si digo hola, decí buen día",
+    "en": "If I say hello, say good morning",
+    "pt": "Se eu digo olá, diz bom dia",
+    "fr": "Si je dis bonjour, dis salut",
+    "it": "Se dico ciao, di buongiorno",
+    "de": "Wenn ich hallo sage, sag guten Morgen"
+  },
+  "p11Add": {
+    "es": "Guardar regla",
+    "en": "Save rule",
+    "pt": "Salvar regra",
+    "fr": "Enregistrer la règle",
+    "it": "Salva la regola",
+    "de": "Regel speichern"
+  },
+  "p11Empty": {
+    "es": "Todavía no hay reglas guardadas para este perfil.",
+    "en": "No rules saved for this profile yet.",
+    "pt": "Ainda não há regras salvas para este perfil.",
+    "fr": "Aucune règle enregistrée pour ce profil.",
+    "it": "Non ci sono ancora regole per questo profilo.",
+    "de": "Für dieses Profil sind noch keine Regeln gespeichert."
+  },
+  "p11Enable": {
+    "es": "Activar",
+    "en": "Enable",
+    "pt": "Ativar",
+    "fr": "Activer",
+    "it": "Attiva",
+    "de": "Aktivieren"
+  },
+  "p11Disable": {
+    "es": "Desactivar",
+    "en": "Disable",
+    "pt": "Desativar",
+    "fr": "Désactiver",
+    "it": "Disattiva",
+    "de": "Deaktivieren"
+  },
+  "p11Remove": {
+    "es": "Eliminar",
+    "en": "Delete",
+    "pt": "Excluir",
+    "fr": "Supprimer",
+    "it": "Elimina",
+    "de": "Löschen"
+  },
+  "p11Edit": {
+    "es": "Modificar",
+    "en": "Edit",
+    "pt": "Editar",
+    "fr": "Modifier",
+    "it": "Modifica",
+    "de": "Bearbeiten"
+  },
+  "p11EditPrompt": {
+    "es": "Escribí la regla corregida completa:",
+    "en": "Enter the complete revised rule:",
+    "pt": "Escreva a regra corrigida completa:",
+    "fr": "Saisis la règle modifiée complète :",
+    "it": "Scrivi la regola modificata completa:",
+    "de": "Bitte die vollständige überarbeitete Regel eingeben:"
+  },
+  "p11DeleteConfirm": {
+    "es": "¿Eliminar definitivamente esta regla del perfil?",
+    "en": "Permanently delete this rule from the profile?",
+    "pt": "Excluir definitivamente esta regra?",
+    "fr": "Supprimer définitivement cette règle ?",
+    "it": "Eliminare definitivamente questa regola?",
+    "de": "Diese Regel endgültig löschen?"
+  },
+  "p11Saved": {
+    "es": "Regla guardada para este perfil. Solo funciona con Robotito abierto.",
+    "en": "Rule saved for this profile. It only runs while Robotito is open.",
+    "pt": "Regra salva para este perfil. Só funciona com Robotito aberto.",
+    "fr": "Règle enregistrée pour ce profil. Robotito doit rester ouvert.",
+    "it": "Regola salvata per questo profilo. Robotito deve restare aperto.",
+    "de": "Regel für dieses Profil gespeichert. Robotito muss geöffnet bleiben."
+  },
+  "p11Invalid": {
+    "es": "No pude interpretar esa regla con seguridad. Probá: «si digo hola, decí buen día».",
+    "en": "Could not safely interpret the rule. Try 'if I say hello, say good morning'.",
+    "pt": "Não entendi a regra com segurança. Tente 'se eu digo olá, diz bom dia'.",
+    "fr": "Règle non comprise. Essaie 'si je dis bonjour, dis salut'.",
+    "it": "Regola non compresa. Prova 'se dico ciao, di buongiorno'.",
+    "de": "Regel nicht eindeutig verstanden. Beispiel: 'wenn ich hallo sage, sag guten Morgen'."
+  },
+  "p11Failed": {
+    "es": "No pude guardar o modificar la regla. Otra pestaña pudo cambiarla: actualizá y probá otra vez.",
+    "en": "Could not save or edit the rule. Another tab may have changed it; refresh and retry.",
+    "pt": "Não foi possível salvar ou editar a regra. Atualize e tente novamente.",
+    "fr": "Impossible d'enregistrer ou de modifier la règle. Actualise puis réessaie.",
+    "it": "Impossibile salvare o modificare la regola. Ricarica e riprova.",
+    "de": "Regel konnte nicht gespeichert werden. Bitte aktualisieren und erneut versuchen."
+  },
+  "p11Listed": {
+    "es": "Te mostré tus reglas en la pestaña Tareas.",
+    "en": "I displayed your rules in the Tasks tab.",
+    "pt": "Mostrei suas regras na aba Tarefas.",
+    "fr": "J'ai affiché tes règles dans l'onglet Tâches.",
+    "it": "Ho mostrato le regole nella scheda Attività.",
+    "de": "Ich habe deine Regeln im Aufgabenbereich angezeigt."
+  }
+});
+Object.assign(LABELS,{
+  "p11Priority": {
+    "es": "Prioridad (0–5)",
+    "en": "Priority (0–5)",
+    "pt": "Prioridade (0–5)",
+    "fr": "Priorité (0–5)",
+    "it": "Priorità (0–5)",
+    "de": "Priorität (0–5)"
+  },
+  "p11Cooldown": {
+    "es": "Espera mínima entre ejecuciones",
+    "en": "Minimum time between actions",
+    "pt": "Intervalo mínimo entre ações",
+    "fr": "Intervalle minimal entre actions",
+    "it": "Intervallo minimo tra le azioni",
+    "de": "Mindestabstand zwischen Ausführungen"
+  },
+  "p11Settings": {
+    "es": "Prioridad y frecuencia",
+    "en": "Priority and frequency",
+    "pt": "Prioridade e frequência",
+    "fr": "Priorité et fréquence",
+    "it": "Priorità e frequenza",
+    "de": "Priorität und Häufigkeit"
+  },
+  "p11PriorityPrompt": {
+    "es": "Prioridad de esta regla (0–5)",
+    "en": "This rule's priority (0–5)",
+    "pt": "Prioridade desta regra (0–5)",
+    "fr": "Priorité de cette règle (0–5)",
+    "it": "Priorità della regola (0–5)",
+    "de": "Priorität der Regel (0–5)"
+  },
+  "p11CooldownPrompt": {
+    "es": "Minutos de espera entre ejecuciones (1–1440)",
+    "en": "Minutes between actions (1–1440)",
+    "pt": "Minutos entre ações (1–1440)",
+    "fr": "Minutes entre actions (1–1440)",
+    "it": "Minuti fra azioni (1–1440)",
+    "de": "Minuten zwischen Ausführungen (1–1440)"
+  },
+  "p11InvalidSettings": {
+    "es": "Usá prioridad de 0 a 5 y espera entre 1 y 1440 minutos.",
+    "en": "Use priority 0–5 and cooldown of 1–1440 minutes.",
+    "pt": "Use prioridade 0–5 e intervalo de 1–1440 minutos.",
+    "fr": "Priorité 0–5 et intervalle 1–1440 minutes.",
+    "it": "Priorità 0–5 e intervallo di 1–1440 minuti.",
+    "de": "Priorität 0–5 und Intervall 1–1440 Minuten."
+  }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
