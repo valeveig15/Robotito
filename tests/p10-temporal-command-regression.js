@@ -32,16 +32,16 @@ const say=[];const speak=t=>say.push(t);
  eq(await commands.handle("poné la grabación de la clase de anteayer",opts),true,"Missing date is handled");
  eq(say.at(-1),commands.msg("missing","es"),"No invented recording");
  eq(await commands.handle("repetí después de mí",opts),true,"Arms next phrase");
- eq(commands.hasPending("Ada"),true,"Pending literal scoped to owner");
- eq(commands.consumePending("choca los cinco",{owner:"Bruno",lang:"es",speak}),false,
+ eq(commands.hasPending("Ada",today.getTime()+500),true,"Pending literal scoped to owner");
+ eq(commands.consumePending("choca los cinco",{owner:"Bruno",lang:"es",speak,at:today.getTime()+1000}),false,
   "A different person's phrase cannot consume Ada's repetition");
- eq(commands.consumePending("choca los cinco",{owner:"Ada",lang:"es",speak}),true,
+ eq(commands.consumePending("choca los cinco",{owner:"Ada",lang:"es",speak,at:today.getTime()+1000}),true,
   "Next phrase is consumed literally");
  eq(say.at(-1),"choca los cinco","Next phrase is not executed as a high-five command");
- eq(commands.hasPending("Ada"),false,"Repetition only once");
+ eq(commands.hasPending("Ada",today.getTime()+500),false,"Repetition only once");
  await commands.handle("repetí después de mí",opts);
  eq(commands.consumePending("poné la grabación de ayer",{owner:"Ada",lang:"es",speak,
-   at:Date.now()+50000}),false,"Expired repetition cannot execute or echo");
+   at:today.getTime()+50000}),false,"Expired repetition cannot execute or echo");
  const record=(at,title,owner="Ada")=>({type:"recommendations",owner,timestamp:at,data:{title}});
  const store={queryRecords:async()=>[
   record(yesterday.getTime(),"Libro auténtico"),
