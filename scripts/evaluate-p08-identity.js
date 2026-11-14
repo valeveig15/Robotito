@@ -10,10 +10,12 @@ const SCENARIOS=new Set(["normal","dim","backlit","profile","glasses",
  "lookalike","similar-voice","noise","replay","tv","multi-face",
  "permission","other"]);
 const DEVICES=new Set(["android","iphone","desktop","tablet","other"]);
+const ROOT_KEYS=new Set(["schema","synthetic","trials","note"]);
 const TRIAL_KEYS=new Set(["id","split","consent","claimed","actual","decision",
  "modality","scenario","device","latencyMs"]);
 function ensureManifest(input){
  if(!input||typeof input!=="object"||Array.isArray(input)||input.schema!==1||
+    Object.keys(input).some(key=>!ROOT_KEYS.has(key))||
     typeof input.synthetic!=="boolean"||!Array.isArray(input.trials)||
     input.trials.length<1||input.trials.length>100000)
   throw new TypeError("Invalid P08 local evaluation manifest");
@@ -77,7 +79,7 @@ function evaluate(input){
  return {
   schema:1,kind:"p08-aggregate-identity-evaluation",
   synthetic:manifest.synthetic,
-  datasetScope:manifest.synthetic?"synthetic-demonstration-only":"self-reported-consented-physical",
+  datasetScope:manifest.synthetic?"synthetic-demonstration-only":"self-reported-non-synthetic",
   calibrationTrials:calibration.length,testTrials:test.length,
   summary:aggregate(test),groups,
   validatedOnHardware:false, // Metrics alone never certify physical correctness.
