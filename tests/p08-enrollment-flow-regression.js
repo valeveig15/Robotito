@@ -6,6 +6,8 @@ const end=source.indexOf("\nfunction ",begin+20);
 assert.ok(begin>0&&end>begin,"Production enrollPerson function must be available");
 const policyStart=source.indexOf("function enrollmentIdentityCheck(");
 const policyEnd=source.indexOf("\nasync function enrollPerson(){",policyStart);
+const voiceConflictStart=source.indexOf("function enrollmentVoiceConflict(");
+assert.ok(voiceConflictStart>policyStart&&voiceConflictStart<policyEnd);
 const distanceStart=source.indexOf("function descriptorDistance(");
 const distanceEnd=source.indexOf("\nasync function captureFaceEnrollment(){",distanceStart);
 const cosineStart=source.indexOf("function cosineSimilarity(");
@@ -21,6 +23,8 @@ const mean=v=>{
  const n=Math.hypot(...sum)||1;
  return sum.map(x=>x/n);
 };
+const voiceConflict=new Function("state","averageVoiceVectors","cosineSimilarity",
+ source.slice(voiceConflictStart,policyEnd)+"\nreturn enrollmentVoiceConflict;")(state,mean,cosine);
 const $fields={
  "#personName":{value:"Ada"},
  "#personBirthday":{value:""},
@@ -38,7 +42,7 @@ const register=new Function(
  "captureFaceEnrollment","enrollmentIdentityCheck","captureEnrollmentVoice",
  "averageVoiceVectors","cosineSimilarity","save","KEYS","ensureBond",
  "buildMatcher","renderPeople","say","window","responseLanguage","document",
- source.slice(begin,end)+"\nreturn enrollPerson;"
+ "enrollmentVoiceConflict",source.slice(begin,end)+"\nreturn enrollPerson;"
 )(state,id=>$fields[id],v=>v? "2026-10-30":"",x=>actions.toasts.push(x),
  (p,msg)=>actions.statuses.push({p,msg}),a=>a,
  async()=>{actions.capture++;if(revokeAtCapture)$fields["#personEnrollmentConsent"].checked=false;
@@ -46,7 +50,7 @@ const register=new Function(
  policy,async()=>{actions.voice++;if(replaceAtVoice)state.captureEpoch=(state.captureEpoch||0)+1;return nextVoice;},mean,cosine,
  ()=>{actions.writes++;},{people:"people"},()=>{},
  ()=>{actions.build++;},()=>{},()=>{},
- {ROBOTITO_I18N:{t:k=>k}} ,()=> "es",{hidden:false});
+ {ROBOTITO_I18N:{t:k=>k}} ,()=> "es",{hidden:false},voiceConflict);
 const eq=(a,b,why)=>assert.deepEqual(a,b,why);
 (async()=>{
  await register();
@@ -57,6 +61,7 @@ const eq=(a,b,why)=>assert.deepEqual(a,b,why);
  eq(state.people.length,1,"New explicitly consented person enrolled");
  eq(state.people[0].name,"Ada","Name recorded only after consent");
  eq(state.people[0].voicePrints.length,4,"Multiple verified voice samples stored");
+ eq(state.people[0].biometricConsent.granted,true,"Enrollment records explicit consent metadata");
  const successfulWrites=actions.writes;
  $fields["#personName"].value="Bruno";
  $fields["#personEnrollmentConsent"].checked=true;
@@ -96,6 +101,16 @@ const eq=(a,b,why)=>assert.deepEqual(a,b,why);
  await register();
  eq(actions.writes,successfulWrites+2,"Verified same person may explicitly refresh their own data");
  eq(state.people[0].voicePrints.length,7,"Verified voice samples appended only to correct profile");
+ $fields["#personName"].value="Clara";
+ nextFace=Array.from({length:12},()=>[1.5,0,0]);
+ nextVoice={prints:[[1,0],[1,0],[1,0],[1,0]],quality:.92};
+ const beforeCollision=actions.writes;
+ $fields["#personEnrollmentConsent"].checked=true;
+ await register();
+ eq(actions.writes,beforeCollision,"Different face with Ada's voice cannot enroll as Clara");
+ eq(state.people.some(p=>p.name==="Clara"),false,"Reject cross-profile voice collision");
+ eq(actions.statuses.some(x=>/p08VoiceCollision/.test(x.msg)),true,
+  "Voice collision is explicit in status, not silently guessed");
  eq($fields["#personEnrollmentConsent"].checked,false,
   "Consent is cleared after each registration attempt");
  eq($fields["#enrollBtn"].disabled,false,"Enroll control unlocks after each attempt");
