@@ -5442,7 +5442,9 @@ function p07Message(key){
   remove:{es:"Eliminar",en:"Delete",pt:"Excluir",fr:"Supprimer",it:"Elimina",de:"Löschen"},
   editPrompt:{es:"Corregí este recuerdo:",en:"Edit this memory:",pt:"Corrija esta lembrança:",fr:"Corrigez ce souvenir :",it:"Correggi questo ricordo:",de:"Diese Erinnerung korrigieren:"},
   removePrompt:{es:"¿Eliminar este recuerdo de forma permanente?",en:"Permanently delete this memory?",pt:"Excluir esta lembrança definitivamente?",fr:"Supprimer définitivement ce souvenir ?",it:"Eliminare definitivamente questo ricordo?",de:"Diese Erinnerung dauerhaft löschen?"},
-  saveFailed:{es:"No pude modificar el recuerdo. Actualizá la página y probá de nuevo.",en:"Could not change the memory. Refresh and try again.",pt:"Não foi possível alterar a lembrança. Atualize e tente novamente.",fr:"Impossible de modifier le souvenir. Rechargez puis réessayez.",it:"Impossibile modificare il ricordo. Ricarica e riprova.",de:"Erinnerung konnte nicht geändert werden. Bitte neu laden."}
+  saveFailed:{es:"No pude modificar el recuerdo. Actualizá la página y probá de nuevo.",en:"Could not change the memory. Refresh and try again.",pt:"Não foi possível alterar a lembrança. Atualize e tente novamente.",fr:"Impossible de modifier le souvenir. Rechargez puis réessayez.",it:"Impossibile modificare il ricordo. Ricarica e riprova.",de:"Erinnerung konnte nicht geändert werden. Bitte neu laden."},
+  clearPrompt:{es:"¿Borrar todos los recuerdos de este perfil? Los de otras personas se conservarán.",en:"Delete all memories for this profile? Other people's memories will be kept.",pt:"Excluir todas as lembranças deste perfil? As de outras pessoas serão mantidas.",fr:"Supprimer tous les souvenirs de ce profil ? Ceux des autres personnes seront conservés.",it:"Eliminare tutti i ricordi di questo profilo? Quelli delle altre persone resteranno.",de:"Alle Erinnerungen dieses Profils löschen? Die der anderen Personen bleiben erhalten."},
+  clearDone:{es:"Recuerdos de este perfil borrados.",en:"Memories for this profile deleted.",pt:"Lembranças deste perfil excluídas.",fr:"Souvenirs de ce profil supprimés.",it:"Ricordi di questo profilo eliminati.",de:"Erinnerungen dieses Profils gelöscht."}
  };
  return t[key]?.[lang]||t[key]?.es||key;
 }
@@ -5952,14 +5954,14 @@ function bindUI(){
   $("#rememberBtn").addEventListener("click",rememberManual);
 
   $("#clearMemoryBtn").addEventListener("click",async()=>{
-    if(!confirm(uiText("¿Querés borrar todos los recuerdos que Robotito guardó?")))return;
+    const owner=activeMemoryOwner();
+    if(!confirm(p07Message("clearPrompt")))return;
     try{
-      await window.ROBOTITO_STORE?.clearRecordsByType?.("memories");
-      await window.ROBOTITO_STORE?.set?.(KEYS.memories,[]);
-      state.memories=[];
+      const result=await window.ROBOTITO_STORE.clearOwnedMemories(owner);
+      state.memories=result.memories||state.memories.filter(m=>(m.owner||"local")!==owner);
       renderMemories();
-      toast("Recuerdos borrados.");
-    }catch(e){console.warn("clear memories",e);toast("No pude borrar toda la memoria del dispositivo.");}
+      toast(p07Message("clearDone"));
+    }catch(e){console.warn("clear owned memories",e);toast(p07Message("saveFailed"));}
   });
 
   $("#goodreadsHelpBtn")?.addEventListener("click",()=>$("#goodreadsHelp")?.classList.toggle("hidden"));
