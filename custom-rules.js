@@ -148,7 +148,7 @@ function create({store=root.ROBOTITO_STORE,owner="local",effects={},now=()=>Date
   if(!parsed){emitMessage("invalid");return null;}
   const id="rule-"+(root.crypto?.randomUUID?.()||Array.from(root.crypto.getRandomValues(new Uint8Array(16)),
    b=>b.toString(16).padStart(2,"0")).join(""));
-  const row=validate({...parsed,id,enabled:true,priority,cooldownMs,lastRunAt:0,createdAt:now()});
+  const row=validate({...parsed,id,sourceText:raw.trim().slice(0,800),enabled:true,priority,cooldownMs,lastRunAt:0,createdAt:now()});
   await change(rows=>{
    if(rows.some(r=>JSON.stringify(r.when)===JSON.stringify(row.when)&&
      r.priority===row.priority&&r.enabled))throw new Error("Conflicting rule trigger and priority");
@@ -163,7 +163,7 @@ function create({store=root.ROBOTITO_STORE,owner="local",effects={},now=()=>Date
  }
  async function edit(id,text){
   const parsed=parse(text);if(!parsed){emitMessage("invalid");return false;}
-  await change(rows=>rows.map(r=>r.id===id?{...r,...parsed,lastRunAt:0}:r));
+  await change(rows=>rows.map(r=>r.id===id?{...r,...parsed,sourceText:text.trim().slice(0,800),lastRunAt:0}:r));
   emitMessage("saved");return true;
  }
  async function emit(evt,env={}){
