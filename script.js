@@ -4119,9 +4119,126 @@ function selectRobotitoContext(owner){
   if(robotitoContextsByOwner.size>24)robotitoContextsByOwner.delete(robotitoContextsByOwner.keys().next().value);
   return robotitoConversationContext;
 }
+// P11 — a rule never executes arbitrary code and never owns a global
+// background timer. State/permissions are checked on every real event.
+const p11Engines=new Map();
+function p11Owner(){return state.currentVoicePerson||state.currentPerson||"local";}
+function p11Text(key){
+ return window.ROBOTITO_I18N?.t?.(key,responseLanguage())||key;
+}
+function p11Status(value){
+ const el=$("#customRuleStatus");if(el)el.textContent=String(value||"");
+}
+function p11Render(rows){
+ const root=$("#customRuleList");if(!root)return;
+ root.replaceChildren();
+ if(!rows.length){const empty=document.createElement("p");empty.className="muted";
+   empty.textContent=p11Text("p11Empty");root.appendChild(empty);return;}
+ for(const [i,r] of rows.entries()){
+  const wrapper=document.createElement("div");wrapper.className="person-row";
+  const text=document.createElement("p");
+  text.textContent=(i+1)+". "+r.when.type+
+    (r.when.phrase?" — "+r.when.phrase:r.when.kind?" — "+r.when.kind:r.when.hhmm?" — "+r.when.hhmm:"")+
+    " → "+(r.do.text||r.do.mood||r.do.type);
+  wrapper.appendChild(text);
+  const actions=document.createElement("div");actions.className="actions";
+  const control=(label,action)=>{
+   const button=document.createElement("button");button.type="button";button.className="ghost";
+   button.textContent=label;button.addEventListener("click",()=>void action());
+   actions.appendChild(button);
+  };
+  control(r.enabled?p11Text("p11Disable"):p11Text("p11Enable"),async()=>{
+   try{const engine=await p11Engine();await engine.toggle(r.id,!r.enabled);p11Render(engine.list());}
+   catch(error){p11Status(p11Text("p11Failed"));}
+  });
+  control(p11Text("p11Edit"),async()=>{
+   const expression=window.prompt(p11Text("p11EditPrompt"),r.sourceText||"");
+   if(!expression)return;
+   try{const engine=await p11Engine();
+    if(await engine.edit(r.id,expression))p11Render(engine.list());}
+   catch(error){p11Status(p11Text("p11Failed"));}
+  });
+  control(p11Text("p11Remove"),async()=>{
+   if(!window.confirm(p11Text("p11DeleteConfirm")))return;
+   try{const engine=await p11Engine();await engine.remove(r.id);p11Render(engine.list());}
+   catch(error){p11Status(p11Text("p11Failed"));}
+  });
+  wrapper.appendChild(actions);root.appendChild(wrapper);
+ }
+}
+async function p11Engine(owner=p11Owner()){
+ if(!window.ROBOTITO_CUSTOM_RULES||!window.ROBOTITO_STORE?.updatePersonalRules)return null;
+ if(p11Engines.has(owner))return p11Engines.get(owner);
+ const engine=window.ROBOTITO_CUSTOM_RULES.create({
+  store:window.ROBOTITO_STORE,owner,
+  now:()=>Date.now(),
+  effects:{
+   owner:p11Owner,language:responseLanguage,
+   status:p11Status,
+   render:rows=>{if(p11Owner()===owner)p11Render(rows);},
+   say:async text=>sayInLanguage(text,responseLanguage()),
+   mood:async mood=>setMood(mood),
+   highfive:async()=>highFiveRobot(),
+   error:err=>console.warn("P11 rule refused",err?.name)
+  }
+ });
+ await engine.load();
+ p11Engines.set(owner,engine);
+ if(owner===p11Owner())p11Render(engine.list());
+ return engine;
+}
+function p11Environment(){
+ return {foreground:!document.hidden,classMode:state.classMode,
+  sleeping:state.sleeping,muted:state.silentUntil>Date.now(),
+  speaking:state.speaking,permissionDenied:false,
+  personPresent:state.lastDetections?.length===1,
+  dayNightMode:state.dayNightMode};
+}
+async function p11Emit(event){
+ try{
+  const engine=await p11Engine();
+  if(!engine)return;
+  await engine.emit(event,p11Environment());
+ }catch(error){console.warn("P11 event blocked",error?.name);}
+}
+async function p11HandleSpeech(rawText,owner){
+ const q=normalizeText(rawText);
+ const rule=window.ROBOTITO_CUSTOM_RULES?.parse?.(rawText);
+ const looksLikeRule=/^(?:si|cuando|if|when|se|quand|wenn)\b/.test(q)
+  && /(?:,|entonces|then|entao|alors|allora|dann)\s+/.test(q);
+ if(rule||looksLikeRule){
+  const engine=await p11Engine(owner);
+  if(!engine)return false;
+  if(rule){try{await engine.add(rawText);say(p11Text("p11Saved"));}
+   catch(error){say(p11Text("p11Failed"));}}
+  else say(p11Text("p11Invalid"));
+  return true;
+ }
+ if(/^(?:mostrame|muestrame|lista|mostrar|show|list|liste|mostra|zeige)\s+(?:mis|my|mes|meine|le mie|minhas)\s+(?:reglas|rules|regras|regles|regole|regeln)\b/.test(q)){
+  const engine=await p11Engine(owner);if(!engine)return false;
+  document.querySelector('[data-tab="tasks"]')?.click();
+  const details=document.querySelector(".p11-rules-panel");if(details)details.open=true;
+  p11Render(engine.list());say(p11Text("p11Listed"));return true;
+ }
+ return false;
+}
+async function p11AddFromUI(){
+ const input=$("#customRuleText"),value=input?.value.trim();
+ if(!value)return;
+ try{
+  const engine=await p11Engine();if(!engine)return;
+  const saved=await engine.add(value);
+  if(saved){input.value="";saved.sourceText=value;p11Render(engine.list());}
+ }catch(error){p11Status(p11Text("p11Failed"));}
+}
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
   const owner=state.currentVoicePerson||state.currentPerson||"local";
   selectRobotitoContext(owner);
+  if(!atomic&&await p11HandleSpeech(rawText,owner))return;
+  // User speech may trigger a rule, but its generated answer never re-enters
+  // this function or the speech parser.
+  if(channel!=="rule"&&!atomic)void p11Emit({type:"speech",phrase:normalizeText(rawText)});
+
   const planningEpoch=++robotitoPlanningEpoch;
   const interpretation=plan||await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{
     context:robotitoConversationContext,language:state.languageMode||"es",channel
@@ -5936,6 +6053,7 @@ function applyDayNightMode(date=new Date()){
 function clockTick(){
   const d=new Date();
   applyDayNightMode(d);
+  if(d.getSeconds()===0)void p11Emit({type:"clock",hhmm:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")});
   const lang=state.languageMode||"es";
   const locale=languageLocale(lang);
   $("#clock").textContent=d.toLocaleTimeString(locale,{hour:"2-digit",minute:"2-digit"});
@@ -6030,6 +6148,7 @@ function bindUI(){
       try{localStorage.setItem("robotito."+key+".v1",String(value));}catch{}
     }
   });
+  $("#customRuleAdd")?.addEventListener("click",()=>void p11AddFromUI());
   $("#enrollBtn").addEventListener("click",enrollPerson);
   $("#personEnrollmentConsent")?.addEventListener("change",()=>{
     state.enrollmentRevision=(state.enrollmentRevision||0)+1;
@@ -6212,6 +6331,7 @@ async function init(){
   await window.ROBOTITO_STORE?.migrateTypedLegacy?.().catch(e=>console.warn("Typed migration",e));
   await prepareLegacyMemoryIds().catch(e=>console.warn("Memory legacy IDs",e));
   bindUI();
+  void p11Engine("local").catch(error=>console.warn("P11 initial load",error?.name));
   bindPandaReferenceViews();
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("language");
