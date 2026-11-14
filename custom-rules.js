@@ -161,6 +161,18 @@ function create({store=root.ROBOTITO_STORE,owner="local",effects={},now=()=>Date
   await change(rows=>rows.map(r=>r.id===id?{...r,enabled:!!enabled}:r));
   emitMessage(enabled?"enabled":"disabled");
  }
+ async function configure(id,{priority,cooldownMs}={}){
+  const existing=records.find(r=>r.id===id);
+  if(!existing)throw new Error("Rule not found");
+  const nextPriority=priority===undefined?existing.priority:Number(priority);
+  const nextCooldown=cooldownMs===undefined?existing.cooldownMs:Number(cooldownMs);
+  if(!Number.isSafeInteger(nextPriority)||nextPriority<0||nextPriority>5||
+     !Number.isSafeInteger(nextCooldown)||nextCooldown<MIN_COOLDOWN||
+     nextCooldown>86400000)throw new TypeError("Invalid rule priority or cooldown");
+  await change(rows=>rows.map(r=>r.id===id?
+   {...r,priority:nextPriority,cooldownMs:nextCooldown}:r));
+  emitMessage("saved");
+ }
  async function edit(id,text){
   const parsed=parse(text);if(!parsed){emitMessage("invalid");return false;}
   await change(rows=>rows.map(r=>r.id===id?{...r,...parsed,sourceText:text.trim().slice(0,800),lastRunAt:0}:r));
@@ -192,7 +204,7 @@ function create({store=root.ROBOTITO_STORE,owner="local",effects={},now=()=>Date
   }finally{emitting=false;}
  }
  function dispose(){records=[];loaded=false;emitting=false;}
- return {load,list,add,remove,toggle,edit,emit,dispose,owner};
+ return {load,list,add,remove,toggle,edit,configure,emit,dispose,owner};
 }
 root.ROBOTITO_CUSTOM_RULES={create,parse,message,validAction,validTrigger,validate,MIN_COOLDOWN};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_CUSTOM_RULES;
