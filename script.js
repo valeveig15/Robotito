@@ -1572,6 +1572,12 @@ function setupAudio(stream){
           reactionTrial?.observeEvent(event.kind,{suppressed});
           return;
         }
+        if(typeof p11Emit==="function"){
+          const kind=({applause:"clap",clapping:"clap",music:"music",laugh:"laugh",
+            laughter:"laugh",cough:"cough",sneeze:"sneeze",cry:"cry",crying:"cry"})[event.kind]||event.kind;
+          if(["clap","music","laugh","cough","sneeze","cry"].includes(kind))
+            void p11Emit({type:"sound",kind});
+        }
         if(reaction.action==="clap"){
           robot.classList.add("clapping");
           reactionTrial?.observeEvent(event.kind,{action:"clap"});
@@ -4523,6 +4529,7 @@ async function detectLoop(){
       uiSet($("#seenLabel"),"1 persona");
       followFace(dets[0].detection.box);
       recognize(dets[0]);
+      if(typeof p11Emit==="function")void p11Emit({type:"vision"});
       detectEating(dets[0]);
     }else{
       uiSet($("#seenLabel"),dets.length?"{count} personas":"a nadie",{count:dets.length});
@@ -4530,6 +4537,8 @@ async function detectLoop(){
       // A previously confirmed face can last 2.5 s, but cannot be renewed by
       // an empty or frozen camera image.
       state.faceMatchHistory=[];
+      if(dets.length===0&&state.started&&Date.now()-state.lastSeenAt>=10000&&
+         typeof p11Emit==="function")void p11Emit({type:"absence"});
       if(dets.length>1||Date.now()-state.lastFaceConfirmedAt>2500)revoke();
       else resetEyes();
     }
@@ -5451,6 +5460,7 @@ function feedRobot(shared=false){
   state.hunger=0;
   changeMoodScore(shared?2:4);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.35:.60,trust:shared?.25:.45,irritation:-.18});
+  if(typeof p11Emit==="function")void p11Emit({type:"interaction",kind:"feed"});
   const line=shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed");
   setMood("happy",line);
   speciesAct("feed",1600);
@@ -5462,6 +5472,7 @@ function feedRobot(shared=false){
 function petRobot(){
   changeMoodScore(5);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.75,trust:.50,fear:-.18,irritation:-.30});
+  if(typeof p11Emit==="function")void p11Emit({type:"interaction",kind:"pet"});
   const line=speciesLine("pet");
   setMood("happy",line);
   speciesAct("pet",1500);
@@ -5479,6 +5490,7 @@ function temporaryRobotClass(cls,ms=1400){
 function highFiveRobot(){
   changeMoodScore(3);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.35,trust:.30,irritation:-.10});
+  if(typeof p11Emit==="function")void p11Emit({type:"interaction",kind:"highfive"});
   setMood("excited","Robotito celebró a su manera.");
   temporaryRobotClass("highfive",1200);
   speciesAct("highfive",1300);
@@ -5489,6 +5501,7 @@ function playRobot(){
   changeMoodScore(4);
   if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
+  if(typeof p11Emit==="function")void p11Emit({type:"interaction",kind:"play"});
   const line=speciesLine("play");
   setMood("excited",line);
   temporaryRobotClass("playing",2300);
@@ -5499,6 +5512,7 @@ function playRobot(){
 
 function scareRobot(){
   adjustBond(state.currentVoicePerson||state.currentPerson,{fear:2.40,trust:-.45,irritation:.40});
+  if(typeof p11Emit==="function")void p11Emit({type:"interaction",kind:"scare"});
   const line=speciesLine("surprise");
   setMood("scared",line);
   speciesAct("surprise",1000);
@@ -5509,6 +5523,7 @@ function scareRobot(){
 function pokeRobot(){
   changeMoodScore(-2);
   adjustBond(state.currentVoicePerson||state.currentPerson,{irritation:1.15,trust:-.35,affection:-.20});
+  if(typeof p11Emit==="function")void p11Emit({type:"interaction",kind:"poke"});
   const line=speciesLine("poke");
   setMood("annoyed",line);
   speciesAct("poke",1200);
@@ -6053,7 +6068,7 @@ function applyDayNightMode(date=new Date()){
 function clockTick(){
   const d=new Date();
   applyDayNightMode(d);
-  if(d.getSeconds()===0)void p11Emit({type:"clock",hhmm:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")});
+  if(d.getSeconds()===0&&typeof p11Emit==="function")void p11Emit({type:"clock",hhmm:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")});
   const lang=state.languageMode||"es";
   const locale=languageLocale(lang);
   $("#clock").textContent=d.toLocaleTimeString(locale,{hour:"2-digit",minute:"2-digit"});
