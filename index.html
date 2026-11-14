@@ -36,6 +36,7 @@
   <script defer src="semantic-planner.js?v=20261030-p01-context"></script>
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
   <script defer src="robotito-store.js?v=20261030-p02-portable"></script>
+  <script defer src="visitor-memory.js?v=20261114-p09-private"></script>
   <script defer src="p07-backup-crypto.js?v=20261114-p07-encrypted"></script>
   <script defer src="memory-backup-ui.js?v=20261114-p07-encrypted"></script>
   <script defer src="presidents.js"></script>
@@ -717,11 +718,29 @@
             <span data-i18n="p08ConsentLabel">La persona que aparece frente a la cámara acepta explícitamente registrar su rostro y voz en este dispositivo. Puede solicitar borrar sus datos.</span>
           </label>
           <p class="muted" data-i18n="p08EnrollmentWarning">Si ya existe un perfil con ese nombre, Robotito comprobará que sea la misma persona. Si se parece a otra persona registrada, detendrá el registro para evitar confundir identidades.</p>
+          <label class="check"><input id="visitorLinkConsent" type="checkbox" />
+            <span data-i18n="p09LinkConsent">Opcional: si esta persona tiene un historial de visitas consentido y verificado, ofrecer revisarlo y vincular su relación a este perfil. Nunca automáticamente.</span></label>
           <button id="enrollBtn" type="button" class="primary full" data-i18n="uiEnroll">Registrar cara y voz</button>
           <p id="enrollStatus" class="mini-status"></p>
           <div class="enroll-progress" aria-hidden="true"><div id="enrollProgressBar"></div></div>
           <p class="muted" data-i18n="uiEnrollHelp">El registro tarda un poco a propósito: Robotito toma varias muestras del rostro desde distintos ángulos y, para la voz, espera hasta que realmente empieces a hablar. Solo cuentan los segundos en los que detecta voz.</p>
         </div>
+        <details class="card p09-visitor-privacy">
+          <summary data-i18n="p09Section">Privacidad de visitantes sin registrar</summary>
+          <p class="muted" data-i18n="p09Privacy">Sin consentimiento, Robotito solamente sigue a las personas durante esta sesión. Para recordar a un visitante entre visitas se requiere consentimiento explícito y una contraseña: sus huellas faciales resumidas se guardan cifradas en este dispositivo, sin nombres ni fotos. Nunca se envían a terceros. Si olvidás la contraseña, no podrás recuperar este historial.</p>
+          <label><span data-i18n="p09Passphrase">Contraseña privada (12 caracteres o más; no se guarda)</span>
+            <input id="visitorPassphrase" type="password" minlength="12" maxlength="256" autocomplete="off" /></label>
+          <label class="check"><input id="visitorConsent" type="checkbox" />
+            <span data-i18n="p09Consent">La persona que aparece sola ante la cámara consiente expresamente almacenar una referencia facial cifrada y un vínculo anónimo revocable en este navegador. Puede rechazarlo sin perder acceso a Robotito.</span></label>
+          <label class="check"><input id="visitorAttributeActions" type="checkbox" />
+            <span data-i18n="p09ActionsConsent">Atribuir al visitante visible las interacciones realizadas en esta sesión, solamente cuando hay una cara clara y una coincidencia confirmada.</span></label>
+          <div class="actions">
+            <button id="visitorUnlockBtn" type="button" class="ghost" data-i18n="p09Unlock">Desbloquear visitas consentidas</button>
+            <button id="visitorSaveBtn" type="button" class="ghost" data-i18n="p09Remember">Guardar visitante con consentimiento</button>
+            <button id="visitorForgetBtn" type="button" class="ghost danger" data-i18n="p09Forget">Borrar todas las visitas anónimas</button>
+          </div>
+          <p id="visitorStatus" role="status" aria-live="polite" class="muted" data-i18n="p09DefaultStatus">La memoria de visitantes está bloqueada. No se guarda ningún rostro desconocido por defecto.</p>
+        </details>
         <div class="card">
           <div class="section-head">
             <h2 data-i18n="uiPeopleRemembered">Personas que recuerda</h2>
