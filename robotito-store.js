@@ -239,6 +239,30 @@ async function changeOwnedMemory({id,owner,text,expectedVersion,remove=false}={}
   }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
  });
 }
+// New memories are written to both generations of storage together; failure
+// leaves neither a misleading UI entry nor a partially stored typed record.
+async function appendMemory({owner,person,text,language="es",source="manual",at=Date.now()}={}){
+ if(typeof owner!=="string"||!owner.trim()||typeof text!=="string"||
+    !text.trim()||text.trim().length>3000)throw new TypeError("Invalid memory");
+ const id="memory:"+Date.now()+":"+(typeof crypto!=="undefined"&&crypto.randomUUID?
+  crypto.randomUUID():Math.random().toString(36).slice(2));
+ const row=normalizeRecord({id,type:"memories",owner,language,source,
+  timestamp:at,data:{text:text.trim(),person:person||owner,source}});
+ return serial("state:"+MEMORY_MIRROR_KEY,async()=>{
+  const db=await openDb(),tx=db.transaction(["records","state"],"readwrite"),
+   finished=complete(tx);
+  try{
+   const state=tx.objectStore("state"),existing=await request(state.get(MEMORY_MIRROR_KEY));
+   const before=Array.isArray(existing?.value)?existing.value:[];
+   const entry={id,owner,person:person||owner,text:text.trim(),at,
+    language,source,version:row.version};
+   const memories=[...before,entry];
+   tx.objectStore("records").add(row);
+   state.put({key:MEMORY_MIRROR_KEY,value:memories,updatedAt:Date.now()});
+   await finished;return {record:row,memories};
+  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+ });
+}
 async function updateOwnedMemory({id,owner,text,expectedVersion}){
  return changeOwnedMemory({id,owner,text,expectedVersion});
 }
@@ -456,6 +480,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,updateOwnedMemory,deleteOwnedMemory,putBlob,putRecordWithBlob,getBlob,deleteBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
