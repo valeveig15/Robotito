@@ -147,10 +147,10 @@ async function handle(raw,{owner="local",lang="es",store=root.ROBOTITO_STORE,
    rows=rows.filter(row=>aliases[namedSubject].some(s=>fold(row.subject).includes(s)));
   }
   rows.sort((a,b)=>Number(b.startedAt)-Number(a.startedAt));
-  if(!rows.length){speak(msg("missing",lang));return true;}
+  if(!rows.length){stop();if(container)container.replaceChildren();speak(msg("missing",lang));return true;}
   const last=/\b(?:ultima|ultimo|last|latest|newest|letzte|derniere|ultima)\b/.test(q);
   if(last)rows=rows.slice(0,1);
-  if(container)renderRecordings(rows,{container,lang,owner,speak,activeOwner,autoplay:false});
+  if(container)renderRecordings(rows,{container,lang,owner,speak,activeOwner,autoplay:rows.length===1});
   speak(msg(rows.length>1?"ambiguous":"found",lang));
   return true;
  }
