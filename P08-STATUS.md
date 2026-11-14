@@ -22,6 +22,12 @@
 - El sistema de voz usa características acústicas locales rudimentarias; un puntaje alto puede provenir de voces parecidas o reproducciones. Se impide atribuir con incertidumbre, pero la precisión necesita experimentos.
 - Las asociaciones entre historial pseudónimo y registro se dejan para P09 o un flujo consentido dedicado; no se implementó fusión automática de recuerdos.
 
+## Herramienta nueva de medición con consentimiento
+
+- [P08-IDENTITY-EVALUATION.md](P08-IDENTITY-EVALUATION.md) explica el uso de `npm run evaluate:identity -- /ruta/privada/evaluacion.json` para calcular falsas aceptaciones, falsos rechazos, abstenciones y latencia en conjuntos de calibración y prueba separados.
+- El evaluador solo acepta metadatos pseudónimos, consentimiento explícito, modalidades, condiciones y dispositivos; rechaza campos de voz/rostro y no envía datos a GitHub.
+- Numeradores, denominadores e intervalos de Wilson del 95 % se calculan para el conjunto de prueba, sin presentar ceros artificiales cuando faltan casos. La CI usa únicamente una muestra inventada y no demuestra precisión física.
+
 ## Validaciones automatizadas exigidas
 
 - `npm run test:p08`: pruebas de rechazo de perfiles cruzados, nombres repetidos, revocación, memoria de hablante, envejecimiento de evidencia y ausencia de entrenamiento no consentido.
