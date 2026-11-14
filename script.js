@@ -4123,10 +4123,13 @@ function selectRobotitoContext(owner){
 }
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
   const owner=state.currentVoicePerson||state.currentPerson||"local";
+  // A face match alone must not authorize private book history or a
+  // next-utterance repetition for a different speaker.
+  const temporalOwner=activeMemoryOwner();
   // "Repeat after me" consumes the next utterance as inert text. It cannot
   // execute a command, search memories or cross the active speaker boundary.
   if(window.ROBOTITO_TEMPORAL_COMMANDS?.consumePending?.(rawText,{
-     owner,lang:responseLanguage(),speak:literal=>sayInLanguage(literal,responseLanguage())
+     owner:temporalOwner,lang:responseLanguage(),speak:literal=>sayInLanguage(literal,responseLanguage())
    }))return;
   // An empty "repeat after me" is a prompt to listen, not missing content.
   // Arm it BEFORE the semantic planner requests clarification for an empty
@@ -4135,10 +4138,10 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(!atomic&&!state.classMode&&
      ["arm","stop"].includes(preliminaryTemporal?.action)){
     const handled=await window.ROBOTITO_TEMPORAL_COMMANDS.handle(rawText,{
-      owner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
+      owner:temporalOwner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
       classAudio:window.ROBOTITO_CLASS_AUDIO,clock:window.ROBOTITO_TEMPORAL,
       classMode:false,at:new Date(),
-      activeOwner:()=>state.currentVoicePerson||state.currentPerson||"local",
+      activeOwner:()=>activeMemoryOwner(),
       container:$("#temporalPlaybackResult"),
       speak:literal=>sayInLanguage(literal,responseLanguage())
     });
@@ -4209,10 +4212,10 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   const explicitTemporal=window.ROBOTITO_TEMPORAL_COMMANDS?.parse?.(rawText);
   if(explicitTemporal&&!interpretation?.negative&&!interpretation?.needsClarification){
     const done=await window.ROBOTITO_TEMPORAL_COMMANDS?.handle?.(rawText,{
-      owner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
+      owner:temporalOwner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
       classAudio:window.ROBOTITO_CLASS_AUDIO,clock:window.ROBOTITO_TEMPORAL,
       classMode:state.classMode,at:new Date(),
-      activeOwner:()=>state.currentVoicePerson||state.currentPerson||"local",
+      activeOwner:()=>activeMemoryOwner(),
       container:$("#temporalPlaybackResult"),
       speak:literal=>sayInLanguage(literal,responseLanguage())
     });
