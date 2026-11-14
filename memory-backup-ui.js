@@ -8,9 +8,41 @@ function attach(){
  const exporter=byId("downloadMemoryBackup"),chooser=byId("chooseMemoryBackup"),
   file=byId("memoryBackupFile"),encryptBox=byId("encryptMemoryBackup"),
   password=byId("memoryBackupPassword"),repeat=byId("memoryBackupPasswordConfirm"),
-  unlock=byId("memoryBackupRestorePassword"),fields=byId("memoryBackupEncryptionFields");
+  unlock=byId("memoryBackupRestorePassword"),fields=byId("memoryBackupEncryptionFields"),
+  undo=byId("undoMemoryRestore"),discard=byId("discardMemoryUndo");
  if(!exporter||!chooser||!file)return;
  let exported=false;
+ async function refreshUndoControls(){
+  try{
+   const checkpoint=await root.ROBOTITO_STORE.getRestoreUndoInfo();
+   if(undo)undo.disabled=!checkpoint;
+   if(discard)discard.disabled=!checkpoint;
+  }catch(error){
+   console.warn("Memory checkpoint status",error?.name);
+   if(undo)undo.disabled=true;
+   if(discard)discard.disabled=true;
+  }
+ }
+ refreshUndoControls();
+ undo?.addEventListener("click",async()=>{
+  if(!root.confirm(t("p07UndoRestoreConfirm")))return;
+  if(root.prompt(t("p07UndoRestoreType"))!=="DESHACER")return;
+  try{
+   await root.ROBOTITO_STORE.undoLastRestore({confirmation:"DESHACER"});
+   status("p07UndoRestoreDone");
+   root.location.reload();
+  }catch(error){console.warn("Memory restore undo refused",error?.name);
+   status("p07UndoRestoreFailed");await refreshUndoControls();}
+ });
+ discard?.addEventListener("click",async()=>{
+  if(!root.confirm(t("p07UndoDiscardConfirm")))return;
+  try{
+   await root.ROBOTITO_STORE.discardRestoreUndo();
+   await refreshUndoControls();status("p07UndoDiscardDone");
+  }catch(error){console.warn("Memory checkpoint discard",error?.name);
+   status("p07UndoRestoreFailed");}
+ });
+
  if(encryptBox&&fields){
   fields.hidden=!encryptBox.checked;
   encryptBox.addEventListener("change",()=>{
