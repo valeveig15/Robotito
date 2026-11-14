@@ -39,14 +39,15 @@ state.faceMatchHistory=[{label:"Ada",t:42}];
 voiceCandidate={name:"Bruno"};
 speech("Hola, soy Bruno");
 eq(logs.owners[1].person,"Bruno","Known speaker can differ from face in view");
-eq(state.currentPerson,"Ada","Valid voice match does not rewrite facial recognition");
+eq(state.currentPerson,null,"Mismatched verified voice invalidates stale face identity");
+eq(state.faceMatchHistory,[],"A face/speaker disagreement clears visual consensus");
 eq(state.currentVoicePerson,"Bruno","Speaker owner follows verified voice");
 state.classMode=true;
 voiceCandidate=null;
 speech("Otra persona dicta la clase");
 eq(logs.owners[2].person,"local","Unidentified class utterance is stored under local owner");
 eq(logs.classLines.length,1,"Class materials path remains active");
-eq(logs.learner,1,"Existing face/voice learning only executes when face verified");
+eq(logs.learner,0,"No automatic speaker learning when face and voice disagree");
 const vectors=()=>Array.from({length:128},(_,i)=>i/100);
 const valid=[vectors(),vectors(),vectors()];
 state.people=[
