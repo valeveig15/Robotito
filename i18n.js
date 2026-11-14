@@ -1463,6 +1463,7 @@ Object.assign(LABELS,{
     "de": "Verknüpfung nicht bestätigt; die Verläufe bleiben getrennt."
   }
 });
+Object.assign(LABELS,{p10ResultLabel:{"es":"Reproducción de grabaciones buscadas","en":"Requested recording playback","pt":"Reprodução de gravações solicitadas","fr":"Lecture des enregistrements demandés","it":"Riproduzione delle registrazioni richieste","de":"Wiedergabe angeforderter Aufnahmen"}});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
