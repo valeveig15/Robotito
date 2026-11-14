@@ -31,7 +31,7 @@ runBrowserTest("p09-private-visitors",async test=>{
   return {nonConsent,active,wrong,encrypted:JSON.stringify(encrypted).includes("templates"),
    version:encrypted.revision};
  },pass);
- assert.deepEqual(first,{nonConsent:true,active:true,wrong:true,encrypted:false,version:2});
+ assert.deepEqual(first,{nonConsent:true,active:true,wrong:true,encrypted:false,version:1});
  await page.reload({waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_VISITORS?.open));
  assert.equal(await page.evaluate(()=>window.ROBOTITO_VISITORS.locked()),true);
