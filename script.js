@@ -4145,7 +4145,8 @@ function p11Render(rows){
   const text=document.createElement("p");
   text.textContent=(i+1)+". "+r.when.type+
     (r.when.phrase?" — "+r.when.phrase:r.when.kind?" — "+r.when.kind:r.when.hhmm?" — "+r.when.hhmm:"")+
-    " → "+(r.do.text||r.do.mood||r.do.type);
+    " → "+(r.do.text||r.do.mood||r.do.type)+
+    " · P"+r.priority+" · "+Math.round(r.cooldownMs/60000)+" min";
   wrapper.appendChild(text);
   const actions=document.createElement("div");actions.className="actions";
   const control=(label,action)=>{
@@ -4156,6 +4157,22 @@ function p11Render(rows){
   control(r.enabled?p11Text("p11Disable"):p11Text("p11Enable"),async()=>{
    try{const engine=await p11Engine();await engine.toggle(r.id,!r.enabled);p11Render(engine.list());}
    catch(error){p11Status(p11Text("p11Failed"));}
+  });
+  control(p11Text("p11Settings"),async()=>{
+   const priorityRaw=window.prompt(p11Text("p11PriorityPrompt"),String(r.priority));
+   if(priorityRaw===null)return;
+   const cooldownRaw=window.prompt(p11Text("p11CooldownPrompt"),
+     String(Math.round(r.cooldownMs/60000)));
+   if(cooldownRaw===null)return;
+   const priority=Number(priorityRaw),minutes=Number(cooldownRaw);
+   if(!Number.isSafeInteger(priority)||priority<0||priority>5||
+      !Number.isSafeInteger(minutes)||minutes<1||minutes>1440){
+     p11Status(p11Text("p11InvalidSettings"));return;
+   }
+   try{const engine=await p11Engine();
+     await engine.configure(r.id,{priority,cooldownMs:minutes*60000});
+     p11Render(engine.list());
+   }catch(error){p11Status(p11Text("p11Failed"));}
   });
   control(p11Text("p11Edit"),async()=>{
    const expression=window.prompt(p11Text("p11EditPrompt"),r.sourceText||"");
@@ -4233,7 +4250,9 @@ async function p11AddFromUI(){
  if(!value)return;
  try{
   const engine=await p11Engine();if(!engine)return;
-  const saved=await engine.add(value);
+  const priority=Number($("#customRulePriority")?.value||2);
+  const minutes=Number($("#customRuleCooldown")?.value||5);
+  const saved=await engine.add(value,{priority,cooldownMs:minutes*60000});
   if(saved){input.value="";saved.sourceText=value;p11Render(engine.list());}
  }catch(error){p11Status(p11Text("p11Failed"));}
 }
