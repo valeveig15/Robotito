@@ -4376,7 +4376,7 @@ async function detectLoop(){
   clearTimeout(state.faceLoopTimer);
   const current=()=>state.started&&state.captureEpoch===epoch;
   const schedule=()=>{if(current())state.faceLoopTimer=setTimeout(detectLoop,700);};
-  const revoke=()=>{window.ROBOTITO_VISITORS?.clearObservation?.();state.currentPerson=null;state.faceMatchHistory=[];
+  const revoke=()=>{if(typeof window!=="undefined")window.ROBOTITO_VISITORS?.clearObservation?.();state.currentPerson=null;state.faceMatchHistory=[];
     state.lastFaceConfirmedAt=0;state.lastDetections=[];resetEyes();};
   if(document.hidden||state.captureSuspended){schedule();return;}
   if(state.faceInferencePending&&state.faceInferencePending.epoch===epoch)return;
@@ -4411,9 +4411,9 @@ async function detectLoop(){
       // face from this passive observation, and never treat a registered face
       // as an anonymous visitor.
       const face=dets[0];
-      const nearRegistered=state.people.some(person=>(person.descriptors||[])
+      const nearRegistered=(state.people||[]).some(person=>(person.descriptors||[])
         .some(vector=>descriptorDistance(face.descriptor,vector)<.52));
-      window.ROBOTITO_VISITORS?.observe?.(face,{
+      if(typeof window!=="undefined")window.ROBOTITO_VISITORS?.observe?.(face,{
         singleFace:true,now:Date.now(),
         registered:!!state.currentPerson||nearRegistered
       });
@@ -4424,7 +4424,7 @@ async function detectLoop(){
       // A previously confirmed face can last 2.5 s, but cannot be renewed by
       // an empty or frozen camera image.
       state.faceMatchHistory=[];
-      window.ROBOTITO_VISITORS?.clearObservation?.();
+      if(typeof window!=="undefined")window.ROBOTITO_VISITORS?.clearObservation?.();
       if(dets.length>1||Date.now()-state.lastFaceConfirmedAt>2500)revoke();
       else resetEyes();
     }
