@@ -28,6 +28,14 @@ Las etiquetas de propietario evitan mezclas accidentales en el uso normal del pa
 - `tests/p07-encrypted-backup-browser.js` prueba un ciclo completo con audio binario y perfiles, adulteración de archivo y UI real en navegadores.
 - No da protección criptográfica a los datos que siguen en IndexedDB, ni supera el límite de tamaño existente.
 
+## Incremento de restauración reversible (PR posterior al respaldo cifrado)
+
+- Un checkpoint local del estado anterior se guarda **atómicamente** junto con la restauración. Si no hay capacidad suficiente o un registro no puede preservarse, la restauración aborta sin sustituir nada.
+- Opciones de deshacer una vez (confirmación `DESHACER`) y descartar definitivamente el checkpoint; mensajes localizados a seis idiomas.
+- El checkpoint interno queda fuera de los respaldos exportados, para que datos antiguos y posibles olvidos no reaparezcan en archivos compartidos.
+- El borrado de recuerdos o audios invalida el checkpoint para impedir recuperación no deseada.
+- Alcance limitado al mismo navegador y a 64 MiB estimados. No sustituye un respaldo externo ni protege si el almacenamiento se elimina.
+
 ## Puertas de calidad
 
 - Repetir `npm run test:memory`, `npm run test:p07:browser` y `npm run test:ci` en la rama.
@@ -39,7 +47,7 @@ Las etiquetas de propietario evitan mezclas accidentales en el uso normal del pa
 1. **Archivos grandes:** respaldo JSON tiene tope de 32 MiB y 12 MiB por blob. Falta empaquetado o transmisión fragmentada, importación/exportación bajo cuota y prueba con archivos realmente grandes.
 2. **Privacidad de respaldo:** disponible exportación cifrada voluntaria, cuya aceptación multiplataforma depende de CI. El JSON antiguo no cifrado sigue disponible para compatibilidad. Falta cifrado en reposo de datos dentro de IndexedDB y políticas claras de contraseñas/custodia; si se olvida la contraseña de un respaldo cifrado, no se puede recuperar.
 3. **Datos complementarios y versiones:** localStorage y archivos externos no se incluyen; restauración de versiones futuras/antiguas no compatible aún. Probar cambios de versión e interrupciones de migración.
-4. **Deshacer sin archivo previo:** la restauración total actual es transaccional, pero el usuario debe conservar manualmente la copia anterior; falta restauración reversible sin exigir que se gestione un segundo archivo.
+4. **Deshacer y recuperación:** hay un checkpoint transaccional local de un paso y opción de borrarlo, sujeto a CI del nuevo PR y al límite de 64 MiB. Falta recuperación ante pérdida total del dispositivo, límites de almacenamiento y varias pestañas; se recomienda mantener una copia externa.
 5. **Concurrencia y resiliencia:** faltan pruebas de exportación/restauración con escritura en otra pestaña, bloqueo/recarga y fallos de cuota o energía; el control de versión del PR solo cubre mutaciones individuales de recuerdos.
 6. **Visitantes pseudónimos:** falta vinculación explícita, verificable y reversible con registro y consentimiento vigente. Nunca asociar identidades automáticamente por rostro, voz o nombre coincidente.
 7. **Escala y dispositivos:** probar cientos de miles de recuerdos, múltiples blobs, Android/iPhone/escritorio, borrado con fallos y recuperación real. CI sintética no es certificación del hardware.
