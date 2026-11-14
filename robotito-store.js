@@ -307,6 +307,70 @@ async function clearOwnedMemories(owner){
   return {deleted:rows.length,memories};
  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
 }
+// P08 consent revocation: delete a named registered profile and its clearly
+// owned local records in ONE transaction. Never infer that a legacy anonymous
+// conversation belongs to the person merely because it mentions their name.
+async function deleteRegisteredProfile(name,{confirmation}={}){
+ const target=String(name||"").trim();
+ if(!target||target.length>200||confirmation!=="BORRAR")
+  throw new Error("Explicit profile deletion confirmation required");
+ const norm=s=>String(s||"").trim().toLocaleLowerCase();
+ const db=await openDb(),tx=db.transaction(["state","records","blobs"],"readwrite"),
+  finished=complete(tx),state=tx.objectStore("state"),records=tx.objectStore("records"),
+  blobs=tx.objectStore("blobs");
+ try{
+  const peopleState=await request(state.get("robotito.people.v2"));
+  const people=peopleState?.value;
+  if(!Array.isArray(people))throw new Error("Registered profiles unavailable");
+  const matched=people.filter(p=>norm(p?.name)===norm(target));
+  if(matched.length!==1)throw new Error("Profile name is missing or ambiguous");
+  const personName=matched[0].name;
+  const match=s=>norm(s)===norm(personName);
+  const rows=await request(records.getAll());
+  const deleted=new Set(),deletedBlobs=new Set();
+  for(const row of rows){
+   const directOwner=match(row.owner);
+   const legacyProfile=row.type==="people"&&match(row.data?.name);
+   const legacyBirthday=row.type==="birthdays"&&match(row.data?.person);
+   if(directOwner||legacyProfile||legacyBirthday){
+    deleted.add(row.id);records.delete(row.id);
+    if(row.blobId){deletedBlobs.add(row.blobId);blobs.delete(row.blobId);}
+   }
+  }
+  for(const row of rows){
+   if(deleted.has(row.id)||!Array.isArray(row.relatedIds))continue;
+   const links=row.relatedIds.filter(id=>!deleted.has(id));
+   if(links.length!==row.relatedIds.length)
+    records.put({...row,relatedIds:links,updatedAt:Date.now()});
+  }
+  const allBlobs=await request(blobs.getAll());
+  for(const item of allBlobs){
+   if(match(item.owner)||deleted.has(item.recordId)){
+    blobs.delete(item.id);deletedBlobs.add(item.id);
+   }
+  }
+  const replacement=people.filter(p=>!match(p?.name));
+  state.put({...peopleState,value:replacement,updatedAt:Date.now()});
+  const memories=await request(state.get("robotito.memories.v2"));
+  if(Array.isArray(memories?.value))
+   state.put({...memories,value:memories.value.filter(m=>!match(m?.owner)),
+    updatedAt:Date.now()});
+  const transcripts=await request(state.get("robotito.classLines.v1"));
+  if(Array.isArray(transcripts?.value)){
+   const revised=transcripts.value.map(line=>{
+    if(!match(line?.speakerName))return line;
+    const {voicePrint,feature,...safe}=line;
+    return {...safe,speakerName:null,speaker:"classmate",speakerConfidence:0};
+   });
+   state.put({...transcripts,value:revised,updatedAt:Date.now()});
+  }
+  // A previous restore must not resurrect a deleted biometric identity.
+  state.delete(RESTORE_UNDO_KEY);
+  await finished;
+  return {name:personName,people:replacement,recordsDeleted:deleted.size,
+   blobsDeleted:deletedBlobs.size};
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
 async function clearRecordsByType(type,{owner}={}){
  if(!TYPES.has(type))throw new TypeError("Invalid record type");
  let total=0;
@@ -630,6 +694,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,putBlob,putRecordWithBlob,getBlob,deleteBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,deleteRegisteredProfile,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,getRestoreUndoInfo,undoLastRestore,discardRestoreUndo,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
