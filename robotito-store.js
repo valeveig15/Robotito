@@ -153,16 +153,18 @@ function storedBlob(row){
 }
 // Removes legacy blobs even if a previous interrupted save left no record.
 async function deleteBlob(id){
- const db=await openDb(),tx=db.transaction("blobs","readwrite"),finished=complete(tx);
+ const db=await openDb(),tx=db.transaction(["blobs","state"],"readwrite"),finished=complete(tx);
  tx.objectStore("blobs").delete(String(id));
+ tx.objectStore("state").delete(RESTORE_UNDO_KEY);
  await finished;return true;
 }
 async function deleteRecord(id){
  return serial("record:"+id,async()=>{
-  const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
+  const db=await openDb(),tx=db.transaction(["records","blobs","state"],"readwrite"),finished=complete(tx);
   const store=tx.objectStore("records");const row=await request(store.get(String(id)));
   if(row?.blobId)tx.objectStore("blobs").delete(row.blobId);
   store.delete(String(id));
+  tx.objectStore("state").delete(RESTORE_UNDO_KEY);
   // Keep relation metadata coherent when its target disappears.
   await new Promise((resolve,reject)=>{
     const cursor=store.index("byRelation").openCursor(IDBKeyRange.only(String(id)));
@@ -212,6 +214,7 @@ async function changeOwnedMemory({id,owner,text,expectedVersion,remove=false}={}
    if(remove){
     if(old.blobId)tx.objectStore("blobs").delete(old.blobId);
     records.delete(id);
+    state.delete(RESTORE_UNDO_KEY);
     // A deleted memory must not remain as a dangling relation.
     await new Promise((resolve,reject)=>{
      const cursor=records.index("byRelation").openCursor(IDBKeyRange.only(id));
@@ -298,6 +301,8 @@ async function clearOwnedMemories(owner){
   const memories=Array.isArray(mirror?.value)?
    mirror.value.filter(m=>m&&(m.owner||"local")!==owner):null;
   if(memories)state.put({...mirror,value:memories,updatedAt:Date.now()});
+  // A privacy deletion must also erase any checkpoint containing old data.
+  if(ids.size||memories)state.delete(RESTORE_UNDO_KEY);
   await finished;
   return {deleted:rows.length,memories};
  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
