@@ -112,6 +112,8 @@ async function seal(data){
 async function open(passphrase){
  requireCrypto();passwordCheck(passphrase);
  const saved=await root.ROBOTITO_STORE?.get?.(KEY,null);
+ // Never retain a previous decrypted vault after a failed unlock attempt.
+ lock();
  if(saved){
   if(saved.format!==FORMAT||saved.schema!==1||saved.iterations!==ITERATIONS||
     saved.cipher!=="AES-256-GCM"||saved.kdf!=="PBKDF2-SHA256"||
@@ -147,7 +149,8 @@ function runExclusive(task){
 async function persist(next){
  validateProfiles(next);
  const nextEnvelope=await seal(next);
- await root.ROBOTITO_STORE.updateVisitorEnvelope(nextEnvelope,{expectedRevision:revision});
+ try{await root.ROBOTITO_STORE.updateVisitorEnvelope(nextEnvelope,{expectedRevision:revision});}
+ catch(error){lock();throw error;}
  profiles=next;revision=nextEnvelope.revision;
  return nextEnvelope;
 }
@@ -260,6 +263,11 @@ async function offerLink(name,samples,{review}={}){
  });
 }
 function info(){return {unlocked,count:unlocked?profiles.length:null,active:active?.persistent===true};}
+// A hidden page must never retain usable biometric templates or the crypto key.
+if(typeof document!=="undefined"){
+ document.addEventListener("visibilitychange",()=>{if(document.hidden)lock();});
+ root.addEventListener?.("pagehide",lock);
+}
 root.ROBOTITO_VISITORS={open,lock,locked,remember,observe,clearObservation,interaction,
  forgetAll,offerLink,info,template,findCandidate,distance,score,
  requiresConsent:true,format:FORMAT};
