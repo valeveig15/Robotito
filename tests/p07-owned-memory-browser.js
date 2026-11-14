@@ -84,9 +84,18 @@ runBrowserTest("p07-owned-memory",async test=>{
  assert.equal(remaining.mirror.some(m=>m.id===fixture.id),false);
  assert.equal(remaining.other.owner,"Otra persona","Other owners must survive deletion");
  assert.equal(await page.locator("#memoryList").getByText("Mi color favorito es el violeta").count(),0);
+ test.phase("p07-bulk-delete-scoped");
+ await page.locator("#clearMemoryBtn").click();
+ await page.waitForFunction(async id=>!(await window.ROBOTITO_STORE.getRecord(id)),fixture.second);
+ const bulk=await page.evaluate(async id=>{
+  const s=window.ROBOTITO_STORE;
+  return {other:await s.getRecord(id),mirror:await s.get("robotito.memories.v2",[])};
+ },fixture.other);
+ assert.equal(bulk.other.owner,"Otra persona","Bulk clear must preserve other people's memories");
+ assert.equal(bulk.mirror.some(m=>(m.owner||"local")==="local"),false);
  assert.deepEqual(test.report.pageErrors,[]);
  test.report.result={edited:true,ownerIsolation:true,versionConflict:true,
-  crossTabConflict:true,atomicMirror:true,deleted:true};
+  crossTabConflict:true,atomicMirror:true,deleted:true,bulkScoped:true};
  console.log("P07 owned memories: edit, cross-owner rejection, mirror, tab race and delete passed");
  await secondPage.close();
 }).catch(e=>{console.error(e);process.exitCode=1;});
