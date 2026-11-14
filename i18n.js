@@ -1132,6 +1132,73 @@ Object.assign(LABELS,{
     "de": "Verschlüsselte Sicherung konnte nicht geöffnet werden. Passwort, Datei und Version prüfen. Keine Daten wiederhergestellt."
   }
 });
+// P07: one-use restore undo with explicit privacy controls.
+Object.assign(LABELS,{
+  "p07UndoRestoreLabel": {
+    "es": "Deshacer última restauración",
+    "en": "Undo last restore",
+    "pt": "Desfazer última restauração",
+    "fr": "Annuler la dernière restauration",
+    "it": "Annulla l'ultimo ripristino",
+    "de": "Letzte Wiederherstellung rückgängig machen"
+  },
+  "p07UndoDiscardLabel": {
+    "es": "Eliminar punto de recuperación",
+    "en": "Delete restore checkpoint",
+    "pt": "Apagar ponto de recuperação",
+    "fr": "Supprimer le point de restauration",
+    "it": "Elimina punto di ripristino",
+    "de": "Wiederherstellungspunkt löschen"
+  },
+  "p07UndoRestoreConfirm": {
+    "es": "¿Volver al estado anterior a la última restauración? Esta acción reemplazará TODOS los cambios realizados después. No se podrá deshacer de nuevo.",
+    "en": "Return to the state before the last restore? ALL changes since then will be replaced. This undo cannot be undone again.",
+    "pt": "Voltar ao estado anterior à última restauração? TODAS as alterações posteriores serão substituídas. Não será possível desfazer novamente.",
+    "fr": "Revenir à l'état d'avant la dernière restauration ? TOUS les changements effectués depuis seront remplacés. Cette action est définitive.",
+    "it": "Tornare allo stato precedente all'ultimo ripristino? TUTTE le modifiche successive saranno sostituite. Questa operazione è definitiva.",
+    "de": "Zum Zustand vor der letzten Wiederherstellung zurückkehren? ALLE späteren Änderungen werden ersetzt. Dies kann nicht erneut rückgängig gemacht werden."
+  },
+  "p07UndoRestoreType": {
+    "es": "Escribí DESHACER exactamente para recuperar el estado anterior.",
+    "en": "Type DESHACER exactly to recover the previous state.",
+    "pt": "Digite DESHACER para recuperar o estado anterior.",
+    "fr": "Saisis DESHACER exactement pour récupérer l'état précédent.",
+    "it": "Digita DESHACER per recuperare lo stato precedente.",
+    "de": "DESHACER eingeben, um den vorherigen Zustand wiederherzustellen."
+  },
+  "p07UndoRestoreDone": {
+    "es": "Se recuperó el estado anterior. Robotito se recargará.",
+    "en": "The previous state was recovered. Robotito will reload.",
+    "pt": "O estado anterior foi recuperado. O Robotito será recarregado.",
+    "fr": "L'état précédent a été récupéré. Robotito va recharger.",
+    "it": "Lo stato precedente è stato recuperato. Robotito verrà ricaricato.",
+    "de": "Der vorherige Zustand wurde wiederhergestellt. Robotito wird neu geladen."
+  },
+  "p07UndoRestoreFailed": {
+    "es": "No pude recuperar o eliminar el punto anterior. Los datos no se reemplazaron.",
+    "en": "Could not recover or delete the previous checkpoint. The data was not replaced.",
+    "pt": "Não foi possível recuperar ou apagar o ponto anterior. Os dados não foram substituídos.",
+    "fr": "Impossible de récupérer ou supprimer le point précédent. Les données n'ont pas été remplacées.",
+    "it": "Impossibile recuperare o eliminare il punto precedente. I dati non sono stati sostituiti.",
+    "de": "Vorheriger Punkt konnte nicht wiederhergestellt oder gelöscht werden. Daten wurden nicht ersetzt."
+  },
+  "p07UndoDiscardConfirm": {
+    "es": "¿Eliminar definitivamente la copia local del estado anterior? Después no podrás deshacer la restauración.",
+    "en": "Permanently delete the local copy of the previous state? You will no longer be able to undo the restore.",
+    "pt": "Apagar definitivamente a cópia local do estado anterior? Depois não será possível desfazer a restauração.",
+    "fr": "Supprimer définitivement la copie locale de l'état précédent ? Tu ne pourras plus annuler la restauration.",
+    "it": "Eliminare definitivamente la copia locale dello stato precedente? Non potrai più annullare il ripristino.",
+    "de": "Lokale Kopie des vorherigen Zustands endgültig löschen? Danach ist kein Rückgängigmachen mehr möglich."
+  },
+  "p07UndoDiscardDone": {
+    "es": "Punto de recuperación eliminado del navegador.",
+    "en": "Restore checkpoint deleted from this browser.",
+    "pt": "Ponto de recuperação removido deste navegador.",
+    "fr": "Point de restauration supprimé de ce navigateur.",
+    "it": "Punto di ripristino eliminato dal browser.",
+    "de": "Wiederherstellungspunkt aus diesem Browser gelöscht."
+  }
+});
 // P08: identity consent, near-relative conflicts and refused biometric updates.
 Object.assign(LABELS,{"p08ConsentLabel":{"es":"La persona que aparece frente a la cámara acepta explícitamente registrar su rostro y voz en este dispositivo. Puede solicitar borrar sus datos.","en":"The person in front of the camera explicitly agrees to enroll their face and voice on this device. They can request deletion.","pt":"A pessoa diante da câmera concorda explicitamente em registrar rosto e voz neste dispositivo. Ela pode solicitar a exclusão.","fr":"La personne devant la caméra accepte explicitement l'enregistrement de son visage et de sa voix sur cet appareil. Elle peut demander l'effacement.","it":"La persona davanti alla fotocamera acconsente esplicitamente alla registrazione di volto e voce sul dispositivo. Può richiederne l'eliminazione.","de":"Die Person vor der Kamera stimmt ausdrücklich zu, Gesicht und Stimme auf diesem Gerät zu registrieren. Sie kann die Löschung verlangen."},"p08EnrollmentWarning":{"es":"Si ya existe un perfil con ese nombre, Robotito comprobará que sea la misma persona. Si se parece a otra persona registrada, detendrá el registro para evitar confundir identidades.","en":"If a profile with that name exists, Robotito will check whether it is the same person. It will stop if the face looks too similar to another enrolled person.","pt":"Se já existir um perfil com esse nome, o Robotito verificará se é a mesma pessoa. Se o rosto parecer de outra pessoa registrada, o registro será interrompido.","fr":"Si un profil porte déjà ce nom, Robotito vérifiera qu'il s'agit de la même personne. L'enregistrement sera interrompu si le visage ressemble trop à un autre profil.","it":"Se esiste già un profilo con lo stesso nome, Robotito verificherà che sia la stessa persona. Se il volto somiglia a un altro profilo registrato, interromperà l'operazione.","de":"Wenn bereits ein Profil mit diesem Namen existiert, prüft Robotito die Übereinstimmung. Bei zu großer Ähnlichkeit mit einer anderen registrierten Person wird abgebrochen."},"p08ConsentRequired":{"es":"Para registrar a alguien, necesitás su consentimiento explícito.","en":"Explicit consent from the person is required before enrollment.","pt":"É necessário o consentimento explícito da pessoa para o cadastro.","fr":"Le consentement explicite de la personne est requis pour l'enregistrement.","it":"Per la registrazione è necessario il consenso esplicito della persona.","de":"Vor der Registrierung ist die ausdrückliche Einwilligung der Person erforderlich."},"p08Collision":{"es":"La cara se parece demasiado a la de otro perfil registrado. No guardé ni mezclé muestras: verificá las identidades por separado.","en":"The face is too similar to another enrolled profile. No samples were saved or merged. Verify the identities separately.","pt":"O rosto é muito semelhante ao de outro perfil. Nenhuma amostra foi salva ou mesclada. Verifique as identidades separadamente.","fr":"Le visage ressemble trop à un autre profil. Aucun échantillon n'a été enregistré ni fusionné. Vérifiez les identités séparément.","it":"Il volto è troppo simile a un altro profilo. Non sono stati salvati né uniti campioni. Verifica le identità separatamente.","de":"Das Gesicht ähnelt einem anderen Profil zu stark. Es wurden keine Proben gespeichert oder zusammengeführt. Prüfe die Identitäten getrennt."},"p08ExistingUnverified":{"es":"No pude verificar con suficientes muestras que sea la misma persona registrada. No modifiqué el perfil.","en":"Not enough matching samples to verify the existing person's identity. The profile was not changed.","pt":"Não há amostras suficientes para confirmar a pessoa já cadastrada. O perfil não foi alterado.","fr":"Pas assez d'échantillons concordants pour vérifier la personne déjà enregistrée. Profil inchangé.","it":"Campioni insufficienti per verificare la persona già registrata. Il profilo non è stato modificato.","de":"Zu wenige übereinstimmende Proben für die vorhandene Person. Das Profil wurde nicht verändert."},"p08VoiceMismatch":{"es":"La voz nueva no coincide suficientemente con la voz guardada. No modifiqué las muestras de esta persona.","en":"The new voice does not sufficiently match the saved voice. This person's samples were left unchanged.","pt":"A nova voz não corresponde suficientemente à voz salva. As amostras da pessoa não foram alteradas.","fr":"La nouvelle voix ne correspond pas suffisamment à la voix enregistrée. Aucun échantillon modifié.","it":"La nuova voce non corrisponde sufficientemente a quella salvata. Nessun campione modificato.","de":"Die neue Stimme passt nicht ausreichend zur gespeicherten Stimme. Die Proben dieser Person blieben unverändert."}});
 function apply(lang,rootElement){
