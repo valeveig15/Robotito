@@ -351,6 +351,7 @@ async function deleteRegisteredProfile(name,{confirmation}={}){
   }
   const replacement=people.filter(p=>!match(p?.name));
   state.put({...peopleState,value:replacement,updatedAt:Date.now()});
+  state.delete("robotito.custom-rules.v1:"+encodeURIComponent(personName));
   const memories=await request(state.get("robotito.memories.v2"));
   if(Array.isArray(memories?.value))
    state.put({...memories,value:memories.value.filter(m=>!match(m?.owner)),
@@ -369,6 +370,25 @@ async function deleteRegisteredProfile(name,{confirmation}={}){
   await finished;
   return {name:personName,people:replacement,recordsDeleted:deleted.size,
    blobsDeleted:deletedBlobs.size};
+ }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
+// P11: single-transaction compare-and-swap for the active profile's
+// foreground rules. No executable JavaScript or external actions stored here.
+async function updatePersonalRules(owner,{expectedRevision,value}={}){
+ if(typeof owner!=="string"||!owner||owner.length>128||owner.includes(":")||
+    !Number.isSafeInteger(expectedRevision)||expectedRevision<0||
+    !value||value.revision!==expectedRevision+1||
+    !Array.isArray(value.rules)||value.rules.length>50)
+  throw new TypeError("Invalid rule version or owner");
+ const key="robotito.custom-rules.v1:"+encodeURIComponent(owner),
+  db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+  state=tx.objectStore("state");
+ try{
+  const old=await request(state.get(key));
+  if((old?.value?.revision||0)!==expectedRevision)
+   throw new Error("Rules changed in another tab");
+  state.put({key,value,updatedAt:Date.now()});
+  await finished;return true;
  }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
 }
 async function clearRecordsByType(type,{owner}={}){
@@ -694,6 +714,6 @@ async function stats(){
  return out;
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
- heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,deleteRegisteredProfile,putBlob,putRecordWithBlob,getBlob,deleteBlob,
+ heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,deleteRegisteredProfile,updatePersonalRules,putBlob,putRecordWithBlob,getBlob,deleteBlob,
  migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,getRestoreUndoInfo,undoLastRestore,discardRestoreUndo,recordTypes:[...TYPES],dbVersion:VERSION};
 })(typeof window!=="undefined"?window:globalThis);
