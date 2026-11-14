@@ -1067,6 +1067,7 @@ function clearCaptureIdentity(){
   resetEyes();
 }
 function stopSenses(reason="captureStopped"){
+  window.ROBOTITO_TEMPORAL_COMMANDS?.clearPending?.();
   state.started=false;
   state.captureEpoch=(state.captureEpoch||0)+1;
   state.captureRevision=(state.captureRevision||0)+1;
@@ -4121,6 +4122,11 @@ function selectRobotitoContext(owner){
 }
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
   const owner=state.currentVoicePerson||state.currentPerson||"local";
+  // "Repeat after me" consumes the next utterance as inert text. It cannot
+  // execute a command, search memories or cross the active speaker boundary.
+  if(window.ROBOTITO_TEMPORAL_COMMANDS?.consumePending?.(rawText,{
+     owner,lang:responseLanguage(),speak:literal=>sayInLanguage(literal,responseLanguage())
+   }))return;
   selectRobotitoContext(owner);
   const planningEpoch=++robotitoPlanningEpoch;
   const interpretation=plan||await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{
@@ -4180,6 +4186,19 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(interpretation?.intent==="repeat"&&interpretation.shouldExecute){
     sayInLanguage(interpretation.literalText,responseLanguage());
     return;
+  }
+  // P10 resolves concrete recordings and recommendations before generic
+  // memory summaries. Date parsing is shared; missing media is never invented.
+  if(interpretation?.shouldExecute!==false&&!interpretation?.needsClarification){
+    const done=await window.ROBOTITO_TEMPORAL_COMMANDS?.handle?.(rawText,{
+      owner,lang:responseLanguage(),store:window.ROBOTITO_STORE,
+      classAudio:window.ROBOTITO_CLASS_AUDIO,clock:window.ROBOTITO_TEMPORAL,
+      classMode:state.classMode,at:new Date(),
+      activeOwner:()=>state.currentVoicePerson||state.currentPerson||"local",
+      container:$("#temporalPlaybackResult"),
+      speak:literal=>sayInLanguage(literal,responseLanguage())
+    });
+    if(done)return;
   }
   const generalAcademic=interpretation?.source==="general"&&
     ["definition","explanation","comparison","example","summary"].includes(understood.intent);
@@ -6194,6 +6213,7 @@ window.ROBOTITO_QUESTION_ROUTING={
 };
 
 document.addEventListener("visibilitychange",reconcileCaptureState);
+window.addEventListener("pagehide",()=>window.ROBOTITO_TEMPORAL_COMMANDS?.stop?.());
 window.addEventListener("pagehide",()=>{if(state.started)stopSenses();});
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){
