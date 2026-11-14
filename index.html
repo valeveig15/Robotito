@@ -45,6 +45,7 @@
   <script defer src="class-organizer.js?v=20261107-p05"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
   <script defer src="class-verification.js?v=20261108-p06"></script>
+  <script defer src="custom-rules.js?v=20261114-p11-safe"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
@@ -693,6 +694,15 @@
           <div id="tasksList" class="tasks-list"><p class="muted" data-i18n="uiNoTasksHelp">Conectá tu hoja para ver tareas.</p></div>
           <p data-i18n="uiTaskReminderHelp" class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
         </div>
+        <details class="card p11-rules-panel">
+          <summary data-i18n="p11Title">Reglas personalizadas de Robotito</summary>
+          <p class="muted" data-i18n="p11Help">Escribí una regla simple como «si digo hola, decí buen día» o «cuando son las 18:00, recordame estudiar». Solo funciona mientras Robotito está abierto. No ejecuta aplicaciones externas ni notificaciones con el navegador cerrado.</p>
+          <label><span data-i18n="p11RuleLabel">Nueva regla</span>
+            <textarea id="customRuleText" rows="2" maxlength="800" data-i18n-placeholder="p11Example" placeholder="Si digo hola, decí buen día"></textarea></label>
+          <button type="button" id="customRuleAdd" class="primary full" data-i18n="p11Add">Guardar regla</button>
+          <p id="customRuleStatus" role="status" aria-live="polite" class="mini-status"></p>
+          <div id="customRuleList" class="tasks-list"></div>
+        </details>
       </section>
 
       <section class="tabpage" id="tab-people">
