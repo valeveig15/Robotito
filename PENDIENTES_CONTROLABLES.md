@@ -80,8 +80,8 @@ Para impedir reacciones humanas no autorizadas, la política del avatar ahora ex
 
 ## P07 — Persistencia, edición y transferencia segura de memoria
 
-**Estado: trabajo auditado en [P07-STATUS.md](P07-STATUS.md); PR #118 corrige la edición y el borrado por propietario, sin cerrar el punto 07.**
+**Estado: en progreso en [P07-STATUS.md](P07-STATUS.md).** PR #118 integró corrección y borrado por propietario; PR #119 integró copia cifrada voluntaria. Una nueva fase añade un deshacer transaccional de un paso, sujeto a CI.
 
-La copia local sigue limitada a 32 MiB de JSON y 12 MiB por archivo, sin cifrado ni datos solo presentes en localStorage. Implementar respaldo robusto para archivos grandes, integridad y cifrado opcional, control de concurrencia durante copia/restauración, compatibilidad de versiones y deshacer de una restauración sin requerir conservar manualmente una copia previa. Probar recuperación por cuota llena, escritura interrumpida, migraciones parciales, recarga y múltiples pestañas.
+La copia local continúa limitada a 32 MiB de JSON y 12 MiB por archivo. La opción cifrada AES-GCM protege archivos descargados, pero no la base IndexedDB en reposo. Falta respaldo robusto de audios/PDF grandes, datos solo presentes en localStorage, control completo de concurrencia durante exportación, compatibilidad entre versiones futuras y recuperación en dispositivos perdidos. El nuevo checkpoint reversible es local, de una sola generación, limitado a 64 MiB y no sustituye una copia descargada.
 
 La vinculación de visitantes pseudónimos a identidades registradas debe ser voluntaria, verificada y reversible, con consentimiento explícito; nunca atribuir memorias privadas por coincidencia facial/vocal débil. Medir escalabilidad con grandes volúmenes y probar Android, iPhone y escritorio con dispositivos físicos. Mantener «Chocar los cinco» y el resto de la CI sin regresiones.
