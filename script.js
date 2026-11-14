@@ -133,6 +133,7 @@ const state = {
   recentAudioFeatures: [],
   recentVoicePrints: [],
   currentVoicePerson: null,
+  lastVoiceConfirmedAt: 0,
   ambientRms: .012,
   voiceThreshold: .035,
   faceMatchHistory: [],
@@ -1056,6 +1057,7 @@ function primeMobileSpeechFromGesture(){
 
 function clearCaptureIdentity(){
   state.currentPerson=null;state.currentVoicePerson=null;
+  state.lastVoiceConfirmedAt=0;
   state.faceMatchHistory=[];state.lastFaceConfirmedAt=0;
   state.lastDetections=[];state.recentVoicePrints=[];state.recentAudioFeatures=[];
   state.visibleHands=0;state.visibleFingers=0;state.handNearMouth=false;
@@ -1737,12 +1739,14 @@ function processSpeechResult(text,speechMeta=null){
   const print=speechMeta?.startedAt
     ?voicePrintForWindow(speechMeta.startedAt,speechMeta.endedAt)
     :recentVoicePrint();
-  const voiceMatch=recognizeVoicePerson(print,state.currentPerson);
+  const faceAtUtterance=state.currentPerson;
+  const voiceMatch=recognizeVoicePerson(print,faceAtUtterance);
   state.currentVoicePerson=voiceMatch?.name||null;
-  if(!voiceMatch){
-    // Seeing one face does not prove that this person uttered the phrase.
-    // An off-camera speaker or an unclear voice must not inherit that face's
-    // private memories, birthday or reply context.
+  state.lastVoiceConfirmedAt=voiceMatch?Date.now():0;
+  if(!voiceMatch||faceAtUtterance&&faceAtUtterance!==voiceMatch.name){
+    // A different independently recognized speaker NEVER inherits the
+    // visible person's face, memories, relationships or birthday.
+    // Rebuild visual consensus independently after any mismatch.
     state.currentPerson=null;
     state.faceMatchHistory=[];
     state.lastFaceConfirmedAt=0;
@@ -3893,17 +3897,14 @@ function changeClassLineSpeaker(id,value){
     line.speakerName=name;
     line.speaker=speakerRoleForPerson(name);
     line.speakerConfidence=1;
-    const p=state.people.find(x=>x.name===name);
-    if(p&&line.voicePrint){
-      p.voicePrints=[...(p.voicePrints||[]),line.voicePrint].slice(-5);
-      save(KEYS.people,state.people);
-    }
-    if(p&&line.feature&&["me","teacher","classmate"].includes(p.role))learnSpeaker(p.role,line.feature);
+    // Manual attribution corrects the transcript label only; it cannot
+    // silently enroll a biometric voiceprint into someone else's profile.
+    // A voice refresh must go through explicit consented enrollment.
   }else{
     line.speaker=value;
     line.speakerName=null;
     line.speakerConfidence=1;
-    if(line.feature&&["me","teacher","classmate"].includes(value))learnSpeaker(value,line.feature);
+    // This correction does not retrain a biometric speaker model.
   }
   save("robotito.classLines.v1",state.classLines);
   renderClassTranscript();
@@ -4646,7 +4647,13 @@ function recognize(det){
   state.lastFaceConfirmedAt=now;
   const lastGreeting=p.lastGreetingAt||0;
 
-  if(changed && now-lastGreeting>25000){
+  // A camera match alone is not proof of identity: withhold names,
+  // personal greetings and birthdays until independently verified recent
+  // speaker evidence agrees with the same registered person.
+  const voiceConfirmed=state.currentVoicePerson===best.label&&
+    Number.isFinite(state.lastVoiceConfirmedAt)&&
+    now>=state.lastVoiceConfirmedAt&&now-state.lastVoiceConfirmedAt<=4000;
+  if(changed && voiceConfirmed && now-lastGreeting>25000){
     p.lastGreetingAt=now;
     save(KEYS.people,state.people);
     say(greetingFor(p));
@@ -5434,7 +5441,13 @@ function renderPeople(){
 
 // A UI profile may edit only the owner's own typed records. Historical
 // unlabelled memories remain local, never guessed to belong to a person.
-function activeMemoryOwner(){return state.currentPerson||"local";}
+function activeMemoryOwner(){
+ const recent=Number.isFinite(state.lastVoiceConfirmedAt)&&
+  Date.now()>=state.lastVoiceConfirmedAt&&Date.now()-state.lastVoiceConfirmedAt<=8000;
+ return recent&&state.currentVoicePerson&&
+  (!state.currentPerson||state.currentVoicePerson===state.currentPerson)
+   ?state.currentVoicePerson:"local";
+}
 function p07Message(key){
  const lang=state.languageMode||"es";
  const t={
