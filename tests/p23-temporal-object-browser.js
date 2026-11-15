@@ -23,6 +23,7 @@ runBrowserTest("p23-temporal-vision",async test=>{
  assert.equal(checks.third.label,"cup");
  assert.equal(checks.raised,3);
  assert.equal(checks.intent,"object");
+ await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true",null,{timeout:20000});
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="class"]').click();
  await page.locator("#detectObjectBtn").click();
