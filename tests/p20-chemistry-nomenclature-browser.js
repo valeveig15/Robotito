@@ -7,6 +7,7 @@ runBrowserTest("p20-chemistry",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_CHEM_NOMENCLATURE?.query)&&
   document.querySelector("#nomenclatureSolve"),null,{timeout:20000});
+ await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true",null,{timeout:20000});
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="class"]').click();
  await page.locator("#nomenclatureInput").fill("óxido de hierro(III)");
