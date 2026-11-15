@@ -535,8 +535,56 @@ ${useful.join("\n").slice(0,7000)}`;
     renderAcademicMaterials();
   }
 
+  function cumulativeSummary(){
+    const output=document.querySelector("#cumulativeSummaryOutput");
+    const scope=document.querySelector("#cumulativeSummaryScope")?.value==="subject"?"subject":"topic";
+    const level=document.querySelector("#cumulativeSummaryLength")?.value||"medium";
+    const subject=String(document.querySelector("#classSubject")?.value||state.classSubject||"").trim();
+    const topic=scope==="topic"?String(document.querySelector("#classTopic")?.value||state.classTopic||"").trim():"";
+    if(!output)return;
+    output.replaceChildren();
+    if(!subject||(scope==="topic"&&!topic)){
+      output.textContent=uiText("Elegí una materia y, para resumir un tema, indicá también el tema.");return;
+    }
+    const result=window.ROBOTITO_CLASS_AGGREGATE?.build?.({
+      subject,topic,level,lines:state.classLines||[],
+      materials:state.academicMaterials||[],sessions:sessionsFromLines()
+    });
+    if(!result?.ok){
+      output.textContent=uiText("No encontré suficientes apuntes o transcripciones para ese alcance.");return;
+    }
+    const header=document.createElement("h3");header.textContent=uiText("Resumen: ")+subject+(topic?" — "+topic:"");
+    output.append(header);
+    const meta=document.createElement("p");meta.className="muted";
+    meta.textContent=uiText("{count} clases",{count:result.sessionCount})+" · "+uiText("{count} materiales",{count:result.materialCount})+" · "+uiText("{count} fragmentos",{count:result.lineCount});
+    output.append(meta);
+    for(const [label,items] of [
+      [uiText("Ideas importantes"),result.important],
+      [uiText("Conceptos recurrentes"),result.concepts.map(c=>({text:c.word+" ("+c.occurrences+")"}))],
+      [uiText("Dudas"),result.doubts],[uiText("Ejercicios"),result.exercises]
+    ]){
+      const title=document.createElement("h4");title.textContent=label;output.append(title);
+      if(!items.length){const empty=document.createElement("p");empty.className="muted";
+        empty.textContent=uiText("No se encontraron elementos en los materiales seleccionados.");output.append(empty);continue;}
+      const ul=document.createElement("ul");
+      for(const item of items){
+        const li=document.createElement("li");li.textContent=item.text;
+        if(item.source){
+          const cite=document.createElement("small");
+          cite.textContent=" · "+uiText("Fuente: ")+(item.source.name||item.source.sessionId||"transcripción")+
+            (item.source.chunk?" · "+uiText("fragmento {count}",{count:item.source.chunk}):"");
+          li.append(cite);
+        }
+        ul.append(li);
+      }
+      output.append(ul);
+    }
+    const note=document.createElement("p");note.className="muted";
+    note.textContent=uiText("Resumen extractivo: los fragmentos no equivalen a hechos verificados. Revisá el contexto de cada fuente.");
+    output.append(note);
+  }
   window.ROBOTITO_CLASS_ORGANIZER={
-    migrate,render,inferTopic,finalizeSession,generateAndSaveClassSummary,
+    migrate,render,inferTopic,finalizeSession,generateAndSaveClassSummary,cumulativeSummary,
     sessionsFromLines,selectSession,openSessionEditor,saveSessionEdit,currentSessionLines,parseLegacyLabel,
     migrateAudioRecordings,renderAcademicMaterials,importAcademicFiles
   };
@@ -548,6 +596,7 @@ ${useful.join("\n").slice(0,7000)}`;
     try{migrate();}catch(e){console.warn("class migration",e);}
     render();
     renderAcademicMaterials();
+    document.querySelector("#cumulativeSummaryGenerate")?.addEventListener("click",cumulativeSummary);
     migrateAudioRecordings();
     document.querySelector("#classSessionEditorForm")?.addEventListener("submit",saveSessionEdit);
     document.querySelector("#cancelClassSessionEdit")?.addEventListener("click",closeSessionEditor);

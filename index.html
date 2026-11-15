@@ -44,6 +44,7 @@
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
   <script defer src="speech-fallback.js?v=20261105-p04-capture"></script>
   <script defer src="class-audio.js?v=20261107-p05"></script>
+  <script defer src="class-summary-aggregate.js?v=20261115-p15"></script>
   <script defer src="class-organizer.js?v=20261107-p05"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
   <script defer src="class-verification.js?v=20261108-p06"></script>
@@ -537,6 +538,23 @@
               <h2 data-i18n="uiSavedClasses">Clases guardadas</h2>
               <p data-i18n="uiClassSavedHelp" class="muted">Organizadas primero por materia y después por tema.</p>
             </div>
+          </div>
+          <div class="study-output" id="cumulativeSummaryControls">
+            <label><span data-ui-copy="Resumen%20acumulado">Resumen acumulado</span>
+              <select id="cumulativeSummaryScope" aria-label="Alcance del resumen">
+                <option value="topic" data-ui-copy="Tema%20actual">Tema actual</option>
+                <option value="subject" data-ui-copy="Materia%20completa">Materia completa</option>
+              </select>
+            </label>
+            <label><span data-ui-copy="Extensi%C3%B3n">Extensión</span>
+              <select id="cumulativeSummaryLength" aria-label="Extensión del resumen">
+                <option value="short" data-ui-copy="Breve">Breve</option>
+                <option value="medium" selected data-ui-copy="Intermedio">Intermedio</option>
+                <option value="long" data-ui-copy="Detallado">Detallado</option>
+              </select>
+            </label>
+            <button type="button" class="primary" id="cumulativeSummaryGenerate"><span data-ui-copy="Generar%20resumen%20acumulado">Generar resumen acumulado</span></button>
+            <div id="cumulativeSummaryOutput" role="status" aria-live="polite"></div>
           </div>
           <div id="classLibrary" class="class-library">
             <p data-i18n="uiNoClasses" class="muted">Todavía no hay clases organizadas.</p>
