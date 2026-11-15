@@ -45,15 +45,16 @@ function fixture(){
  const badSource=source.slice(from,to).replace(
    "let active=null,captureRequest=0;", "let active=null,captureRequest=0;"
  );
+ class FaultyRecorder{
+   constructor(){this.state="inactive";this.mimeType="audio/webm";}
+   start(){this.state="recording";queueMicrotask(()=>this.ondataavailable?.({data:new Blob(["chunk"])}));}
+   stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
+ }
  const badRuntime=new Function("state","window","document","navigator","MediaStream","MediaRecorder","crypto",
   "pickMimeType","render","setLiveStatus","putChunk","chunksFor","saveRecording","clearChunks",
   "let active=null,captureRequest=0;\n"+badSource+"\nreturn {start,stop};")(
-  invalid.state,{MediaRecorder:class {
-    constructor(){this.state="inactive";this.mimeType="audio/webm";}
-    start(){this.state="recording";queueMicrotask(()=>this.ondataavailable?.({data:new Blob(["chunk"])}));}
-    stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
-  }},{hidden:false},{storage:{persist:async()=>{}}},
-  class{constructor(tracks){this.getTracks=()=>tracks;}},class {},{randomUUID:()=>"bad-class"},
+  invalid.state,{MediaRecorder:FaultyRecorder},{hidden:false},{storage:{persist:async()=>{}}},
+  class{constructor(tracks){this.getTracks=()=>tracks;}},FaultyRecorder,{randomUUID:()=>"bad-class"},
   ()=>"audio/webm",async()=>{},()=>{},async()=>{throw new Error("storage unavailable");},
   async()=>[{seq:0,blob:new Blob(["partial"])}],
   async()=>{throw new Error("Incomplete recording must never be saved");},async()=>{});
