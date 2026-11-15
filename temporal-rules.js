@@ -36,7 +36,7 @@ function safeRow(row){
 }
 function parseInstruction(raw){
  const s=String(raw||"").trim().replace(/[.!?]+$/,"").trim();
- let m=s.match(/^(?:en|em|dentro de|in|daqui a|dans|tra)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)\s*[,;:]?\s*(?:recordame|recuerdame|avisame|decime|dime|dimmi|di|say|tell me|remind me|lembre-me|me lembre|dis-moi|ricordami|sag mir)\s+(.+)$/i);
+ let m=s.match(/^(?:en|em|dentro de|in|daqui a|dans|tra)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)\s*[,;:]?\s*(?:recordame|recuerdame|avisame|decime|dime|dimmi|di|say|tell me|remind me|lembre-me|me lembre|dis-moi|ricordami|sag mir)(?:\s+|,\s*)(.+)$/i);
  if(m){const ms=duration(m[1],fold(m[2]));return ms&&safeText(m[3].replace(/^[,;:]\s*/,""))?{kind:"once",ms,text:m[3].replace(/^[,;:]\s*/,"").trim()}:null;}
  m=s.match(/^(?:cada|every|a cada|toutes les|ogni|alle)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)\s*(?:por|durante|for|durant|per|fur)\s*(\d{1,2})\s*(?:veces|times|vezes|fois|volte|mal)\s*[,;:]?\s*(?:recordame|recuerdame|avisame|decime|dime|di|say|tell me|remind me|lembre-me|dis-moi|ricordami|sag mir)\s+(.+)$/i);
  if(m){const ms=duration(m[1],fold(m[2])),n=Number(m[3]);return ms&&n>=2&&n<=12&&safeText(m[4])?{kind:"repeat",ms,count:n,text:m[4].trim()}:null;}
