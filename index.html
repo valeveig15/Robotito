@@ -18,6 +18,7 @@
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js?v=20261107-p05"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
+  <script defer src="temporal-rules.js?v=20261115-p10-p11"></script>
   <script defer src="i18n.js?v=20261107-p05"></script>
   <script defer src="ui-messages.js?v=20261108-p06"></script>
   <script defer src="localized-content.js?v=20261107-p05"></script>
@@ -370,6 +371,7 @@
         <button type="button" class="tab active" data-tab="status" data-i18n="status">Estado</button>
         <button type="button" class="tab" data-tab="class" data-i18n="class">Clase</button>
         <button type="button" class="tab" data-tab="tasks" data-i18n="tasks">Tareas</button>
+        <button type="button" class="tab" data-tab="temporal">Órdenes y reglas</button>
         <button type="button" class="tab" data-tab="people" data-i18n="people">Personas</button>
         <button type="button" class="tab" data-tab="books" data-i18n="books">Libros</button>
         <button type="button" class="tab" data-tab="memory" data-i18n="memory">Memoria</button>
@@ -669,6 +671,24 @@
           <p class="muted" data-i18n="uiObjectHelp">Mostrá un objeto a cámara y preguntá “¿qué es esto?” o usá el botón.</p>
           <button id="detectObjectBtn" type="button" class="primary full" data-i18n="uiRecognizeObject">Reconocer objeto</button>
           <div id="objectResult" class="study-output"></div>
+        </div>
+      </section>
+
+      <section class="tabpage" id="tab-temporal">
+        <div class="card">
+          <h2>Órdenes temporales y reglas personalizadas</h2>
+          <p class="muted">Estas órdenes funcionan únicamente con Robotito abierto y visible. No envían notificaciones con la pestaña cerrada ni activan cámara, micrófono o acciones peligrosas.</p>
+          <label><span>Escribí una orden segura</span>
+            <input id="temporalRuleInput" autocomplete="off" maxlength="420" placeholder="En 5 minutos decime tomar agua" />
+          </label>
+          <div class="actions">
+            <button id="temporalRuleAdd" type="button" class="primary">Guardar orden</button>
+          </div>
+          <p id="temporalRuleStatus" class="muted" aria-live="polite"></p>
+          <p class="muted">Ejemplos: «En 5 minutos decime tomar agua», «Cada 10 minutos por 3 veces decime estirar», «Si digo hola robotito, decí buen día», «Todos los días a las 14:30 decime estudiar».</p>
+          <h3>Órdenes guardadas del perfil activo</h3>
+          <div id="temporalRuleList"></div>
+          <p class="muted">Las reglas solo producen mensajes de texto o voz y se pueden cancelar individualmente. No se ejecutan instrucciones de código ni operaciones irreversibles.</p>
         </div>
       </section>
 
