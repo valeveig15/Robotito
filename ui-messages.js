@@ -3,6 +3,29 @@
 (function(root){
 "use strict";
 const rows=`
+Resumen acumulado|Cumulative summary|Resumo acumulado|Résumé cumulatif|Riepilogo cumulativo|Kumulative Zusammenfassung
+Alcance del resumen|Summary scope|Escopo do resumo|Portée du résumé|Ambito del riepilogo|Umfang der Zusammenfassung
+Tema actual|Current topic|Tema atual|Thème actuel|Argomento attuale|Aktuelles Thema
+Materia completa|Whole subject|Disciplina inteira|Matière entière|Materia completa|Gesamtes Fach
+Extensión|Length|Extensão|Longueur|Lunghezza|Länge
+Breve|Short|Breve|Court|Breve|Kurz
+Intermedio|Medium|Intermediário|Moyen|Intermedio|Mittel
+Detallado|Detailed|Detalhado|Détaillé|Dettagliato|Ausführlich
+Generar resumen acumulado|Generate cumulative summary|Gerar resumo acumulado|Générer un résumé cumulatif|Genera riepilogo cumulativo|Kumulative Zusammenfassung erstellen
+Elegí una materia y, para resumir un tema, indicá también el tema.|Choose a subject and, for a topic summary, enter the topic too.|Escolha uma disciplina e, para resumir um tema, informe também o tema.|Choisis une matière et indique aussi le thème pour en faire le résumé.|Scegli una materia e, per riassumere un argomento, indica anche l'argomento.|Wähle ein Fach und für eine Themenzusammenfassung auch das Thema.
+No encontré suficientes apuntes o transcripciones para ese alcance.|Not enough notes or transcripts were found for that scope.|Não encontrei anotações ou transcrições suficientes para esse escopo.|Je n'ai pas trouvé assez de notes ou de transcriptions pour cette portée.|Non ho trovato appunti o trascrizioni sufficienti per questo ambito.|Für diesen Umfang wurden nicht genügend Notizen oder Transkripte gefunden.
+Resumen: |Summary: |Resumo: |Résumé : |Riepilogo: |Zusammenfassung: 
+{count} clases|{count} classes|{count} aulas|{count} cours|{count} lezioni|{count} Unterrichtsstunden
+{count} materiales|{count} materials|{count} materiais|{count} documents|{count} materiali|{count} Materialien
+{count} fragmentos|{count} excerpts|{count} trechos|{count} extraits|{count} estratti|{count} Auszüge
+Ideas importantes|Key ideas|Ideias importantes|Idées importantes|Idee importanti|Wichtige Ideen
+Conceptos recurrentes|Recurring concepts|Conceitos recorrentes|Concepts récurrents|Concetti ricorrenti|Wiederkehrende Konzepte
+Dudas|Questions|Dúvidas|Questions en suspens|Dubbi|Offene Fragen
+Ejercicios|Exercises|Exercícios|Exercices|Esercizi|Übungen
+No se encontraron elementos en los materiales seleccionados.|No matching items were found in the selected materials.|Nenhum item foi encontrado nos materiais selecionados.|Aucun élément n'a été trouvé dans les documents sélectionnés.|Nessun elemento trovato nei materiali selezionati.|In den ausgewählten Materialien wurden keine Einträge gefunden.
+Fuente: |Source: |Fonte: |Source : |Fonte: |Quelle: 
+fragmento {count}|excerpt {count}|trecho {count}|extrait {count}|estratto {count}|Auszug {count}
+Resumen extractivo: los fragmentos no equivalen a hechos verificados. Revisá el contexto de cada fuente.|Extractive summary: excerpts are not verified facts. Check each source in context.|Resumo extrativo: os trechos não são fatos verificados. Confira o contexto de cada fonte.|Résumé extractif : les extraits ne sont pas des faits vérifiés. Vérifie leur contexte.|Riepilogo estrattivo: gli estratti non sono fatti verificati. Controlla il contesto di ogni fonte.|Extraktive Zusammenfassung: Auszüge sind keine geprüften Fakten. Prüfe den Kontext jeder Quelle.
 Dibujo hecho por Robotito|Drawing by Robotito|Desenho de Robotito|Dessin de Robotito|Disegno di Robotito|Zeichnung von Robotito
 Estado de Robotito|Robotito status|Estado de Robotito|État de Robotito|Stato di Robotito|Robotitos Status
 Acciones con Robotito|Robotito actions|Ações com Robotito|Actions avec Robotito|Azioni con Robotito|Aktionen mit Robotito
