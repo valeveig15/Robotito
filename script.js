@@ -3478,6 +3478,10 @@ function classEvidenceScore(question,e){
   // Subject context helps but never excludes older transcripts.
   if(e.subjectPreferred)score+=1.0;
   if(e.topicPreferred)score+=1.8;
+  // When relevance is comparable, prefer the student's uploaded study
+  // material over an uncertain automatic class transcript. This bonus cannot
+  // turn an unrelated document into evidence: overlap is required above.
+  if(e.sourceType==="material")score+=1.6;
   if(e.sourceType==="class"&&e.speaker==="teacher")score+=.45;
 
   // Penalize accidental one-word hits in multi-concept questions.
