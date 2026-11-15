@@ -52,7 +52,8 @@
     const sessionId=state.classMode?state.classSessionId:state.selectedClassSessionId;
     if(sessionId){
       const exact=state.classLines.filter(l=>l.sessionId===sessionId);
-      if(exact.length)return exact.slice(-250);
+      // A selected class must never fall through to another session.
+      return exact.slice(-250);
     }
 
     const subj=normalizeText(state.classSubject||$("#classSubject")?.value||"");
@@ -62,8 +63,8 @@
     const matched=state.classLines.filter(l=>{
       const ls=normalizeText(l.subject||"");
       const lt=normalizeText(l.topic||"");
-      const subjectOk=!subj||ls===subj||ls.includes(subj)||subj.includes(ls);
-      const topicOk=!topic||lt===topic||lt.includes(topic)||topic.includes(lt);
+      const subjectOk=!subj||(!!ls&&(ls===subj||ls.includes(subj)||subj.includes(ls)));
+      const topicOk=!topic||(!!lt&&(lt===topic||lt.includes(topic)||topic.includes(lt)));
       return subjectOk&&topicOk;
     });
     // No unrelated session may answer a question about this subject/topic.
