@@ -1,0 +1,30 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p20-chemistry",async test=>{
+ const {page,baseURL}=test;
+ test.phase("p20-interface");
+ await page.goto(baseURL,{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>Boolean(window.ROBOTITO_CHEM_NOMENCLATURE?.query)&&
+  document.querySelector("#nomenclatureSolve"),null,{timeout:20000});
+ await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
+ await page.locator('[data-tab="class"]').click();
+ await page.locator("#nomenclatureInput").fill("óxido de hierro(III)");
+ await page.locator("#nomenclatureSolve").click();
+ assert.match(await page.locator("#nomenclatureAnswer").innerText(),/Fe2O3/);
+ assert.match(await page.locator("#nomenclatureAnswer").innerText(),/carga \+3/);
+ await page.locator("#nomenclatureInput").fill("NaCl2");
+ await page.locator("#nomenclatureSolve").click();
+ assert.match(await page.locator("#nomenclatureAnswer").innerText(),/no neutraliza/);
+ await page.locator("#nomenclatureInput").fill("óxido de hierro");
+ await page.locator("#nomenclatureSolve").click();
+ assert.match(await page.locator("#nomenclatureAnswer").innerText(),/número de oxidación/);
+ test.phase("p20-practice");
+ await page.locator("#nomenclaturePractice").click();
+ assert.match(await page.locator("#nomenclatureExercise").innerText(),/fórmula/);
+ await page.locator("#nomenclatureReveal").click();
+ assert.match(await page.locator("#nomenclatureAnswer").innerText(),/Solución:/);
+ assert.deepEqual(test.report.pageErrors,[]);
+ test.report.result={naming:true,formula:true,invalid:true,ambiguity:true,exercises:true,hardware:false};
+ console.log("P20 "+test.engineName+" chemistry nomenclature tutor passed");
+}).catch(error=>{console.error(error);process.exitCode=1;});

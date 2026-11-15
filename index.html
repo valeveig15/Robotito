@@ -17,6 +17,8 @@
   <script defer src="objects.js?v=20261107-p05"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js?v=20261107-p05"></script>
+  <script defer src="chemistry-nomenclature.js?v=20261115-p20"></script>
+  <script defer src="chemistry-nomenclature-ui.js?v=20261115-p20"></script>
   <script defer src="study-planner.js?v=20261115-p18"></script>
   <script defer src="study-planner-ui.js?v=20261115-p18"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
@@ -684,6 +686,21 @@
           <button id="solveMathBtn" data-i18n="uiSolveMath" type="button" class="primary full">Resolver y representar</button>
           <div id="mathExplanation" class="study-output"></div>
           <canvas id="mathCanvas" width="520" height="360"></canvas>
+        </div>
+
+        <div class="card" id="nomenclatureTutorCard">
+          <h2>Nomenclatura química paso a paso</h2>
+          <p class="muted">Formá o nombrá compuestos de un catálogo controlado: óxidos, hidróxidos, sales y ácidos frecuentes. Las valencias y cargas se justifican; si la fórmula no está comprobada, Robotito lo aclara.</p>
+          <label>Nombre o fórmula
+            <input id="nomenclatureInput" autocomplete="off" placeholder="Ej. óxido de hierro(III) o Fe2O3" />
+          </label>
+          <button type="button" class="primary full" id="nomenclatureSolve">Explicar fórmula y nombre</button>
+          <div class="button-grid two">
+            <button type="button" id="nomenclaturePractice">Ejercicio nuevo</button>
+            <button type="button" id="nomenclatureReveal" disabled>Mostrar solución</button>
+          </div>
+          <div id="nomenclatureExercise" class="study-output"></div>
+          <div id="nomenclatureAnswer" class="study-output" role="status" aria-live="polite" style="white-space:pre-wrap"></div>
         </div>
 
         <div class="card">
