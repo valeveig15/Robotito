@@ -244,16 +244,25 @@
       const country=await resolveCountry(parsed.country,lang);
       if(!country)return {handled:true,text:language(lang)==="en"?"I couldn't identify that country.":"No pude identificar ese país.",source:null};
       if(parsed.intent==="current"){
+        // One crowdsourced record cannot corroborate a current office-holder.
+        // Never fall back to the first historical row when it is unavailable.
         const live=await currentPresident(country);
-        if(live?.name){
-          const code=language(lang);
-          const text=code==="en"
-            ?"The current president of "+country.label+" is "+live.name+"."
-            :code==="pt"
-              ?"O presidente atual de "+country.label+" é "+live.name+"."
-              :"El presidente actual de "+country.label+" es "+live.name+".";
-          return {handled:true,text,source:"Wikidata",country,parsed,rows:[live]};
-        }
+        const today=new Date().toISOString().slice(0,10);
+        const code=language(lang);
+        const text=live?.name
+          ?code==="en"?"Wikidata lists "+live.name+" for the presidency of "+country.label+
+            " (checked "+today+"), but I have not independently verified this with an official source."
+          :code==="pt"?"O Wikidata registra "+live.name+" para a presidência de "+country.label+
+            " (consulta "+today+"), sem confirmação independente em fonte oficial."
+          :"Wikidata registra a "+live.name+" para la presidencia de "+country.label+
+            " (consultado "+today+"), pero no lo corroboré con una fuente oficial independiente."
+          :code==="en"?"I could not verify the current president from dated, corroborated sources."
+          :code==="pt"?"Não consegui verificar a presidência atual com fontes datadas e corroboradas."
+          :"No pude verificar la presidencia actual con fuentes fechadas y corroboradas.";
+        return {handled:true,text,verified:false,checkedAt:today,
+          source:live?.name?"Wikidata (sin corroboración oficial)":null,
+          url:live?.id?"https://www.wikidata.org/wiki/"+live.id:null,
+          country,parsed,rows:live?[live]:[]};
       }
       const rows=await officeHolders(country);
       const text=format(parsed,country,rows,lang);

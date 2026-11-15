@@ -164,7 +164,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **18.** Lista de prioridades y tareas propia de Robotito — EN PROGRESO (planificador nativo local, vencimientos, horarios, completado e importación voluntaria de Sheets; ver [P18-STATUS.md](P18-STATUS.md)).
 - [ ] **19.** Matemáticas y ecuaciones expresadas oralmente — EN PROGRESO (ecuaciones lineales, sistemas 2×2, pasos, comprobación, casos negativos y voz; ver [P19-STATUS.md](P19-STATUS.md)).
 - [ ] **20.** Nomenclatura química como tutor — EN PROGRESO (nombres/fórmulas, estados de oxidación, compuestos frecuentes y ejercicios con rechazo conservador; ver [P20-STATUS.md](P20-STATUS.md)).
-- [ ] **21.** Países, capitales, autoridades e historia contextualizada — POR AUDITAR
+- [ ] **21.** Países, capitales, autoridades e historia contextualizada — EN PROGRESO (capitales dinámicas con fuente y fecha; autoridades actuales sin corroboración oficial se marcan no verificadas; faltan gobierno e historia exhaustivos; ver [P21-STATUS.md](P21-STATUS.md)).
 - [ ] **22.** Vídeos y materiales de estudio — EN PROGRESO (evidencias subtituladas/auditivas/visuales con fuente, tiempos, consentimiento y búsqueda temática; faltan validación física y precisión; ver [P22-STATUS.md](P22-STATUS.md)).
 - [ ] **23.** Visión de objetos y seguimiento visual — POR AUDITAR
 - [ ] **24.** Mostrar objetos mediante una pequeña escena, no un cartel — POR AUDITAR
