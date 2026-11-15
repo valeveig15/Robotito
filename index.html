@@ -17,6 +17,8 @@
   <script defer src="objects.js?v=20261107-p05"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js?v=20261107-p05"></script>
+  <script defer src="study-planner.js?v=20261115-p18"></script>
+  <script defer src="study-planner-ui.js?v=20261115-p18"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
   <script defer src="temporal-rules.js?v=20261115-p10-p11"></script>
   <script defer src="i18n.js?v=20261107-p05"></script>
@@ -711,6 +713,64 @@
       </section>
 
       <section class="tabpage" id="tab-tasks">
+        <div class="card" id="nativeStudyPlanner">
+          <h2>Planificador de estudio de Robotito</h2>
+          <p class="muted">Funciona directamente en este navegador, sin Google Sheets. La fecha de entrega es opcional: si vence y la tarea sigue pendiente, queda marcada como atrasada y superprioritaria hasta que la completes.</p>
+          <form id="nativeTaskForm" class="native-task-form">
+            <label>Tarea
+              <input id="nativeTaskName" maxlength="240" required placeholder="Ej. Repasar membrana celular" autocomplete="off" />
+            </label>
+            <label>Materia
+              <input id="nativeTaskSubject" maxlength="90" placeholder="Ej. Biología" autocomplete="off" />
+            </label>
+            <label>Prioridad de tarea (1–5)
+              <select id="nativeTaskPriority">
+                <option value="1">1 · Baja</option><option value="2">2</option>
+                <option value="3" selected>3 · Media</option><option value="4">4</option>
+                <option value="5">5 · Alta</option>
+              </select>
+            </label>
+            <label>Duración estimada (minutos)
+              <input id="nativeTaskMinutes" type="number" min="1" max="1440" value="30" />
+            </label>
+            <label>Fecha de entrega (opcional)
+              <input id="nativeTaskDue" type="date" />
+            </label>
+            <button class="primary" type="submit">Añadir pendiente</button>
+          </form>
+          <details>
+            <summary>Materias y disponibilidad semanal</summary>
+            <form id="nativeSubjectForm" class="native-task-form">
+              <label>Materia <input id="nativeSubjectName" maxlength="90" required placeholder="Ej. Física" /></label>
+              <label>Prioridad de materia (1–5)
+                <select id="nativeSubjectPriority">
+                  <option value="1">1</option><option value="2">2</option>
+                  <option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+                </select>
+              </label>
+              <button type="submit">Guardar materia</button>
+            </form>
+            <form id="nativeBlockForm" class="native-task-form">
+              <label>Día de estudio
+                <select id="nativeBlockWeekday">
+                  <option value="1">Lunes</option><option value="2">Martes</option>
+                  <option value="3">Miércoles</option><option value="4">Jueves</option>
+                  <option value="5">Viernes</option><option value="6">Sábado</option>
+                  <option value="0">Domingo</option>
+                </select>
+              </label>
+              <label>Desde <input id="nativeBlockStart" type="time" value="17:00" required /></label>
+              <label>Hasta <input id="nativeBlockEnd" type="time" value="18:00" required /></label>
+              <button type="submit">Agregar horario</button>
+            </form>
+            <div id="nativeTaskBlocks"></div>
+          </details>
+          <h3>Prioridades de hoy</h3>
+          <p class="muted" id="nativeTaskDaySummary"></p>
+          <div id="nativeTaskList" class="tasks-list"></div>
+          <p class="mini-status" role="status" aria-live="polite" id="nativeTaskStatus"></p>
+          <p class="muted">También podés decir «Anotá tarea repasar energía para Física» o «Terminé tarea repasar energía». Las tareas siguen siendo privadas de este navegador.</p>
+        </div>
         <div class="card">
           <h2 data-i18n="uiTasksSheet">Tu hoja de tareas</h2>
           <p class="muted" data-i18n="uiTaskSheetHelp">Pegá el enlace de Google Sheets. Robotito intentará leer una hoja publicada/compartida para lectura. Tus datos quedan guardados en este navegador.</p>
@@ -728,6 +788,7 @@
           <div class="section-head">
             <h2 data-i18n="uiPendingTasks">Pendientes</h2>
             <button id="refreshTasksBtn" type="button" class="ghost" data-i18n="uiRefresh">Actualizar</button>
+            <button id="nativeSheetImport" type="button" class="ghost">Copiar pendientes de Sheets a Robotito</button>
           </div>
           <div id="tasksList" class="tasks-list"><p class="muted" data-i18n="uiNoTasksHelp">Conectá tu hoja para ver tareas.</p></div>
           <p data-i18n="uiTaskReminderHelp" class="muted">Después de 20 minutos usando Robotito, si hay pendientes te va a recordar que existen para que no te quedes distraída con él.</p>
