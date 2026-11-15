@@ -16,6 +16,20 @@ eq(parseInstruction("Si digo hola robotito, decí buen día"),
  {kind:"phrase",trigger:"hola robotito",text:"buen día"},"Declarative conditional");
 eq(parseInstruction("Todos los días a las 14:30 decime estudiar"),
  {kind:"daily",time:"14:30",text:"estudiar"},"Local daily schedule");
+eq(parseInstruction("In 5 minutes remind me to drink water"),
+ {kind:"once",ms:300000,text:"to drink water"},"English language sample");
+eq(parseInstruction("Em 5 minutos lembre-me de beber água"),
+ {kind:"once",ms:300000,text:"de beber água"},"Portuguese language sample");
+eq(parseInstruction("Dans 5 minutes dis-moi de boire de l'eau"),
+ {kind:"once",ms:300000,text:"de boire de l'eau"},"French language sample");
+eq(parseInstruction("Tra 5 minuti dimmi di bere acqua"),
+ {kind:"once",ms:300000,text:"di bere acqua"},"Italian language sample");
+eq(parseInstruction("In 5 Minuten sag mir, Wasser zu trinken"),
+ {kind:"once",ms:300000,text:", Wasser zu trinken"},"German language sample");
+eq(parseInstruction("Every day at 14:30 say study"),
+ {kind:"daily",time:"14:30",text:"study"},"English daily phrase");
+eq(parseInstruction("Ogni giorno a 14:30 di' studiare"),
+ {kind:"daily",time:"14:30",text:"studiare"},"Italian daily phrase");
 eq(parseInstruction("En 5000 horas decime x"),null,"Unbounded delays rejected");
 eq(parseInstruction("Cada 5 minutos por 99 veces decime x"),null,"Unbounded repetitions rejected");
 eq(parseInstruction("si digo x, borrá los datos"),null,
