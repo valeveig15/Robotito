@@ -166,7 +166,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **20.** Nomenclatura química como tutor — EN PROGRESO (nombres/fórmulas, estados de oxidación, compuestos frecuentes y ejercicios con rechazo conservador; ver [P20-STATUS.md](P20-STATUS.md)).
 - [ ] **21.** Países, capitales, autoridades e historia contextualizada — POR AUDITAR
 - [ ] **22.** Vídeos y materiales de estudio — POR AUDITAR
-- [ ] **23.** Visión de objetos y seguimiento visual — POR AUDITAR
+- [ ] **23.** Visión de objetos y seguimiento visual — EN PROGRESO (consenso temporal de objetos, incertidumbre y dedos estables; faltan calibración real y móviles; ver [P23-STATUS.md](P23-STATUS.md)).
 - [ ] **24.** Mostrar objetos mediante una pequeña escena, no un cartel — POR AUDITAR
 - [ ] **25.** Interfaz móvil sin superposiciones y chat escrito visible — POR AUDITAR
 - [ ] **26.** Redimensionamiento horizontal y desplazamiento del panel derecho — POR AUDITAR
