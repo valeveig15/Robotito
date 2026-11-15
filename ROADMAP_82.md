@@ -155,9 +155,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — EN PROGRESO (bóveda cifrada con consentimiento, seguimiento efímero sin permiso, vínculos revisados y borrado; ver [P09-STATUS.md](P09-STATUS.md); falta validación biométrica con personas y hardware reales)
 - [ ] **10.** Órdenes temporales, reproducción y repetición — EN PROGRESO (recordatorios relativos, repeticiones finitas, panel y ejecución visible por perfil; ver [P10-STATUS.md](P10-STATUS.md); faltan horarios suspendidos/hardware y ejecución con pestaña cerrada)
 - [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — EN PROGRESO (reglas declarativas de respuesta por frase u hora, cancelables y limitadas al perfil; ver [P11-STATUS.md](P11-STATUS.md); pendientes otros eventos consentidos, concurrencia y validación física)
-- [ ] **12.** Modo Clase: audio completo, silencio y reproducción — POR AUDITAR
-- [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — POR AUDITAR
-- [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — POR AUDITAR
+- [ ] **12.** Modo Clase: audio completo, silencio y reproducción — EN PROGRESO (integridad de fragmentos y rechazo de grabaciones incompletas en [PR #130](https://github.com/valeveig15/Robotito/pull/130); faltan clases prolongadas y hardware real; ver [P12-STATUS.md](P12-STATUS.md))
+- [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — EN PROGRESO (abstención ante identidad incierta y protección contra verificación tardía en [PR #130](https://github.com/valeveig15/Robotito/pull/130); faltan diarización y edición con historial; ver [P13-STATUS.md](P13-STATUS.md))
+- [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — EN PROGRESO (aislamiento entre sesiones y materias en [PR #130](https://github.com/valeveig15/Robotito/pull/130); falta jerarquía completa de fuentes y trazabilidad; ver [P14-STATUS.md](P14-STATUS.md))
 - [ ] **15.** Resúmenes por clase, tema y materia completa — POR AUDITAR
 - [ ] **16.** Compartir selectivamente memorias de clases — POR AUDITAR
 - [ ] **17.** Grupos de estudio con chat y entregas conjuntas — POR AUDITAR

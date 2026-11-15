@@ -39,18 +39,21 @@
       const closeness=Math.max(0,Math.min(1,1-best.d/1.05));
       const margin=second?Math.max(0,Math.min(1,(second.d-best.d)/.42)):.45;
       state.lastSpeakerConfidence=Math.max(.28,Math.min(.96,closeness*.72+margin*.28));
-      if(best.d<.7)return best.label;
-      if(second&&best.d+.10<second.d)return best.label;
+      // An acoustic resemblance alone cannot prove who spoke.
+      // A missing second profile cannot provide an identity margin.
+      if(second&&best.d<.45&&second.d-best.d>=.20&&
+         state.lastSpeakerConfidence>=.72)return best.label;
     }
-    // Unknown voices are provisionally classmates, but explicitly marked low-confidence.
+    // Never silently attribute an unverified voice to a classmate.
     state.lastSpeakerConfidence=.24;
-    return "classmate";
+    return "unknown";
   }
   function classLinesForSubject(){
     const sessionId=state.classMode?state.classSessionId:state.selectedClassSessionId;
     if(sessionId){
       const exact=state.classLines.filter(l=>l.sessionId===sessionId);
-      if(exact.length)return exact.slice(-250);
+      // A selected class must never fall through to another session.
+      return exact.slice(-250);
     }
 
     const subj=normalizeText(state.classSubject||$("#classSubject")?.value||"");
@@ -60,11 +63,12 @@
     const matched=state.classLines.filter(l=>{
       const ls=normalizeText(l.subject||"");
       const lt=normalizeText(l.topic||"");
-      const subjectOk=!subj||ls===subj||ls.includes(subj)||subj.includes(ls);
-      const topicOk=!topic||lt===topic||lt.includes(topic)||topic.includes(lt);
+      const subjectOk=!subj||(!!ls&&(ls===subj||ls.includes(subj)||subj.includes(ls)));
+      const topicOk=!topic||(!!lt&&(lt===topic||lt.includes(topic)||topic.includes(lt)));
       return subjectOk&&topicOk;
     });
-    return (matched.length?matched:state.classLines).slice(-250);
+    // No unrelated session may answer a question about this subject/topic.
+    return matched.slice(-250);
   }
   function contentWords(text){
     const stop=new Set(["que","como","para","por","una","uno","unos","unas","del","las","los","con","sin","sobre","esto","esta","este","son","fue","era","hay","muy","mas","pero","porque","cuando","donde","cual","cuales","quien","profesora","profesor","clase"]);
@@ -307,13 +311,16 @@ Respondé únicamente JSON válido:
     }
     renderClassTranscript();
     $("#speakerPill")?.classList.remove("hidden");
-    if($("#speakerLabel"))uiSet($("#speakerLabel"),speaker==="me"?"VOS":speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
+    if($("#speakerLabel"))uiSet($("#speakerLabel"),speaker==="me"?"VOS":speaker==="teacher"?"PROFESOR/A":speaker==="classmate"?"COMPAÑERO/A":"SIN IDENTIFICAR");
 
     const verification=await verifyTranscript(line.correctedText,[state.classSubject,state.classTopic].filter(Boolean).join(" — "));
     const live=state.classLines.find(x=>x.id===line.id);
     if(!live)return;
-    live.correctedText=verification.text;
-    live.corrections=[...(live.corrections||[]),...(verification.changes||[])];
+    // A slow verification may not overwrite manual edits made meanwhile.
+    if(live.correctedText===academic.text){
+      live.correctedText=verification.text;
+      live.corrections=[...(live.corrections||[]),...(verification.changes||[])];
+    }
     live.verificationStatus=verification.status;
     live.verificationSources=verification.sources||[];
     save("robotito.classLines.v1",state.classLines);
