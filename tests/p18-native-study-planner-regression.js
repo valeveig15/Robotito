@@ -52,6 +52,12 @@ const capacityTasks={getItem:key=>JSON.stringify({version:1,subjects:[{name:"Bio
 const atCapacity=createPlanner({storage:capacityTasks});
 assert.throws(()=>atCapacity.addTask({title:"Tarea 1001"}),/Límite de 1000 tareas/);
 assert.equal(atCapacity.snapshot().tasks.length,1000,"Task capacity rejection preserves all 1000 stored tasks");
+const legacyOverflow={getItem:()=>JSON.stringify({version:1,subjects:[],blocks:[],
+ tasks:Array.from({length:1001},(_,i)=>({id:"legacy"+i,title:"Legacy "+i,subject:"",priority:3,minutes:30,due:"",done:false,createdAt:i,doneAt:null}))}),
+ setItem:()=>{}};
+const recovered=createPlanner({storage:legacyOverflow});
+assert.equal(recovered.snapshot().tasks.length,1001,"Existing overflow records must remain recoverable after reload");
+assert.throws(()=>recovered.addTask({title:"No perder historial"}),/Límite de 1000 tareas/);
 const capacitySubjects={getItem:key=>JSON.stringify({version:1,subjects:Array.from({length:100},(_,i)=>({name:"Materia "+i,priority:3})),blocks:[],tasks:[]}),
  setItem:()=>{throw new Error("Unexpected subject write");}};
 const fullSubjects=createPlanner({storage:capacitySubjects});
