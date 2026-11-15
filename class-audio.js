@@ -339,14 +339,17 @@
       topic:topic||"",
       startedAt,recorder,audioStream,
       mimeType:recorder.mimeType||mimeType||"audio/webm",
-      seq:0,pending:[],stopped:false,stopResolve:null,stopReject:null
+      seq:0,pending:[],chunkErrors:[],stopped:false,stopResolve:null,stopReject:null
     };
     active=session;
 
     recorder.ondataavailable=e=>{
       if(!e.data||!e.data.size)return;
       const seq=session.seq++;
-      const write=putChunk(id,seq,e.data).catch(err=>console.warn("class audio chunk",err));
+      const write=putChunk(id,seq,e.data).catch(err=>{
+        session.chunkErrors.push({seq,message:String(err?.message||err)});
+        console.warn("class audio chunk",err);
+      });
       session.pending.push(write);
     };
     recorder.onerror=e=>{
@@ -381,6 +384,8 @@
       // Give the final dataavailable write a brief chance to register.
       await new Promise(r=>setTimeout(r,80));
       await Promise.allSettled(session.pending);
+      // A failed chunk is not a complete recording: never label partial audio as saved.
+      if(session.chunkErrors.length)throw new Error("Incomplete class audio: missing stored chunks");
 
       const rows=await chunksFor(session.id);
       if(!rows.length)throw new Error("La grabación quedó vacía.");

@@ -155,9 +155,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — EN PROGRESO (bóveda cifrada con consentimiento, seguimiento efímero sin permiso, vínculos revisados y borrado; ver [P09-STATUS.md](P09-STATUS.md); falta validación biométrica con personas y hardware reales)
 - [ ] **10.** Órdenes temporales, reproducción y repetición — EN PROGRESO (recordatorios relativos, repeticiones finitas, panel y ejecución visible por perfil; ver [P10-STATUS.md](P10-STATUS.md); faltan horarios suspendidos/hardware y ejecución con pestaña cerrada)
 - [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — EN PROGRESO (reglas declarativas de respuesta por frase u hora, cancelables y limitadas al perfil; ver [P11-STATUS.md](P11-STATUS.md); pendientes otros eventos consentidos, concurrencia y validación física)
-- [ ] **12.** Modo Clase: audio completo, silencio y reproducción — POR AUDITAR
-- [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — POR AUDITAR
-- [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — POR AUDITAR
+- [ ] **12.** Modo Clase: audio completo, silencio y reproducción — EN PROGRESO (rechazo de grabaciones incompletas por fallas de escritura; ver [P12-STATUS.md](P12-STATUS.md); falta validación física y recuperación de errores)
+- [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — EN PROGRESO (protección contra verificaciones asíncronas obsoletas; ver [P13-STATUS.md](P13-STATUS.md); falta diarización validada y edición con historial)
+- [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — EN PROGRESO (prioridad moderada del material relevante importado; ver [P14-STATUS.md](P14-STATUS.md); faltan citas granulares y distinguir apuntes personales)
 - [ ] **15.** Resúmenes por clase, tema y materia completa — POR AUDITAR
 - [ ] **16.** Compartir selectivamente memorias de clases — POR AUDITAR
 - [ ] **17.** Grupos de estudio con chat y entregas conjuntas — POR AUDITAR

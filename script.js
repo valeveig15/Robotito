@@ -3478,6 +3478,10 @@ function classEvidenceScore(question,e){
   // Subject context helps but never excludes older transcripts.
   if(e.subjectPreferred)score+=1.0;
   if(e.topicPreferred)score+=1.8;
+  // When relevance is comparable, prefer the student's uploaded study
+  // material over an uncertain automatic class transcript. This bonus cannot
+  // turn an unrelated document into evidence: overlap is required above.
+  if(e.sourceType==="material")score+=1.6;
   if(e.sourceType==="class"&&e.speaker==="teacher")score+=.45;
 
   // Penalize accidental one-word hits in multi-concept questions.
@@ -3731,7 +3735,12 @@ function sourceKindLabel(e){
 }
 function sourceDetailLabel(e){
   if(e.sourceType==="material"||e.speaker==="material"){
-    return e.sourceName||e.subject||"archivo cargado";
+    const documentName=e.sourceName||e.subject||"archivo cargado";
+    const position=[
+      Number.isInteger(e.chunk)&&e.chunk>0?"fragmento "+e.chunk:"",
+      Number.isInteger(e.sentence)&&e.sentence>0?"oración "+e.sentence:""
+    ].filter(Boolean).join(" · ");
+    return [documentName,position].filter(Boolean).join(" · ");
   }
   const who=classSpeakerLabel(e);
   const time=e.at?new Date(e.at).toLocaleTimeString(languageLocale(state.languageMode),{hour:"2-digit",minute:"2-digit"}):"";
@@ -3923,6 +3932,42 @@ function ensureClassLineIds(){
   state.classLines.forEach((l,i)=>{if(!l.id){l.id="legacy-"+l.at+"-"+i;changed=true;}});
   if(changed)save("robotito.classLines.v1",state.classLines);
 }
+function editClassLineText(id){
+  const line=state.classLines.find(x=>x.id===id);
+  if(!line)return false;
+  const current=line.correctedText||line.text||"";
+  const response=window.prompt(uiText("Corregí la transcripción de esta frase:"),current);
+  if(response===null)return false;
+  const updated=response.trim();
+  if(!updated||updated.length>4000){
+    toast("La corrección debe tener entre 1 y 4000 caracteres.");
+    return false;
+  }
+  if(updated===current)return false;
+  line.corrections=[...(line.corrections||[]),{
+    from:current,to:updated,kind:"manual",at:Date.now()
+  }].slice(-50);
+  line.correctedText=updated;
+  // A manual edit invalidates verification tied to the previous words.
+  line.verificationStatus="manual";
+  line.verificationSources=[];
+  save("robotito.classLines.v1",state.classLines);
+  renderClassTranscript();
+  return true;
+}
+function undoClassLineText(id){
+  const line=state.classLines.find(x=>x.id===id);
+  const changes=line?.corrections||[];
+  const last=changes[changes.length-1];
+  if(!last||last.kind!=="manual")return false;
+  line.correctedText=last.from;
+  line.corrections=changes.slice(0,-1);
+  line.verificationStatus="manual";
+  line.verificationSources=[];
+  save("robotito.classLines.v1",state.classLines);
+  renderClassTranscript();
+  return true;
+}
 function renderClassTranscript(){
   const root=$("#classTranscript");
   const lines=classLinesForSubject().slice(-40);
@@ -3946,9 +3991,14 @@ function renderClassTranscript(){
     const src=(l.verificationSources||[]).length
       ?'<div class="fact-sources">'+uiText('Fuentes')+': '+l.verificationSources.map(x=>'<a href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener">'+escapeHtml(x.title)+'</a>').join(' · ')+'</div>'
       :'';
-    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(l.speakerName||uiText(tag))+'</span>'+speakerSelectHtml(l)+match+verify+'</div><span lang="'+(window.ROBOTITO_I18N.supported(l.language)?l.language:'und')+'" translate="no">'+escapeHtml(txt)+'</span>'+corr+src+'</div>';
+    const canUndo=l.corrections?.at(-1)?.kind==="manual";
+    const correctionActions='<div class="class-line-actions"><button type="button" class="ghost edit-class-line" data-line-id="'+escapeHtml(l.id)+'">'+escapeHtml(uiText("Corregir texto"))+'</button>'+
+      (canUndo?'<button type="button" class="ghost undo-class-line" data-line-id="'+escapeHtml(l.id)+'">'+escapeHtml(uiText("Deshacer corrección"))+'</button>':"")+'</div>';
+    return '<div class="class-line '+cls+'"><div class="class-line-top"><span class="speaker-tag '+cls+'">'+escapeHtml(l.speakerName||uiText(tag))+'</span>'+speakerSelectHtml(l)+match+verify+'</div><span lang="'+(window.ROBOTITO_I18N.supported(l.language)?l.language:'und')+'" translate="no">'+escapeHtml(txt)+'</span>'+corr+src+correctionActions+'</div>';
   }).join("");
   root.querySelectorAll(".class-speaker-select").forEach(sel=>sel.addEventListener("change",()=>changeClassLineSpeaker(sel.dataset.lineId,sel.value)));
+  root.querySelectorAll(".edit-class-line").forEach(button=>button.addEventListener("click",()=>editClassLineText(button.dataset.lineId)));
+  root.querySelectorAll(".undo-class-line").forEach(button=>button.addEventListener("click",()=>undoClassLineText(button.dataset.lineId)));
   root.scrollTop=root.scrollHeight;
 }
 function updateClassDuration(){
