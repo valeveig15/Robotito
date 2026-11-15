@@ -37,5 +37,25 @@ function fixture(){
  active.storage[0]([{blob:new Blob(["test"],{type:"audio/webm"})}]);
  const saved=await saving;
  eq(saved.subject,"Physics","Recorded bytes remain saveable after closing the microphone");
+ // No truncated recording may be reported as successfully saved if one chunk write fails.
+ const invalid=fixture();
+ const badSource=source.slice(from,to).replace(
+   "let active=null,captureRequest=0;", "let active=null,captureRequest=0;"
+ );
+ const badRuntime=new Function("state","window","document","navigator","MediaStream","MediaRecorder","crypto",
+  "pickMimeType","render","setLiveStatus","putChunk","chunksFor","saveRecording","clearChunks",
+  "let active=null,captureRequest=0;\n"+badSource+"\nreturn {start,stop};")(
+  invalid.state,{MediaRecorder:class {
+    constructor(){this.state="inactive";this.mimeType="audio/webm";}
+    start(){this.state="recording";queueMicrotask(()=>this.ondataavailable?.({data:new Blob(["chunk"])}));}
+    stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
+  }},{hidden:false},{storage:{persist:async()=>{}}},
+  class{constructor(tracks){this.getTracks=()=>tracks;}},class {},{randomUUID:()=>"bad-class"},
+  ()=>"audio/webm",async()=>{},()=>{},async()=>{throw new Error("storage unavailable");},
+  async()=>[{seq:0,blob:new Blob(["partial"])}],
+  async()=>{throw new Error("Incomplete recording must never be saved");},async()=>{});
+ eq((await badRuntime.start("Physics")).ok,true,"Recorder begins before a simulated storage failure");
+ const failure=await badRuntime.stop();
+ eq(failure,null,"Chunk persistence failure rejects partial class audio instead of saving it");
  console.log("P04 class-audio cancellation:",checks,"checks");
 })().catch(error=>{console.error(error);process.exitCode=1;});
