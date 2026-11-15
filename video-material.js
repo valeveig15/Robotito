@@ -10,6 +10,28 @@
   let visionBusy=false;
   let transcriptSegments=[];
   let visualObservations=new Map();
+  let activeVideo=null,captureBeganAt=0,evidenceStore=null;
+  function evidence(){
+    if(!evidenceStore)evidenceStore=window.ROBOTITO_VIDEO_EVIDENCE?.createStore?.();
+    if(!evidenceStore)throw new Error("Evidence store unavailable");
+    return evidenceStore;
+  }
+  function classScope(){
+    return {subject:norm(document.querySelector("#classSubject")?.value||state.classSubject),
+      topic:norm(document.querySelector("#classTopic")?.value||state.classTopic),
+      sessionId:norm(state.classSessionId)};
+  }
+  function storeEvidence(video,items){
+    const scope=classScope();
+    if(!scope.subject||!items.length)return 0;
+    try{
+      return evidence().addBatch({
+        sourceId:video.id,sourceUrl:video.url,title:video.title,
+        ...scope,owner:"local",consent:true,items
+      });
+    }catch(e){console.warn("video evidence persistence",e);setStatus(
+      "No pude guardar el índice de evidencias: "+String(e.message||e),"error");return 0;}
+  }
 
   function norm(value){
     return String(value||"").trim();
@@ -105,6 +127,10 @@
       transcript
     ].join("\n");
     await saveTextMaterial(material,"YouTube_"+safeName(video.title)+".txt");
+    // Pasted captions are supplied text, not something that Robotito actually heard.
+    storeEvidence(video,window.ROBOTITO_VIDEO_EVIDENCE?.segmentCaptions?.(transcript)?.map(row=>({
+      kind:"provided-caption",text:row.text,atSec:row.atSec,complete:false
+    }))||[]);
     if(textarea)textarea.value="";
     setStatus("Transcripción guardada como material académico de la materia y el tema actuales.","success");
     toast?.("Transcripción del video incorporada.");
@@ -133,7 +159,7 @@
       const visual=document.querySelector("#youtubeVisualStatus");
       if(visual){
         const names=[...visualObservations.values()].sort((a,b)=>b.count-a.count).slice(0,5).map(x=>x.name);
-        uiSet(visual,names.length?"Objetos vistos: {names}":"Todavía no reconocí objetos generales con suficiente seguridad.",lang=>({names:names.map(name=>translatedObject(name,lang)).join(", ")}));
+        uiSet(visual,names.length?"Posibles objetos detectados: {names}":"Todavía no reconocí objetos generales con suficiente seguridad.",lang=>({names:names.map(name=>translatedObject(name,lang)).join(", ")}));
       }
     }catch(e){
       console.warn("video frame vision",e);
@@ -147,7 +173,9 @@
     setTimeout(inspectFrame,1800);
   }
   async function importVisualObservations(video){
-    const rows=[...visualObservations.values()].sort((a,b)=>b.count-a.count);
+    const rows=[...visualObservations.values()]
+      .filter(x=>x.count>=2&&x.best>=.70)
+      .sort((a,b)=>b.count-a.count);
     if(!rows.length)return;
     const lines=[
       uiText("Fuente: {value}",{value:video.url}),
@@ -158,6 +186,8 @@
       ...rows.map(x=>uiText("- {name} (detectado entre {start} s y {end} s; confianza máxima {confidence}%)",{name:translatedObject(x.name),start:x.firstAt,end:x.lastAt,confidence:Math.round(x.best*100)}))
     ];
     await saveTextMaterial(lines.join("\n"),"Observaciones_visuales_"+safeName(video.title)+".txt");
+    storeEvidence(video,rows.map(x=>({kind:"seen",text:translatedObject(x.name),
+      atSec:x.firstAt,score:x.best,samples:x.count,complete:false})));
   }
   async function restoreNormalListening(){
     if(!state.started||!state.stream)return;
@@ -216,6 +246,8 @@
 
       captureActive=true;
       captureStopping=false;
+      activeVideo=video;
+      captureBeganAt=Date.now();
       transcriptSegments=[];
       visualObservations=new Map();
       setButtons(true);
@@ -240,7 +272,7 @@
         onTranscript:(text,meta)=>{
           const clean=norm(text);
           if(!clean)return;
-          transcriptSegments.push({text:clean,at:Date.now()});
+          transcriptSegments.push({text:clean,atSec:Math.max(0,(Date.now()-captureBeganAt)/1000)});
           state.speakerOverride="teacher";
           void captureClassLine(clean,meta);
         },
@@ -263,6 +295,7 @@
       captureStream=null;
       captureActive=false;
       startedClassForCapture=false;
+      activeVideo=null;
       setButtons(false);
       const msg=e?.message==="no-audio"
         ?"La pestaña se compartió sin audio. Reintentá y marcá «Compartir audio de la pestaña»."
@@ -281,10 +314,14 @@
     visualTimer=null;
     window.RobotitoLocalASR?.pause?.(true);
     const id=parseYouTubeId(currentUrl())||"video";
-    const video={id,url:"https://www.youtube.com/watch?v="+id,title:titleForVideo(id)};
+    // Capture may continue after the user edits the link field; retain the
+    // original source selected when permission was granted.
+    const video=activeVideo||{id,url:"https://www.youtube.com/watch?v="+id,title:titleForVideo(id)};
 
     try{
       if(startedClassForCapture&&state.classMode)await stopClassMode();
+      storeEvidence(video,transcriptSegments.map(x=>({kind:"heard",text:x.text,
+        atSec:x.atSec,capture:true,complete:false})).slice(0,240));
       await importVisualObservations(video);
     }catch(e){
       console.warn("finish video material",e);
@@ -293,6 +330,7 @@
     captureStream?.getTracks?.().forEach(track=>{try{track.stop();}catch{}});
     captureStream=null;
     startedClassForCapture=false;
+    activeVideo=null;
 
     const preview=document.querySelector("#youtubeCapturePreview");
     if(preview){preview.pause();preview.srcObject=null;preview.hidden=true;}
@@ -308,7 +346,35 @@
     captureStopping=false;
     await restoreNormalListening();
   }
+  function searchEvidence(){
+    const out=document.querySelector("#videoEvidenceResults");
+    if(!out)return;
+    out.replaceChildren();
+    let rows=[];
+    try{
+      rows=evidence().search({...classScope(),
+        query:norm(document.querySelector("#videoEvidenceQuery")?.value),owner:"local",limit:12});
+    }catch(e){out.textContent="No pude consultar las evidencias guardadas: "+e.message;return;}
+    if(!rows.length){out.textContent="No hay fragmentos coincidentes en la materia y el tema seleccionados.";return;}
+    const labels={"provided-caption":"Subtítulo aportado","heard":"Audio transcrito",
+      "seen":"Detección visual probable","inferred":"Inferencia no verificada"};
+    const list=document.createElement("ol");
+    for(const entry of rows){
+      const li=document.createElement("li"),lead=document.createElement("strong");
+      lead.textContent=(labels[entry.kind]||entry.kind)+
+        (entry.atSec==null?"":" · "+Math.round(entry.atSec)+" s")+
+        " · "+(entry.title||entry.sourceId);
+      const text=document.createElement("p");text.textContent=entry.text;
+      li.append(lead,text);
+      if(entry.sourceUrl){const a=document.createElement("a");
+        a.href=entry.sourceUrl;a.target="_blank";a.rel="noopener noreferrer";
+        a.textContent="Abrir fuente";li.append(a);}
+      list.append(li);
+    }
+    out.append(list);
+  }
   function bind(){
+    document.querySelector("#videoEvidenceSearch")?.addEventListener("click",searchEvidence);
     document.querySelector("#prepareYoutubeBtn")?.addEventListener("click",prepareVideo);
     document.querySelector("#openYoutubeBtn")?.addEventListener("click",openVideo);
     document.querySelector("#saveYoutubeTranscriptBtn")?.addEventListener("click",savePastedTranscript);
