@@ -46,7 +46,9 @@ function createPlanner({storage=root.localStorage,now=()=>new Date()}={}){
  try{
   const raw=JSON.parse(storage?.getItem(KEY)||"null");
   if(raw&&raw.version===1&&Array.isArray(raw.subjects)&&Array.isArray(raw.blocks)&&Array.isArray(raw.tasks)){
-   data={version:1,subjects:raw.subjects.slice(0,100),blocks:raw.blocks.slice(0,500),tasks:raw.tasks.slice(0,1000)};
+   // Preserve any legacy records already written above capacity. New writes
+   // are blocked until the user frees space; silent truncation loses work.
+   data={version:1,subjects:raw.subjects,blocks:raw.blocks,tasks:raw.tasks};
   }
  }catch(error){throw new Error("No pude leer el planificador local: "+error.message);}
  const persist=next=>{storage.setItem(KEY,JSON.stringify(next));data=next;return next;};
