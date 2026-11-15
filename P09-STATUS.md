@@ -12,6 +12,14 @@ Estado: **software en revisión; validación humana y hardware pendiente**.
 - Acariciar, jugar, alimentar, asustar, pinchar y chocar los cinco actualizan lentamente el vínculo solo cuando hay una cara confirmada y se ha aceptado atribuir esas interacciones.
 - El borrado requiere BORRAR VISITAS, retira la bóveda cifrada e invalida el punto de recuperación del navegador para no resucitar datos eliminados.
 
+## Correcciones de concurrencia y consentimiento
+
+- La inscripción anónima reevalúa **bajo el bloqueo serial** el consentimiento vigente, la bóveda desbloqueada, el posible perfil duplicado y el límite de capacidad, justo antes de escribir.
+- El botón de guardar aporta un comprobador de consentimiento y revisión de sesión que se valida nuevamente cuando llega el turno de persistir. Una cancelación tardía no introduce muestras.
+- La eliminación total se serializa con los registros pendientes. Una inscripción en cola no puede volver a crear la bóveda después de una eliminación confirmada.
+- La vinculación de un visitante a una persona registrada exige que la revisión humana siga correspondiendo a la misma revisión del registro; si hubo otro cambio, debe revisarse otra vez.
+- La regresión P09 incorpora inscripciones concurrentes de la misma cara, retirada de consentimiento mientras se espera y eliminación contra una escritura en cola.
+
 ## Pruebas y límites
 
 - npm run test:p09 y npm run test:p09:browser cubren consentimiento, cifrado, error de contraseña, colisiones de caras, persistencia, reencuentro sintético, enfriamiento, asociación revisada y eliminación.
