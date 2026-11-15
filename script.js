@@ -3735,7 +3735,12 @@ function sourceKindLabel(e){
 }
 function sourceDetailLabel(e){
   if(e.sourceType==="material"||e.speaker==="material"){
-    return e.sourceName||e.subject||"archivo cargado";
+    const documentName=e.sourceName||e.subject||"archivo cargado";
+    const position=[
+      Number.isInteger(e.chunk)&&e.chunk>0?"fragmento "+e.chunk:"",
+      Number.isInteger(e.sentence)&&e.sentence>0?"oración "+e.sentence:""
+    ].filter(Boolean).join(" · ");
+    return [documentName,position].filter(Boolean).join(" · ");
   }
   const who=classSpeakerLabel(e);
   const time=e.at?new Date(e.at).toLocaleTimeString(languageLocale(state.languageMode),{hour:"2-digit",minute:"2-digit"}):"";
