@@ -1463,6 +1463,129 @@ Object.assign(LABELS,{
     "de": "Verknüpfung nicht bestätigt; die Verläufe bleiben getrennt."
   }
 });
+// P10/P11: foreground-only instructions and explicit bounded rules.
+Object.assign(LABELS,{
+  "p10RulesTab": {
+    "es": "Órdenes y reglas",
+    "en": "Commands and rules",
+    "pt": "Comandos e regras",
+    "fr": "Commandes et règles",
+    "it": "Comandi e regole",
+    "de": "Befehle und Regeln"
+  },
+  "p10RulesTitle": {
+    "es": "Órdenes temporales y reglas personalizadas",
+    "en": "Timed commands and custom rules",
+    "pt": "Comandos temporizados e regras personalizadas",
+    "fr": "Commandes programmées et règles personnalisées",
+    "it": "Comandi temporizzati e regole personalizzate",
+    "de": "Zeitbefehle und eigene Regeln"
+  },
+  "p10RulesScope": {
+    "es": "Solo se ejecutan mientras Robotito está abierto y visible; no hay notificaciones con la pestaña cerrada.",
+    "en": "Only run while Robotito is open and visible; no notifications when the tab is closed.",
+    "pt": "Funcionam apenas com Robotito aberto e visível; sem notificações com a aba fechada.",
+    "fr": "Fonctionnent uniquement quand Robotito est ouvert et visible ; aucune notification si l'onglet est fermé.",
+    "it": "Funzionano solo con Robotito aperto e visibile; nessuna notifica con la scheda chiusa.",
+    "de": "Funktionieren nur, wenn Robotito geöffnet und sichtbar ist; keine Benachrichtigung bei geschlossenem Tab."
+  },
+  "p10RulesInputLabel": {
+    "es": "Escribí una orden segura",
+    "en": "Enter a safe command",
+    "pt": "Digite um comando seguro",
+    "fr": "Saisis une commande sûre",
+    "it": "Inserisci un comando sicuro",
+    "de": "Sicheren Befehl eingeben"
+  },
+  "p10RulesPlaceholder": {
+    "es": "En 5 minutos decime tomar agua",
+    "en": "In 5 minutes remind me to drink water",
+    "pt": "Em 5 minutos lembre-me de beber água",
+    "fr": "Dans 5 minutes dis-moi de boire de l'eau",
+    "it": "Tra 5 minuti dimmi di bere acqua",
+    "de": "In 5 Minuten sag mir, Wasser zu trinken"
+  },
+  "p10RulesAdd": {
+    "es": "Guardar orden",
+    "en": "Save command",
+    "pt": "Salvar comando",
+    "fr": "Enregistrer la commande",
+    "it": "Salva comando",
+    "de": "Befehl speichern"
+  },
+  "p10RulesExamples": {
+    "es": "Ejemplos: «En 5 minutos decime tomar agua»; «Cada 10 minutos por 3 veces decime estirar»; «Si digo hola robotito, decí buen día»; «Todos los días a las 14:30 decime estudiar».",
+    "en": "Examples: «In 5 minutes remind me to drink water»; «Every 10 minutes for 3 times remind me to stretch»; «If I say hello robotito, say good morning»; «Every day at 14:30 say study».",
+    "pt": "Exemplos: «Em 5 minutos lembre-me de beber água»; «A cada 10 minutos por 3 vezes diga alongar»; «Se eu disser olá, diga bom dia».",
+    "fr": "Exemples : «Dans 5 minutes dis-moi de boire de l'eau» ; «Si je dis bonjour, dis salut» ; «Tous les jours à 14:30 dis étudier».",
+    "it": "Esempi: «Tra 5 minuti dimmi di bere acqua»; «Se dico ciao, di' buongiorno»; «Ogni giorno a 14:30 di' studiare».",
+    "de": "Beispiele: «In 5 Minuten sag mir, Wasser zu trinken»; «Wenn ich sage Hallo, sage Guten Morgen»; «Jeden Tag um 14:30 sage Lernen»."
+  },
+  "p10RulesSaved": {
+    "es": "Órdenes guardadas del perfil activo",
+    "en": "Saved commands for this profile",
+    "pt": "Comandos salvos deste perfil",
+    "fr": "Commandes enregistrées de ce profil",
+    "it": "Comandi salvati per questo profilo",
+    "de": "Gespeicherte Befehle dieses Profils"
+  },
+  "p10RulesSafety": {
+    "es": "Solo generan respuestas de texto o voz, se pueden cancelar y no ejecutan código ni acciones irreversibles.",
+    "en": "Only produce text or spoken replies, can be cancelled, and never execute code or irreversible actions.",
+    "pt": "Geram apenas respostas de texto ou voz; podem ser cancelados e não executam código.",
+    "fr": "Produisent uniquement des réponses écrites ou parlées ; aucune exécution de code.",
+    "it": "Producono solo risposte scritte o vocali; non eseguono codice.",
+    "de": "Erzeugen nur Text- oder Sprachantworten; führen keinen Code aus."
+  },
+  "p10RulesCancel": {
+    "es": "Cancelar",
+    "en": "Cancel",
+    "pt": "Cancelar",
+    "fr": "Annuler",
+    "it": "Annulla",
+    "de": "Abbrechen"
+  },
+  "p10RulesSavedOK": {
+    "es": "Instrucción guardada para este perfil.",
+    "en": "Command saved for this profile.",
+    "pt": "Comando salvo para este perfil.",
+    "fr": "Commande enregistrée pour ce profil.",
+    "it": "Comando salvato per questo profilo.",
+    "de": "Befehl für dieses Profil gespeichert."
+  },
+  "p10RulesInvalid": {
+    "es": "Usá uno de los formatos de ejemplo.",
+    "en": "Use one of the example formats.",
+    "pt": "Use um dos formatos de exemplo.",
+    "fr": "Utilise l'un des formats d'exemple.",
+    "it": "Usa uno dei formati di esempio.",
+    "de": "Eines der Beispielformate verwenden."
+  },
+  "p10RulesStoredVoice": {
+    "es": "Orden guardada. Funcionará mientras esta página esté abierta y visible.",
+    "en": "Command saved. It will work while this page is open and visible.",
+    "pt": "Comando salvo. Funcionará enquanto a página estiver aberta e visível.",
+    "fr": "Commande enregistrée. Elle fonctionnera lorsque la page sera ouverte et visible.",
+    "it": "Comando salvato. Funzionerà finché la pagina sarà aperta e visibile.",
+    "de": "Befehl gespeichert. Er funktioniert, solange die Seite geöffnet und sichtbar ist."
+  },
+  "p10RulesCancelAll": {
+    "es": "¿Cancelar todas las órdenes y reglas de este perfil?",
+    "en": "Cancel all commands and rules for this profile?",
+    "pt": "Cancelar todos os comandos e regras deste perfil?",
+    "fr": "Annuler toutes les commandes et règles de ce profil ?",
+    "it": "Annullare tutti i comandi e le regole di questo profilo?",
+    "de": "Alle Befehle und Regeln dieses Profils abbrechen?"
+  },
+  "p10RulesCancelled": {
+    "es": "Órdenes y reglas de este perfil canceladas.",
+    "en": "Commands and rules for this profile cancelled.",
+    "pt": "Comandos e regras deste perfil cancelados.",
+    "fr": "Commandes et règles de ce profil annulées.",
+    "it": "Comandi e regole di questo profilo annullati.",
+    "de": "Befehle und Regeln dieses Profils abgebrochen."
+  }
+});
 function apply(lang,rootElement){
  if(!supported(lang))return false;
  const doc=rootElement||root.document;
