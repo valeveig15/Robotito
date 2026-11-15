@@ -55,6 +55,7 @@ function createPlanner({storage=root.localStorage,now=()=>new Date()}={}){
   if(!name||name.length>90||!Number.isInteger(priority)||priority<1||priority>5)
    throw new Error("Materia o prioridad inválida (1–5).");
   const subjects=data.subjects.filter(s=>norm(s.name)!==norm(name));
+  if(subjects.length>=100)throw new Error("Límite de 100 materias alcanzado. Revisá materias anteriores.");
   subjects.push({name,priority});
   persist({...data,subjects});return subjects.at(-1);
  }
@@ -63,6 +64,7 @@ function createPlanner({storage=root.localStorage,now=()=>new Date()}={}){
   if(!Number.isInteger(weekday)||weekday<0||weekday>6||e<=s)throw new Error("Bloque de estudio inválido.");
   if(data.blocks.some(b=>b.weekday===weekday&&s<minutes(b.end)&&e>minutes(b.start)))
    throw new Error("Ya tenés un bloque que se superpone con ese horario.");
+  if(data.blocks.length>=500)throw new Error("Límite de 500 horarios alcanzado. Eliminá un horario antes de agregar otro.");
   const b={id:uid(),weekday,start,end};
   persist({...data,blocks:[...data.blocks,b]});return b;
  }
@@ -72,6 +74,9 @@ function createPlanner({storage=root.localStorage,now=()=>new Date()}={}){
   if(!title||title.length>240||subject.length>90||
     !Number.isInteger(priority)||priority<1||priority>5||
     !Number.isInteger(mins)||mins<1||mins>1440)throw new Error("Datos de tarea inválidos.");
+  if(data.tasks.length>=1000)throw new Error("Límite de 1000 tareas alcanzado. Eliminá tareas antiguas para evitar pérdida de datos.");
+  if(subject&&!data.subjects.some(s=>norm(s.name)===norm(subject))&&data.subjects.length>=100)
+    throw new Error("Límite de 100 materias alcanzado. Revisá materias anteriores.");
   const task={id:uid(),title,subject,priority,minutes:mins,due,done:false,createdAt:Date.now(),doneAt:null};
   const next={...data,tasks:[...data.tasks,task]};
   if(subject&&!next.subjects.some(s=>norm(s.name)===norm(subject)))
@@ -88,6 +93,8 @@ function createPlanner({storage=root.localStorage,now=()=>new Date()}={}){
   if("minutes" in patch){task.minutes=Number(patch.minutes);if(!Number.isInteger(task.minutes)||task.minutes<1||task.minutes>1440)throw new Error("Duración inválida.");}
   if("due" in patch)task.due=parseDate(patch.due);
   if("done" in patch){task.done=patch.done===true;task.doneAt=task.done?Date.now():null;}
+  if(task.subject&&!data.subjects.some(s=>norm(s.name)===norm(task.subject))&&data.subjects.length>=100)
+    throw new Error("Límite de 100 materias alcanzado. Revisá materias anteriores.");
   const next={...data,tasks:data.tasks.map(t=>t.id===id?task:t)};
   if(task.subject&&!next.subjects.some(s=>norm(s.name)===norm(task.subject)))
    next.subjects=[...next.subjects,{name:task.subject,priority:3}];
