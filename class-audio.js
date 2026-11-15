@@ -339,14 +339,17 @@
       topic:topic||"",
       startedAt,recorder,audioStream,
       mimeType:recorder.mimeType||mimeType||"audio/webm",
-      seq:0,pending:[],stopped:false,stopResolve:null,stopReject:null
+      seq:0,pending:[],writeErrors:[],stopped:false,stopResolve:null,stopReject:null
     };
     active=session;
 
     recorder.ondataavailable=e=>{
       if(!e.data||!e.data.size)return;
       const seq=session.seq++;
-      const write=putChunk(id,seq,e.data).catch(err=>console.warn("class audio chunk",err));
+      const write=putChunk(id,seq,e.data).catch(err=>{
+        session.writeErrors.push(err);
+        console.warn("class audio chunk",err);
+      });
       session.pending.push(write);
     };
     recorder.onerror=e=>{
@@ -381,8 +384,15 @@
       // Give the final dataavailable write a brief chance to register.
       await new Promise(r=>setTimeout(r,80));
       await Promise.allSettled(session.pending);
+      if(session.writeErrors.length)
+        throw new Error("No se pudieron guardar todos los fragmentos del audio.");
+      if(!session.seq)
+        throw new Error("La grabación quedó vacía.");
 
       const rows=await chunksFor(session.id);
+      if(rows.length!==session.seq||
+         rows.some((row,index)=>row.seq!==index||!(row.blob instanceof Blob)||!row.blob.size))
+        throw new Error("La grabación está incompleta: faltan fragmentos.");
       if(!rows.length)throw new Error("La grabación quedó vacía.");
       const blob=new Blob(rows.map(x=>x.blob),{type:session.mimeType||rows[0].blob?.type||"audio/webm"});
       const endedAt=Date.now();
