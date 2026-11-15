@@ -144,8 +144,20 @@ function solve(raw,language="es"){
    return {handled:true,kind:"linear",variable:v,value,verified,text,steps:3};
   }
   const [a,b]=eqs,det=a.x*b.y-b.x*a.y;
-  if(active.size!==2||Math.abs(det)<EPS)
-   return {handled:true,kind:"singular",text:lang.singular};
+  if(active.size!==2||Math.abs(det)<EPS){
+   // Two equations in two unknowns can be dependent or inconsistent;
+   // do not call both merely "singular" without checking their ranks.
+   const matrix=[a,b].map(e=>[e.x,e.y,e.n]);
+   const pivots=[0,1].filter(i=>Math.abs(matrix[0][i])>EPS||Math.abs(matrix[1][i])>EPS);
+   const conflicting=Math.abs(a.x*b.n-b.x*a.n)>EPS||
+     Math.abs(a.y*b.n-b.y*a.n)>EPS||
+     ((!pivots.length)&&Math.abs(a.n-b.n)>EPS)||
+     [a,b].some(e=>Math.abs(e.x)<EPS&&Math.abs(e.y)<EPS&&Math.abs(e.n)>EPS);
+   const kind=conflicting?"contradiction":"dependent";
+   return {handled:true,kind,verified:true,
+     text:conflicting?lang.none:lang.singular+
+      " "+lang.infinite};
+  }
   const x=(a.n*b.y-b.n*a.y)/det,y=(a.x*b.n-b.x*a.n)/det;
   if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error("invalid");
   const checks=eqs.map(e=>Math.abs(e.x*x+e.y*y-e.n)<1e-7*Math.max(1,Math.abs(e.n)));
