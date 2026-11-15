@@ -58,12 +58,14 @@ function makeGrant({actor,recipient,permission,scope}){
  if(!validId(owner)||!validId(recipient)||owner===recipient||
     !["read","write"].includes(permission))throw new Error("Invalid recipient or permission");
  return {id:ID(),owner,recipient,permission,selection:selection(scope),
-   revision:1,revokedAt:null,createdAt:Date.now()};
+   revision:1,revokedAt:null,createdAt:Date.now(),
+   audit:[{event:"grant-created",by:owner,at:Date.now(),revision:1}]};
 }
 function revokeGrant(grant,principal,expected,now=Date.now()){
  if(!grant||actorId(principal)!==grant.owner)throw new Error("Forbidden");
  requireRevision(grant.revision,expected);
- return {...grant,revokedAt:now,revision:grant.revision+1};
+ return {...grant,revokedAt:now,revision:grant.revision+1,
+  audit:[...(grant.audit||[]),{event:"grant-revoked",by:grant.owner,at:now,revision:grant.revision+1}]};
 }
 function makeGroup({actor,title,subject}){
  const owner=actorId(actor);
@@ -117,7 +119,8 @@ function notificationChoice(group,actor,enabled,timeZone,expected){
  try{new Intl.DateTimeFormat("en-US",{timeZone}).format(new Date());}
  catch{throw new Error("Invalid time zone");}
  const members={...group.members,[id]:{...group.members[id],notify:enabled===true,timeZone}};
- return {...group,members,revision:group.revision+1};
+ return {...group,members,revision:group.revision+1,
+  audit:[...group.audit,{event:"notification-choice",by:id,enabled:enabled===true,revision:group.revision+1}]};
 }
 function reminderPlan(group,actor,at=Date.now()){
  const {id}=membership(group,actor);
