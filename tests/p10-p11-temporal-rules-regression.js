@@ -25,7 +25,7 @@ eq(parseInstruction("Dans 5 minutes dis-moi de boire de l'eau"),
 eq(parseInstruction("Tra 5 minuti dimmi di bere acqua"),
  {kind:"once",ms:300000,text:"di bere acqua"},"Italian language sample");
 eq(parseInstruction("In 5 Minuten sag mir, Wasser zu trinken"),
- {kind:"once",ms:300000,text:", Wasser zu trinken"},"German language sample");
+ {kind:"once",ms:300000,text:"Wasser zu trinken"},"German language sample");
 eq(parseInstruction("Every day at 14:30 say study"),
  {kind:"daily",time:"14:30",text:"study"},"English daily phrase");
 eq(parseInstruction("Ogni giorno a 14:30 di' studiare"),
