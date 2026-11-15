@@ -46,4 +46,21 @@ const broken={getItem:()=>null,setItem:()=>{throw new Error("QuotaExceeded");}};
 const failing=createPlanner({storage:broken});
 assert.throws(()=>failing.addTask({title:"No persistir"}),/QuotaExceeded/);
 assert.equal(failing.snapshot().tasks.length,0,"Failed write must not pretend that task was saved");
+const capacityTasks={getItem:key=>JSON.stringify({version:1,subjects:[{name:"Biología",priority:3}],blocks:[],
+ tasks:Array.from({length:1000},(_,i)=>({id:"t"+i,title:"Tarea "+i,subject:"Biología",priority:3,minutes:10,due:"",done:false,createdAt:i,doneAt:null}))}),
+ setItem:()=>{throw new Error("Unexpected write beyond task capacity");}};
+const atCapacity=createPlanner({storage:capacityTasks});
+assert.throws(()=>atCapacity.addTask({title:"Tarea 1001"}),/Límite de 1000 tareas/);
+assert.equal(atCapacity.snapshot().tasks.length,1000,"Task capacity rejection preserves all 1000 stored tasks");
+const capacitySubjects={getItem:key=>JSON.stringify({version:1,subjects:Array.from({length:100},(_,i)=>({name:"Materia "+i,priority:3})),blocks:[],tasks:[]}),
+ setItem:()=>{throw new Error("Unexpected subject write");}};
+const fullSubjects=createPlanner({storage:capacitySubjects});
+assert.throws(()=>fullSubjects.addSubject("Materia 101"),/Límite de 100 materias/);
+assert.throws(()=>fullSubjects.addTask({title:"Examen",subject:"Nueva Materia"}),/Límite de 100 materias/);
+assert.equal(fullSubjects.snapshot().subjects.length,100);
+const capacityBlocks={getItem:key=>JSON.stringify({version:1,subjects:[],blocks:Array.from({length:500},(_,i)=>({id:"b"+i,weekday:i%7,start:"08:00",end:"09:00"})),tasks:[]}),
+ setItem:()=>{throw new Error("Unexpected schedule write");}};
+const fullBlocks=createPlanner({storage:capacityBlocks});
+assert.throws(()=>fullBlocks.addBlock({weekday:2,start:"10:00",end:"11:00"}),/Límite de 500 horarios/);
+assert.equal(fullBlocks.snapshot().blocks.length,500);
 console.log("P18 native study planner deadlines, manual priorities, persistence and voice: passed");
