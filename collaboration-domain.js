@@ -20,7 +20,9 @@ function selection({type,id,subject,topic}={}){
     throw new Error("Invalid class selection");
   return {type,id,subject:clean(subject),topic:clean(topic)};
 }
-function academicOnly(record,scope){
+function academicOnly(record,scope,owner){
+  if(!validId(owner)||record?.owner!==owner)
+    throw new Error("Academic ownership mismatch");
   // Explicit allowlist; never accept raw memory, voice, face or profile fields.
   if(!record||!["class-line","class-summary","academic-material"].includes(record.type))
     throw new Error("Only academic content can be shared");
@@ -44,7 +46,7 @@ function access(grant,actor,operation,record){
     !["read","write"].includes(grant.permission))return false;
  if(operation==="write"&&grant.permission!=="write")return false;
  if(operation!=="read"&&operation!=="write")return false;
- try{if(record)academicOnly(record,grant.selection);}catch{return false;}
+ try{if(record)academicOnly(record,grant.selection,grant.owner);}catch{return false;}
  return true;
 }
 function requireRevision(current,expected){
