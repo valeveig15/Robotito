@@ -4271,6 +4271,11 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
   const nomenclature=window.ROBOTITO_CHEM_NOMENCLATURE?.query?.(rawText);
   if(nomenclature?.handled){say(nomenclature.text,11000,detectedLang);return;}
+  const algebra=window.ROBOTITO_ALGEBRA_TUTOR?.solve?.(interpreted,detectedLang);
+  if(algebra?.handled){
+    say(algebra.text,Math.max(7600,Math.min(30000,algebra.text.length*85)),detectedLang);
+    return;
+  }
   if(answerArithmetic(interpreted,detectedLang))return;
   if(await handleWeatherAndDayQuestions(interpreted,interpretation))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;
