@@ -294,6 +294,8 @@
     // authorize a camera, browser, or academic action.
     if(frame&&frame.shouldExecute===false)return {...central,intent:central?.intent||"statement",depth,shouldExecute:false};
     if(frame?.quotedContent&&frame.source==="general")return {...central,depth,shouldExecute:true};
+    if(window.ROBOTITO_COUNTRY_KNOWLEDGE?.parseQuestion?.(raw))
+      return {...central,intent:"country-capital",depth,shouldExecute:true};
     if(window.ROBOTITO_PRESIDENTS?.parseQuestion?.(raw))
       return {...central,intent:"president",depth,shouldExecute:true};
     if(/\b(que es esto|que objeto es|que estoy mostrando|reconoce este objeto|reconoce esto|what is this object|what am i showing)\b/.test(q))
@@ -308,6 +310,13 @@
   async function handle(raw,{lang="es",plan=null}={}){
     const info=classify(raw,plan);
     if(info.shouldExecute===false)return false;
+    if(info.intent==="country-capital"){
+      const result=await window.ROBOTITO_COUNTRY_KNOWLEDGE.answer(raw,lang);
+      if(result?.handled){
+        say(result.text,Math.min(18000,readingDisplayTime?.(result.text,5000)||7000),lang);
+        return true;
+      }
+    }
     if(info.intent==="president"){
       const result=await window.ROBOTITO_PRESIDENTS.answer(raw,lang);
       if(result?.handled){
