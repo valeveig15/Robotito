@@ -6,7 +6,7 @@ const france={name:{common:"France",official:"French Republic"},cca2:"FR",capita
 const congo1={name:{common:"Congo Republic"},cca2:"CG",capital:["Brazzaville"],altSpellings:["Congo"],translations:{}};
 const congo2={name:{common:"DR Congo"},cca2:"CD",capital:["Kinshasa"],altSpellings:["Congo"],translations:{}};
 const cases=[
-["¿Cuál es la capital de Francia?","Francia"],
+["¿Cuál es la capital de Francia?","francia"],
 ["What is the capital of France?","france"],
 ["Qual é a capital de França?","franca"],
 ["Quelle est la capitale de France ?","france"],
