@@ -93,12 +93,17 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
   rows=rows.filter(r=>r.owner!==owner);if(n!==rows.length)save();return n-rows.length;};
  const tick=({owner,visible=true,emit=()=>{}}={})=>{
   if(!visible||!validOwner(owner))return 0;
-  const t=now(),today=new Date(t).toLocaleDateString("en-CA"),hm=
-   String(new Date(t).getHours()).padStart(2,"0")+":"+
-   String(new Date(t).getMinutes()).padStart(2,"0");
+  const t=now(),local=new Date(t),
+   today=[local.getFullYear(),String(local.getMonth()+1).padStart(2,"0"),
+    String(local.getDate()).padStart(2,"0")].join("-"),
+   hm=String(local.getHours()).padStart(2,"0")+":"+
+    String(local.getMinutes()).padStart(2,"0");
   const due=[];let changed=false;
   rows=rows.filter(row=>{
    if(row.owner!==owner)return true;
+   // Never consume an instruction that cannot be delivered in this tick.
+   // Remaining due rows stay queued for the following visible tick.
+   if(due.length>=3)return true;
    if(row.kind==="phrase")return true;
    if(row.kind==="daily"){
     if(row.time!==hm||row.lastDate===today)return true;
