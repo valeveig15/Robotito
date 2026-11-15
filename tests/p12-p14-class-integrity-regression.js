@@ -52,5 +52,12 @@ const capture=new Function("state","averageRecentVoiceFeature","recentVoicePrint
   "Uploaded material gets an explicit ranking boost after relevance overlap");
  assert.ok(main.indexOf('if(overlap===0)return 0;')<main.indexOf('if(e.sourceType==="material")score+=1.6;'),
   "Unrelated material cannot become evidence just by being uploaded");
+ const labelSource=grab(main,"function sourceDetailLabel(e){","function shortEvidenceQuote(");
+ const sourceLabel=new Function("languageLocale","state","classSpeakerLabel",
+  labelSource+String.fromCharCode(10)+"return sourceDetailLabel;")(
+  ()=>"es",{languageMode:"es"},()=>"profesor/a");
+ assert.equal(sourceLabel({sourceType:"material",sourceName:"Mis apuntes.pdf",chunk:2,sentence:4}),
+  "Mis apuntes.pdf · fragmento 2 · oración 4",
+  "A cited document carries the available fragment and sentence references");
  console.log("P12/P13/P14 class integrity regression: passed");
 })().catch(error=>{console.error(error);process.exitCode=1;});
