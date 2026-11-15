@@ -153,8 +153,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **07.** Memoria contextual, fechas y datos durables — EN PROGRESO (búsqueda por fechas y propietario, respaldo local y edición/borrado acotados; ver [P07-STATUS.md](P07-STATUS.md); pendientes copias grandes/cifradas, restauración reversible, vinculación consentida y hardware)
 - [ ] **08.** Identificación rigurosa de personas registradas — EN PROGRESO (seguridad de rostros y voces, aislamiento frente a caras y hablantes distintos, borrado biométrico con consentimiento y regresiones; ver [P08-STATUS.md](P08-STATUS.md); pendiente evaluación física con personas parecidas, calibración y hardware real)
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — EN PROGRESO (bóveda cifrada con consentimiento, seguimiento efímero sin permiso, vínculos revisados y borrado; ver [P09-STATUS.md](P09-STATUS.md); falta validación biométrica con personas y hardware reales)
-- [ ] **10.** Órdenes temporales, reproducción y repetición — POR AUDITAR
-- [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — POR AUDITAR
+- [ ] **10.** Órdenes temporales, reproducción y repetición — EN PROGRESO (recordatorios relativos, repeticiones finitas, panel y ejecución visible por perfil; ver [P10-STATUS.md](P10-STATUS.md); faltan horarios suspendidos/hardware y ejecución con pestaña cerrada)
+- [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — EN PROGRESO (reglas declarativas de respuesta por frase u hora, cancelables y limitadas al perfil; ver [P11-STATUS.md](P11-STATUS.md); pendientes otros eventos consentidos, concurrencia y validación física)
 - [ ] **12.** Modo Clase: audio completo, silencio y reproducción — POR AUDITAR
 - [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — POR AUDITAR
 - [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — POR AUDITAR
