@@ -6345,6 +6345,8 @@ async function init(){
   await window.ROBOTITO_STORE?.migrateTypedLegacy?.().catch(e=>console.warn("Typed migration",e));
   await prepareLegacyMemoryIds().catch(e=>console.warn("Memory legacy IDs",e));
   bindUI();
+  // Browser controls are not interactive until migrations and listener wiring finish.
+  document.documentElement.dataset.robotitoUiReady="true";
   bindPandaReferenceViews();
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("language");
