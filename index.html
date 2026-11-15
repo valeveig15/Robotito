@@ -60,6 +60,7 @@
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="script.js?v=20261108-p06"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
+  <script defer src="video-evidence.js?v=20261115-p22"></script>
   <script defer src="video-material.js?v=20261107-p05"></script>
   <script defer src="robotito-tests.js?v=20261105-p04-capture"></script>
   <script defer src="robotito-regression-suite.js?v=20261105-p04-capture"></script>
@@ -645,6 +646,14 @@
           <p id="youtubeCaptureStatus" class="video-capture-status muted" data-ui-copy=Peg%C3%A1%20un%20enlace%20para%20comenzar.>Pegá un enlace para comenzar.</p>
           <video id="youtubeCapturePreview" class="youtube-capture-preview" muted autoplay playsinline hidden></video>
           <p id="youtubeVisualStatus" class="muted" data-ui-copy=La%20visi%C3%B3n%20del%20video%20reconocer%C3%A1%20objetos%20generales%20cuando%20compartas%20la%20pesta%C3%B1a.>La visión del video reconocerá objetos generales cuando compartas la pestaña.</p>
+          <div class="study-output" id="videoEvidencePanel">
+            <label>Buscar evidencia del vídeo por tema
+              <input id="videoEvidenceQuery" type="search" maxlength="120" placeholder="Ej. transporte celular" />
+            </label>
+            <button type="button" id="videoEvidenceSearch" class="ghost">Buscar fragmentos de vídeo</button>
+            <div id="videoEvidenceResults" role="status" aria-live="polite"></div>
+            <p class="muted">Los subtítulos aportados, el audio transcrito y las detecciones visuales se distinguen y mantienen su fuente. Las detecciones de modelos no son hechos confirmados.</p>
+          </div>
 
           <details class="youtube-transcript-help">
             <summary data-i18n="uiYouTubeTranscriptSummary">Usar la transcripción o los subtítulos</summary>
