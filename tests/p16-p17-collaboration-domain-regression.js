@@ -5,7 +5,7 @@ const user=id=>({id,source:"trusted-server-auth"});
 assert.throws(()=>c.actorId({id:"alice"}),/Authentication/);
 assert.throws(()=>c.makeGrant({recipient:"bob",permission:"read",scope:{type:"subject",id:"s",subject:"Física"}}),/Authentication/);
 const scope={type:"topic",id:"t1",subject:"Biología",topic:"Célula"};
-const record={type:"academic-material",subject:"Biología",topic:"Célula",sessionId:"cl1",
+const record={owner:"alice",type:"academic-material",subject:"Biología",topic:"Célula",sessionId:"cl1",
  name:"Notas.md",text:"Sólo material docente",faceEmbedding:[1,2,3],
  voicePrint:"secret",personalMemory:"private"};
 const grant=c.makeGrant({actor:user("alice"),recipient:"bob",permission:"read",scope});
@@ -14,8 +14,10 @@ assert.equal(c.access(grant,user("bob"),"write",record),false);
 assert.equal(c.access(grant,user("eve"),"read",record),false);
 assert.equal(c.access(grant,user("bob"),"read",{...record,topic:"Otra"}),false);
 assert.equal(c.access(grant,user("bob"),"read",{...record,subject:"Física"}),false);
-assert.throws(()=>c.academicOnly({type:"face",subject:"Biología",topic:"Célula"},scope));
-const shared=c.academicOnly(record,scope);
+assert.throws(()=>c.academicOnly({owner:"alice",type:"face",subject:"Biología",topic:"Célula"},scope,"alice"));
+assert.equal(c.access(grant,user("bob"),"read",{...record,owner:"eve"}),false,
+ "Matching subject must never leak a different owner\u0027s material");
+const shared=c.academicOnly(record,scope,"alice");
 assert.equal(shared.type,"academic-material");
 assert.equal(shared.text,"Sólo material docente");
 assert.equal("faceEmbedding" in shared,false);
@@ -51,7 +53,7 @@ const key=reminders[0].dedupeKey;
 assert.equal(c.reminderPlan(group,user("bob"),now)[0].dedupeKey,key,"Stable idempotency key");
 assert.deepEqual(c.reminderPlan(group,user("bob"),Date.parse("2026-11-15T02:00:00Z")),[]);
 assert.deepEqual(c.reminderPlan(group,user("bob"),Date.parse("2026-11-01T10:00:00Z")),[]);
-group=c.deadlineChange(group,user("alice"),"2026-11-23",group.revision);
+group=c.deadlineChange(group,user("alice"),"2026-11-21",group.revision);
 assert.notEqual(c.reminderPlan(group,user("bob"),now)[0]?.dedupeKey,key,"Deadline revision changes identity");
 group=c.memberChange(group,user("alice"),"bob","remove",group.revision);
 assert.throws(()=>c.reminderPlan(group,user("bob"),now),/Not a group member/);
