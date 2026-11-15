@@ -165,7 +165,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **19.** Matemáticas y ecuaciones expresadas oralmente — EN PROGRESO (ecuaciones lineales, sistemas 2×2, pasos, comprobación, casos negativos y voz; ver [P19-STATUS.md](P19-STATUS.md)).
 - [ ] **20.** Nomenclatura química como tutor — EN PROGRESO (nombres/fórmulas, estados de oxidación, compuestos frecuentes y ejercicios con rechazo conservador; ver [P20-STATUS.md](P20-STATUS.md)).
 - [ ] **21.** Países, capitales, autoridades e historia contextualizada — POR AUDITAR
-- [ ] **22.** Vídeos y materiales de estudio — POR AUDITAR
+- [ ] **22.** Vídeos y materiales de estudio — EN PROGRESO (evidencias subtituladas/auditivas/visuales con fuente, tiempos, consentimiento y búsqueda temática; faltan validación física y precisión; ver [P22-STATUS.md](P22-STATUS.md)).
 - [ ] **23.** Visión de objetos y seguimiento visual — POR AUDITAR
 - [ ] **24.** Mostrar objetos mediante una pequeña escena, no un cartel — POR AUDITAR
 - [ ] **25.** Interfaz móvil sin superposiciones y chat escrito visible — POR AUDITAR
