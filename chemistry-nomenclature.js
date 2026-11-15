@@ -108,8 +108,8 @@ function formulaToName(formula){
  const polyMatches=table.filter(e=>e.anion.poly&&e.cation.symbol!=="NH4"&&
   e.formula!==formula).filter(e=>{
    const c=e.cation.symbol,a=e.anion.symbol;
-   const cpart=c.replace(/[.*+?^${}()|[\]\\]/g,"\\ const simple=formula.match(/^([A-Z][a-z]?)(\d*)([A-Z][a-z]?)(\d*)$/);");
-   const apart=a.replace(/[.*+?^${}()|[\]\\]/g,"\\ const simple=formula.match(/^([A-Z][a-z]?)(\d*)([A-Z][a-z]?)(\d*)$/);");
+   const cpart=c; // catalogue ion symbols are hardcoded alphanumeric tokens
+   const apart=a;
    return new RegExp("^"+cpart+"(?:[2-9]\\d*)?(?:\\("+apart+"\\)(?:[2-9]\\d*)?|"+apart+")$").test(formula);
  });
  if(polyMatches.length===1)
