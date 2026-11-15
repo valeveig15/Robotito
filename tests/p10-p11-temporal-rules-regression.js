@@ -79,6 +79,30 @@ eq(e.list("local").length,1,"Other owner's reminder retained");
 eq(e.speech("cancelar todas las reglas",{owner:"local"}).needsConfirmation,true,
  "Voice cancel asks for confirmation instead of clearing automatically");
 eq(e.list("local").length,1,"No erasure without explicit confirmation");
+// A burst larger than the per-tick delivery limit must not silently lose alerts.
+const burstData=new Map();
+const burstStorage={
+ getItem:k=>burstData.get(k)||null,
+ setItem:(k,v)=>burstData.set(k,v)
+};
+let burstNow=Date.now();
+const burst=createEngine({storage:burstStorage,now:()=>burstNow});
+for(let i=0;i<5;i++)burst.create({kind:"once",ms:1000,text:"aviso "+i},"local");
+burstNow+=1000;
+const burstLog=[];
+eq(burst.tick({owner:"local",emit:t=>burstLog.push(t)}),3,
+ "Only three simultaneous notices delivered on the first tick");
+eq(burst.list("local").length,2,
+ "Excess due reminders must remain queued, not silently consumed");
+const afterReload=createEngine({storage:burstStorage,now:()=>burstNow});
+eq(afterReload.list("local").length,2,
+ "Queued reminders survive a reload before the next tick");
+eq(afterReload.tick({owner:"local",emit:t=>burstLog.push(t)}),2,
+ "Remaining two reminders are delivered on the following tick");
+eq(burstLog,["aviso 0","aviso 1","aviso 2","aviso 3","aviso 4"],
+ "All due messages are delivered once, in order");
+eq(afterReload.tick({owner:"local",emit:t=>burstLog.push(t)}),0,
+ "Drained reminders are never replayed");
 for(let i=0;i<39;i++)e.create({kind:"phrase",trigger:"clave"+i,text:"texto"+i},"local");
 assert.throws(()=>e.create({kind:"phrase",trigger:"extra",text:"extra2"},"local"),/Maximum/);
 console.log("P10/P11 safe foreground timing, finite repeats, per-owner rules and cancellation: passed");
