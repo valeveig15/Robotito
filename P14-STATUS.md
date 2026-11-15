@@ -3,7 +3,7 @@
 **Estado: EN PROGRESO.** Robotito ya recupera líneas de clases y fragmentos del material académico cargado, aplica umbrales de relevancia y presenta indicaciones de procedencia en sus respuestas de clase.
 
 ## Mejora puntual
-El material de estudio subido por el usuario obtiene una ventaja moderada cuando compite con transcripciones automáticas con contenido comparable. No elimina el requisito de solapamiento semántico: un archivo ajeno a la consulta no se considera evidencia solo por ser un documento cargado.
+El material de estudio subido por el usuario obtiene una ventaja moderada cuando compite con transcripciones automáticas con contenido comparable. No elimina el requisito de solapamiento semántico: un archivo ajeno a la consulta no se considera evidencia solo por ser un documento cargado. Cuando existe, la tarjeta de fuente muestra nombre de archivo, número de fragmento y número de oración para que la referencia sea comprobable.
 
 ## Pruebas
 `npm run test:p12-p14` verifica que la prioridad se aplica después del filtro de relevancia. Las regresiones semánticas y del núcleo se mantienen en CI.
