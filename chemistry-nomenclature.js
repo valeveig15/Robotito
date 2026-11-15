@@ -103,6 +103,19 @@ function formulaToName(formula){
  const missing=table.filter(e=>e.formula!==formula&&e.formula.replace(/[()]/g,"")===formula);
  if(missing.length===1)
   return {handled:true,ok:false,invalid:true,text:"Faltan paréntesis para conservar el ion poliatómico: escribí "+missing[0].formula+" ("+missing[0].name+")."};
+ // An explicitly covered polyatomic ion with the wrong charge balance
+ // is not an unknown molecule; identify the expected smallest ionic ratio.
+ const polyMatches=table.filter(e=>e.anion.poly&&e.cation.symbol!=="NH4"&&
+  e.formula!==formula).filter(e=>{
+   const c=e.cation.symbol,a=e.anion.symbol;
+   const cpart=c.replace(/[.*+?^${}()|[\]\\]/g,"\\ const simple=formula.match(/^([A-Z][a-z]?)(\d*)([A-Z][a-z]?)(\d*)$/);");
+   const apart=a.replace(/[.*+?^${}()|[\]\\]/g,"\\ const simple=formula.match(/^([A-Z][a-z]?)(\d*)([A-Z][a-z]?)(\d*)$/);");
+   return new RegExp("^"+cpart+"(?:[2-9]\\d*)?(?:\\("+apart+"\\)(?:[2-9]\\d*)?|"+apart+")$").test(formula);
+ });
+ if(polyMatches.length===1)
+  return {handled:true,ok:false,invalid:true,
+   text:"La proporción no neutraliza las cargas de esos iones. Revisá "+
+    polyMatches[0].formula+" ("+polyMatches[0].name+")."};
  const simple=formula.match(/^([A-Z][a-z]?)(\d*)([A-Z][a-z]?)(\d*)$/);
  if(simple){
   const likely=table.filter(e=>e.cation.symbol===simple[1]&&e.anion.symbol===simple[3]);
