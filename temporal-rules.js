@@ -96,23 +96,24 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
   const t=now(),today=new Date(t).toLocaleDateString("en-CA"),hm=
    String(new Date(t).getHours()).padStart(2,"0")+":"+
    String(new Date(t).getMinutes()).padStart(2,"0");
-  const due=[];
+  const due=[];let changed=false;
   rows=rows.filter(row=>{
    if(row.owner!==owner)return true;
    if(row.kind==="phrase")return true;
    if(row.kind==="daily"){
     if(row.time!==hm||row.lastDate===today)return true;
-    row.lastDate=today;due.push(row.text);return true;
+    row.lastDate=today;due.push(row.text);changed=true;return true;
    }
    if(t<row.dueAt)return true;
    if(t-row.dueAt<=GRACE)due.push(row.text);
+   changed=true;
    if(row.kind==="once")return false;
    row.remaining--;
    if(row.remaining<=0||t-row.dueAt>GRACE)return false;
    row.dueAt=t+row.intervalMs;return true;
   });
   // Mark first: callback failure or unexpected rerender cannot replay.
-  if(due.length)save();
+  if(changed)save();
   for(const text of due.slice(0,3))emit(text);
   return Math.min(due.length,3);
  };
@@ -124,12 +125,15 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
    catch(error){return {handled:true,error:String(error.message)};}
   }
   const normalized=fold(raw);if(!normalized)return {handled:false};
+  if(/^(?:cancela|cancelar|borra|borrar|elimina|delete|remove) (?:todas |all )?(?:las )?(?:ordenes|reglas|reminders|rules)$/.test(normalized))
+   return {handled:true,needsConfirmation:true};
   const triggered=rows.find(row=>row.kind==="phrase"&&row.owner===owner&&
    fold(row.trigger)===normalized);
   if(!triggered)return {handled:false};
   emit(triggered.text);return {handled:true,triggered:triggered.id};
  };
- return {create,list,cancel,clear,tick,speech,parseInstruction};
+ const reload=()=>{rows=load();onChange(list("local"));return rows.length;};
+ return {create,list,cancel,clear,tick,speech,reload,parseInstruction};
 }
 let engine=null,context=null,timer=null;
 function attach({say=()=>{},owner=()=> "local"}={}){
@@ -155,6 +159,9 @@ function attach({say=()=>{},owner=()=> "local"}={}){
  timer=root.setInterval?.(()=>engine.tick({owner:context.owner(),visible:!root.document.hidden,
   emit:context.say}),1000);
  root.document?.addEventListener("visibilitychange",render);
+ root.addEventListener?.("storage",event=>{
+  if(event.key===KEY){engine.reload();render();}
+ });
  return engine;
 }
 function render(){
@@ -180,7 +187,11 @@ function handle(raw,options={}){
  const result=engine.speech(raw,{owner:context.owner(),visible:!root.document.hidden,
   emit:context.say});
  if(result.handled&&result.created)context.say("Orden guardada. La ejecutaré mientras esta página esté abierta y visible.");
- else if(result.error)context.say("No pude guardar esa orden: "+result.error);
+ else if(result.needsConfirmation){
+  if(root.confirm?.("¿Cancelar todas las órdenes y reglas de este perfil?")){
+   engine.clear(context.owner());context.say("Órdenes y reglas de este perfil canceladas.");
+  }
+ }else if(result.error)context.say("No pude guardar esa orden: "+result.error);
  return result;
 }
 root.ROBOTITO_TEMPORAL_RULES={createEngine,parseInstruction,attach,handle};
