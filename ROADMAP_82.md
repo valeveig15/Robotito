@@ -159,8 +159,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — POR AUDITAR
 - [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — POR AUDITAR
 - [ ] **15.** Resúmenes por clase, tema y materia completa — EN PROGRESO (agregación de clases/temas/materias, extensiones, fuentes y tests en [PR #131](https://github.com/valeveig15/Robotito/pull/131); evaluación de fidelidad de síntesis y CI final pendientes; ver [P15-STATUS.md](P15-STATUS.md))
-- [ ] **16.** Compartir selectivamente memorias de clases — POR AUDITAR
-- [ ] **17.** Grupos de estudio con chat y entregas conjuntas — POR AUDITAR
+- [ ] **16.** Compartir selectivamente memorias de clases — EN PROGRESO (ACL y servicio transaccional con permisos, revocación y filtrado académico en [PR #133](https://github.com/valeveig15/Robotito/pull/133); falta backend autenticado desplegado y sincronización real; ver [P16-P17-STATUS.md](P16-P17-STATUS.md))
+- [ ] **17.** Grupos de estudio con chat y entregas conjuntas — EN PROGRESO (núcleo de roles, chat, fecha común y planificación opt-in en [PR #133](https://github.com/valeveig15/Robotito/pull/133); faltan servidor, mensajería entre cuentas y notificaciones; ver [P16-P17-STATUS.md](P16-P17-STATUS.md))
 - [ ] **18.** Lista de prioridades y tareas propia de Robotito — POR AUDITAR
 - [ ] **19.** Matemáticas y ecuaciones expresadas oralmente — POR AUDITAR
 - [ ] **20.** Nomenclatura química como tutor — POR AUDITAR
