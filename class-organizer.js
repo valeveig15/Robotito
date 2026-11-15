@@ -544,35 +544,35 @@ ${useful.join("\n").slice(0,7000)}`;
     if(!output)return;
     output.replaceChildren();
     if(!subject||(scope==="topic"&&!topic)){
-      output.textContent="Elegí una materia y, para resumir un tema, indicá también el tema.";return;
+      output.textContent=uiText("Elegí una materia y, para resumir un tema, indicá también el tema.");return;
     }
     const result=window.ROBOTITO_CLASS_AGGREGATE?.build?.({
       subject,topic,level,lines:state.classLines||[],
       materials:state.academicMaterials||[],sessions:sessionsFromLines()
     });
     if(!result?.ok){
-      output.textContent="No encontré suficientes apuntes o transcripciones para ese alcance.";return;
+      output.textContent=uiText("No encontré suficientes apuntes o transcripciones para ese alcance.");return;
     }
-    const header=document.createElement("h3");header.textContent="Resumen: "+subject+(topic?" — "+topic:"");
+    const header=document.createElement("h3");header.textContent=uiText("Resumen: ")+subject+(topic?" — "+topic:"");
     output.append(header);
     const meta=document.createElement("p");meta.className="muted";
-    meta.textContent=result.sessionCount+" clases · "+result.materialCount+" materiales · "+result.lineCount+" fragmentos";
+    meta.textContent=uiText("{count} clases",{count:result.sessionCount})+" · "+uiText("{count} materiales",{count:result.materialCount})+" · "+uiText("{count} fragmentos",{count:result.lineCount});
     output.append(meta);
     for(const [label,items] of [
-      ["Ideas importantes",result.important],
-      ["Conceptos recurrentes",result.concepts.map(c=>({text:c.word+" ("+c.occurrences+")"}))],
-      ["Dudas",result.doubts],["Ejercicios",result.exercises]
+      [uiText("Ideas importantes"),result.important],
+      [uiText("Conceptos recurrentes"),result.concepts.map(c=>({text:c.word+" ("+c.occurrences+")"}))],
+      [uiText("Dudas"),result.doubts],[uiText("Ejercicios"),result.exercises]
     ]){
       const title=document.createElement("h4");title.textContent=label;output.append(title);
       if(!items.length){const empty=document.createElement("p");empty.className="muted";
-        empty.textContent="No se encontraron elementos en los materiales seleccionados.";output.append(empty);continue;}
+        empty.textContent=uiText("No se encontraron elementos en los materiales seleccionados.");output.append(empty);continue;}
       const ul=document.createElement("ul");
       for(const item of items){
         const li=document.createElement("li");li.textContent=item.text;
         if(item.source){
           const cite=document.createElement("small");
-          cite.textContent=" · Fuente: "+(item.source.name||item.source.sessionId||"transcripción")+
-            (item.source.chunk?" · fragmento "+item.source.chunk:"");
+          cite.textContent=" · "+uiText("Fuente: ")+(item.source.name||item.source.sessionId||"transcripción")+
+            (item.source.chunk?" · "+uiText("fragmento {count}",{count:item.source.chunk}):"");
           li.append(cite);
         }
         ul.append(li);
@@ -580,7 +580,7 @@ ${useful.join("\n").slice(0,7000)}`;
       output.append(ul);
     }
     const note=document.createElement("p");note.className="muted";
-    note.textContent="Resumen extractivo: los fragmentos no equivalen a hechos verificados. Revisá el contexto de cada fuente.";
+    note.textContent=uiText("Resumen extractivo: los fragmentos no equivalen a hechos verificados. Revisá el contexto de cada fuente.");
     output.append(note);
   }
   window.ROBOTITO_CLASS_ORGANIZER={
