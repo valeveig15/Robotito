@@ -116,13 +116,17 @@ function solve(raw,language="es"){
   const parts=prepared.split(";").filter(Boolean);
   if(parts.length<1||parts.length>2)throw new Error("invalid");
   const eqs=parts.map(equation);
-  const variables=new Set();
-  eqs.forEach(e=>{if(Math.abs(e.left.x)+Math.abs(e.right.x)>EPS)variables.add("x");
-   if(Math.abs(e.left.y)+Math.abs(e.right.y)>EPS)variables.add("y");});
-  if(!variables.size)throw new Error("invalid");
+  const mentioned=new Set(),active=new Set();
+  eqs.forEach(e=>{
+   if(e.raw.includes("x"))mentioned.add("x");
+   if(e.raw.includes("y"))mentioned.add("y");
+   if(Math.abs(e.x)>EPS)active.add("x");
+   if(Math.abs(e.y)>EPS)active.add("y");
+  });
+  if(!mentioned.size)throw new Error("invalid");
   if(eqs.length===1){
-   const e=eqs[0],v=variables.has("x")?"x":"y";
-   if(variables.size>1)return {handled:true,kind:"underdetermined",text:lang.many};
+   const e=eqs[0],v=active.has("x")?"x":active.has("y")?"y":mentioned.has("x")?"x":"y";
+   if(active.size>1)return {handled:true,kind:"underdetermined",text:lang.many};
    const a=e[v],b=e.n;
    if(Math.abs(a)<EPS){
     const text=Math.abs(b)<EPS?lang.infinite:lang.none;
@@ -140,7 +144,7 @@ function solve(raw,language="es"){
    return {handled:true,kind:"linear",variable:v,value,verified,text,steps:3};
   }
   const [a,b]=eqs,det=a.x*b.y-b.x*a.y;
-  if(variables.size!==2||Math.abs(det)<EPS)
+  if(active.size!==2||Math.abs(det)<EPS)
    return {handled:true,kind:"singular",text:lang.singular};
   const x=(a.n*b.y-b.n*a.y)/det,y=(a.x*b.n-b.x*a.n)/det;
   if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error("invalid");
