@@ -13,6 +13,9 @@ for(const [query,expected] of rows){
  assert.match(x.text,/Paso 1/);assert.match(x.text,/Comprobación/);
 }
 assert.equal(solve("x=x").kind,"identity");
+assert.equal(solve("x-x=0").kind,"identity");
+assert.equal(solve("0x=5").kind,"contradiction");
+assert.equal(solve("x+y-y=2").value,2);
 assert.equal(solve("x+1=x+2").kind,"contradiction");
 assert.equal(solve("x+y=3").kind,"underdetermined");
 const sys=solve("x+y=5; 2x-y=1");
