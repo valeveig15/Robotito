@@ -163,16 +163,22 @@ function eligibleRegistered(samples,people){
  }
  return false;
 }
-async function remember(samples,{consent=false,people=[]}={}){
+async function remember(samples,{consent=false,people=[],currentConsent=null}={}){
  if(!consent)throw new Error("Explicit visitor consent required");
  if(!unlocked)throw new Error("Unlock the private visitor vault first");
  const t=template(samples);
- if(eligibleRegistered(samples,people))
-  throw new Error("Face resembles an existing registered profile; do not duplicate");
- if(findCandidate(samples,profiles)||profiles.some(p=>score(samples,p.templates)<.48))
-  throw new Error("Visitor already enrolled or too similar to another visitor");
- if(profiles.length>=MAX_PROFILES)throw new Error("Private visitor vault at capacity");
  return runExclusive(async()=>{
+  // Recheck under the same serial lock that commits the vault. Two captures
+  // finishing together must never create two profiles for the same face.
+  // A pending capture cannot persist after consent was withdrawn or the
+  // browser session has locked the vault.
+  if(!unlocked||currentConsent&&currentConsent()!==true)
+   throw new Error("Visitor consent or unlocked session expired");
+  if(eligibleRegistered(samples,people))
+   throw new Error("Face resembles an existing registered profile; do not duplicate");
+  if(findCandidate(samples,profiles)||profiles.some(p=>score(samples,p.templates)<.48))
+   throw new Error("Visitor already enrolled or too similar to another visitor");
+  if(profiles.length>=MAX_PROFILES)throw new Error("Private visitor vault at capacity");
   const next=profiles.slice();
   const id=root.crypto.randomUUID?.()||Array.from(randomBytes(16),x=>x.toString(16).padStart(2,"0")).join("");
   next.push({id,templates:t,consentAt:Date.now(),bond:{
@@ -240,8 +246,10 @@ function interaction(kind,{now=Date.now(),singleFace=true}={}){
 }
 async function forgetAll({confirmation}={}){
  if(confirmation!=="BORRAR VISITAS")throw new Error("Explicit visitor deletion required");
- await root.ROBOTITO_STORE.deleteVisitorVault({confirmation});
- lock();return true;
+ return runExclusive(async()=>{
+  await root.ROBOTITO_STORE.deleteVisitorVault({confirmation});
+  lock();return true;
+ });
 }
 async function offerLink(name,samples,{review}={}){
  if(!unlocked||!Array.isArray(samples)||samples.length<9||
@@ -250,10 +258,16 @@ async function offerLink(name,samples,{review}={}){
  if(!match)return false;
  const profile=profiles.find(p=>p.id===match.id);
  if(!profile||typeof review!=="function")return false;
+ const reviewedRevision=revision;
  const chosen=await review({bond:{...profile.bond},
    interactions:{...profile.interactions},lastSeenAt:profile.lastSeenAt});
  if(chosen!==true)return false;
  return runExclusive(async()=>{
+  // Any interaction, enrollment, deletion or other tab change since the
+  // human reviewed the candidate invalidates this permission.
+  if(!unlocked||revision!==reviewedRevision||
+     findCandidate(samples,profiles)?.id!==match.id)
+   throw new Error("Visitor changed during review; confirm again");
   const next=profiles.filter(p=>p.id!==match.id),nextEnvelope=await seal(next);
   const people=await root.ROBOTITO_STORE.linkVisitorProfile({
    name,bond:profile.bond,expectedRevision:revision,envelope:nextEnvelope,
