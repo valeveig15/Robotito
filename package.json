@@ -2,7 +2,7 @@
   "name": "robotito-regression",
   "private": true,
   "scripts": {
-    "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:p01 && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:p08 && npm run test:p09 && npm run test:generative && npm run test:p10-p11",
+    "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:p01 && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:p08 && npm run test:p09 && npm run test:generative && npm run test:p10-p11 && npm run test:p12-p14",
     "test:core": "node tests/core-regression.js",
     "test:browser": "node tests/browser-regression.js",
     "test:browser:performance": "node tests/browser-performance-smoke.js",
@@ -62,6 +62,7 @@
     "test:p09": "node tests/p09-visitor-vault-regression.js",
     "test:p09:browser": "node tests/p09-private-visitors-browser.js",
     "test:p10-p11": "node tests/p10-p11-temporal-rules-regression.js",
+    "test:p12-p14": "node tests/p04-class-audio-cancellation-regression.js && node tests/p13-p14-class-integrity-regression.js",
     "test:p10-p11:browser": "node tests/p10-p11-rules-browser.js"
   },
   "devDependencies": {
