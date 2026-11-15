@@ -4269,6 +4269,11 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   if(handleSocialSpeech(text)) return;
   if(/\b(choca los cinco|chocame los cinco|dame cinco|high[ -]five)\b/.test(text)){highFiveRobot();return;}
   if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
+  const algebra=window.ROBOTITO_ALGEBRA_TUTOR?.solve?.(interpreted,detectedLang);
+  if(algebra?.handled){
+    say(algebra.text,Math.max(7600,Math.min(30000,algebra.text.length*85)),detectedLang);
+    return;
+  }
   if(answerArithmetic(interpreted,detectedLang))return;
   if(await handleWeatherAndDayQuestions(interpreted,interpretation))return;
   if(detectedLang==="en" && answerEnglishPersonalQuestion(rawText)) return;

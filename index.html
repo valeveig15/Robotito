@@ -17,6 +17,8 @@
   <script defer src="objects.js?v=20261107-p05"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js?v=20261107-p05"></script>
+  <script defer src="algebra-tutor.js?v=20261115-p19"></script>
+  <script defer src="algebra-tutor-ui.js?v=20261115-p19"></script>
   <script defer src="study-planner.js?v=20261115-p18"></script>
   <script defer src="study-planner-ui.js?v=20261115-p18"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
@@ -675,6 +677,16 @@
             <button id="flashcardsBtn" type="button" data-i18n="uiFlashcards">Tarjetas de estudio</button>
           </div>
           <div id="classAnswer" class="study-output"></div>
+        </div>
+
+        <div class="card" id="algebraTutorCard">
+          <h2>Resolver ecuaciones paso a paso</h2>
+          <p class="muted">Probá «2x + 3 = 11», «2(x + 1) = 8» o un sistema «x + y = 5; 2x - y = 1». Verificá las unidades y el dominio. Robotito explica qué operaciones puede resolver y no inventa soluciones para expresiones no lineales.</p>
+          <label>Ecuación o sistema
+            <textarea id="algebraTutorInput" rows="2" placeholder="Ej. 2x + 3 = 11"></textarea>
+          </label>
+          <button type="button" class="primary full" id="algebraTutorSolve">Resolver con comprobación</button>
+          <div id="algebraTutorResult" class="study-output" role="status" aria-live="polite" style="white-space:pre-wrap"></div>
         </div>
 
         <div class="card">

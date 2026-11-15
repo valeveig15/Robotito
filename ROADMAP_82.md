@@ -162,7 +162,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **16.** Compartir selectivamente memorias de clases — POR AUDITAR
 - [ ] **17.** Grupos de estudio con chat y entregas conjuntas — POR AUDITAR
 - [ ] **18.** Lista de prioridades y tareas propia de Robotito — EN PROGRESO (planificador nativo local, vencimientos, horarios, completado e importación voluntaria de Sheets; ver [P18-STATUS.md](P18-STATUS.md)).
-- [ ] **19.** Matemáticas y ecuaciones expresadas oralmente — POR AUDITAR
+- [ ] **19.** Matemáticas y ecuaciones expresadas oralmente — EN PROGRESO (ecuaciones lineales, sistemas 2×2, pasos, comprobación, casos negativos y voz; ver [P19-STATUS.md](P19-STATUS.md)).
 - [ ] **20.** Nomenclatura química como tutor — POR AUDITAR
 - [ ] **21.** Países, capitales, autoridades e historia contextualizada — POR AUDITAR
 - [ ] **22.** Vídeos y materiales de estudio — POR AUDITAR
