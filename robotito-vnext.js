@@ -204,47 +204,73 @@
   async function detectObjectNow(){
     if(!state.started){toast("Primero despertá los sentidos.");return false;}
     const out=document.querySelector("#objectResult");
-    if(out)out.innerHTML='<div class="study-chip" data-ui-copy=Mirando%20el%20objeto%E2%80%A6>Mirando el objeto…</div>';
+    if(out)out.textContent="Observando varias imágenes de la cámara…";
+    const stable=window.ROBOTITO_OBJECT_TRACKER?.createTracker?.();
+    const epoch=state.captureEpoch;
+    const active=()=>state.started&&state.captureEpoch===epoch&&!document.hidden&&
+      !state.captureSuspended&&camera.readyState>=2;
     try{
+      if(!stable)throw new Error("tracker-not-loaded");
       await loadObjectModels();
-      if(camera.readyState<2)throw new Error("camera-not-ready");
-      const preds=await state.objectModel.detect(camera,12,.32);
-      const nonPerson=preds.filter(p=>p.class!=="person");
-      let chosen=(nonPerson[0]||preds[0]||null);
-      let modelLabel=chosen?.class||"";
-      let confidence=chosen?.score||0;
-      let item=window.ROBOTITO_OBJECTS?.findByModelLabel?.(modelLabel)||null;
-
-      // MobileNet is a useful second opinion for objects outside COCO's 80 classes.
-      if((!chosen||!item||confidence<.48)&&state.imageModel){
-        const cls=await state.imageModel.classify(camera,5);
-        const best=(cls||[]).find(x=>x.probability>=.18);
-        if(best){
-          const mapped=window.ROBOTITO_OBJECTS?.findByModelLabel?.(best.className);
-          if(mapped||!chosen){
-            item=mapped||item;
-            modelLabel=best.className;
-            confidence=Math.max(confidence,best.probability||0);
-          }
+      if(!active())throw new Error("camera-not-ready");
+      let result=null,previousTime=null;
+      for(let i=0;i<6;i++){
+        if(!active())throw new Error("camera-interrupted");
+        const currentTime=camera.currentTime;
+        if(i===0||previousTime===null||currentTime!==previousTime){
+          const predictions=await state.objectModel.detect(camera,12,.4);
+          if(!active())throw new Error("camera-interrupted");
+          result=stable.observe(predictions,Date.now());
+          previousTime=currentTime;
+          if(result)break;
+        }
+        await new Promise(resolve=>setTimeout(resolve,160));
+      }
+      let item=result?window.ROBOTITO_OBJECTS?.findByModelLabel?.(result.label):null;
+      // MobileNet only acts as a strong, repeated second opinion. A low-score
+      // single frame must not override inconclusive COCO detections.
+      if(!item&&state.imageModel){
+        const candidates=[];
+        for(let i=0;i<2;i++){
+          if(!active())throw new Error("camera-interrupted");
+          const classified=await state.imageModel.classify(camera,5);
+          if(!active())throw new Error("camera-interrupted");
+          const first=classified?.[0],second=classified?.[1];
+          const mapped=window.ROBOTITO_OBJECTS?.findByModelLabel?.(first?.className);
+          if(mapped&&(Number(first?.probability)||0)>=.80&&
+            Number(first?.probability)-Number(second?.probability||0)>=.20)
+            candidates.push({item:mapped,score:first.probability});
+          await new Promise(resolve=>setTimeout(resolve,140));
+        }
+        if(candidates.length===2&&candidates[0].item.id===candidates[1].item.id){
+          item=candidates[0].item;
+          result={confidence:Math.min(candidates[0].score,candidates[1].score),
+            label:item.id,votes:2,stable:true};
         }
       }
-
-      if(!chosen&&!item){
-        if(out)out.innerHTML='<div class="study-chip" data-ui-copy=No%20reconozco%20un%20objeto%20con%20suficiente%20claridad.%20Acercalo%2C%20ilumin%C3%A1%20bien%20y%20dejalo%20quieto%20un%20segundo.>No reconozco un objeto con suficiente claridad. Acercalo, iluminá bien y dejalo quieto un segundo.</div>';
-        say("No lo reconozco con suficiente claridad todavía.",4200);
+      if(!item||!result){
+        if(out)out.textContent="No puedo identificar un objeto con suficiente seguridad entre estas imágenes. Acercalo, iluminá bien y mantenelo quieto.";
+        say("No lo distingo con suficiente seguridad. Probá acercarlo y mantenerlo quieto.",4800);
         return true;
       }
-
-      const name=objectDisplay(item,modelLabel);
-      const pct=Math.round(Math.max(0,Math.min(1,confidence))*100);
-      if(out)out.innerHTML='<div class="object-box"><div class="object-icon">'+escapeHtml(item?.emoji||"👀")+'</div><div><strong>'+escapeHtml(uiText('Creo que es {name}.',{name}))+'</strong><div class="muted">'+uiText('Confianza aproximada: {count}%',{count:pct})+'</div></div></div>';
-      uiSet(out?.querySelector("strong"),"Creo que es {name}.",lang=>({name:item?window.ROBOTITO_OBJECTS.displayName(item,lang):name}));
-      uiSet(out?.querySelector(".muted"),"Confianza aproximada: {count}%",{count:pct});
+      const name=window.ROBOTITO_OBJECTS.displayName(item,state.languageMode);
+      const pct=Math.round(Math.max(0,Math.min(1,result.confidence))*100);
+      if(out){
+        out.replaceChildren();
+        const card=document.createElement("div");card.className="object-box";
+        const icon=document.createElement("div");icon.className="object-icon";icon.textContent=item.emoji||"👀";
+        const body=document.createElement("div"),title=document.createElement("strong"),detail=document.createElement("div");
+        detail.className="muted";
+        title.textContent="Creo que es "+name+".";
+        detail.textContent="Coincidencia visual aproximada: "+pct+" %; comprobada en varias imágenes.";
+        body.append(title,detail);card.append(icon,body);out.append(card);
+      }
       const show=document.querySelector("#objectShowcase");
-      if(show&&item){
+      if(show){
         document.querySelector("#objectShowEmoji").textContent=item.emoji||"✨";
-        uiSet(document.querySelector("#objectShowName"),"{name}",lang=>({name:window.ROBOTITO_OBJECTS.displayName(item,lang)}));
-        uiSet(document.querySelector("#objectShowInfo"),"Reconocido por cámara");
+        uiSet(document.querySelector("#objectShowName"),"{name}",
+          lang=>({name:window.ROBOTITO_OBJECTS.displayName(item,lang)}));
+        uiSet(document.querySelector("#objectShowInfo"),"Reconocido tentativamente por cámara");
         show.classList.remove("hidden");
         clearTimeout(detectObjectNow.t);
         detectObjectNow.t=setTimeout(()=>show.classList.add("hidden"),4200);
@@ -253,7 +279,7 @@
       return true;
     }catch(e){
       console.warn("object recognition",e);
-      if(out)out.innerHTML='<div class="study-chip" data-ui-copy=No%20pude%20usar%20el%20reconocimiento%20visual%20en%20este%20momento.>No pude usar el reconocimiento visual en este momento.</div>';
+      if(out)out.textContent="No pude utilizar la cámara de forma segura. Comprobá los permisos y volvé a intentarlo.";
       say("No pude usar bien la cámara para reconocerlo.",3800);
       return true;
     }
