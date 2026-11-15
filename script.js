@@ -4121,6 +4121,11 @@ function selectRobotitoContext(owner){
   return robotitoConversationContext;
 }
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
+  // P10/P11: explicit literal-response instructions are parsed conservatively
+  // before generic intent planning. Class audio is educational material, never
+  // a source of automatic personal commands.
+  if(!atomic&&!state.classMode&&!document.hidden&&
+    window.ROBOTITO_TEMPORAL_RULES?.handle?.(rawText)?.handled)return;
   const owner=state.currentVoicePerson||state.currentPerson||"local";
   selectRobotitoContext(owner);
   const planningEpoch=++robotitoPlanningEpoch;
@@ -6376,6 +6381,10 @@ async function init(){
   setInterval(updateClassDuration,1000);
   setInterval(ambientMood,2500);
   setInterval(taskReminderTick,30000);
+  window.ROBOTITO_TEMPORAL_RULES?.attach?.({
+    say:text=>{if(!document.hidden&&!state.classMode)say(text);},
+    owner:activeMemoryOwner
+  });
   setInterval(routinePromptTick,60000);
   setTimeout(routinePromptTick,12000);
   if(state.tasksSheetUrl) refreshTasks();
