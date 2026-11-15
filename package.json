@@ -65,7 +65,7 @@
     "test:p10-p11": "node tests/p10-p11-temporal-rules-regression.js",
     "test:p10-p11:browser": "node tests/p10-p11-rules-browser.js",
     "test:p15:browser": "node tests/p15-class-aggregate-browser.js",
-    "test:p16-p17": "node tests/p16-p17-collaboration-domain-regression.js"
+    "test:p16-p17": "node tests/p16-p17-collaboration-domain-regression.js && node tests/p16-p17-collaboration-service-regression.js"
   },
   "devDependencies": {
     "playwright": "1.56.1"
