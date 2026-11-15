@@ -309,9 +309,14 @@ Respondé únicamente JSON válido:
     $("#speakerPill")?.classList.remove("hidden");
     if($("#speakerLabel"))uiSet($("#speakerLabel"),speaker==="me"?"VOS":speaker==="teacher"?"PROFESOR/A":"COMPAÑERO/A");
 
-    const verification=await verifyTranscript(line.correctedText,[state.classSubject,state.classTopic].filter(Boolean).join(" — "));
+    // Snapshot the source and scope: a slow network check must not overwrite
+    // a later manual correction, a renamed class, or a new capture session.
+    const originalCorrection=line.correctedText;
+    const originalSubject=line.subject,originalTopic=line.topic;
+    const verification=await verifyTranscript(originalCorrection,[originalSubject,originalTopic].filter(Boolean).join(" — "));
     const live=state.classLines.find(x=>x.id===line.id);
-    if(!live)return;
+    if(!live||live.correctedText!==originalCorrection||
+       live.subject!==originalSubject||live.topic!==originalTopic)return;
     live.correctedText=verification.text;
     live.corrections=[...(live.corrections||[]),...(verification.changes||[])];
     live.verificationStatus=verification.status;
