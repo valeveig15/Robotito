@@ -15,7 +15,7 @@ function announce(task,allDone){
  if(typeof root.setMood==="function")root.setMood("proud","Robotito celebra tu progreso de estudio.");
  const text=allDone?"¡Felicitaciones! ¡Completaste todos tus pendientes!":"¡Muy bien! Terminaste "+task.title+".";
  message(text);
- if(!root.state?.classMode&&typeof root.say==="function")root.say(text,5000);
+ if(!(typeof state!=="undefined"&&state.classMode)&&typeof root.say==="function")root.say(text,5000);
 }
 function render(){
  if(!planner){message("El planificador local no está disponible en este navegador.");return;}
