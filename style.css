@@ -3072,3 +3072,15 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .localized-content-text{white-space:pre-line;overflow-wrap:anywhere}
 .localized-content-status{display:block;color:var(--muted,#5e5665);font-size:.78rem;margin-top:.35rem}
 .local-translation-button{display:block;margin-top:.35rem;max-width:100%;white-space:normal}
+
+/* P18 — native daily planner; responsive, touch-friendly controls */
+.native-task-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px;margin:12px 0 18px;align-items:end}
+.native-task-form label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.native-task-form input,.native-task-form select{width:100%;min-width:0}
+.native-task-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
+.native-task-controls button,.native-task-controls select,.native-task-controls input{min-height:38px}
+.native-task-controls input[type=number]{max-width:82px}
+.native-task-controls input[type=date]{max-width:180px}
+.native-task-row{padding:13px 12px;margin-block:9px;overflow-wrap:anywhere}
+.study-success{font-weight:700;letter-spacing:.01em}
+@media(max-width:500px){.native-task-form{grid-template-columns:1fr}.native-task-controls{gap:6px}.native-task-controls input[type=date]{max-width:100%}}
