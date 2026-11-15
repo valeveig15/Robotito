@@ -10,7 +10,7 @@
   let visionBusy=false;
   let transcriptSegments=[];
   let visualObservations=new Map();
-  let activeVideo=null,captureBeganAt=0,evidenceStore=null;
+  let activeVideo=null,activeScope=null,captureBeganAt=0,evidenceStore=null;
   function evidence(){
     if(!evidenceStore)evidenceStore=window.ROBOTITO_VIDEO_EVIDENCE?.createStore?.();
     if(!evidenceStore)throw new Error("Evidence store unavailable");
@@ -21,8 +21,7 @@
       topic:norm(document.querySelector("#classTopic")?.value||state.classTopic),
       sessionId:norm(state.classSessionId)};
   }
-  function storeEvidence(video,items){
-    const scope=classScope();
+  function storeEvidence(video,items,scope=classScope()){ 
     if(!scope.subject||!items.length)return 0;
     try{
       return evidence().addBatch({
@@ -187,7 +186,7 @@
     ];
     await saveTextMaterial(lines.join("\n"),"Observaciones_visuales_"+safeName(video.title)+".txt");
     storeEvidence(video,rows.map(x=>({kind:"seen",text:translatedObject(x.name),
-      atSec:x.firstAt,score:x.best,samples:x.count,complete:false})));
+      atSec:x.firstAt,score:x.best,samples:x.count,complete:false})),activeScope||classScope());
   }
   async function restoreNormalListening(){
     if(!state.started||!state.stream)return;
@@ -247,6 +246,7 @@
       captureActive=true;
       captureStopping=false;
       activeVideo=video;
+      activeScope=classScope();
       captureBeganAt=Date.now();
       transcriptSegments=[];
       visualObservations=new Map();
@@ -295,7 +295,7 @@
       captureStream=null;
       captureActive=false;
       startedClassForCapture=false;
-      activeVideo=null;
+      activeVideo=null;activeScope=null;
       setButtons(false);
       const msg=e?.message==="no-audio"
         ?"La pestaña se compartió sin audio. Reintentá y marcá «Compartir audio de la pestaña»."
@@ -321,7 +321,7 @@
     try{
       if(startedClassForCapture&&state.classMode)await stopClassMode();
       storeEvidence(video,transcriptSegments.map(x=>({kind:"heard",text:x.text,
-        atSec:x.atSec,capture:true,complete:false})).slice(0,240));
+        atSec:x.atSec,capture:true,complete:false})).slice(0,240),activeScope||classScope());
       await importVisualObservations(video);
     }catch(e){
       console.warn("finish video material",e);
@@ -330,7 +330,7 @@
     captureStream?.getTracks?.().forEach(track=>{try{track.stop();}catch{}});
     captureStream=null;
     startedClassForCapture=false;
-    activeVideo=null;
+    activeVideo=null;activeScope=null;
 
     const preview=document.querySelector("#youtubeCapturePreview");
     if(preview){preview.pause();preview.srcObject=null;preview.hidden=true;}
