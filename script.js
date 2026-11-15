@@ -4032,7 +4032,9 @@ function taskReminderTick(){
   const elapsed=Date.now()-state.sessionStartedAt;
   if(elapsed<20*60*1000)return;
   if(Date.now()-state.lastTaskReminderAt<20*60*1000)return;
-  const tasks=pendingTasks();
+  if(state.classMode)return;
+  const native=window.ROBOTITO_STUDY_PLANNER_UI?.engine?.todayPlan?.().tasks||[];
+  const tasks=[...native.map(t=>({task:t.title})),...pendingTasks()];
   if(!tasks.length)return;
   state.lastTaskReminderAt=Date.now();
   const first=tasks[0];
@@ -4126,6 +4128,10 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   // a source of automatic personal commands.
   if(!atomic&&!state.classMode&&!document.hidden&&
     window.ROBOTITO_TEMPORAL_RULES?.handle?.(rawText)?.handled)return;
+  if(!atomic&&!state.classMode&&!document.hidden){
+    const localTask=window.ROBOTITO_STUDY_PLANNER_UI?.speech?.(rawText);
+    if(localTask?.handled){say(localTask.text,5600);return;}
+  }
   const owner=state.currentVoicePerson||state.currentPerson||"local";
   selectRobotitoContext(owner);
   const planningEpoch=++robotitoPlanningEpoch;
