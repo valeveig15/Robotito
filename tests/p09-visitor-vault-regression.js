@@ -68,8 +68,30 @@ const det=(center,confidence=.91)=>({descriptor:face(center),detection:{score:co
  assert.equal(linked.people[0].name,"Ada");
  assert.equal(visitors.info().count,1,"Link deletes only matched pseudonymous entry");
  assert.equal(await visitors.offerLink("Bruno",frames(.2),{review:()=>true}),false);
+ // Two concurrent enrollments of one person may create at most one entry.
+ const concurrent=await Promise.allSettled([
+  visitors.remember(frames(2.0),{consent:true,people:[]}),
+  visitors.remember(frames(2.0),{consent:true,people:[]})
+ ]);
+ assert.equal(concurrent.filter(r=>r.status==="fulfilled").length,1,
+  "Concurrent duplicate enrollment must be rejected after serial lock");
+ assert.equal(visitors.info().count,2,
+  "Only one pseudonymous visitor was created by two simultaneous calls");
+ let liveConsent=true;
+ const pending=visitors.remember(frames(3.3),{
+  consent:true,people:[],currentConsent:()=>liveConsent
+ });
+ liveConsent=false;
+ await assert.rejects(pending,/consent/i,
+  "Revocation while an enrollment is queued must leave the vault unchanged");
+ assert.equal(visitors.info().count,2);
+
  await assert.rejects(()=>visitors.forgetAll({confirmation:"BORRAR"}),/deletion|confirmation/i);
- await visitors.forgetAll({confirmation:"BORRAR VISITAS"});
+ const deleting=visitors.forgetAll({confirmation:"BORRAR VISITAS"});
+ const late=visitors.remember(frames(3.3),{consent:true,people:[]});
+ await deleting;
+ await assert.rejects(late,/locked|session/i,
+  "A pending enrollment cannot resurrect a forgotten visitor vault");
  assert.equal(deleted,1);
  assert.equal(state.has("robotito.visitors.v1"),false);
  assert.equal(visitors.locked(),true);

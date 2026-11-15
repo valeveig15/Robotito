@@ -5195,7 +5195,11 @@ async function enrollVisitor(){
      consent.checked!==true||!state.started||document.hidden||state.captureSuspended){
    visitorStatus("p09CaptureCanceled");return;
   }
-  await window.ROBOTITO_VISITORS.remember(samples,{consent:true,people:state.people});
+  await window.ROBOTITO_VISITORS.remember(samples,{
+   consent:true,people:state.people,
+   currentConsent:()=>state.captureEpoch===epoch&&state.enrollmentRevision===rev&&
+    consent?.checked===true&&state.started&&!document.hidden&&!state.captureSuspended
+  });
   visitorStatus("p09Saved");
  }catch(error){
   console.warn("P09 visitor enrollment",error?.name);
