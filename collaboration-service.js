@@ -29,14 +29,16 @@ function createService({transact}={}){
  });
  const updateShare=async(actor,{grantId,expectedRevision,records})=>run(state=>{
   const grant=state.grants[grantId];
-  if(!grant||grant.owner!==policy.actorId(actor)||grant.revokedAt)
+  const editor=policy.actorId(actor);
+  if(!grant||grant.revokedAt||
+     (grant.owner!==editor&&!policy.access(grant,actor,"write")))
     throw new Error("Forbidden");
   policy.requireRevision(grant.revision,expectedRevision);
   const data=records.map(r=>policy.academicOnly(r,grant.selection,grant.owner));
   if(data.length>100)throw new Error("Too many academic records");
   state.shared[grantId]=data;
   state.grants[grantId]={...grant,revision:grant.revision+1};
-  state.audit.push({event:"share-updated",grantId,owner:grant.owner,at:Date.now()});
+  state.audit.push({event:"share-updated",grantId,owner:grant.owner,by:editor,at:Date.now()});
   return {revision:grant.revision+1};
  });
  const revoke=async(actor,{grantId,expectedRevision})=>run(state=>{
