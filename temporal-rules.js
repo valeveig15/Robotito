@@ -36,13 +36,13 @@ function safeRow(row){
 }
 function parseInstruction(raw){
  const s=String(raw||"").trim().replace(/[.!?]+$/,"").trim();
- let m=s.match(/^(?:en|dentro de|in|daqui a|dans|tra|in)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)\s*[,;:]?\s*(?:recordame|recuerdame|avisame|decime|dime|di|say|tell me|remind me|lembre-me|me lembre|dis-moi|ricordami|sag mir)\s+(.+)$/i);
+ let m=s.match(/^(?:en|dentro de|in|daqui a|dans|tra)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)\s*[,;:]?\s*(?:recordame|recuerdame|avisame|decime|dime|di|say|tell me|remind me|lembre-me|me lembre|dis-moi|ricordami|sag mir)\s+(.+)$/i);
  if(m){const ms=duration(m[1],fold(m[2]));return ms&&safeText(m[3])?{kind:"once",ms,text:m[3].trim()}:null;}
  m=s.match(/^(?:cada|every|a cada|toutes les|ogni|alle)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)\s*(?:por|durante|for|durant|per|fur)\s*(\d{1,2})\s*(?:veces|times|vezes|fois|volte|mal)\s*[,;:]?\s*(?:recordame|recuerdame|avisame|decime|dime|di|say|tell me|remind me|lembre-me|dis-moi|ricordami|sag mir)\s+(.+)$/i);
  if(m){const ms=duration(m[1],fold(m[2])),n=Number(m[3]);return ms&&n>=2&&n<=12&&safeText(m[4])?{kind:"repeat",ms,count:n,text:m[4].trim()}:null;}
- m=s.match(/^(?:si digo|cuando diga|if i say|when i say|se eu disser|quando eu disser|si je dis|quand je dis|se dico|quando dico|wenn ich sage)\s+["“«']?(.+?)["”»']?\s*[,;:]\s*(?:deci|decime|dime|di|say|tell me|diga|dis|di'|sage)\s+(.+)$/i);
+ m=s.match(/^(?:si digo|cuando diga|if i say|when i say|se eu disser|quando eu disser|si je dis|quand je dis|se dico|quando dico|wenn ich sage)\s+["“«']?(.+?)["”»']?\s*[,;:]\s*(?:dec[ií]|decime|dime|d[ií]|say|tell me|diga|dis|di'|sage)\s+(.+)$/i);
  if(m&&safeText(m[1],MAX_RULE_TRIGGER)&&safeText(m[2]))return {kind:"phrase",trigger:m[1].trim(),text:m[2].trim()};
- m=s.match(/^(?:todos los dias|cada dia|every day|todo dia|tous les jours|ogni giorno|jeden tag)\s+(?:a las|at|as|a|um)\s+([01]?\d|2[0-3]):([0-5]\d)\s*[,;:]?\s*(?:deci|decime|dime|di|say|tell me|diga|dis|sage)\s+(.+)$/i);
+ m=s.match(/^(?:todos los d[ií]as|cada d[ií]a|every day|todo dia|tous les jours|ogni giorno|jeden tag)\s+(?:a las|at|as|a|um)\s+([01]?\d|2[0-3]):([0-5]\d)\s*[,;:]?\s*(?:dec[ií]|decime|dime|d[ií]|say|tell me|diga|dis|sage)\s+(.+)$/i);
  if(m&&safeText(m[3]))return {kind:"daily",time:String(Number(m[1])).padStart(2,"0")+":"+m[2],text:m[3].trim()};
  return null;
 }
@@ -132,7 +132,7 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
   if(!triggered)return {handled:false};
   emit(triggered.text);return {handled:true,triggered:triggered.id};
  };
- const reload=()=>{rows=load();onChange(list("local"));return rows.length;};
+ const reload=()=>{rows=load();onChange(rows.map(r=>({...r})));return rows.length;};
  return {create,list,cancel,clear,tick,speech,reload,parseInstruction};
 }
 let engine=null,context=null,timer=null;
