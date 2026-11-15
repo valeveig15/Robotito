@@ -34,6 +34,7 @@ function create({fetcher=root.fetch?.bind(root),now=()=>Date.now()}={}){
  async function read(url){
   if(typeof fetcher!=="function")throw Error("unavailable");
   const result=await fetcher(url,{headers:{Accept:"application/json"}});
+  if(result?.status===404)return []; // A valid no-match is not an outage.
   if(!result?.ok)throw Error("source unavailable");
   const data=await result.json();
   return Array.isArray(data)?data:[];
