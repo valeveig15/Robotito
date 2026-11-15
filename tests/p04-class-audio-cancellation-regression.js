@@ -12,7 +12,10 @@ function fixture(){
  const state={started:true,captureEpoch:1,captureRevision:1,stream:{getAudioTracks:()=>[track]}};
  class Recorder{
   constructor(){this.state="inactive";this.mimeType="audio/webm";}
-  start(){this.state="recording";}stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
+  start(){this.state="recording";}stop(){this.state="inactive";queueMicrotask(()=>{
+    this.ondataavailable?.({data:new Blob(["test"],{type:"audio/webm"})});
+    this.onstop?.();
+  });}
  }
  const runtime=new Function("state","window","document","navigator","MediaStream","MediaRecorder","crypto",
   "pickMimeType","render","setLiveStatus","putChunk","chunksFor","saveRecording","clearChunks",
@@ -34,7 +37,7 @@ function fixture(){
  await cycle();
  // The recorder has stopped; the existing 80 ms chunk flush is allowed to finish.
  while(!active.storage.length)await new Promise(resolve=>setTimeout(resolve,10));
- active.storage[0]([{blob:new Blob(["test"],{type:"audio/webm"})}]);
+ active.storage[0]([{seq:0,blob:new Blob(["test"],{type:"audio/webm"})}]);
  const saved=await saving;
  eq(saved.subject,"Physics","Recorded bytes remain saveable after closing the microphone");
  // No truncated recording may be reported as successfully saved if one chunk write fails.
