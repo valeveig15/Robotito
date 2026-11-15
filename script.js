@@ -4722,6 +4722,7 @@ function setupHands(){
     const epoch=state.captureEpoch;
     let closed=false,timer=null,pendingRevision=null;
     const hands=new Hands({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    const fingerCounter=window.ROBOTITO_OBJECT_TRACKER?.createFingerCounter?.();
     state.handsCleanup=()=>{
       closed=true;clearTimeout(timer);
       try{Promise.resolve(hands.close?.()).catch(()=>{});}catch{}
@@ -4735,13 +4736,17 @@ function setupHands(){
       state.visibleHands=landmarks.length;
 
       if(landmarks.length){
-        state.lastHandSeenAt=Date.now();
-        state.visibleFingers=landmarks.reduce((total,hand,index)=>{
+        const total=landmarks.reduce((sum,hand,index)=>{
           const handed=results.multiHandedness?.[index]?.label||"";
-          return total+countExtendedFingers(hand,handed);
+          return sum+countExtendedFingers(hand,handed);
         },0);
+        const stable=fingerCounter?.observe(total,Date.now());
+        state.visibleFingers=stable===null||stable===undefined?0:stable;
+        state.lastHandSeenAt=stable===null||stable===undefined?0:Date.now();
       }else{
+        fingerCounter?.reset();
         state.visibleFingers=0;
+        state.lastHandSeenAt=0;
       }
 
       const face=state.lastDetections[0];
