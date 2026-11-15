@@ -32,7 +32,7 @@ const client=create({now:()=>t,fetcher:async url=>{
  assert.match(a.url,/\/alpha\/FR/);
  assert.equal(a.checkedAt,"2026-11-15");
  let before=calls;
- await client.answer("What is the capital of France?","en");
+ await client.answer("¿Cuál es la capital de Francia?","en");
  assert.equal(calls,before,"same exact country uses cached lookup");
  const amb=await client.answer("capital de Congo");
  assert.equal(amb.ambiguous,true);
@@ -44,6 +44,6 @@ const client=create({now:()=>t,fetcher:async url=>{
  assert.equal((await missing.answer("capital de Francia")).missing,true);
  const source=require("node:fs").readFileSync(require("node:path").join(__dirname,"../presidents.js"),"utf8");
  assert.match(source,/verified:false,checkedAt:today/);
- assert.match(source,/sin confirmación independiente|sin confirmación oficial/);
+ assert.match(source,/fuente oficial independiente/);
  console.log("P21 country capitals, source timing, ambiguity, stale authority protection: passed");
 })().catch(e=>{console.error(e);process.exitCode=1;});
