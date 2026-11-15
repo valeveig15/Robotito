@@ -136,6 +136,9 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
  return {create,list,cancel,clear,tick,speech,reload,parseInstruction};
 }
 let engine=null,context=null,timer=null;
+function label(key,fallback){const lang=root.document?.documentElement?.lang||"es";
+ return root.ROBOTITO_I18N?.t?.(key,lang)||fallback;
+}
 function attach({say=()=>{},owner=()=> "local"}={}){
  if(engine)return engine;
  context={say,owner};
@@ -146,15 +149,15 @@ function attach({say=()=>{},owner=()=> "local"}={}){
   const box=$("temporalRuleInput"),raw=box?.value?.trim();if(!raw)return;
   const result=engine.speech(raw,{owner:context.owner(),emit:context.say});
   const status=$("temporalRuleStatus");
-  if(status)status.textContent=result.created?"Instrucción guardada para este perfil.":
-   result.error?"No pude guardar esa orden: "+result.error:
-   "Usá uno de los ejemplos de órdenes admitidas.";
+  if(status)status.textContent=result.created?label("p10RulesSavedOK","Instrucción guardada para este perfil."):
+   result.error?label("p10RulesInvalid","No pude guardar esa orden."):
+   label("p10RulesInvalid","Usá uno de los formatos de ejemplo.");
   if(result.created)box.value="";render();
  };
  $("temporalRuleAdd")?.addEventListener("click",submit);
  $("temporalRuleInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submit();}});
  const status=$("temporalRuleStatus");
- if(status)status.textContent="Las órdenes se ejecutan solo mientras Robotito está abierto y visible.";
+ if(status)status.textContent=label("p10RulesScope","Las órdenes se ejecutan solo mientras Robotito está abierto y visible.");
  render();
  timer=root.setInterval?.(()=>engine.tick({owner:context.owner(),visible:!root.document.hidden,
   emit:context.say}),1000);
@@ -177,7 +180,7 @@ function render(){
    row.kind==="repeat"?"Repetir "+row.remaining+" veces: "+row.text:
    "Recordar: "+row.text;
   const button=root.document.createElement("button");button.type="button";
-  button.className="ghost danger";button.textContent="Cancelar";
+  button.className="ghost danger";button.textContent=label("p10RulesCancel","Cancelar");
   button.addEventListener("click",()=>{engine.cancel(row.id,context.owner());render();});
   item.append(description,button);list.appendChild(item);
  }
@@ -186,10 +189,10 @@ function handle(raw,options={}){
  if(!engine)return {handled:false};
  const result=engine.speech(raw,{owner:context.owner(),visible:!root.document.hidden,
   emit:context.say});
- if(result.handled&&result.created)context.say("Orden guardada. La ejecutaré mientras esta página esté abierta y visible.");
+ if(result.handled&&result.created)context.say(label("p10RulesStoredVoice","Orden guardada. La ejecutaré mientras esta página esté abierta y visible."));
  else if(result.needsConfirmation){
-  if(root.confirm?.("¿Cancelar todas las órdenes y reglas de este perfil?")){
-   engine.clear(context.owner());context.say("Órdenes y reglas de este perfil canceladas.");
+  if(root.confirm?.(label("p10RulesCancelAll","¿Cancelar todas las órdenes y reglas de este perfil?"))){
+   engine.clear(context.owner());context.say(label("p10RulesCancelled","Órdenes y reglas de este perfil canceladas."));
   }
  }else if(result.error)context.say("No pude guardar esa orden: "+result.error);
  return result;
