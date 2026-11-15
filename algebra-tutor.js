@@ -13,6 +13,14 @@ const terms={
  it:{eq:"Equazione",system:"Sistema",step:"Passo",check:"Verifica",unique:"Soluzione",infinite:"L'uguaglianza vale per ogni valore reale.",none:"L'equazione è impossibile.",many:"Due incognite richiedono più condizioni.",singular:"Il sistema non ha una soluzione unica.",invalid:"Non posso risolvere in modo affidabile questa espressione. Sono supportate solo equazioni lineari.",divide:"Divisione per zero o per un'espressione contenente incognite non consentita.",nonlinear:"Questa espressione non è lineare.",unsupported:"Serve un'uguaglianza con x o y."},
  de:{eq:"Gleichung",system:"Gleichungssystem",step:"Schritt",check:"Probe",unique:"Lösung",infinite:"Die Gleichung gilt für jeden reellen Wert.",none:"Die Gleichung ist widersprüchlich.",many:"Zwei Unbekannte erfordern weitere Bedingungen.",singular:"Das System hat keine eindeutige Lösung.",invalid:"Ich kann diesen Ausdruck nicht zuverlässig lösen. Nur lineare Gleichungen werden unterstützt.",divide:"Division durch null oder durch einen Ausdruck mit Unbekannten ist nicht zulässig.",nonlinear:"Dieser Ausdruck ist nicht linear.",unsupported:"Ich brauche eine Gleichung mit x oder y."}
 };
+const dependentWords={
+ es:"Las ecuaciones son dependientes: hay infinitos pares de soluciones que cumplen la relación, pero no hay un par único.",
+ en:"The equations are dependent: infinitely many pairs satisfy the relation, but there is no unique pair.",
+ pt:"As equações são dependentes: infinitos pares satisfazem a relação, mas não há um par único.",
+ fr:"Les équations sont dépendantes : une infinité de couples satisfait la relation, sans couple unique.",
+ it:"Le equazioni sono dipendenti: infinite coppie soddisfano la relazione, ma non c'è una coppia unica.",
+ de:"Die Gleichungen sind abhängig: unendlich viele Wertepaare erfüllen sie, aber kein eindeutiges Paar."
+};
 const close=n=>Math.abs(n)<EPS?0:n;
 const fmt=n=>{
  if(!Number.isFinite(n))throw new Error("invalid");
@@ -155,8 +163,7 @@ function solve(raw,language="es"){
      [a,b].some(e=>Math.abs(e.x)<EPS&&Math.abs(e.y)<EPS&&Math.abs(e.n)>EPS);
    const kind=conflicting?"contradiction":"dependent";
    return {handled:true,kind,verified:true,
-     text:conflicting?lang.none:lang.singular+
-      " "+lang.infinite};
+     text:conflicting?lang.none:(dependentWords[language]||dependentWords.es)};
   }
   const x=(a.n*b.y-b.n*a.y)/det,y=(a.x*b.n-b.x*a.n)/det;
   if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error("invalid");
