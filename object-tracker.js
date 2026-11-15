@@ -11,9 +11,10 @@ function createTracker({now=()=>Date.now(),ttlMs=1900,minFrames=3,minScore=.58}=
   const ranked=candidates.sort((a,b)=>Number(b.score)-Number(a.score));
   const nonPerson=ranked.filter(p=>p.class!=="person");
   const best=(nonPerson[0]||ranked[0]||null);
+  const competitor=nonPerson.length?nonPerson[1]:ranked[1];
   frames=frames.filter(x=>at>=x.at&&at-x.at<=ttlMs);
   frames.push({at,label:best?.class||null,score:Number(best?.score)||0,
-    competitor:Number((nonPerson[1]||ranked[1])?.score)||0});
+    competitor:Number(competitor?.score)||0});
   frames=frames.slice(-7);
   return current(at);
  }
