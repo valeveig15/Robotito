@@ -51,7 +51,8 @@ function requireRevision(current,expected){
  if(!Number.isSafeInteger(expected)||expected!==current)
    throw new Error("Revision conflict");
 }
-function makeGrant({owner,recipient,permission,scope}){
+function makeGrant({actor,recipient,permission,scope}){
+ const owner=actorId(actor);
  if(!validId(owner)||!validId(recipient)||owner===recipient||
     !["read","write"].includes(permission))throw new Error("Invalid recipient or permission");
  return {id:ID(),owner,recipient,permission,selection:selection(scope),
@@ -62,12 +63,13 @@ function revokeGrant(grant,principal,expected,now=Date.now()){
  requireRevision(grant.revision,expected);
  return {...grant,revokedAt:now,revision:grant.revision+1};
 }
-function makeGroup({owner,title,subject}){
+function makeGroup({actor,title,subject}){
+ const owner=actorId(actor);
  if(!validId(owner)||!clean(title)||clean(title).length>120||!clean(subject))
   throw new Error("Invalid group");
  return {id:ID(),owner,title:clean(title),subject:clean(subject),
    members:{[owner]:{role:"admin",notify:false,timeZone:"UTC"}},
-   messages:[],deadline:null,revision:1,audit:[]};
+   messages:[],deadline:null,deadlineVersion:0,revision:1,audit:[]};
 }
 function membership(group,actor){
  const id=actorId(actor);
@@ -100,9 +102,11 @@ function deadlineChange(group,actor,date,expected){
  const {id,role}=membership(group,actor);
  if(role!=="admin"&&role!=="editor")throw new Error("Forbidden deadline change");
  requireRevision(group.revision,expected);
- if(date!==null&&(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date+"T12:00:00Z"))))
+ if(date!==null&&(!/^\d{4}-\d{2}-\d{2}$/.test(date)||
+   !Number.isFinite(Date.parse(date+"T12:00:00Z"))||
+   new Date(date+"T12:00:00Z").toISOString().slice(0,10)!==date))
   throw new Error("Invalid deadline");
- return {...group,deadline:date,revision:group.revision+1,
+ return {...group,deadline:date,deadlineVersion:(group.deadlineVersion||0)+1,revision:group.revision+1,
    audit:[...group.audit,{event:"deadline-change",by:id,date,revision:group.revision+1}]};
 }
 function notificationChoice(group,actor,enabled,timeZone,expected){
@@ -130,7 +134,7 @@ function reminderPlan(group,actor,at=Date.now()){
  if(days<0||days>7||!slot)return [];
  // Only an eligible, opt-in event. Durable dedup and dispatch belong to backend.
  return [{groupId:group.id,memberId:id,date:localDate,slot,daysRemaining:days,
-   deadline:group.deadline,dedupeKey:[group.id,id,group.deadline,localDate,slot].join(":")}];
+   deadline:group.deadline,dedupeKey:[group.id,id,group.deadlineVersion||0,group.deadline,localDate,slot].join(":")}];
 }
 module.exports={actorId,selection,academicOnly,access,requireRevision,
  makeGrant,revokeGrant,makeGroup,membership,memberChange,postMessage,
