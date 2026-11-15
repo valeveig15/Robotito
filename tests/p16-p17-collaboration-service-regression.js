@@ -34,6 +34,15 @@ const main={owner:"alice",type:"class-line",sessionId:"s1",subject:"Historia",to
  await svc.revoke(actor("alice"),{grantId:s.grantId,expectedRevision:2});
  assert.equal((await svc.sharedWith(actor("bob"))).length,0);
  assert.equal(db.shared[s.grantId],undefined);
+ const writable=await svc.addShare(actor("alice"),{recipient:"bob",permission:"write",
+   scope:{type:"class",id:"s1",subject:"Historia"},records:[main]});
+ const edited=await svc.updateShare(actor("bob"),{grantId:writable.grantId,expectedRevision:1,
+   records:[{...main,text:"Anotación aprobada por editor del material compartido."}]});
+ assert.equal(edited.revision,2,"Authorized writer can edit only the shared snapshot");
+ assert.equal(db.audit.at(-1).by,"bob","Editor identity is audited");
+ await svc.revoke(actor("alice"),{grantId:writable.grantId,expectedRevision:2});
+ await assert.rejects(svc.updateShare(actor("bob"),{grantId:writable.grantId,
+   expectedRevision:3,records:[main]}),/Forbidden/);
  const g=await svc.createGroup(actor("alice"),{title:"Grupo de Historia",subject:"Historia"});
  await assert.rejects(svc.getGroup(actor("eve"),g.id),/Not a group member/);
  const m=await svc.groupMember(actor("alice"),{groupId:g.id,memberId:"bob",role:"editor",expectedRevision:1});
