@@ -40,6 +40,14 @@ assert.deepEqual(funcs.classLinesForSubject().map(x=>x.sessionId),["bio-1"],
 state.selectedClassSessionId="math-1";state.classSubject="Matemáticas";state.classTopic="Álgebra";
 assert.deepEqual(funcs.classLinesForSubject().map(x=>x.sessionId),["math-1"],
  "Selected recorded session remains preferred");
+state.selectedClassSessionId="missing-session";
+assert.deepEqual(funcs.classLinesForSubject(),[],
+ "An unavailable selected session must not fall through to a different class");
+state.selectedClassSessionId=null;
+state.classLines.push({sessionId:"unnamed",subject:"",topic:"",text:"private unrelated material"});
+state.classSubject="Química";state.classTopic="";
+assert.deepEqual(funcs.classLinesForSubject(),[],
+ "Missing subject metadata must not match any selected subject");
 assert.match(source,/if\(live\.correctedText===academic\.text\)/,
  "Asynchronous fact verification must not overwrite a newer manual correction");
 console.log("P13/P14 speaker abstention and class source isolation: passed");
