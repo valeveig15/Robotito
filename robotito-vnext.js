@@ -206,9 +206,11 @@
     const out=document.querySelector("#objectResult");
     if(out)out.textContent="Observando varias imágenes de la cámara…";
     const stable=window.ROBOTITO_OBJECT_TRACKER?.createTracker?.();
-    const epoch=state.captureEpoch;
-    const active=()=>state.started&&state.captureEpoch===epoch&&!document.hidden&&
-      !state.captureSuspended&&camera.readyState>=2;
+    const epoch=state.captureEpoch,revision=state.captureRevision;
+    const active=()=>state.started&&state.captureEpoch===epoch&&
+      state.captureRevision===revision&&!document.hidden&&!state.captureSuspended&&
+      camera.readyState>=2&&!!camera.srcObject&&
+      (camera.srcObject.getVideoTracks?.()||[]).some(track=>track.readyState==="live");
     try{
       if(!stable)throw new Error("tracker-not-loaded");
       await loadObjectModels();
@@ -231,8 +233,14 @@
       // single frame must not override inconclusive COCO detections.
       if(!item&&state.imageModel){
         const candidates=[];
-        for(let i=0;i<2;i++){
+        let previousMobileFrame=null;
+        for(let i=0;i<3&&candidates.length<2;i++){
           if(!active())throw new Error("camera-interrupted");
+          if(previousMobileFrame!==null&&camera.currentTime===previousMobileFrame){
+            await new Promise(resolve=>setTimeout(resolve,170));
+            continue;
+          }
+          previousMobileFrame=camera.currentTime;
           const classified=await state.imageModel.classify(camera,5);
           if(!active())throw new Error("camera-interrupted");
           const first=classified?.[0],second=classified?.[1];
