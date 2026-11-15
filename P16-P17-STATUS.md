@@ -2,6 +2,10 @@
 
 **Estado: núcleo de reglas propuesto en la rama de P16/P17, SIN servicio desplegado ni sincronización real.**
 
+## Contrato de servicio transaccional
+
+`collaboration-service.js` encapsula altas, actualizaciones y revocaciones de selecciones académicas; lectura únicamente por receptor autorizado; creación de grupos; gestión de miembros, chat, fechas y consentimiento de recordatorios. Requiere un adaptador `transact(fn)` que confirme los cambios de manera atómica y duradera. **No se ofrece un adaptador inseguro por defecto**: antes de conectarlo a HTTP debe configurarse un proveedor de autenticación confiable y una base de datos real con exclusión y versiones. `tests/p16-p17-collaboration-service-regression.js` comprueba los flujos con un adaptador simulado transaccional, no con dos dispositivos conectados.
+
 ## P16 — compartir solo memorias académicas seleccionadas
 
 `collaboration-domain.js` incluye validación de alcance por clase, tema o materia, roles `read` y `write`, revocación por revisión (CAS), y una lista blanca de campos exportables (`class-line`, `class-summary`, `academic-material`). No se permite compartir por esta ruta rasgos faciales, huellas vocales, recuerdos personales, configuraciones de perfil ni blobs de audio. El receptor no autorizado y el receptor revocado no tienen acceso en la política.
