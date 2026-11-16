@@ -50,30 +50,47 @@ function create({fetcher=root.fetch?.bind(root),now=()=>Date.now()}={}){
    "https://restcountries.com/v3.1/translation/"+encodeURIComponent(name)+"?fields="+fields,
    "https://restcountries.com/v3.1/name/"+encodeURIComponent(name)+"?fields="+fields
   ];
-  let rows=[];let failed=0;
+  const collected=new Map();let successes=0,failed=0;
   for(const url of candidateEndpoints){
-   try{rows=await read(url);if(rows.length)break;}catch{failed++;}
+   try{
+    const rows=await read(url);
+    successes++;
+    for(const row of rows){
+     if(!variants(row).includes(key))continue;
+     if(!/^[A-Z]{2}$/.test(row.cca2||""))continue;
+     collected.set(row.cca2,row);
+    }
+    // Continue: the first endpoint can omit a matching country/territory,
+    // or return one of several similarly named territories.
+   }catch{failed++;}
   }
-  if(!rows.length&&failed===candidateEndpoints.length)throw Error("offline");
-  const candidates=rows.filter(r=>variants(r).includes(key));
-  cache.set(key,{at:now(),rows:candidates});
+  if(successes===0&&failed===candidateEndpoints.length)throw Error("offline");
+  const candidates=[...collected.values()];
+  // Do not cache a partial negative or ambiguity result when a source failed:
+  // an outage must not hide countries that might match.
+  if(failed===0)cache.set(key,{at:now(),rows:candidates});
   return candidates;
  }
  async function answer(raw,lang="es"){
   const parsed=parseQuestion(raw);if(!parsed)return {handled:false};
-  const L=messages[locale[lang]||"es"],day=new Date(now()).toISOString().slice(0,10);
-  const result=(text,source=null,more={})=>({handled:true,text,source,checkedAt:day,...more});
+  const L=messages[locale[lang]||"es"];
+  let checkedAt=now();
+  const day=()=>new Date(checkedAt).toISOString().slice(0,10);
+  const result=(text,source=null,more={})=>({handled:true,text,source,checkedAt:day(),...more});
   try{
    const matches=await lookup(parsed.country);
+   // A cache hit retains the original fetch date, not an invented "today".
+   checkedAt=cache.get(fold(parsed.country))?.at??now();
    if(matches.length>1)return result(L.unclear,null,{ambiguous:true});
    if(!matches.length)return result(L.none,null,{unknown:true});
    const row=matches[0],capital=Array.isArray(row.capital)?row.capital.filter(Boolean):[];
    if(!capital.length)return result(L.missing,null,{missing:true});
-   const country=row.translations?.[lang]?.common||row.name?.common||parsed.country;
+   const langKey={es:"spa",en:"eng",pt:"por",fr:"fra",it:"ita",de:"deu"}[lang]||"spa";
+   const country=row.translations?.[langKey]?.common||row.name?.common||parsed.country;
    const title=capital.length>1?L.many:L.capital;
    const sentence=title.replace("{country}",country).replace("{capital}",capital.join(", "));
    const url="https://restcountries.com/v3.1/alpha/"+encodeURIComponent(row.cca2||"");
-   return result(sentence+" "+L.source.replace("{date}",day),"REST Countries",{url,capital,cca2:row.cca2});
+   return result(sentence+" "+L.source.replace("{date}",day()),"REST Countries",{url,capital,cca2:row.cca2});
   }catch{return result(L.offline,null,{error:"source-unavailable"});}
  }
  return {answer,lookup};
