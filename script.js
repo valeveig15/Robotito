@@ -2183,7 +2183,26 @@ function speciesIntroduction(id=state.avatar){
   const profile=speciesProfile(id,responseLanguage());
   return uiText("Soy {name}. {trait}.",{name:avatarName(avatar,responseLanguage()),trait:profile.trait},responseLanguage());
 }
+// A direct offer is an action even if the general semantic planner calls the
+// sentence a statement. Check it before the "overheard statement" branch.
+function handleSpeciesFoodOffer(rawText){
+  const offered=window.ROBOTITO_SPECIES_KNOWLEDGE?.feedingOffer?.(rawText,{
+    id:state.avatar,lang:responseLanguage()
+  });
+  if(!offered?.handled)return false;
+  if(offered.ok)feedRobot(false,{foodEmoji:offered.emoji,reply:offered.text});
+  else{say(offered.text,5200,responseLanguage());speciesAct("surprise",900);}
+  return true;
+}
 function handleSpeciesQuestion(rawText){
+  const topic=window.ROBOTITO_SPECIES_KNOWLEDGE?.answer?.(rawText,{
+    id:state.avatar,lang:responseLanguage(),name:avatarName(avatarById(state.avatar),responseLanguage())
+  });
+  if(topic?.handled){
+    say(topic.text,Math.max(4200,Math.min(9000,topic.text.length*55)),responseLanguage());
+    speciesAct(topic.kind==="diet"?"feed":"introduce",1600);
+    return true;
+  }
   const text=normalizeText(rawText);
   if(/\b(que|cual|what|which|qual)\s+(animal|especie|bicho)\b/.test(text)
     ||/\b(que animal sos|que animal eres|what are you|qual animal voce e)\b/.test(text)){
@@ -2253,6 +2272,8 @@ function applyAvatar(id,{persist=true}={}){
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
   updateAvatarMoodIcon();
+  const food=$("#robotito .food-prop");
+  if(food)food.textContent=window.ROBOTITO_SPECIES_KNOWLEDGE?.foodEmoji?.(avatar.id)||"🍓";
   // Same central state, but the approved SVG replaces the prior generic illustration.
   void window.ROBOTITO_APPROVED_AVATAR?.activate?.(avatar.id,{mood:state.mood,language:avatarLanguage()});
   return avatar;
@@ -4227,6 +4248,10 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     topic:interpretation?.entities?.topic||"",data:{role:"user",text:String(rawText).slice(0,2000),
       intent:understood.intent||"unknown",source:interpretation?.source||"none",channel}})
     .catch(e=>console.warn("conversation storage",e));
+  // A clearly addressed feeding offer is a direct user action, not a generic
+  // overheard statement. Negations, quoted text and class speech remain inert.
+  const directFood=/^(?:robotito[, ]+)?(?:te doy|te ofrezco|te traje|quiero darte|dale de comer|darte de comer|i give you|i offer you|feed you|here is some|eu te dou|eu te ofereco|je te donne|je t offre|ti do|ti offro|ich gebe dir|ich futtere dich)\b/.test(text);
+  if(directFood&&!state.classMode&&!interpretation?.negative&&!interpretation?.quotedContent&&handleSpeciesFoodOffer(interpreted))return;
   // An overheard statement must not start class, web, book, math or camera actions.
   if(interpretation&&interpretation.shouldExecute===false){
     if(interpretation.negative){
@@ -5477,13 +5502,17 @@ function animatePoke(){
   setTimeout(()=>robot.classList.remove("poked"),900);
 }
 
-function feedRobot(shared=false){
+function feedRobot(shared=false,{foodEmoji,reply}={}){
+  const emoji=foodEmoji||window.ROBOTITO_SPECIES_KNOWLEDGE?.foodEmoji?.(state.avatar)||"🍓";
+  const food=$("#robotito .food-prop");
+  if(food)food.textContent=emoji;
+  window.ROBOTITO_APPROVED_AVATAR?.showFood?.(emoji,1650);
   localStorage.setItem(KEYS.lastFed,String(Date.now()));
   state.hunger=0;
   changeMoodScore(shared?2:4);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.35:.60,trust:shared?.25:.45,irritation:-.18});
   recordVisitorInteraction("feed");
-  const line=shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed");
+  const line=reply||(shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed"));
   setMood("happy",line);
   speciesAct("feed",1600);
   animateEat();

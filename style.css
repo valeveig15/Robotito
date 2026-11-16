@@ -3298,3 +3298,44 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
  .approved-avatar-host .approved-object-prop{animation:none}
 }
+
+
+/* P29 — Camaleón: colores perceptibles por estado, sin cambiar la silueta
+   ni el fondo. El estado lo controla setMood del motor central. */
+#robotito.avatar-chameleon .avatar-character{
+  transition:filter .68s ease;
+  filter:hue-rotate(0deg) saturate(1);
+}
+#robotito.avatar-chameleon.mood-happy .avatar-character{
+  filter:hue-rotate(-16deg) saturate(1.35) brightness(1.05);
+}
+#robotito.avatar-chameleon.mood-excited .avatar-character{
+  filter:hue-rotate(-27deg) saturate(1.55) brightness(1.06);
+}
+#robotito.avatar-chameleon.mood-angry .avatar-character,
+#robotito.avatar-chameleon.mood-annoyed .avatar-character{
+  filter:hue-rotate(-116deg) saturate(1.5);
+}
+#robotito.avatar-chameleon.mood-sad .avatar-character{
+  filter:hue-rotate(102deg) saturate(.95);
+}
+#robotito.avatar-chameleon.mood-embarrassed .avatar-character{
+  filter:hue-rotate(174deg) saturate(1.1);
+}
+#robotito.avatar-chameleon.mood-scared .avatar-character,
+#robotito.avatar-chameleon.mood-confused .avatar-character{
+  filter:hue-rotate(169deg) saturate(.7) brightness(1.08);
+}
+#robotito.avatar-chameleon.mood-hungry .avatar-character{
+  filter:hue-rotate(-40deg) saturate(.85);
+}
+#robotito.avatar-chameleon.mood-sleepy .avatar-character,
+#robotito.avatar-chameleon.mood-bored .avatar-character{
+  filter:hue-rotate(125deg) saturate(.6) brightness(.92);
+}
+#robotito.avatar-chameleon.mood-curious .avatar-character{
+  filter:hue-rotate(-5deg) saturate(1.2);
+}
+@media(prefers-reduced-motion:reduce){
+ #robotito.avatar-chameleon .avatar-character{transition:none}
+}
