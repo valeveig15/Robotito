@@ -18,7 +18,7 @@ const ACTIONS={
  introduce:"saludar",idle:"saludar",surprise:"saltar",poke:"saltar"
 };
 let requested=0,current=null,root=null,observer=null,speechTimer=null,blinkTimer=null;
-let pendingSync=false;
+let pendingSync=false,foodTimer=null;
 const cached=new Map(),path=id=>"assets/approved-avatars/"+REFS[id]+".fragment.html";
 function getRobot(){return document.getElementById("robotito");}
 function getWorld(){return document.getElementById("world");}
@@ -44,7 +44,7 @@ function ensureHost(){
 function reset(){
  ++requested;
  observer?.disconnect();observer=null;
- clearTimeout(speechTimer);clearTimeout(blinkTimer);
+ clearTimeout(speechTimer);clearTimeout(blinkTimer);clearTimeout(foodTimer);foodTimer=null;
  speechTimer=null;blinkTimer=null;current=null;pendingSync=false;
  getWorld()?.classList.remove("approved-art-world");
  const old=getRobot();
@@ -139,6 +139,9 @@ async function activate(id,{mood="calm",language="es"}={}){
 .stage #stage-svg{width:100%;height:100%;display:block;touch-action:manipulation}
 .stage .cornerlabel,.stage button{display:none!important}
 .approved-object-prop{position:absolute;left:58%;top:48%;font-size:clamp(24px,5vw,51px);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(40,30,40,.22))}
+.approved-food-prop{position:absolute;left:55%;top:66%;font-size:clamp(24px,5vw,45px);pointer-events:none;filter:drop-shadow(0 4px 5px rgba(30,30,30,.2));animation:approved-food-pop .34s ease-out both}
+@keyframes approved-food-pop{0%{opacity:0;transform:translateY(10px) scale(.6)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.approved-food-prop{animation:none}}
 @media(prefers-reduced-motion:reduce){
  #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion{animation:none!important;transition:none!important}
 }
@@ -167,6 +170,17 @@ function setMood(mood){
  if(MOODS[mood])current.mood=mood;
  scheduleSync();
 }
+function showFood(emoji,ms=1600){
+ if(!current||!emoji)return false;
+ const shadow=current.shadow;
+ let prop=shadow.querySelector(".approved-food-prop");
+ if(!prop){prop=document.createElement("span");prop.className="approved-food-prop";prop.setAttribute("aria-hidden","true");shadow.appendChild(prop);}
+ prop.textContent=emoji;
+ clearTimeout(foodTimer);
+ const token=requested;
+ foodTimer=setTimeout(()=>{if(token===requested)prop.remove();foodTimer=null;},Math.max(500,Math.min(ms,5000)));
+ return true;
+}
 function setLanguage(lang){
  if(current)current.language=lang;
  const robot=getRobot();
@@ -189,7 +203,7 @@ function blink(){
 document.addEventListener("visibilitychange",()=>{if(document.hidden){speak(false);clearTimeout(blinkTimer);current?.avatar.classList.remove("blink");}});
 window.addEventListener("pagehide",reset);
 window.ROBOTITO_APPROVED_AVATAR={
- ids:Object.keys(REFS),source:REFS,activate,setMood,setLanguage,speak,blink,reset,
+ ids:Object.keys(REFS),source:REFS,activate,setMood,setLanguage,showFood,speak,blink,reset,
  get current(){return current;},path
 };
 })();
