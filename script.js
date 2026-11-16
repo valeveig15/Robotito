@@ -2199,24 +2199,24 @@ function speciesIntroduction(id=state.avatar){
   return uiText("Soy {name}. {trait}.",{name:avatarName(avatar,responseLanguage()),trait:profile.trait},responseLanguage());
 }
 function handleSpeciesQuestion(rawText){
-  const text=normalizeText(rawText);
-  if(/\b(que|cual|what|which|qual)\s+(animal|especie|bicho)\b/.test(text)
-    ||/\b(que animal sos|que animal eres|what are you|qual animal voce e)\b/.test(text)){
-    say(speciesIntroduction(),4200);
-    speciesAct("introduce",1300);
-    return true;
-  }
-  if(/\b(que comes|que te gusta comer|cual es tu comida|what do you eat|what food|o que voce come)\b/.test(text)){
-    say(speciesLine("feed"),4200);
-    speciesAct("feed",1300);
-    return true;
-  }
-  if(/\b(que tiene de especial|que te hace especial|caracteristica de tu especie|contame de tu especie|tell me about your species|fale da sua especie|por que cambias de color)\b/.test(text)){
-    say(speciesIntroduction()+" "+speciesLine("idle"),5600);
-    speciesAct("introduce",1800);
-    return true;
-  }
-  return false;
+  // P29: distinguish questions directed at the selected character from
+  // general zoology questions. No saved profile or personal records consulted.
+  const lang=responseLanguage();
+  const avatar=avatarById(state.avatar);
+  const fact=window.ROBOTITO_SPECIES_FACTS?.describe?.(rawText,{
+    id:avatar.id,name:avatarName(avatar,lang),
+    trait:speciesProfile(avatar.id,lang).trait,lang
+  });
+  if(!fact)return false;
+  say(fact.text,readingDisplayTime(fact.text,4200),lang);
+  if(fact.kind==="chameleon"&&avatar.id==="chameleon"){
+    // This uses the existing mood-hue visual response, not camera sampling.
+    speciesAct("play",1800);
+    robot?.classList.add("chameleon-color-demo");
+    const active=avatar.id;
+    setTimeout(()=>{if(state.avatar===active)robot?.classList.remove("chameleon-color-demo");},1800);
+  }else speciesAct(fact.action,1400);
+  return true;
 }
 function maybeSpeciesIdleComment(quietFor){
   if(!state.started||quietFor<60||state.classMode||state.sleeping||state.nightSleep)return;
