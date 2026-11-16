@@ -7,6 +7,8 @@ runBrowserTest("p07-restore-undo",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.undoLastRestore
   &&window.ROBOTITO_STORE?.restoreBackup),null,{timeout:20000});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
+ await page.evaluate(()=>ROBOTITO_MEMORY.flush());
  const result=await page.evaluate(async()=>{
   const s=window.ROBOTITO_STORE;
   const expectReject=async task=>{

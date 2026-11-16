@@ -5,6 +5,7 @@
 const api=root.ROBOTITO_MEMORY_STATE,store=root.ROBOTITO_STORE;
 let state=null,renderApp=()=>{},resetIdentity=()=>{},session="session:"+crypto.randomUUID(),visitor=null,activeOwner=null;
 let generation=0,readyPromise=Promise.resolve(),loading=false,viewLegacy=false;
+let initializedResolve;const initialized=new Promise(resolve=>{initializedResolve=resolve;});
 const versions=new Map(),queues=new Map();
 const settings={"robotito.lastBook.v1":["lastBook",null],"robotito.voiceProfiles.v1":["voiceProfiles",{me:[],teacher:[],classmate:[]}],
  "robotito.tasksSheetUrl.v1":["tasksSheetUrl",""],"robotito.tasksSheetGid.v1":["tasksSheetGid","0"],
@@ -62,7 +63,7 @@ async function init(options){
     if(activeOwner===session&&computedOwner()===session&&property!=="lastVoiceConfirmedAt")session="session:"+crypto.randomUUID();
     changed();}});
  }
- changed();await readyPromise;attach();root.ROBOTITO_MEMORY.active=true;
+ changed();await readyPromise;attach();root.ROBOTITO_MEMORY.active=true;initializedResolve();
  root.addEventListener("robotito:languagechange",render);
  let timer;
  root.addEventListener("robotito:memorychange",()=>{clearTimeout(timer);timer=setTimeout(()=>{if(byId("tab-memory")?.classList.contains("active"))render().catch(()=>{});},80);});
@@ -207,8 +208,8 @@ function attach(){
   }catch{status("No se pudo deshacer la vinculación. Revisá la clave y el estado del historial.");}
  });
 }
-root.ROBOTITO_MEMORY={active:false,init,owner,ready:()=>{owner();return readyPromise;},persist,remember,render,newSession,deleteCurrent,clearMemories,
+root.ROBOTITO_MEMORY={active:false,init,owner,ready:async()=>{await initialized;owner();await readyPromise;},persist,remember,render,newSession,deleteCurrent,clearMemories,
  hasSetting:key=>Object.hasOwn(settings,key),load:(key,fallback)=>settingValues.get(api.scopeKey(owner(),key))??fallback,
- flush:async()=>{if(state?.classMode||root.ROBOTITO_CLASS_AUDIO?.isBusy?.())throw Error("Finish the active recording before backing up");await readyPromise;await Promise.all([...queues.values()]);await root.ROBOTITO_MEMORY_MODULES?.flush?.();await store.flush();},
+ flush:async()=>{if(state?.classMode||root.ROBOTITO_CLASS_AUDIO?.isBusy?.())throw Error("Finish the active recording before backing up");await initialized;await readyPromise;await Promise.all([...queues.values()]);await root.ROBOTITO_MEMORY_MODULES?.flush?.();await store.flush();},
  offerLink:name=>{if(byId("visitorLinkTarget"))byId("visitorLinkTarget").value=name;status("El perfil se registró. Podés revisar y vincular un historial de visitante desde Memoria.");}};
 })(window);

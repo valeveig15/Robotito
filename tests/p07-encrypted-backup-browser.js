@@ -8,6 +8,8 @@ runBrowserTest("p07-encrypted-backup",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.exportBackup
   &&window.ROBOTITO_BACKUP_CRYPTO?.encrypt),null,{timeout:20000});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
+ await page.evaluate(()=>ROBOTITO_MEMORY.flush());
  const marker="Confidencial: prueba de cifrado P07";
  await page.evaluate(async marker=>{
   await window.ROBOTITO_STORE.putRecord({id:"p07-encrypted-memory",
