@@ -68,6 +68,7 @@ runBrowserTest("p07-restore-undo",async test=>{
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="memory"]').click();
  await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
  await page.waitForFunction(()=>!document.getElementById("undoMemoryRestore").disabled);
  await page.evaluate(()=>{
   window.__p07UndoConfirmed=0;
@@ -94,6 +95,7 @@ runBrowserTest("p07-restore-undo",async test=>{
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="memory"]').click();
  await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
  await page.waitForFunction(()=>!document.getElementById("discardMemoryUndo").disabled);
  await page.evaluate(()=>window.confirm=()=>true);
  await page.locator("#discardMemoryUndo").click();

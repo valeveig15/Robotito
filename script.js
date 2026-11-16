@@ -183,10 +183,12 @@ const robot = $("#robotito");
 const camera = $("#camera");
 
 function load(key, fallback) {
+  if(window.ROBOTITO_MEMORY?.active&&window.ROBOTITO_MEMORY.hasSetting(key))return window.ROBOTITO_MEMORY.load(key,fallback);
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
   catch { return fallback; }
 }
 function save(key, value) {
+  if(window.ROBOTITO_MEMORY?.active&&window.ROBOTITO_MEMORY.persist(key,value))return;
   if(window.ROBOTITO_STORE?.isHeavyKey?.(key)){
     window.ROBOTITO_STORE.persistStateKey(key,value).catch?.(e=>console.warn("durable storage",e));
     return;
@@ -657,12 +659,12 @@ async function localizeGeneratedSpeech(text,target=responseLanguage()){
 function commitSpeechMessage(text,ms,lang,token,ownerAtRequest){
   if(token!==state.speechBubbleToken)return;
   state.pendingSpeechLocalization=false;
-  if(ownerAtRequest!==undefined&&ownerAtRequest!==(state.currentVoicePerson||state.currentPerson||"local")){
+  if(ownerAtRequest!==undefined&&ownerAtRequest!==((window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"))){
     $("#speechBubble")?.classList.add("hidden");return;
   }
   state.lastSaid=text;
   // Local ephemeral reply state is scoped to the active conversational owner.
-  const replyOwner=state.currentVoicePerson||state.currentPerson||"local";
+  const replyOwner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
   robotitoReplyByOwner.set(replyOwner,{text,language:lang||state.languageMode||"es"});
   if(robotitoReplyByOwner.size>24)robotitoReplyByOwner.delete(robotitoReplyByOwner.keys().next().value);
   window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner:replyOwner,
@@ -683,7 +685,7 @@ function say(text, ms=3000, spokenLang=null){
   const b=$("#speechBubble");
   if(!b)return;
   const token=++state.speechBubbleToken;
-  const owner=state.currentVoicePerson||state.currentPerson||"local";
+  const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
 
   if(speechNeedsLocalization(text,target,spokenLang)){
     state.pendingSpeechLocalization=true;
@@ -1931,6 +1933,7 @@ function setupSpeechRecognition(userGesture=false){
 }
 
 function autoRemember(text){
+  if(window.ROBOTITO_MEMORY?.active){window.ROBOTITO_MEMORY.remember(text,{source:"speech"}).catch(e=>console.warn("memory save",e));return;}
   const clean=text.trim();
   if(clean.length<2)return;
   const person=state.currentVoicePerson||state.currentPerson||"persona no reconocida";
@@ -2431,7 +2434,7 @@ async function translateShortPhrase(phrase,source,target){
   const local=localTranslate(clean,source,target);
   if(local)return local;
   if(window.ROBOTITO_LOCALIZED_CONTENT)return window.ROBOTITO_LOCALIZED_CONTENT.translate(clean,source,target);
-  const key=JSON.stringify([state.currentVoicePerson||state.currentPerson||"local",source,target,clean]);
+  const key=JSON.stringify([(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"),source,target,clean]);
   if(translationCache.has(key))return translationCache.get(key);
   try{
     if(window.LanguageModel?.create){
@@ -2496,10 +2499,10 @@ async function handleSayInLanguageCommand(rawText){
   }
   const source=responseLanguage();
   const request=typeof state!=="undefined"?++state.speechBubbleToken:null;
-  const owner=request===null?null:state.currentVoicePerson||state.currentPerson||"local";
+  const owner=request===null?null:(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
   const translated=await translateShortPhrase(phrase,source,target);
   if(request!==null&&request!==state.speechBubbleToken)return true;
-  if(request!==null&&owner!==(state.currentVoicePerson||state.currentPerson||"local"))return true;
+  if(request!==null&&owner!==((window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local")))return true;
   if(!translated){
     const fail=typeof uiText==="function"?uiText("No pude traducir esa frase ahora.",{},source):"No pude traducir esa frase ahora.";
     say(fail);
@@ -2537,7 +2540,7 @@ function answerEnglishPersonalQuestion(rawText){
   if(/(what can you do|how can you help me|what are your abilities|what do you know how to do)/.test(text)){say("I can recognize faces and voices, remember things, listen to classes, summarize them, help you study, count fingers, recognize some objects, recommend books, check tasks, and answer many everyday questions.",6500);return true;}
   if(/(what do you see|can you see me|who do you see)/.test(text)){say(!state.lastDetections.length?"I can't see anyone right now.":known?`I can see ${known}.`:`I can see ${state.lastDetections.length} ${state.lastDetections.length===1?"person":"people"}, but I don't recognize everyone.`);return true;}
   if(/(who is speaking|who is talking|do you recognize my voice|whose voice is this)/.test(text)){say(state.currentVoicePerson?`I think ${state.currentVoicePerson} is speaking.`:"I can hear a voice, but I don't recognize it confidently.");return true;}
-  if(/(what do you remember about me|what did i tell you|what do you know about me)/.test(text)){const person=known||"persona no reconocida";const mine=state.memories.filter(m=>m.person===person).slice(-1);say(mine.length?`The last thing I remember is: "${mine[0].text}"`:"I don't have a clear memory about you yet.");return true;}
+  if(/(what do you remember about me|what did i tell you|what do you know about me)/.test(text)){const person=known||"persona no reconocida";const mine=state.memories.filter(m=>m.owner?m.owner===(window.ROBOTITO_MEMORY?.owner?.()||known):m.person===person).slice(-1);say(mine.length?`The last thing I remember is: "${mine[0].text}"`:"I don't have a clear memory about you yet.");return true;}
   if(/(are you real|are you alive|are you a robot|what are you)/.test(text)){say("I'm Robotito, a virtual panda. I'm not alive like a person, but I can see, listen, remember, learn from classes, and react.");return true;}
   return false;
 }
@@ -2925,7 +2928,7 @@ function answerEasyQuestion(rawText){
     [["recordas","recuerdas","acordas","acuerdas","sabes"],["mi","de mi","te dije","te conte"]]
   )){
     const person=known||"persona no reconocida";
-    const mine=state.memories.filter(m=>m.person===person).slice(-5);
+    const mine=state.memories.filter(m=>m.owner?m.owner===(window.ROBOTITO_MEMORY?.owner?.()||known):m.person===person).slice(-5);
     if(!mine.length)say("Todavía no tengo recuerdos claros tuyos.");
     else sayDynamic("rememberLast",{memory:mine[mine.length-1].text});
     return true;
@@ -3581,6 +3584,7 @@ function looksLikeClassQuestion(text){
   return !!answerFromClass(text);
 }
 async function answerClassQuestion(question,{speak=true,render=true,announceMissing=false}={}){
+  const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
   const found=answerFromClass(question);
   if(!found){
     if(render&&$("#classAnswer")){
@@ -3590,6 +3594,7 @@ async function answerClassQuestion(question,{speak=true,render=true,announceMiss
     return false;
   }
   const answer=await composeAcademicAnswer(question,found.evidence);
+  if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return false;
   if(render)renderAcademicAnswer(question,answer,found.evidence);
   if(speak)say(spokenAcademicAnswer(question,answer,found.evidence).slice(0,520),6500);
   return true;
@@ -3966,8 +3971,8 @@ async function connectTasksSheet(){
   const gid=$("#tasksSheetGid").value.trim()||"0";
   const id=extractSheetId(url);
   if(!id){toast("Ese enlace no parece ser de Google Sheets.");return;}
-  localStorage.setItem("robotito.tasksSheetUrl.v1",url);
-  localStorage.setItem("robotito.tasksSheetGid.v1",gid);
+  save("robotito.tasksSheetUrl.v1",url);
+  save("robotito.tasksSheetGid.v1",gid);
   state.tasksSheetUrl=url;state.tasksSheetGid=gid;
   await refreshTasks();
 }
@@ -3989,6 +3994,7 @@ function taskDoneValue(v){
   return ["hecho","completo","completado","done","si","sí","true","x","finalizado","entregado"].includes(s);
 }
 async function refreshTasks(){
+  const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
   if(!state.tasksSheetUrl){uiSet($("#tasksConnectionStatus"),"Sin hoja conectada.");return;}
   const id=extractSheetId(state.tasksSheetUrl), gid=state.tasksSheetGid||"0";
   if(!id)return;
@@ -3998,6 +4004,7 @@ async function refreshTasks(){
     if(!res.ok)throw new Error("No accesible");
     const rows=csvRows(await res.text());
     if(rows.length<2)throw new Error("Vacía");
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     const headers=rows[0].map(h=>normalizeText(h));
     const findCol=names=>headers.findIndex(h=>names.some(n=>h.includes(n)));
     const taskCol=findCol(["tarea","actividad","pendiente","trabajo","descripcion","nombre"]);
@@ -4085,7 +4092,7 @@ async function handleSemanticFollowUp(plan,owner,channel){
   // Offline-only translation of prior replies. Do not leak private class
   // content or conversation memories to an unconsented third-party API.
   const translated=await translateShortPhrase(String(reply.text).slice(0,3000),reply.language,target);
-  if(epoch!==robotitoPlanningEpoch||owner!==(state.currentVoicePerson||state.currentPerson||"local"))return true;
+  if(epoch!==robotitoPlanningEpoch||owner!==((window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local")))return true;
   if(translated){
    const detected=detectGeneratedSpeechLanguage(translated);
    if(detected==="und"||detected===target){sayInLanguage(translated,target);return true;}
@@ -4123,22 +4130,26 @@ function selectRobotitoContext(owner){
   return robotitoConversationContext;
 }
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
+  const ownerBeforeReady=window.ROBOTITO_MEMORY?.owner?.();
+  await window.ROBOTITO_MEMORY?.ready?.();
+  if(ownerBeforeReady!==window.ROBOTITO_MEMORY?.owner?.())return;
+  const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
   // P10/P11: explicit literal-response instructions are parsed conservatively
   // before generic intent planning. Class audio is educational material, never
   // a source of automatic personal commands.
   if(!atomic&&!state.classMode&&!document.hidden&&
-    window.ROBOTITO_TEMPORAL_RULES?.handle?.(rawText)?.handled)return;
+    (await window.ROBOTITO_TEMPORAL_RULES?.handle?.(rawText))?.handled)return;
   if(!atomic&&!state.classMode&&!document.hidden){
-    const localTask=window.ROBOTITO_STUDY_PLANNER_UI?.speech?.(rawText);
+    const localTask=await window.ROBOTITO_STUDY_PLANNER_UI?.speech?.(rawText);
+    if(owner!==window.ROBOTITO_MEMORY?.owner?.())return;
     if(localTask?.handled){say(localTask.text,5600);return;}
   }
-  const owner=state.currentVoicePerson||state.currentPerson||"local";
   selectRobotitoContext(owner);
   const planningEpoch=++robotitoPlanningEpoch;
   const interpretation=plan||await window.ROBOTITO_SEMANTIC_PLANNER?.planAsync?.(rawText,{
     context:robotitoConversationContext,language:state.languageMode||"es",channel
   });
-  if(planningEpoch!==robotitoPlanningEpoch||owner!==(state.currentVoicePerson||state.currentPerson||"local"))return;
+  if(planningEpoch!==robotitoPlanningEpoch||owner!==((window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local")))return;
   if(interpretation){
     if(interpretation.followUp&&(atomic||interpretation.actions?.length<=1)){
       await handleSemanticFollowUp(interpretation,owner,channel);
@@ -4224,6 +4235,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
     owner,language:state.languageMode||"es",plan:interpretation
   });
+  if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"))return;
   if(recalled?.handled){say(recalled.text,readingDisplayTime(recalled.text));return;}
 
   // Exact exercise requests from uploaded academic material have top priority.
@@ -4321,7 +4333,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
 
   if(/\b(?:libro|book|livro|livre|buch)\b/.test(text)&&/\b(?:recomend|recommend|suger)/.test(text)&&/\b(?:ayer|semana pasada|last week|yesterday)/.test(text)){
     const interval=window.ROBOTITO_TEMPORAL?.resolve?.(text,{language:state.languageMode||"es"});
-    const rows=await window.ROBOTITO_STORE?.queryRecords?.({type:"recommendations",owner:state.currentPerson||"local",
+    const rows=await window.ROBOTITO_STORE?.queryRecords?.({type:"recommendations",owner:(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"),
       after:interval?.start,before:interval?.end,limit:5})||[];
     const remembered=rows[0]?.data?.title;
     say(remembered?"Te recomendé «"+remembered+"».":"No encontré una recomendación guardada para esa fecha.");
@@ -5349,6 +5361,8 @@ async function enrollPerson(){
     buildMatcher();
     renderPeople();
     state.faceMatchHistory=[];
+    await window.ROBOTITO_STORE?.putRecord?.({id:"person:"+name,type:"people",owner:name,source:"enrollment",data:{name,birthday,role}});
+    window.ROBOTITO_MEMORY?.offerLink?.(name);
     // Voluntary visitor history association needs a second, explicit choice
     // and a fresh unambiguous match to the newly consented enrollment.
     if($("#visitorLinkConsent")?.checked){
@@ -5650,6 +5664,7 @@ function renderPeople(){
 // A UI profile may edit only the owner's own typed records. Historical
 // unlabelled memories remain local, never guessed to belong to a person.
 function activeMemoryOwner(){
+ if(typeof window!=="undefined"&&window.ROBOTITO_MEMORY?.active)return window.ROBOTITO_MEMORY.owner();
  const recent=Number.isFinite(state.lastVoiceConfirmedAt)&&
   Date.now()>=state.lastVoiceConfirmedAt&&Date.now()-state.lastVoiceConfirmedAt<=8000;
  return recent&&state.currentVoicePerson&&
@@ -5694,6 +5709,7 @@ async function changeDisplayedMemory(m,{remove=false}={}){
  }catch(error){console.warn("Memory edit rejected",error);toast(p07Message("saveFailed"));}
 }
 function renderMemories(){
+ if(window.ROBOTITO_MEMORY?.active){window.ROBOTITO_MEMORY.render().catch(e=>console.warn("memory render",e));return;}
  const root=$("#memoryList");
  root.innerHTML="";
  const owner=activeMemoryOwner();
@@ -5737,6 +5753,10 @@ async function prepareLegacyMemoryIds(){
  if(changed)await store.set(KEYS.memories,state.memories);
 }
 async function rememberManual(){
+ if(window.ROBOTITO_MEMORY?.active){
+  try{const input=$("#memoryInput");const row=await window.ROBOTITO_MEMORY.remember(input.value,{type:$("#memorySaveType")?.value||"memories"});if(row)input.value="";}
+  catch(e){console.warn("memory save",e);toast(p07Message("saveFailed"));}return;
+ }
  const input=$("#memoryInput"),text=input.value.trim();
  if(!text)return;
  try{
@@ -5768,8 +5788,10 @@ function parseCSV(text){
 }
 
 async function importGoodreads(file){
+  const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
   const text=await file.text(), rows=parseCSV(text);
   if(rows.length<2)return toast("No pude leer ese CSV.");
+  if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
   const headers=rows[0].map(h=>h.trim());
   state.library=rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||""])));
   save(KEYS.goodreads,state.library);
@@ -5927,6 +5949,7 @@ async function fetchBookCandidates(profile){
 }
 
 async function recommendBook(promptOverride=null){
+  const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
   const prompt=(promptOverride||$("#bookPrompt").value).trim();
   if(!prompt)return toast("Describime qué te gustaría leer.");
 
@@ -5958,7 +5981,8 @@ async function recommendBook(promptOverride=null){
       .sort((a,b)=>b.score-a.score)
       .slice(0,3);
     if(ranked.length){
-      showBookRecommendations(ranked,profile,prompt);
+      if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
+    showBookRecommendations(ranked,profile,prompt);
       return;
     }
   }
@@ -5972,6 +5996,7 @@ async function recommendBook(promptOverride=null){
       .slice(0,3);
 
     if(!ranked.length)throw new Error("sin resultados");
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     showBookRecommendations(ranked,profile,prompt);
   }catch(error){
     const ranked=LOCAL_BOOK_CATALOG
@@ -5980,6 +6005,7 @@ async function recommendBook(promptOverride=null){
       .sort((a,b)=>b.score-a.score)
       .slice(0,3);
     if(ranked.length){
+      if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
       showBookRecommendations(ranked,profile,prompt,true);
       return;
     }
@@ -5992,7 +6018,7 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
   const first=results[0]?.book;
   if(!first)return;
   save(KEYS.lastBook,{title:first.title,at:Date.now(),prompt});
-  window.ROBOTITO_STORE?.putRecord?.({type:"recommendations",owner:state.currentPerson||"local",
+  window.ROBOTITO_STORE?.putRecord?.({type:"recommendations",owner:(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"),
     source:"books",timestamp:Date.now(),topic:prompt,language:state.languageMode||"es",
     data:{title:first.title,authors:first.authors||[],prompt}}).catch(e=>console.warn("recommendation memory",e));
   const intro=localFallback
@@ -6180,6 +6206,7 @@ function bindUI(){
   $("#rememberBtn").addEventListener("click",rememberManual);
 
   $("#clearMemoryBtn").addEventListener("click",async()=>{
+    if(window.ROBOTITO_MEMORY?.active){try{await window.ROBOTITO_MEMORY.clearMemories();}catch(e){console.warn("memory delete",e);toast("No pude borrar toda la memoria del dispositivo.");}return;}
     const owner=activeMemoryOwner();
     if(!confirm(p07Message("clearPrompt")))return;
     try{
@@ -6226,6 +6253,7 @@ function bindUI(){
     $$(".tabpage").forEach(x=>x.classList.remove("active"));
     t.classList.add("active");
     $("#tab-"+t.dataset.tab).classList.add("active");
+    if(t.dataset.tab==="memory")void window.ROBOTITO_MEMORY?.render?.();
   }));
 
   $(".quick-actions").addEventListener("click",e=>{
@@ -6344,11 +6372,13 @@ document.addEventListener("visibilitychange",()=>{
 });
 
 async function init(){
+  try{if(await window.ROBOTITO_STORE?.applyPendingPreferences?.()){window.location.reload();return;}}catch(e){console.warn("Pending restored preferences",e);}
   await window.ROBOTITO_STORE?.bootstrap?.(state);
   migrateOldData();
   // Do not silently delete people or memories based on their names.
   await window.ROBOTITO_STORE?.migrateTypedLegacy?.().catch(e=>console.warn("Typed migration",e));
   await prepareLegacyMemoryIds().catch(e=>console.warn("Memory legacy IDs",e));
+  await window.ROBOTITO_MEMORY?.init?.({state,resetIdentity:()=>{stopSenses();state.currentPerson=null;state.currentVoicePerson=null;},refresh:()=>{renderMemories();renderTasks();updateLibraryStats();renderClassTranscript();window.ROBOTITO_CLASS_ORGANIZER?.render?.();window.ROBOTITO_CLASS_ORGANIZER?.renderAcademicMaterials?.();window.ROBOTITO_CLASS_AUDIO?.render?.();}});
   bindUI();
   // Browser controls are not interactive until migrations and listener wiring finish.
   document.documentElement.dataset.robotitoUiReady="true";

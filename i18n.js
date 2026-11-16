@@ -977,21 +977,21 @@ Object.assign(LABELS,{
   "de": "Lokale Speicher-Sicherung und Wiederherstellung"
  },
  "p07BackupWarning": {
-  "es": "La copia puede incluir rostros, audios, transcripciones y recuerdos de varias personas. Si no activás el cifrado, el JSON queda sin protección; no lo compartas.",
-  "en": "Backups may include faces, audio, transcripts and multiple people's memories. Unless you enable encryption, the JSON is unprotected; do not share it.",
-  "pt": "A cópia pode incluir rostos, áudios, transcrições e lembranças de várias pessoas. Sem criptografia, o JSON fica desprotegido; não o compartilhe.",
-  "fr": "La copie peut contenir visages, audios, transcriptions et souvenirs de plusieurs personnes. Sans chiffrement, le JSON n'est pas protégé ; ne le partage pas.",
-  "it": "La copia può contenere volti, audio, trascrizioni e ricordi di più persone. Senza cifratura, il JSON non è protetto; non condividerlo.",
-  "de": "Die Sicherung kann Gesichter, Audio, Transkripte und Erinnerungen mehrerer Personen enthalten. Ohne Verschlüsselung ist JSON ungeschützt; nicht teilen."
- },
+  "es": "La copia puede incluir rostros, audios, transcripciones y recuerdos de varias personas. Sin cifrado, el archivo queda sin protección; no lo compartas.",
+  "en": "Backups may include faces, audio, transcripts and multiple people’s memories. Without encryption, the file is unprotected; do not share it.",
+  "pt": "A cópia pode incluir rostos, áudios, transcrições e lembranças de várias pessoas. Sem criptografia, o arquivo fica desprotegido; não o compartilhe.",
+  "fr": "La copie peut contenir visages, audios, transcriptions et souvenirs de plusieurs personnes. Sans chiffrement, le fichier n’est pas protégé ; ne le partage pas.",
+  "it": "Il backup può contenere volti, audio, trascrizioni e ricordi di più persone. Senza cifratura il file non è protetto; non condividerlo.",
+  "de": "Die Sicherung kann Gesichter, Audio, Transkripte und Erinnerungen mehrerer Personen enthalten. Ohne Verschlüsselung ist die Datei ungeschützt; nicht teilen."
+},
  "p07BackupScope": {
-  "es": "La copia contiene los datos de IndexedDB de este navegador, de todas las personas y sesiones guardadas. No incluye archivos ni preferencias fuera de IndexedDB.",
-  "en": "The backup contains this browser's IndexedDB data from all saved people and sessions. It excludes files and preferences outside IndexedDB.",
-  "pt": "A cópia contém dados do IndexedDB deste navegador, de todas as pessoas e sessões salvas. Não inclui dados fora do IndexedDB.",
-  "fr": "La copie contient les données IndexedDB de ce navigateur pour toutes les personnes et sessions enregistrées, pas les données hors IndexedDB.",
-  "it": "La copia contiene i dati IndexedDB di questo browser di tutte le persone e sessioni salvate, non i dati esterni a IndexedDB.",
-  "de": "Die Sicherung enthält die IndexedDB-Daten dieses Browsers aller gespeicherten Personen und Sitzungen, nicht die Daten außerhalb von IndexedDB."
- },
+  "es": "El formato completo incluye historiales guardados, archivos finalizados y preferencias de Robotito de este navegador. El JSON anterior solo incluye IndexedDB. Las sesiones temporales y el punto de recuperación no se exportan.",
+  "en": "The complete format includes saved histories, finalized files and this browser’s Robotito preferences. Legacy JSON includes only IndexedDB. Temporary sessions and the recovery checkpoint are not exported.",
+  "pt": "O formato completo inclui históricos salvos, arquivos finalizados e preferências do Robotito neste navegador. O JSON antigo inclui apenas IndexedDB. Sessões temporárias e o ponto de recuperação não são exportados.",
+  "fr": "Le format complet inclut les historiques, fichiers finalisés et préférences Robotito du navigateur. L’ancien JSON contient seulement IndexedDB. Sessions temporaires et point de récupération ne sont pas exportés.",
+  "it": "Il formato completo include cronologie, file completati e preferenze Robotito del browser. Il vecchio JSON include solo IndexedDB. Sessioni temporanee e punto di recupero non vengono esportati.",
+  "de": "Das vollständige Format enthält Verläufe, abgeschlossene Dateien und Robotito-Einstellungen dieses Browsers. Altes JSON enthält nur IndexedDB. Temporäre Sitzungen und Wiederherstellungspunkt werden nicht exportiert."
+},
  "p07BackupDownload": {
   "es": "Descargar copia de seguridad",
   "en": "Download backup",

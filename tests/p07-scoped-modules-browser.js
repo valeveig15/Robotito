@@ -1,0 +1,78 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p07-scoped-modules",async test=>{
+ const {page,baseURL}=test;let checks=0;
+ const eq=(a,b,message)=>{assert.deepEqual(a,b,message);checks++;};
+ await page.goto(baseURL,{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ test.phase("scoped-domain-engines");
+ const results=await page.evaluate(async()=>{
+  const s=ROBOTITO_STORE,a=ROBOTITO_MEMORY_STATE,m=ROBOTITO_MEMORY_MODULES;
+  const native=m.create({...m.native,factory:ROBOTITO_STUDY_PLANNER.createPlanner});
+  const rules=m.create({...m.rules,factory:ROBOTITO_TEMPORAL_RULES.createEngine});
+  const videos=m.create({...m.video,factory:ROBOTITO_VIDEO_EVIDENCE.createStore});
+  const owner=ROBOTITO_MEMORY.owner();
+  await native.run(p=>p.addTask({title:"Tarea anónima"}));
+  await rules.run(p=>p.create({kind:"phrase",trigger:"secreto",text:"Regla temporal"},owner));
+  await videos.run(p=>p.addBatch({owner,sourceId:"test",subject:"Biología",consent:true,
+   items:[{kind:"provided-caption",text:"Evidencia privada temporal"}]}));
+  const temporary=(await native.read()).snapshot().tasks.length;
+  state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
+  const other=(await native.read()).snapshot().tasks.length;
+  const otherRules=(await rules.read()).list("Ada").length;
+  const otherVideo=(await videos.read()).search({owner:"Ada",subject:"Biología"}).length;
+  await native.run(p=>p.addTask({title:"Tarea de Ada"}));
+  const durable=await a.collection("Ada",m.native.key);
+  const typed=(await s.queryRecords({owner:"Ada",type:"tasks",limit:Infinity})).some(r=>r.data.title==="Tarea de Ada");
+  const backup=await s.exportBackup();
+  return {temporary,other,otherVideo,otherRules,durable:durable.items.length,typed,leaked:backup.records.some(r=>r.owner===owner),local:localStorage.getItem(m.native.key)};
+ });
+ eq(results,{temporary:1,other:0,otherVideo:0,otherRules:0,durable:1,typed:true,leaked:false,local:null},"Tasks/video/rule engines isolate anonymous and registered histories");
+ await page.reload();await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ const reload=await page.evaluate(async()=>{
+  const m=ROBOTITO_MEMORY_MODULES,n=m.create({...m.native,factory:ROBOTITO_STUDY_PLANNER.createPlanner});
+  const anonymous=(await n.read()).snapshot().tasks.length;
+  state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
+  return {anonymous,ada:(await n.read()).snapshot().tasks[0]?.title};
+ });
+ eq(reload,{anonymous:0,ada:"Tarea de Ada"},"Reload recovers only explicitly selected owner");
+ test.phase("owner-boundaries-and-link-revisions");
+ checks+=await page.evaluate(async()=>{
+  const s=ROBOTITO_STORE,a=ROBOTITO_MEMORY_STATE;let checks=0;
+  const check=(ok,msg)=>{if(!ok)throw Error(msg);checks++;};
+  const rejected=async fn=>{try{await fn();return false;}catch{return true;}};
+  await s.set(a.scopeKey("Ada:X","robotito.lastBook.v1"),"Preserve me");
+  await a.deleteOwner("Ada",{confirmation:"BORRAR"});
+  check(await s.get(a.scopeKey("Ada:X","robotito.lastBook.v1"))==="Preserve me","Owner prefix must not erase another profile");
+  await s.putRecordWithBlob({id:"ram-file",type:"audios",owner:"session:one",blobId:"ram-blob"},new Blob(["one"]));
+  check(await rejected(()=>s.putRecordWithBlob({id:"ram-file",type:"audios",owner:"session:two",blobId:"ram-blob"},new Blob(["two"]))),"RAM file cannot overwrite another session");
+  await s.set("robotito.people.v2",[{name:"Ada",descriptors:[]}]);
+  const visitor=await a.createVisitor({consent:true});
+  const key=ROBOTITO_MEMORY_MODULES.native.key;
+  await a.saveCollection(visitor.id,key,[{id:"native-task",kind:"task",title:"Antes",memoryRecordId:"native-task-row"}],0);
+  const review=await a.previewLink(visitor.token,"Ada");
+  await a.saveCollection(visitor.id,key,[{id:"native-task",kind:"task",title:"Después",memoryRecordId:"native-task-row"}],1);
+  check(await rejected(()=>a.linkVisitor({token:visitor.token,target:"Ada",confirmation:"Ada",revision:review.revision})),"Collection edits invalidate stale link review");
+  const next=await a.previewLink(visitor.token,"Ada"),link=await a.linkVisitor({token:visitor.token,target:"Ada",confirmation:"Ada",revision:next.revision});
+  const data=await a.collection("Ada",key);data.items[0].done=true;
+  await a.saveCollection("Ada",key,data.items,data.version);
+  await a.undoLink({id:link.id,token:visitor.token,confirmation:"DESVINCULAR"});
+  check((await a.collection(visitor.id,key)).items[0].done===true,"Unlink retains task edits and original provenance");
+  check((await a.collection("Ada",key)).items.length===0,"Unlink removes visitor task from wrong target");
+  check((await s.getRecord("native-task-row")).owner===visitor.id,"Typed task ownership returns with collection");
+  return checks;
+ });
+ test.phase("legacy-module-quarantine");
+ const isolated=await test.browser.newContext();
+ await isolated.route("**/*",route=>new URL(route.request().url()).origin===baseURL?route.continue():route.fulfill({status:200,body:""}));
+ const old=await isolated.newPage();await old.goto(baseURL+"/package.json");
+ await old.evaluate(()=>localStorage.setItem("robotito.nativeStudyPlanner.v1",JSON.stringify({version:1,tasks:[{id:"legacy",title:"Old shared task"}],subjects:[],blocks:[]})));
+ await old.goto(baseURL,{waitUntil:"domcontentloaded"});await old.waitForFunction(()=>ROBOTITO_MEMORY.active&&ROBOTITO_STUDY_PLANNER_UI.engine);
+ const legacy=await old.evaluate(async()=>({active:ROBOTITO_STUDY_PLANNER_UI.engine.snapshot().tasks.length,
+  archived:(await ROBOTITO_MEMORY_STATE.collection("legacy:unassigned","robotito.nativeStudyPlanner.v1")).items[0]?.title,
+  local:localStorage.getItem("robotito.nativeStudyPlanner.v1")}));
+ eq(legacy,{active:0,archived:"Old shared task",local:null},"Legacy tasks are migrated once without attributing to a new visitor");
+ await isolated.close();test.report.checks=checks;
+ console.log("P07 "+test.engineName+" scoped tasks, videos, migration and link corrections:",checks,"checks");
+}).catch(e=>{console.error(e);process.exitCode=1;});

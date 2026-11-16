@@ -4,13 +4,13 @@ const {runBrowserTest}=require("./browser-test-harness.js");
 runBrowserTest("p05-dynamic-content",async test=>{
  const {page,baseURL}=test;
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
- await page.waitForFunction(()=>typeof setLanguageMode==="function"&&window.ROBOTITO_LOCALIZED_CONTENT);
+ await page.waitForFunction(()=>typeof setLanguageMode==="function"&&window.ROBOTITO_LOCALIZED_CONTENT&&window.ROBOTITO_MEMORY?.active);
  await page.click('[data-start-language="es"]');
  await page.click('[data-avatar-id="panda"]');
  test.phase("six-locale-dynamic-panels");
- await page.evaluate(()=>{
+ await page.evaluate(async()=>{
   state.people=[{name:"Borrar",birthday:"2000-02-03",descriptors:[],voicePrints:[]}];
-  state.memories=[{person:"Borrar",text:'Guardar archivo <img src=x onerror="throw 1">',at:Date.now(),source:"manual",language:"es"}];
+  await ROBOTITO_MEMORY.remember('Guardar archivo <img src=x onerror="throw 1">');
   state.classLines=[{id:"p05-quote",subject:"Borrar",text:"Guardar archivo",speaker:"teacher",at:Date.now(),language:"es",sessionId:"p05-class"}];
   state.classSubject="Borrar";state.selectedClassSessionId="p05-class";
  });

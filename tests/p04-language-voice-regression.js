@@ -181,7 +181,7 @@ ok(!source.includes("if(forcedLang)return false;"),"Forced language cannot bypas
 ok(source.includes("francais|french|italiano|italian|aleman|deutsch|german"),"Six-language say command vocabulary");
 ok(sampleUI.includes('root.addEventListener("pagehide",()=>{++view;capture.cancel();clearPlayer();});'),
  "BFCache return must permit a new voice sample recording");
-for(const version of ["i18n.js?v=20261107-p05","script.js?v=20261108-p06","speech-fallback.js?v=20261105-p04-capture","voice-sample-capture.js?v=20261108-p06"])
+for(const version of ["i18n.js?v=20261115-p07","script.js?v=20261115-p07","speech-fallback.js?v=20261105-p04-capture","voice-sample-capture.js?v=20261108-p06"])
  ok(html.includes(version),"Assets load updated P04 implementation "+version);
 // Frequent class, tasks and library messages work without a downloaded model.
 for(const original of ["Ya puedo hablar de nuevo.","Todavía no importaste tu biblioteca de Goodreads.","No tengo tu cumpleaños registrado.","Hoy todavía no escuché ninguna clase.","Ahora mismo no veo a nadie.","Ahora mismo no veo ninguna mano.","No tengo una edad humana. Soy una mascota virtual.","Soy Robotito, un panda virtual.","Estoy durmiendo.","Estoy bailando porque detecté música.","No encontré información suficiente para contestar eso.","No encontré evidencia suficiente en las transcripciones para contestar eso.","No encontré ese cumpleaños entre las personas registradas.","No veo tareas pendientes en la hoja conectada.","No tengo registrada una comida todavía.","No pude encontrar una recomendación ahora mismo.","Entendido, no voy a hacer eso.","Todavía no había dicho nada."]){

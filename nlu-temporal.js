@@ -17,6 +17,14 @@ const DAYS={
 };
 function resolve(raw,{now=new Date(),language="es",future=false}={}){
  const q=fold(raw),today=midnight(now);let offset=null,kind=null;
+ // Parse calendar dates locally, never as UTC, and reject impossible dates.
+ const dated=q.match(/\b(\d{4})-(\d{2})-(\d{2})\b/)||q.match(/\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})\b/);
+ if(dated){
+  const y=Number(dated[dated[1].length===4?1:3]),m=Number(dated[2]),d=Number(dated[dated[1].length===4?3:1]);
+  const date=new Date(y,m-1,d);
+  if(date.getFullYear()!==y||date.getMonth()!==m-1||date.getDate()!==d)return {kind:"invalid",start:null,end:null};
+  return span(date,next(date,1),"date");
+ }
  if(/\b(anteayer|day before yesterday|anteontem|avant hier|l'altro ieri|vorgestern)\b/.test(q)){offset=-2;kind="anteayer";}
  else if(/\b(ayer|yesterday|ontem|hier|ieri|gestern)\b/.test(q)){offset=-1;kind="ayer";}
  else if(/\b(hoy|today|hoje|aujourd'hui|oggi|heute)\b/.test(q)){offset=0;kind="hoy";}
@@ -25,15 +33,17 @@ function resolve(raw,{now=new Date(),language="es",future=false}={}){
  if(/\b(semana pasada|last week|semana passada|semaine derniere|settimana scorsa|letzte woche)\b/.test(q)){
   const monday=next(today,-((today.getDay()+6)%7)-7);return span(monday,next(monday,7),"last-week","week");
  }
- const m=q.match(/\b(?:hace|ago|ha|il y a|vor)\s*(\d+|un|una|one|um|uma|une|ein|eine)\s*(?:dias?|days?|jours?|giorni?|tage?|semanas?|weeks?|semaines?|settimane?|wochen?)\b/);
+ const amount="(\\d+|un|una|one|um|uma|une|ein|eine|einer|einem)",unit="(?:dias?|days?|jours?|giorn[oi]|tag(?:e|en)?|semanas?|weeks?|semaines?|settiman[ae]|wochen?)";
+ const m=q.match(new RegExp("\\b(?:hace|ha|il y a|vor)\\s*"+amount+"\\s*"+unit+"\\b"))
+  ||q.match(new RegExp("\\b"+amount+"\\s*"+unit+"\\s*(?:ago|fa)\\b"));
  if(m){
-  const weeks=/seman|week|semain|settiman|woch/.test(m[0]),d=next(today,-Math.min(3650,(/^(?:un|una|one|um|uma|une|ein|eine)$/.test(m[1])?1:Number(m[1]))*(weeks?7:1)));
+  const weeks=/seman|week|semain|settiman|woch/.test(m[0]),d=next(today,-Math.min(3650,(/^\d+$/.test(m[1])?Number(m[1]):1)*(weeks?7:1)));
   return span(d,next(d,1),"relative");
  }
  const weekdays=DAYS[language]||DAYS.es;
  for(let day=0;day<7;day++){
   const name=weekdays[day];
-  if(new RegExp("(?:^|\\s)"+name+"(?:\\s|$)").test(q)){
+  if(new RegExp("\\b"+name+"\\b").test(q)){
    let delta=(day-today.getDay()+7)%7;
    if(!future)delta=delta===0?0:delta-7;
    const d=next(today,delta);return span(d,next(d,1),"weekday");

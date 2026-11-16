@@ -135,19 +135,28 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
  const reload=()=>{rows=load();onChange(rows.map(r=>({...r})));return rows.length;};
  return {create,list,cancel,clear,tick,speech,reload,parseInstruction};
 }
-let engine=null,context=null,timer=null;
+let engine=null,context=null,timer=null,service=null;
+async function refresh(){if(!service)return;try{engine=await service.read();render();}catch{engine=null;render();}}
+async function execute(action){
+ const owner=context.owner(),emitted=[];
+ try{
+  const result=await service.run(current=>{engine=current;return action(current,owner,value=>emitted.push(value));});
+  if(owner===context.owner())for(const value of emitted)context.say(value);
+  render();return result;
+ }catch(error){await refresh();return {handled:true,error:String(error.message||error)};}
+}
 function label(key,fallback){const lang=root.document?.documentElement?.lang||"es";
  return root.ROBOTITO_I18N?.t?.(key,lang)||fallback;
 }
 function attach({say=()=>{},owner=()=> "local"}={}){
- if(engine)return engine;
+ if(service)return service;
  context={say,owner};
- try{engine=createEngine({storage:root.localStorage,onChange:render});}
+ try{service=root.ROBOTITO_MEMORY_MODULES.create({...root.ROBOTITO_MEMORY_MODULES.rules,factory:createEngine});}
  catch(error){console.warn("P10/P11 local instructions unavailable",error);return null;}
  const $=id=>root.document?.getElementById(id);
- const submit=()=>{
+ const submit=async()=>{
   const box=$("temporalRuleInput"),raw=box?.value?.trim();if(!raw)return;
-  const result=engine.speech(raw,{owner:context.owner(),emit:context.say});
+  const result=await execute((current,owner,emit)=>current.speech(raw,{owner,emit}));
   const status=$("temporalRuleStatus");
   if(status)status.textContent=result.created?label("p10RulesSavedOK","Instrucción guardada para este perfil."):
    result.error?label("p10RulesInvalid","No pude guardar esa orden."):
@@ -158,20 +167,23 @@ function attach({say=()=>{},owner=()=> "local"}={}){
  $("temporalRuleInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submit();}});
  const status=$("temporalRuleStatus");
  if(status)status.textContent=label("p10RulesScope","Las órdenes se ejecutan solo mientras Robotito está abierto y visible.");
- render();
- timer=root.setInterval?.(()=>engine.tick({owner:context.owner(),visible:!root.document.hidden,
-  emit:context.say}),1000);
+ void refresh();
+ timer=root.setInterval?.(()=>{if(!root.document.hidden&&engine?.list(context.owner()).length)
+  void execute((current,owner,emit)=>current.tick({owner,visible:true,emit}));},1000);
+ root.addEventListener("robotito:memoryscopechange",()=>{engine=null;render();});
+ root.addEventListener("robotito:memoryscopeready",()=>void refresh());
  root.document?.addEventListener("visibilitychange",render);
  root.addEventListener?.("storage",event=>{
-  if(event.key===KEY){engine.reload();render();}
+  if(event.key===KEY)void refresh();
  });
- return engine;
+ return service;
 }
 function render(){
- if(!engine||!root.document)return;
+ if(!root.document)return;
  const $=id=>root.document.getElementById(id),list=$("temporalRuleList");
  if(!list)return;
  list.replaceChildren();
+ if(!engine)return;
  for(const row of engine.list(context.owner())){
   const item=root.document.createElement("div");item.className="memory-row";
   const description=root.document.createElement("span");
@@ -181,23 +193,25 @@ function render(){
    "Recordar: "+row.text;
   const button=root.document.createElement("button");button.type="button";
   button.className="ghost danger";button.textContent=label("p10RulesCancel","Cancelar");
-  button.addEventListener("click",()=>{engine.cancel(row.id,context.owner());render();});
+  button.addEventListener("click",()=>execute((current,owner)=>current.cancel(row.id,owner)));
   item.append(description,button);list.appendChild(item);
  }
 }
-function handle(raw,options={}){
- if(!engine)return {handled:false};
- const result=engine.speech(raw,{owner:context.owner(),visible:!root.document.hidden,
-  emit:context.say});
+async function handle(raw,options={}){
+ if(!service)return {handled:false};
+ // No private read for unrelated speech when there are no active phrase rules.
+ const probe=createEngine({storage:{getItem:()=>"[]",setItem:()=>{}}}).speech(raw,{owner:context.owner(),emit:()=>{}});
+ if(!probe.handled&&!engine?.list(context.owner()).some(row=>row.kind==="phrase"))return {handled:false};
+ const result=await execute((current,owner,emit)=>current.speech(raw,{owner,visible:!root.document.hidden,emit}));
  if(result.handled&&result.created)context.say(label("p10RulesStoredVoice","Orden guardada. La ejecutaré mientras esta página esté abierta y visible."));
  else if(result.needsConfirmation){
   if(root.confirm?.(label("p10RulesCancelAll","¿Cancelar todas las órdenes y reglas de este perfil?"))){
-   engine.clear(context.owner());context.say(label("p10RulesCancelled","Órdenes y reglas de este perfil canceladas."));
+   const cleared=await execute((current,owner)=>current.clear(owner));if(!cleared?.error)context.say(label("p10RulesCancelled","Órdenes y reglas de este perfil canceladas."));
   }
  }else if(result.error)context.say("No pude guardar esa orden: "+result.error);
  return result;
 }
-root.ROBOTITO_TEMPORAL_RULES={createEngine,parseInstruction,attach,handle};
+root.ROBOTITO_TEMPORAL_RULES={createEngine,parseInstruction,attach,handle,refresh};
 if(typeof module!=="undefined"&&module.exports)
  module.exports={createEngine,parseInstruction};
 })(typeof window!=="undefined"?window:globalThis);

@@ -190,7 +190,7 @@ function negativeDirective(input){
  // negator. Require an imperative verb family so quoted occurrences are inert.
  const verb=semanticTokens(q)[0]||"";
  if(/\bnicht\s*[.!?]*$/.test(q)
-   &&["erkl","zeig","offn","oeffn","such","mach","schreib","nenn","sag","zeichn","lies","les"].some(stem=>verb.startsWith(stem))
+   &&["erkl","zeig","offn","oeffn","such","mach","schreib","nenn","sag","zeichn","lies","les","erinner"].some(stem=>verb.startsWith(stem))
    && !/\b(?:wort|begriff|ausdruck|bedeutung|von)\s+nicht\b/.test(q))return true;
  if(/^n['’][a-z]/.test(q)&&/\bpas\b/.test(q))return true;
  if(/^(?:can|could|would)\s+you\s+(?:please\s+)?not\b/.test(q))return true;
@@ -378,6 +378,8 @@ function inferFrame(text,{context,language,now},inSequence=false){
  const knownExercise=solveReference&&previous?.intent==="exercise"&&Number.isInteger(previous?.entities?.exerciseNumber)&&previous?.source==="materials"&&previous?.mayReadClass!==false;
  if(solveReference){features.speechAct="request";features.directed=true;}
  const followUp=followUpModifier(directedText);
+ const recall=root.ROBOTITO_MEMORY_RETRIEVAL?.intent?.(unquoted(directedText));
+ if(recall?.directed&&!features.reportedUtterance&&!features.mentionQuestion){features.speechAct="request";features.directed=true;}
  const roles=features.roles;
  let {intent,source,confidence}=fallback;
  const reported=(features.mentionQuestion||features.reportedUtterance)&&features.speechAct==="statement";
@@ -400,6 +402,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
   else if(has("SUMMARIZE")){intent="summary";source="general";confidence=.84;}
   else if(has("EXAMPLE")){intent="example";source="general";confidence=.79;}
   else if(has("CORRECT")){intent="correction";source="conversation";confidence=.81;}
+  else if(recall&&!defines&&!has("EXPLAIN")&&!has("CORRECT")){intent="memory-search";source=["recommendations","books"].includes(recall.type)?"books":recall.type==="tasks"?"tasks":"memories";confidence=.86;}
   else if(has("REMEMBER")&&features.speechAct!=="statement"&&/\b(?:que|what|lo|mis|me|mi|ayer|hace|semana|last)\b/.test(q)){intent="memory-search";source="memories";confidence=.81;}
   else if(has("EXPLAIN")||features.implicit){intent="explanation";source="general";confidence=.82;}
   else if(features.question&&intent==="conversation"){intent="factual-question";source="general";confidence=.68;}

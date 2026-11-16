@@ -12,12 +12,12 @@ let count=0;const eq=(a,b,m)=>{assert.deepEqual(a,b,m);count++;};
   const writes=[],db={transaction:(stores,mode)=>{
    eq(stores,["records","blobs"],"One transaction for audio and consent");
    eq(mode,"readwrite","Atomic transaction writable");
-   return {objectStore:name=>({put:row=>writes.push([name,row])})};
+   return {objectStore:name=>({get:()=>null,put:row=>writes.push([name,row])})};
   }};
-  const put=new Function("Blob","normalizeRecord","serial","openDb","complete",
+  const put=new Function("Blob","normalizeRecord","serial","openDb","complete","isEphemeral","transaction","request",
    storeSource.slice(begin,end)+"return putRecordWithBlob;")(
     Blob,row=>row,(_key,task)=>task(),async()=>db,
-    ()=>fail?Promise.reject(Error("Aborted")):Promise.resolve());
+    ()=>fail?Promise.reject(Error("Aborted")):Promise.resolve(),()=>false,(db,stores,mode)=>db.transaction(stores,mode),async()=>null);
   try{await put({id:"voice-profile-local",owner:"local",blobId:"voice-sample-local"},blob,{type:"audio"});}
   catch(e){if(!fail)throw e;eq(e.message,"Aborted","Transaction failure rejects");}
   eq(writes.length,2,"Both writes staged in same transaction");
@@ -30,10 +30,10 @@ let count=0;const eq=(a,b,m)=>{assert.deepEqual(a,b,m);count++;};
  // support both representations without losing MIME type or audio bytes.
  let stored;
  const readEnd=storeSource.indexOf("// Removes legacy blobs",end);
- const read=new Function("openDb","request","Blob","ArrayBuffer",
+ const read=new Function("openDb","request","Blob","ArrayBuffer","ephemeralBlobs","transaction",
   storeSource.slice(end,readEnd)+"return getBlob;")(
    async()=>({transaction:()=>({objectStore:()=>({get:()=>stored})})}),
-   async row=>row,Blob,ArrayBuffer);
+   async row=>row,Blob,ArrayBuffer,new Map(),(db,stores,mode)=>db.transaction(stores,mode));
  for(const oldFormat of [true,false]){
   stored=oldFormat?{blob}:{blobBytes:await blob.arrayBuffer(),mimeType:blob.type};
   const loaded=await read("existing-audio");

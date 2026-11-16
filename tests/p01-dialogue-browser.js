@@ -5,7 +5,7 @@ runBrowserTest("p01-dialogue",async test=>{
   const {page,baseURL}=test,errors=test.report.pageErrors;
   test.phase("p01-dialogue");
   await page.goto(baseURL,{waitUntil:"domcontentloaded"});
-  await page.waitForFunction(()=>Boolean(window.ROBOTITO_CHAT));
+  await page.waitForFunction(()=>Boolean(window.ROBOTITO_CHAT)&&window.ROBOTITO_MEMORY?.active);
   const result=await page.evaluate(async()=>{
    state.voiceEnabled=false;setLanguageMode('es');
    const chat=window.ROBOTITO_CHAT,planner=window.ROBOTITO_SEMANTIC_PLANNER;
@@ -44,11 +44,13 @@ runBrowserTest("p01-dialogue",async test=>{
     check(/português/.test(bubble.textContent),'Missing translated follow-up');
     check(state.languageMode==='es','One-answer translation changed UI locale');
     window.Translator=undefined;
-    const planAsync=planner.planAsync;let resolveAlice;
+    const planAsync=planner.planAsync;let resolveAlice,entered;
+    const alicePlanning=new Promise(resolve=>{entered=resolve;});
     try{
-     planner.planAsync=(raw,options)=>raw.includes('densidad')?new Promise(resolve=>{resolveAlice=()=>resolve(planner.plan(raw,options));}):planAsync(raw,options);
+     planner.planAsync=(raw,options)=>raw.includes('densidad')?new Promise(resolve=>{resolveAlice=()=>resolve(planner.plan(raw,options));entered();}):planAsync(raw,options);
      state.currentVoicePerson=null;state.currentPerson='P01-Alice';
      const alice=chat.send('¿Qué es densidad?',{channel:'text'});
+     await alicePlanning;
      state.currentPerson='P01-Bob';
      await chat.send('¿Qué es permutación?',{channel:'text'});
      const bobReply=bubble.textContent;

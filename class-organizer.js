@@ -151,10 +151,12 @@ ${useful.join("\n").slice(0,7000)}`;
     return selected;
   }
   async function finalizeSession(endedAt,recording=null){
+    const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
     const sessionId=state.classSessionId;
     const lines=state.classLines.filter(l=>l.sessionId===sessionId);
     let topic=String(state.classTopic||document.querySelector("#classTopic")?.value||"").trim();
     if(!topic)topic=await inferTopic(lines,state.classSubject||"Clase");
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return null;
     state.classTopic=topic;
     if(document.querySelector("#classTopic"))document.querySelector("#classTopic").value=topic;
 
@@ -169,6 +171,7 @@ ${useful.join("\n").slice(0,7000)}`;
       });
     }
 
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return null;
     const points=buildSummaryText(lines);
     const existingIndex=state.classSummaries.findIndex(x=>x.sessionId===sessionId);
     const entry={
@@ -500,6 +503,7 @@ ${useful.join("\n").slice(0,7000)}`;
     }));
   }
   async function importAcademicFiles(files){
+    const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
     if(!files?.length)return;
     const subject=(document.querySelector("#classSubject")?.value||state.classSubject||"Material").trim()||"Material";
     const topic=(document.querySelector("#classTopic")?.value||state.classTopic||"").trim();
@@ -509,6 +513,7 @@ ${useful.join("\n").slice(0,7000)}`;
     for(const file of files){
       try{
         const text=await textFromAcademicFile(file);
+        if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
         const chunks=chunkAcademicText(text);
         const id=crypto.randomUUID?.()||("material-"+Date.now()+"-"+Math.random().toString(16).slice(2));
         const exercises=window.ROBOTITO_CLASS_EXERCISES?.extractFromText?.(text,{

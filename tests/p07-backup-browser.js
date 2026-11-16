@@ -81,6 +81,7 @@ runBrowserTest("p07-backup",async test=>{
   await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
   await page.locator('[data-tab="memory"]').click();
   await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
   assert.equal(await page.locator("#chooseMemoryBackup").isDisabled(),true);
   let download;
   try{

@@ -5,10 +5,41 @@
 "use strict";
 const DB_NAME="robotito-data-v2", VERSION=4;
 const HEAVY=new Set(["robotito.classLines.v1","robotito.classSummaries.v1","robotito.academicMaterials.v1","robotito.memories.v2","robotito.people.v2","robotito.tasks.v1","robotito.goodreads.v1"]);
-const TYPES=new Set(["people","conversations","preferences","memories","classes","subjects","topics","audios","transcripts","pdfs","notes","exercises","books","recommendations","tasks","rules","birthdays"]);
+const TYPES=new Set(["people","conversations","preferences","memories","relationships","classes","subjects","topics","audios","transcripts","pdfs","notes","exercises","books","recommendations","tasks","rules","birthdays"]);
 const LEGACY_TYPE={"robotito.classLines.v1":"transcripts","robotito.classSummaries.v1":"classes","robotito.academicMaterials.v1":"notes","robotito.memories.v2":"memories","robotito.people.v2":"people","robotito.tasks.v1":"tasks","robotito.goodreads.v1":"books"};
 const queues=new Map();
+const ephemeralRecords=new Map(),ephemeralBlobs=new Map(),ephemeralState=new Map();
+const isEphemeral=owner=>String(owner).startsWith("session:");
+const ephemeralKey=key=>String(key).startsWith("memory-scope:session%3A");
+function clearEphemeralOwner(owner){
+ if(!isEphemeral(owner))throw Error("Temporary owner required");
+ for(const [id,row] of ephemeralRecords)if(row.owner===owner)ephemeralRecords.delete(id);
+ for(const [id,row] of ephemeralBlobs)if(row.owner===owner)ephemeralBlobs.delete(id);
+ const prefix="memory-scope:"+encodeURIComponent(owner)+":";
+ for(const key of ephemeralState.keys())if(key.startsWith(prefix))ephemeralState.delete(key);
+}
 let dbPromise=null;
+let databaseEpoch=null;
+const changes=typeof BroadcastChannel!=="undefined"?new BroadcastChannel("robotito-memory-changes"):null;
+function notifyChange(){root.dispatchEvent?.(new Event("robotito:memorychange"));changes?.postMessage({changed:true});}
+if(changes)changes.onmessage=()=>root.dispatchEvent?.(new Event("robotito:memorychange"));
+function transaction(db,names,mode="readonly",{replace=false}={}){
+ const list=typeof names==="string"?[names]:[...names];
+ if(mode==="readwrite"&&!list.includes("migrations"))list.push("migrations");
+ const tx=db.transaction(list,mode);
+ if(mode==="readwrite"){
+  if(!replace){const guard=tx.objectStore("migrations").get("p07:epoch");
+   guard.onsuccess=()=>{if((guard.result?.value||"initial")!==databaseEpoch){try{tx.abort();}catch{};}};
+  }
+  tx.addEventListener("complete",notifyChange);
+ }
+ return tx;
+}
+async function withTransaction(names,mode,body,options){
+ const db=await openDb(),tx=transaction(db,names,mode,options),finished=complete(tx);
+ try{const result=await body(tx);await finished;return result;}
+ catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+}
 function request(req){return new Promise((resolve,reject)=>{req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||new Error("IndexedDB request failed"));});}
 function complete(tx){return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onerror=event=>reject(event?.target?.error||tx.error||new Error("IndexedDB transaction failed"));tx.onabort=()=>reject(tx.error||new Error("IndexedDB transaction aborted"));});}
 function openDb(){
@@ -31,7 +62,10 @@ function openDb(){
    if(!db.objectStoreNames.contains("blobs"))db.createObjectStore("blobs",{keyPath:"id"});
    if(!db.objectStoreNames.contains("migrations"))db.createObjectStore("migrations",{keyPath:"id"});
   };
-  req.onsuccess=()=>{const db=req.result;db.onversionchange=()=>{db.close();dbPromise=null;};resolve(db);};
+  req.onsuccess=()=>{const db=req.result;db.onversionchange=()=>{db.close();dbPromise=null;};
+   const epoch=db.transaction("migrations","readonly").objectStore("migrations").get("p07:epoch");
+   epoch.onsuccess=()=>{databaseEpoch=epoch.result?.value||"initial";resolve(db);};epoch.onerror=()=>reject(epoch.error);
+  };
   req.onerror=()=>reject(req.error||new Error("Could not open IndexedDB"));
   req.onblocked=()=>reject(new Error("Close other Robotito tabs to upgrade storage"));
  }).catch(e=>{dbPromise=null;throw e;});
@@ -45,20 +79,23 @@ function serial(key,task){
  return current;
 }
 async function get(key,fallback=null){
- const db=await openDb();const tx=db.transaction("state","readonly");
+ if(ephemeralKey(key))return structuredClone(ephemeralState.get(key)??fallback);
+ const db=await openDb();const tx=transaction(db,"state","readonly");
  const result=await request(tx.objectStore("state").get(key));
  return result?.value===undefined?fallback:result.value;
 }
 async function set(key,value){
+ if(ephemeralKey(key)){ephemeralState.set(key,structuredClone(value));return true;}
  return serial("state:"+key,async()=>{
-  const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx);
+  const db=await openDb(),tx=transaction(db,"state","readwrite"),finished=complete(tx);
   tx.objectStore("state").put({key,value,updatedAt:Date.now()});
   await finished;return true;
  });
 }
 async function remove(key){
+ if(ephemeralKey(key)){ephemeralState.delete(key);return true;}
  return serial("state:"+key,async()=>{
-  const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx);
+  const db=await openDb(),tx=transaction(db,"state","readwrite"),finished=complete(tx);
   tx.objectStore("state").delete(key);await finished;return true;
  });
 }
@@ -71,26 +108,34 @@ function normalizeRecord(input){
   language:String(input.language||"und"),subject:String(input.subject||""),topic:String(input.topic||""),
   source:String(input.source||"user"),tags:Array.isArray(input.tags)?[...new Set(input.tags.map(String))]:[],
   relatedIds:Array.isArray(input.relatedIds)?[...new Set(input.relatedIds.map(String))]:[],
-  data:input.data===undefined?null:input.data,blobId:input.blobId?String(input.blobId):null};
+  data:input.data===undefined?null:input.data,blobId:input.blobId?String(input.blobId):null,
+  ...(input.provenance?{provenance:input.provenance}:{})};
 }
 async function putRecord(record){
  const row=normalizeRecord(record);
+ if(isEphemeral(row.owner)){
+  const previous=ephemeralRecords.get(row.id);
+  if(previous&&(previous.owner!==row.owner||previous.type!==row.type))throw Error("Record ID belongs to another session");
+  row.version=previous?previous.version+1:row.version;ephemeralRecords.set(row.id,structuredClone(row));return row;
+ }
  return serial("record:"+row.id,async()=>{
-  const db=await openDb(),tx=db.transaction("records","readwrite"),finished=complete(tx);
-  const store=tx.objectStore("records");
+  const db=await openDb(),tx=transaction(db,"records","readwrite"),finished=complete(tx);
   try{
-   const previous=await request(store.get(row.id));
-   if(previous&&(previous.owner!==row.owner||previous.type!==row.type))
-    throw new Error("Record ID already belongs to another owner or type");
-   store.put(row);
-   await finished;return row;
+   const previous=await request(tx.objectStore("records").get(row.id));
+   if(previous&&(previous.owner!==row.owner||previous.type!==row.type))throw Error("Use a reviewed link to change record ownership");
+   row.version=previous?previous.version+1:row.version;
+   tx.objectStore("records").put(row);await finished;return row;
   }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
  });
 }
-async function getRecord(id){const db=await openDb();return (await request(db.transaction("records","readonly").objectStore("records").get(String(id))))||null;}
+async function getRecord(id){if(ephemeralRecords.has(String(id)))return structuredClone(ephemeralRecords.get(String(id)));const db=await openDb();return (await request(transaction(db,"records","readonly").objectStore("records").get(String(id))))||null;}
 async function queryRecords({type,owner,after,before,subject,topic,tags,limit=100}={}){
  if(type&&!TYPES.has(type))throw new TypeError("Invalid type");
- const db=await openDb(),store=db.transaction("records","readonly").objectStore("records");
+ if(isEphemeral(owner))return [...ephemeralRecords.values()].filter(v=>v.owner===owner&&(!type||v.type===type)
+  &&(after===undefined||v.timestamp>=after)&&(before===undefined||v.timestamp<=before)
+  &&(!subject||v.subject===subject)&&(!topic||v.topic.includes(topic))&&(!tags||tags.every(t=>v.tags.includes(t))))
+  .sort((a,b)=>b.timestamp-a.timestamp).slice(0,limit).map(v=>structuredClone(v));
+ const db=await openDb(),store=transaction(db,"records","readonly").objectStore("records");
  const source=type&&owner?store.index("byTypeOwner").openCursor(IDBKeyRange.only([type,owner]))
   :type?store.index("byType").openCursor(IDBKeyRange.only(type))
   :owner?store.index("byOwner").openCursor(IDBKeyRange.only(owner)):store.openCursor();
@@ -108,14 +153,17 @@ async function queryRecords({type,owner,after,before,subject,topic,tags,limit=10
   };
  });
  out.sort((a,b)=>b.timestamp-a.timestamp);
- return out.slice(0,Math.max(1,Math.min(5000,Number(limit)||100)));
+ // Infinity is used by contextual retrieval: filtering after a 100-row window
+ // could falsely claim an older, matching memory did not exist.
+ return limit===Infinity?out:out.slice(0,Math.max(1,Math.min(5000,Number(limit)||100)));
 }
 async function putBlob(id,blob,{owner="local",type="binary",recordId=null}={}){
  if(!(blob instanceof Blob))throw new TypeError("Blob required");
+ if(isEphemeral(owner)){ephemeralBlobs.set(String(id),{blob,owner,recordId,type});return String(id);}
  // ArrayBuffer works in engines/private contexts that cannot persist Blob
  // backing files. Decode before opening a transaction, never while it idles.
  const blobBytes=await blob.arrayBuffer(),mimeType=blob.type;
- const db=await openDb(),tx=db.transaction("blobs","readwrite"),finished=complete(tx);
+ const db=await openDb(),tx=transaction(db,"blobs","readwrite"),finished=complete(tx);
  tx.objectStore("blobs").put({id:String(id),blobBytes,mimeType,owner,type,recordId,updatedAt:Date.now()});
  await finished;return String(id);
 }
@@ -124,10 +172,21 @@ async function putRecordWithBlob(input,blob,{type="binary"}={}){
  if(!(blob instanceof Blob))throw new TypeError("Blob required");
  const row=normalizeRecord(input);
  if(!row.blobId)throw new TypeError("Record requires blobId");
+ if(isEphemeral(row.owner)){
+  const previous=ephemeralRecords.get(row.id),file=ephemeralBlobs.get(row.blobId);
+  if(previous&&(previous.owner!==row.owner||previous.type!==row.type)||file&&(file.owner!==row.owner||file.recordId!==row.id))throw Error("File ownership mismatch");
+  row.version=previous?previous.version+1:row.version;
+  const copy=structuredClone(row);ephemeralRecords.set(row.id,copy);ephemeralBlobs.set(row.blobId,{blob,owner:row.owner,recordId:row.id,type});return copy;
+ }
  return serial("record:"+row.id,async()=>{
   const blobBytes=await blob.arrayBuffer(),mimeType=blob.type;
-  const db=await openDb(),tx=db.transaction(["records","blobs"],"readwrite"),finished=complete(tx);
+  const db=await openDb(),tx=transaction(db,["records","blobs"],"readwrite"),finished=complete(tx);
   try{
+   const previous=await request(tx.objectStore("records").get(row.id));
+   if(previous&&(previous.owner!==row.owner||previous.type!==row.type))throw Error("Use a reviewed link to change record ownership");
+   const file=await request(tx.objectStore("blobs").get(row.blobId));
+   if(file&&(file.owner!==row.owner||file.recordId!==row.id))throw Error("File ownership mismatch");
+   row.version=previous?previous.version+1:row.version;
    tx.objectStore("blobs").put({id:row.blobId,blobBytes,mimeType,owner:row.owner,type,
     recordId:row.id,updatedAt:Date.now()});
    tx.objectStore("records").put(row);
@@ -142,7 +201,8 @@ async function putRecordWithBlob(input,blob,{type="binary"}={}){
  });
 }
 async function getBlob(id){
- const db=await openDb(),row=await request(db.transaction("blobs","readonly").objectStore("blobs").get(String(id)));
+ if(ephemeralBlobs.has(String(id)))return ephemeralBlobs.get(String(id)).blob;
+ const db=await openDb(),row=await request(transaction(db,"blobs","readonly").objectStore("blobs").get(String(id)));
  return storedBlob(row);
 }
 function storedBlob(row){
@@ -153,14 +213,16 @@ function storedBlob(row){
 }
 // Removes legacy blobs even if a previous interrupted save left no record.
 async function deleteBlob(id){
- const db=await openDb(),tx=db.transaction(["blobs","state"],"readwrite"),finished=complete(tx);
+ if(ephemeralBlobs.has(String(id))){ephemeralBlobs.delete(String(id));return true;}
+ const db=await openDb(),tx=transaction(db,["blobs","state"],"readwrite"),finished=complete(tx);
  tx.objectStore("blobs").delete(String(id));
  tx.objectStore("state").delete(RESTORE_UNDO_KEY);
  await finished;return true;
 }
 async function deleteRecord(id){
+ if(ephemeralRecords.has(String(id))){const row=ephemeralRecords.get(String(id));ephemeralRecords.delete(String(id));if(row.blobId)ephemeralBlobs.delete(row.blobId);return true;}
  return serial("record:"+id,async()=>{
-  const db=await openDb(),tx=db.transaction(["records","blobs","state"],"readwrite"),finished=complete(tx);
+  const db=await openDb(),tx=transaction(db,["records","blobs","state"],"readwrite"),finished=complete(tx);
   const store=tx.objectStore("records");const row=await request(store.get(String(id)));
   if(row?.blobId)tx.objectStore("blobs").delete(row.blobId);
   store.delete(String(id));
@@ -198,7 +260,7 @@ async function changeOwnedMemory({id,owner,text,expectedVersion,remove=false}={}
  if(!remove&&(typeof text!=="string"||!text.trim()||text.trim().length>3000))
   throw new TypeError("Memory text must be between 1 and 3000 characters");
  return serial("record:"+id,async()=>{
-  const db=await openDb(),tx=db.transaction(["records","state","blobs"],"readwrite"),
+  const db=await openDb(),tx=transaction(db,["records","state","blobs"],"readwrite"),
    finished=complete(tx),records=tx.objectStore("records"),state=tx.objectStore("state");
   try{
    const old=await request(records.get(id));
@@ -252,7 +314,7 @@ async function appendMemory({owner,person,text,language="es",source="manual",at=
  const row=normalizeRecord({id,type:"memories",owner,language,source,
   timestamp:at,data:{text:text.trim(),person:person||owner,source}});
  return serial("state:"+MEMORY_MIRROR_KEY,async()=>{
-  const db=await openDb(),tx=db.transaction(["records","state"],"readwrite"),
+  const db=await openDb(),tx=transaction(db,["records","state"],"readwrite"),
    finished=complete(tx);
   try{
    const state=tx.objectStore("state"),existing=await request(state.get(MEMORY_MIRROR_KEY));
@@ -276,7 +338,7 @@ async function deleteOwnedMemory({id,owner,expectedVersion}){
 // Never erase a different person's record because one profile requested cleanup.
 async function clearOwnedMemories(owner){
  if(typeof owner!=="string"||!owner.trim())throw new TypeError("Memory owner required");
- const db=await openDb(),tx=db.transaction(["records","blobs","state"],"readwrite"),
+ const db=await openDb(),tx=transaction(db,["records","blobs","state"],"readwrite"),
   finished=complete(tx),records=tx.objectStore("records"),state=tx.objectStore("state");
  try{
   const rows=await request(records.index("byTypeOwner").getAll(IDBKeyRange.only(["memories",owner])));
@@ -315,7 +377,7 @@ async function deleteRegisteredProfile(name,{confirmation}={}){
  if(!target||target.length>200||confirmation!=="BORRAR")
   throw new Error("Explicit profile deletion confirmation required");
  const norm=s=>String(s||"").trim().toLocaleLowerCase();
- const db=await openDb(),tx=db.transaction(["state","records","blobs"],"readwrite"),
+ const db=await openDb(),tx=transaction(db,["state","records","blobs"],"readwrite"),
   finished=complete(tx),state=tx.objectStore("state"),records=tx.objectStore("records"),
   blobs=tx.objectStore("blobs");
  try{
@@ -364,6 +426,7 @@ async function deleteRegisteredProfile(name,{confirmation}={}){
    });
    state.put({...transcripts,value:revised,updatedAt:Date.now()});
   }
+  for(const item of await request(state.getAll()))if(item.key.startsWith("memory-scope:"+encodeURIComponent(personName)+":"))state.delete(item.key);
   // A previous restore must not resurrect a deleted biometric identity.
   state.delete(RESTORE_UNDO_KEY);
   await finished;
@@ -388,7 +451,7 @@ async function updateVisitorEnvelope(envelope,{expectedRevision}={}){
  if(!Number.isSafeInteger(expectedRevision)||expectedRevision<0)
   throw new TypeError("Missing expected visitor vault revision");
  checkVisitorEnvelope(envelope,expectedRevision);
- const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+ const db=await openDb(),tx=transaction(db,"state","readwrite"),finished=complete(tx),
   state=tx.objectStore("state");
  try{
   const prior=await request(state.get(VISITOR_VAULT_KEY));
@@ -400,7 +463,7 @@ async function updateVisitorEnvelope(envelope,{expectedRevision}={}){
 }
 async function deleteVisitorVault({confirmation}={}){
  if(confirmation!=="BORRAR VISITAS")throw new Error("Explicit visitor deletion required");
- const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+ const db=await openDb(),tx=transaction(db,"state","readwrite"),finished=complete(tx),
   state=tx.objectStore("state");
  state.delete(VISITOR_VAULT_KEY);
  // Undo must never resurrect biometrics the visitor chose to delete.
@@ -414,7 +477,7 @@ async function linkVisitorProfile({name,bond,expectedRevision,envelope,confirmat
     !Number.isFinite(bond[k])||bond[k]<0||bond[k]>100))
   throw new TypeError("Verified explicit association required");
  checkVisitorEnvelope(envelope,expectedRevision);
- const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx),
+ const db=await openDb(),tx=transaction(db,"state","readwrite"),finished=complete(tx),
   state=tx.objectStore("state");
  try{
   const [oldVault,oldPeople]=await Promise.all([
@@ -456,6 +519,30 @@ async function clearRecordsByType(type,{owner}={}){
  }
  return total;
 }
+async function editRecord(id,{owner,expectedVersion,data,remove=false}={}){
+ if(!owner||!Number.isInteger(expectedVersion))throw Error("Owner and record version required");
+ if(!isEphemeral(owner)&&(await getRecord(id))?.type==="memories"){
+  const result=await changeOwnedMemory({id,owner,expectedVersion,text:data?.text,remove});return result.record;
+ }
+ const change=row=>{
+  if(!row||row.owner!==owner)throw Error("Record does not belong to this owner");
+  if(row.version!==expectedVersion)throw Error("Memory changed in another tab; reload before editing");
+  return {...row,data:structuredClone(data),version:row.version+1,updatedAt:Date.now()};
+ };
+ if(isEphemeral(owner)){
+  const next=change(ephemeralRecords.get(String(id)));
+  if(remove)await deleteRecord(id);else ephemeralRecords.set(String(id),next);
+  notifyChange();return remove?null:next;
+ }
+ return withTransaction(["records","blobs","state"],"readwrite",async tx=>{
+  const records=tx.objectStore("records"),row=await request(records.get(String(id))),next=change(row);
+  if(remove){tx.objectStore("state").delete(RESTORE_UNDO_KEY);records.delete(String(id));if(row.blobId)tx.objectStore("blobs").delete(row.blobId);
+   const related=await request(records.index("byRelation").getAll(String(id)));
+   for(const linked of related)records.put({...linked,relatedIds:linked.relatedIds.filter(x=>x!==String(id)),version:linked.version+1});
+  }else records.put(next);
+  return remove?null:next;
+ });
+}
 function localValue(key,fallback){try{const v=localStorage.getItem(key);return v===null?fallback:JSON.parse(v);}catch{return fallback;}}
 async function migrateKey(key,fallback){
  const existing=await get(key,undefined);
@@ -493,7 +580,7 @@ async function migrateTypedLegacy({owner="local"}={}){
  const db=await openDb();
  for(const key of HEAVY){
   const marker="typed-v3:"+owner+":"+key;
-  const done=await request(db.transaction("migrations","readonly").objectStore("migrations").get(marker));
+  const done=await request(transaction(db,"migrations","readonly").objectStore("migrations").get(marker));
   if(done)continue;
   const rows=await get(key,[]);
   if(!Array.isArray(rows))continue;
@@ -511,14 +598,14 @@ async function migrateTypedLegacy({owner="local"}={}){
       source:"people",data:{person:p.name,date:p.birthday}});
    }
   }
-  const tx=db.transaction("migrations","readwrite"),finished=complete(tx);
+  const tx=transaction(db,"migrations","readwrite"),finished=complete(tx);
   tx.objectStore("migrations").put({id:marker,count:rows.length,at:Date.now()});await finished;
  }
  return true;
 }
 async function audit(){
- const db=await openDb(),records=await request(db.transaction("records","readonly").objectStore("records").getAll()),
-  blobs=await request(db.transaction("blobs","readonly").objectStore("blobs").getAll());
+ const db=await openDb(),records=await request(transaction(db,"records","readonly").objectStore("records").getAll()),
+  blobs=await request(transaction(db,"blobs","readonly").objectStore("blobs").getAll());
  const ids=new Set(records.map(x=>x.id)),blobIds=new Set(blobs.map(x=>x.id));
  const invalid=records.filter(x=>!TYPES.has(x.type)||!x.id||!x.owner).map(x=>x.id);
  const missingBlobs=records.filter(x=>x.blobId&&!blobIds.has(x.blobId)).map(x=>x.id);
@@ -531,11 +618,11 @@ async function audit(){
 const BACKUP_STORES=["state","records","blobs","migrations"];
 // This is internal IndexedDB state, never included in exported backup files.
 const RESTORE_UNDO_KEY="robotito.restore.undo.v1";
-const RESTORE_UNDO_MAX_BYTES=64*1024*1024;
+const RESTORE_UNDO_MAX_BYTES=256*1024*1024;
 const BACKUP_MAX_BYTES=32*1024*1024, BACKUP_MAX_SINGLE_BLOB=12*1024*1024;
 function validateBackup(raw){
  if(!raw||typeof raw!=="object"||Array.isArray(raw)||raw.format!=="robotito-local-backup"||
-    raw.schema!==1||raw.dbVersion!==VERSION)throw new TypeError("Unsupported Robotito backup format");
+    raw.schema!==1||![3,4].includes(raw.dbVersion))throw new TypeError("Unsupported Robotito backup format");
  for(const name of BACKUP_STORES){
   if(!Array.isArray(raw[name])||raw[name].length>20000)throw new TypeError("Missing or oversized backup store: "+name);
  }
@@ -605,7 +692,7 @@ async function exportBackup(){
  if(BACKUP_STORES.some(name=>!db.objectStoreNames.contains(name))||
     db.objectStoreNames.length!==BACKUP_STORES.length)
   throw new Error("Storage schema is not supported by this backup version");
- const tx=db.transaction(BACKUP_STORES,"readonly"),finished=complete(tx);
+ const tx=transaction(db,BACKUP_STORES,"readonly"),finished=complete(tx);
  const rows=await Promise.all(BACKUP_STORES.map(name=>request(tx.objectStore(name).getAll())));
  await finished;
  const snapshot={format:"robotito-local-backup",schema:1,dbVersion:VERSION,
@@ -643,7 +730,7 @@ function validateUndoSnapshot(snapshot){
   throw new TypeError("Unsupported local restore checkpoint");
  const stores=snapshot.stores;
  if(!stores||BACKUP_STORES.some(name=>!Array.isArray(stores[name])||
-    stores[name].length>20000))throw new TypeError("Invalid local restore checkpoint");
+    stores[name].length>50000))throw new TypeError("Invalid local restore checkpoint");
  const distinct={};
  for(const name of BACKUP_STORES){
   distinct[name]=new Set();
@@ -707,12 +794,12 @@ function checkpointFromRows(rows){
  return snapshot;
 }
 async function getRestoreUndoInfo(){
- const db=await openDb(),row=await request(db.transaction("state","readonly")
+ const db=await openDb(),row=await request(transaction(db,"state","readonly")
   .objectStore("state").get(RESTORE_UNDO_KEY));
  return row?.value?validateUndoSnapshot(row.value):null;
 }
 async function discardRestoreUndo(){
- const db=await openDb(),tx=db.transaction("state","readwrite"),finished=complete(tx);
+ const db=await openDb(),tx=transaction(db,"state","readwrite"),finished=complete(tx);
  tx.objectStore("state").delete(RESTORE_UNDO_KEY);
  await finished;return true;
 }
@@ -731,36 +818,52 @@ async function restoreBackup(raw,{confirmation}={}){
   decoded.push({id:item.id,owner:item.owner,type:item.type,recordId:item.recordId,
    updatedAt:item.updatedAt,blobBytes:bytes.buffer,mimeType:item.mime||"application/octet-stream"});
  }
- const db=await openDb();
- if(BACKUP_STORES.some(name=>!db.objectStoreNames.contains(name))||
-    db.objectStoreNames.length!==BACKUP_STORES.length)
-  throw new Error("Incompatible storage schema");
- const tx=db.transaction(BACKUP_STORES,"readwrite"),finished=complete(tx);
- try{
-  const before=await Promise.all(BACKUP_STORES.map(name=>request(
-   tx.objectStore(name).getAll())));
-  const undo=checkpointFromRows(before);
-  for(const name of BACKUP_STORES)tx.objectStore(name).clear();
-  for(const name of BACKUP_STORES)
-   for(const item of name==="blobs"?decoded:raw[name])tx.objectStore(name).put(item);
-  tx.objectStore("state").put({key:RESTORE_UNDO_KEY,value:undo,updatedAt:Date.now()});
-  await finished;return summary;
- }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+ await replaceSnapshot({...raw,blobs:decoded},{confirmation});
+ return summary;
 }
 // Undo is one-use and deliberately discards changes made AFTER the restore.
 // Its source is the browser's own preserved checkpoint, never an uploaded file.
 async function undoLastRestore({confirmation}={}){
  if(confirmation!=="DESHACER")throw new Error("Explicit undo confirmation required");
- const db=await openDb(),tx=db.transaction(BACKUP_STORES,"readwrite"),finished=complete(tx);
- try{
-  const stored=await request(tx.objectStore("state").get(RESTORE_UNDO_KEY));
-  if(!stored?.value)throw new Error("No reversible restore checkpoint exists");
-  const summary=validateUndoSnapshot(stored.value);
-  for(const name of BACKUP_STORES)tx.objectStore(name).clear();
-  for(const name of BACKUP_STORES)
-   for(const item of stored.value.stores[name])tx.objectStore(name).put(item);
-  await finished;return summary;
- }catch(error){try{tx.abort();}catch{}await finished.catch(()=>{});throw error;}
+ return replaceSnapshot(null,{confirmation,undo:true});
+}
+
+function devicePreferences(){
+ const result=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith("robotito."))result.push({key,value:localStorage.getItem(key)});}return result;
+}
+async function rawSnapshot(){
+ return withTransaction(BACKUP_STORES,"readonly",async tx=>{
+  const values=await Promise.all(BACKUP_STORES.map(name=>request(tx.objectStore(name).getAll())));
+  return Object.fromEntries(BACKUP_STORES.map((name,i)=>[name,name==="state"?values[i].filter(row=>row.key!==RESTORE_UNDO_KEY):values[i]]));
+ });
+}
+async function replaceSnapshot(input,{confirmation,undo=false}={}){
+ if(confirmation!==(undo?"DESHACER":"RESTAURAR"))throw Error("Explicit restore confirmation required");
+ const preferences=devicePreferences(),nextEpoch=crypto.randomUUID();let summary;
+ await withTransaction(BACKUP_STORES,"readwrite",async tx=>{
+  const state=tx.objectStore("state"),saved=undo?await request(state.get(RESTORE_UNDO_KEY)):null;
+  const snapshot=undo?saved?.value?.stores:input;if(!snapshot)throw Error("No recovery checkpoint");
+  if(undo)summary=validateUndoSnapshot(saved.value);
+  const before=checkpointFromRows(await Promise.all(BACKUP_STORES.map(name=>request(tx.objectStore(name).getAll()))));
+  const pending=before.stores.state.find(row=>row.key==="p07:pending-preferences");
+  before.preferences=pending?.value||preferences;
+  for(const name of BACKUP_STORES){const table=tx.objectStore(name);table.clear();for(const item of snapshot[name])table.put(item);}
+  if(!undo)state.put({key:RESTORE_UNDO_KEY,value:before,updatedAt:Date.now()});
+  const desired=undo?saved.value.preferences:input.preferences;
+  if(desired)state.put({key:"p07:pending-preferences",value:desired,updatedAt:Date.now()});
+  tx.objectStore("migrations").put({id:"p07:epoch",value:nextEpoch,at:Date.now()});
+ },{replace:true});
+ databaseEpoch=nextEpoch;return summary;
+}
+async function applyPendingPreferences(){
+ const pending=await get("p07:pending-preferences",null);if(!pending)return false;
+ const previous=devicePreferences();
+ const apply=values=>{
+  for(const item of devicePreferences())localStorage.removeItem(item.key);
+  for(const item of values){if(typeof item?.key!=="string"||!item.key.startsWith("robotito.")||typeof item.value!=="string")throw Error("Invalid preference entry");localStorage.setItem(item.key,item.value);}
+ };
+ try{apply(pending);}catch(error){try{apply(previous);}catch{}throw error;}
+ await remove("p07:pending-preferences");return true;
 }
 
 async function stats(){
@@ -770,5 +873,5 @@ async function stats(){
 }
 root.ROBOTITO_STORE={get,set,remove,bootstrap,persistStateKey,isHeavyKey:key=>HEAVY.has(key),
  heavyKeys:[...HEAVY],putRecord,getRecord,queryRecords,deleteRecord,appendMemory,updateOwnedMemory,deleteOwnedMemory,clearOwnedMemories,deleteRegisteredProfile,updateVisitorEnvelope,deleteVisitorVault,linkVisitorProfile,putBlob,putRecordWithBlob,getBlob,deleteBlob,
- migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,getRestoreUndoInfo,undoLastRestore,discardRestoreUndo,recordTypes:[...TYPES],dbVersion:VERSION};
+ migrateTypedLegacy,clearRecordsByType,audit,stats,exportBackup,validateBackup,restoreBackup,getRestoreUndoInfo,undoLastRestore,discardRestoreUndo,recordTypes:[...TYPES],dbVersion:VERSION,editRecord,withTransaction,isEphemeral,clearEphemeralOwner,normalizeRecord,notifyChange,rawSnapshot,replaceSnapshot,devicePreferences,applyPendingPreferences,flush:()=>Promise.all([...queues.values()])};
 })(typeof window!=="undefined"?window:globalThis);
