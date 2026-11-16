@@ -16,6 +16,9 @@ assert.deepEqual(segmentCaptions("00:00:10.000 --> tiempo inválido\nSupuesto au
  [],"Malformed cue headers must not be treated as untimed speech");
 assert.equal(segmentCaptions("WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nTexto válido.\n\n00:00:09.000 --> 00:00:05.000\nTexto descartado.").length,
  1,"Mixed valid and invalid cues import only validated timings");
+assert.deepEqual(segmentCaptions("Material largo.",{maxChars:0,maxSegments:0}),[]);
+assert.ok(segmentCaptions("El material se parte en fragmentos legibles.",{maxChars:0,maxSegments:5}).length<=5,
+ "Nonpositive chunk width must never loop forever");
 const plain=segmentCaptions("El transporte activo requiere energía. La membrana tiene proteínas.");
 assert.equal(plain[0].atSec,null,"Pasted un-timed captions cannot acquire fabricated timestamps");
 let now=1234,store=createStore({storage,now:()=>now});
