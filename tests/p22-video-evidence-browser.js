@@ -8,7 +8,9 @@ runBrowserTest("p22-video-evidence",async test=>{
  await page.waitForFunction(()=>!!window.ROBOTITO_VIDEO_EVIDENCE?.createStore&&
    !!document.querySelector("#videoEvidenceSearch"),null,{timeout:20000});
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
+ await page.waitForFunction(()=>!!window.ROBOTITO_ROUTER?.classify,null,{timeout:20000});
  await page.locator('[data-tab="class"]').click();
+ await page.waitForFunction(()=>document.querySelector("#tab-class")?.classList.contains("active"),null,{timeout:10000});
  await page.locator("#classSubject").fill("Biología");
  await page.locator("#classTopic").fill("Membrana");
  await page.evaluate(()=>{
