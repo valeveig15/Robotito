@@ -40,6 +40,7 @@ const feed=(text,id)=>species.feedingOffer(text,{id,lang:"es"});
 assert.deepEqual([feed("te doy un pescado","polar-bear").ok,feed("te doy una banana","polar-bear").ok,
  feed("te doy chocolate","dog").ok,feed("te doy bambú","panda").ok],[true,false,false,true]);
 assert.equal(feed("te doy un abrazo","dog"),null,"Affection is not food");
+assert.equal(feed("No te doy chocolate","dog"),null,"Negated offers must never cause feeding");
 assert.equal(feed("¿Cuál es tu comida?","panda"),null,"Questions do not trigger feeding");
 assert.equal(feed("te doy un pescado","robot").ok,false);
 console.log("P29: 50 species × 6 languages × 6 questions, safety, origin, relatives and food: passed");
