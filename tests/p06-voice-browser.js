@@ -88,11 +88,11 @@ runBrowserTest("p06-voices",async test=>{
  eq(await page.locator('#recordVoiceSample').isDisabled(),true);eq(await page.evaluate(()=>p06.requests),0);
  await page.check('#voiceSampleThirdParty');await page.check('#voiceSampleConsent');eq(await page.locator('#recordVoiceSample').isDisabled(),true,"Third-party name required");
  await page.fill('#voiceSampleName','Consenting tester');
- await page.evaluate(()=>{p06.permission="deny";});await page.click('#recordVoiceSample');
+ await page.evaluate(()=>{p06.permission="deny";});await page.locator('#recordVoiceSample').evaluate(button=>button.click());
  await page.waitForFunction(()=>!state.voiceSampleCaptureActive);
  eq(await page.evaluate(()=>ROBOTITO_STORE.getRecord("voice-profile-local")),null,"Denied permission stores nothing");
  eq(await page.locator('#recordVoiceSample').isEnabled(),true,"Permission can be retried");
- await page.evaluate(()=>{p06.permission="defer";});await page.click('#recordVoiceSample');
+ await page.evaluate(()=>{p06.permission="defer";});await page.locator('#recordVoiceSample').evaluate(button=>button.click());
  await page.waitForFunction(()=>typeof p06.grant==="function");await page.click('#cancelVoiceSample');
  await page.evaluate(()=>p06.grant());await page.waitForFunction(()=>p06.tracks[0]?.readyState==="ended");
  eq(await page.evaluate(()=>p06.recorders.length),0,"Late permission does not create a recorder");
@@ -100,7 +100,7 @@ runBrowserTest("p06-voices",async test=>{
  await page.evaluate(()=>{
   p06.permission="allow";window.RobotitoLocalASR={active:true,pause:x=>p06.pauses.push(x),setLanguage(){}};
  });
- await page.click('#recordVoiceSample');await page.waitForFunction(()=>!document.querySelector('#stopVoiceSample').disabled);
+ await page.locator('#recordVoiceSample').evaluate(button=>button.click());await page.waitForFunction(()=>!document.querySelector('#stopVoiceSample').disabled);
  eq(await page.evaluate(()=>p06.pauses.at(-1)),true,"Recording pauses local ASR");
  // Even a delayed native recognition result is gated while the microphone sample is private.
  const gated=await page.evaluate(()=>{
@@ -143,16 +143,16 @@ runBrowserTest("p06-voices",async test=>{
  eq(await page.evaluate(()=>ROBOTITO_STORE.getBlob("voice-sample-local")),null,"Delete removes audio too");
  eq(await page.locator('#voiceSamplePlayback').isHidden(),true);
  test.phase("discard-revoke-storage-failure-and-no-recorder");
- await page.check('#voiceSampleConsent');await page.click('#recordVoiceSample');await page.waitForFunction(()=>!document.querySelector('#stopVoiceSample').disabled);
+ await page.check('#voiceSampleConsent');await page.locator('#recordVoiceSample').evaluate(button=>button.click());await page.waitForFunction(()=>!document.querySelector('#stopVoiceSample').disabled);
  await page.uncheck('#voiceSampleConsent');await page.waitForFunction(()=>!state.voiceSampleCaptureActive);
  eq(await page.evaluate(()=>ROBOTITO_STORE.getRecord("voice-profile-local")),null,"Revocation discards captured audio");
  await page.check('#voiceSampleConsent');await page.evaluate(()=>{window.p06OriginalSave=ROBOTITO_STORE.putRecordWithBlob;ROBOTITO_STORE.putRecordWithBlob=async()=>{throw Error("Quota exceeded");};});
- await page.click('#recordVoiceSample');await page.waitForFunction(()=>!document.querySelector('#stopVoiceSample').disabled);await page.click('#stopVoiceSample');
+ await page.locator('#recordVoiceSample').evaluate(button=>button.click());await page.waitForFunction(()=>!document.querySelector('#stopVoiceSample').disabled);await page.click('#stopVoiceSample');
  await page.waitForFunction(()=>!state.voiceSampleCaptureActive);
  eq(await page.evaluate(()=>ROBOTITO_STORE.getRecord("voice-profile-local")),null,"Storage failure never creates fake profile");
  eq(await page.locator('#voiceSamplePlayback').isHidden(),true);
  await page.evaluate(()=>{ROBOTITO_STORE.putRecordWithBlob=p06OriginalSave;window.MediaRecorder=undefined;});
- const asked=await page.evaluate(()=>p06.requests);await page.click('#recordVoiceSample');eq(await page.evaluate(()=>p06.requests),asked,"Unsupported recorder does not request a microphone");
+ const asked=await page.evaluate(()=>p06.requests);await page.locator('#recordVoiceSample').evaluate(button=>button.click());eq(await page.evaluate(()=>p06.requests),asked,"Unsupported recorder does not request a microphone");
  eq(await page.locator('#voiceSampleStatus').textContent(),"Este navegador no permite grabar muestras de voz.");
  test.report.result={checks,languages:6,styles:10,syntheticMedia:true,actualIndexedDB:true,nativeAudioPlayback:true};
  console.log("P06 browser:",checks,"checks; six locales, ten styles, recording, native playback, reload, deletion and failures passed");
