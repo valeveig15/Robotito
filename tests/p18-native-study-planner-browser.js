@@ -24,6 +24,9 @@ runBrowserTest("p18-native-tasks",async test=>{
  assert.equal(snapshot.tasks.length,1);assert.equal(snapshot.tasks[0].subject,"Química");
  test.phase("p18-complete");
  await list.getByRole("button",{name:/Completar/}).click();
+ await list.getByText(/Completada/).waitFor();
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
+ assert.equal(await page.evaluate(()=>ROBOTITO_STUDY_PLANNER_UI.engine.snapshot().tasks[0].done),true,"Completion is committed before reload");
  assert.match(await list.innerText(),/Completada/);
  assert.match(await list.innerText(),/Felicitaciones/);
  await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
