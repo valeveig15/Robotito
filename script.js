@@ -672,6 +672,7 @@ function commitSpeechMessage(text,ms,lang,token,ownerAtRequest){
   if(!b)return;
   b.textContent=text;
   b.classList.remove("hidden");
+  window.ROBOTITO_TYPED_CHAT?.onReply?.(text,replyOwner);
   const displayMs=readingDisplayTime(text,ms);
   scheduleSpeechBubbleHide(token,Date.now()+displayMs);
   speakResponse(text,lang);
@@ -4118,6 +4119,7 @@ function selectRobotitoContext(owner){
   if(owner===robotitoContextOwner)return robotitoConversationContext;
   robotitoContextsByOwner.set(robotitoContextOwner,robotitoConversationContext);
   robotitoContextOwner=owner;
+  window.ROBOTITO_TYPED_CHAT?.onOwnerChange?.(owner);
   robotitoConversationContext=robotitoContextsByOwner.get(owner)
     ||window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
   if(robotitoContextsByOwner.size>24)robotitoContextsByOwner.delete(robotitoContextsByOwner.keys().next().value);
@@ -6104,6 +6106,7 @@ function bindUI(){
     entry.value="";
     $("#transcript").textContent=question;
     autoRemember(question);
+    window.ROBOTITO_TYPED_CHAT?.onTurn?.(question,state.currentVoicePerson||state.currentPerson||"local");
     try{await handleSpeech(question,{channel:"text"});}
     catch(error){console.warn("typed question",error);say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"No pude procesar eso.");}
   });

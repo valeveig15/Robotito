@@ -3099,3 +3099,80 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
   .robotito.object-trip-walking{transition:none!important}
   .robotito.object-trip-presenting .object-scene-prop{animation:none}
 }
+
+
+/* P25 — keep the animated scene separate from status, actions and written conversation. */
+.typed-chat-history{
+  min-width:0;max-width:100%;max-height:148px;min-height:40px;
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  display:flex;flex-direction:column;align-items:flex-start;gap:7px;
+  padding:7px 8px;border:1px solid rgba(72,57,77,.12);
+  border-radius:13px;background:rgba(255,255,255,.73);
+  scrollbar-width:thin;
+}
+.typed-chat-placeholder{margin:5px 2px;color:var(--muted);font-size:12px}
+.typed-chat-line{
+  display:grid;gap:3px;max-width:min(95%,480px);min-width:0;
+  padding:7px 10px;border-radius:12px;
+  font-size:12px;line-height:1.4;overflow-wrap:anywhere;word-break:normal;
+  border:1px solid rgba(85,64,88,.12);
+  background:#fff;
+}
+.typed-chat-line strong{font-size:10px;color:#625569}
+.typed-chat-line span{white-space:pre-wrap;overflow-wrap:anywhere}
+.typed-chat-user{align-self:flex-end;background:#e8f6f1}
+.typed-chat-assistant{align-self:flex-start;background:#fdf9ff}
+.robotito-text-form{min-width:0;margin:0}
+.robotito-text-form-row{min-width:0}
+.robotito-text-form input{font-size:16px;max-width:100%;width:100%}
+.robotito-text-form button{touch-action:manipulation;min-height:44px}
+@media(min-width:901px){
+  .world{display:flex;flex-direction:column}
+  .world-scene{
+    position:relative;inset:auto;flex:1 0 420px;min-height:420px;width:100%;
+  }
+  .world-controls{
+    display:grid;position:relative!important;inset:auto!important;
+    flex:0 0 auto;gap:8px;padding:10px;
+    border-top:1px solid rgba(78,59,80,.11);background:rgba(255,251,254,.96);
+  }
+  .world-controls .hud{
+    position:relative!important;inset:auto!important;
+    display:flex;flex-wrap:nowrap;gap:6px;
+    overflow-x:auto;width:100%;max-width:100%;
+  }
+  .world-controls .quick-actions{
+    position:relative!important;inset:auto!important;
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    width:100%;max-width:100%;gap:6px;
+  }
+  .world-controls .quick-actions button{min-width:0;white-space:normal}
+}
+@media(max-width:900px){
+  .world-controls{min-width:0;width:100%}
+  .world-controls .hud,.world-controls .quick-actions{min-width:0}
+  .world-controls .quick-actions button{min-height:44px}
+  .typed-chat-history{max-height:146px}
+  .robotito-text-form{padding:5px}
+  .robotito-text-form-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .robotito-text-form-row button{min-width:82px;max-width:100%;padding:8px 11px}
+  .robotito-text-form-row input{min-width:0;min-height:44px}
+  .world-scene{min-height:clamp(340px,53svh,490px)}
+}
+@media(max-width:440px){
+  .robotito-text-form-row{grid-template-columns:minmax(0,1fr) auto}
+  .robotito-text-form-row button{width:auto;min-width:74px;padding:8px 9px}
+  .robotito-text-form-row input{min-width:0;font-size:16px}
+  .typed-chat-history{max-height:116px}
+}
+@media(max-width:360px){
+  .world-controls{padding:8px}
+  .world-controls .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .robotito-text-form-row{grid-template-columns:1fr}
+  .robotito-text-form-row button{width:100%}
+  .world-scene{min-height:340px}
+}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  .world-scene{min-height:300px}
+  .typed-chat-history{max-height:100px}
+}
