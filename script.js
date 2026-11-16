@@ -2231,6 +2231,7 @@ function updateAvatarMoodIcon(mood=state.mood){
 }
 function applyAvatar(id,{persist=true}={}){
   const avatar=avatarById(id);
+  window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   state.avatar=avatar.id;
   if(persist)localStorage.setItem(KEYS.avatar,avatar.id);
   if(robot){
