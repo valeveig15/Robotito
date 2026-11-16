@@ -3260,3 +3260,41 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
   .world-controls{gap:7px}
   #robotitoTextForm{padding:7px}
 }
+
+
+/* P28: original approved avatar art fills only the scene, never the input/controls. */
+.world-scene{isolation:isolate}
+.approved-avatar-host{
+ position:absolute;inset:0;display:block;z-index:3;
+ overflow:hidden;isolation:isolate;pointer-events:auto;
+ touch-action:manipulation;
+}
+.world.approved-art-world #robotito{
+ opacity:0!important;pointer-events:none!important;
+}
+.world.approved-art-world .panda-reference-landscape,
+.world.approved-art-world .bamboo,
+.world.approved-art-world .day-sun,
+.world.approved-art-world .night-sky,
+.world.approved-art-world .room-cloud,
+.world.approved-art-world .floor-glow,
+.world.approved-art-world #groundShadow{
+ visibility:hidden!important;pointer-events:none!important;
+}
+.world.approved-art-world #speechBubble,
+.world.approved-art-world .speech-bubble{position:absolute;z-index:14}
+.world.approved-art-world #objectShowcase,
+.world.approved-art-world #drawingShowcase,
+.world.approved-art-world #birthdayScene{z-index:12}
+.approved-avatar-host .approved-object-prop{
+ position:absolute;left:58%;top:48%;font-size:clamp(24px,5vw,51px);
+ filter:drop-shadow(0 5px 5px rgba(40,30,40,.22));pointer-events:none;
+ animation:approved-show-object .25s ease-out both;
+}
+@keyframes approved-show-object{
+ from{opacity:0;transform:translateY(10px) scale(.6)}
+ to{opacity:1;transform:translateY(0) scale(1)}
+}
+@media(prefers-reduced-motion:reduce){
+ .approved-avatar-host .approved-object-prop{animation:none}
+}
