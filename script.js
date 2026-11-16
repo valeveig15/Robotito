@@ -67,7 +67,8 @@ const ROBOTITO_AVATARS = [
 
 const state = {
   started: false,
-  avatar: localStorage.getItem(KEYS.avatar) || "panda",
+  avatar: ROBOTITO_AVATARS.some(item=>item.id===localStorage.getItem(KEYS.avatar))
+    ?localStorage.getItem(KEYS.avatar):"panda",
   mood: "calm",
   moodScore: 55,
   energy: 100,
@@ -2234,7 +2235,7 @@ function applyAvatar(id,{persist=true}={}){
   const avatar=avatarById(id);
   window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   state.avatar=avatar.id;
-  if(persist)localStorage.setItem(KEYS.avatar,avatar.id);
+  if(persist){try{localStorage.setItem(KEYS.avatar,avatar.id);}catch(error){console.warn("avatar preference",error);}}
   if(robot){
     for(const item of ROBOTITO_AVATARS)robot.classList.remove("avatar-"+item.id);
     robot.classList.add("avatar-"+avatar.id);
@@ -2282,7 +2283,7 @@ function renderAvatarChoices(){
   if(!container)return;
   const lang=avatarLanguage();
   container.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.("avatarAvailable",lang)||"Avatares disponibles");
-  container.innerHTML=ROBOTITO_AVATARS.map((avatar,index)=>{
+  container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
     const selected=avatar.id===state.avatar;
     return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
       <span class="avatar-choice-emoji" aria-hidden="true">${avatarVisualMarkup(avatar,"avatar-choice-svg")}</span>
@@ -6394,16 +6395,25 @@ async function init(){
     gate.style.display="";
     gate.classList.remove("hidden");
   }
-  const savedLanguage=localStorage.getItem("robotito.languageMode.v1");
+  let savedLanguage=null,savedAvatar=null;
+  try{
+    savedLanguage=localStorage.getItem("robotito.languageMode.v1");
+    savedAvatar=localStorage.getItem(KEYS.avatar);
+  }catch(error){console.warn("startup preferences",error);}
   if(window.ROBOTITO_I18N?.supported?.(savedLanguage)){
     setLanguageMode(savedLanguage);
-    const gateForReturn=$("#languageGate");
-    if(gateForReturn){
-      gateForReturn.hidden=true;gateForReturn.classList.add("hidden");
-      gateForReturn.style.display="none";gateForReturn.setAttribute("aria-hidden","true");
+    if(ROBOTITO_AVATARS.some(item=>item.id===savedAvatar)){
+      const gateForReturn=$("#languageGate");
+      if(gateForReturn){
+        gateForReturn.hidden=true;gateForReturn.classList.add("hidden");
+        gateForReturn.style.display="none";gateForReturn.setAttribute("aria-hidden","true");
+      }
+      $("#startBtn").disabled=false;
+      $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
+    }else{
+      // Upgraded users who already chose a language still get to choose their avatar once.
+      showStartupStep("avatar");
     }
-    $("#startBtn").disabled=false;
-    $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
   }else if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if(!Number.isFinite(state.voicePitch)||state.voicePitch<=0)state.voicePitch=.65;
