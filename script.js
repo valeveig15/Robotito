@@ -453,6 +453,7 @@ function setVoicePlaybackStatus(status){
     muted:"La voz permanece en silencio durante Modo Clase o un silencio solicitado.",
     recording:"Terminá o descartá la muestra antes de probar una voz."};
   state.voicePlaybackStatus=status;
+  window.ROBOTITO_APPROVED_AVATAR?.speak?.(status==="playing");
   uiSet($("#voicePlaybackStatus"),messages[status]??messages.failed);
   if($("#stopVoiceBtn"))$("#stopVoiceBtn").disabled=!state.speaking;
 }
@@ -735,6 +736,7 @@ function setMood(mood, reason=""){
   uiSet($("#moodLabel"),labels[mood]||mood);
   if(reason) uiSet($("#statusText"),reason);
   updateAvatarMoodIcon(mood);
+  window.ROBOTITO_APPROVED_AVATAR?.setMood?.(mood);
 }
 
 function ensureBond(p){
@@ -958,6 +960,7 @@ function singleBlink(duration=115){
   requestAnimationFrame(()=>{
     if(eyesLocked()||document.hidden)return;
     robot.classList.add("blink");
+    window.ROBOTITO_APPROVED_AVATAR?.blink?.();
     state.lastBlinkAt=Date.now();
     state.blinkCloseTimer=setTimeout(()=>{
       robot.classList.remove("blink");
@@ -2250,6 +2253,8 @@ function applyAvatar(id,{persist=true}={}){
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
   updateAvatarMoodIcon();
+  // Same central state, but the approved SVG replaces the prior generic illustration.
+  void window.ROBOTITO_APPROVED_AVATAR?.activate?.(avatar.id,{mood:state.mood,language:avatarLanguage()});
   return avatar;
 }
 
@@ -2373,6 +2378,7 @@ function setLanguageMode(mode){
   window.ROBOTITO_I18N?.apply?.(mode);
   if($("#startBtn"))$("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
   if(typeof updateAvatarAria==="function")updateAvatarAria();
+  window.ROBOTITO_APPROVED_AVATAR?.setLanguage?.(mode);
   populateVoiceSelect();
   if(typeof refreshLocalizedUI==="function")refreshLocalizedUI();
   if(typeof applyDayNightMode==="function")applyDayNightMode(new Date());
