@@ -49,7 +49,9 @@ function reset(){
  getWorld()?.classList.remove("approved-art-world");
  const old=getRobot();
  old?.removeAttribute("aria-hidden");
- document.getElementById("approvedAvatarHost")?.replaceChildren();
+ const oldHost=document.getElementById("approvedAvatarHost");
+ oldHost?.shadowRoot?.replaceChildren();
+ if(oldHost){oldHost.replaceChildren();oldHost.style.display="none";}
 }
 async function fetchMarkup(id){
  if(cached.has(id))return cached.get(id);
@@ -104,9 +106,9 @@ function sync(){
  stage.classList.toggle("shadow-dancing",action==="bailar");
  host.classList.toggle("approved-is-walking",walk);
  const oldProp=robot.querySelector("#objectSceneProp");
- let prop=host.querySelector(".approved-object-prop");
+ let prop=current.shadow.querySelector(".approved-object-prop");
  if(robot.classList.contains("object-trip-presenting")&&oldProp){
-  if(!prop){prop=document.createElement("span");prop.className="approved-object-prop";prop.setAttribute("aria-hidden","true");host.appendChild(prop);}
+  if(!prop){prop=document.createElement("span");prop.className="approved-object-prop";prop.setAttribute("aria-hidden","true");current.shadow.appendChild(prop);}
   prop.textContent=oldProp.textContent;
  }else prop?.remove();
 }
@@ -122,6 +124,7 @@ async function activate(id,{mood="calm",language="es"}={}){
  }
  const host=ensureHost();if(!host)return false;
  observer?.disconnect();observer=null;
+ host.style.display="";
  // Keep the current avatar visible during async loading.
  try{
   const content=(await fetchMarkup(id)).cloneNode(true);
@@ -134,6 +137,7 @@ async function activate(id,{mood="calm",language="es"}={}){
 .stage{height:100%;width:100%;aspect-ratio:auto!important;border-radius:0!important;overflow:hidden!important}
 .stage #stage-svg{width:100%;height:100%;display:block;touch-action:manipulation}
 .stage .cornerlabel,.stage button{display:none!important}
+.approved-object-prop{position:absolute;left:58%;top:48%;font-size:clamp(24px,5vw,51px);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(40,30,40,.22))}
 @media(prefers-reduced-motion:reduce){
  #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion{animation:none!important;transition:none!important}
 }
