@@ -2284,7 +2284,7 @@ function renderAvatarChoices(){
   container.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.("avatarAvailable",lang)||"Avatares disponibles");
   container.innerHTML=ROBOTITO_AVATARS.map((avatar,index)=>{
     const selected=avatar.id===state.avatar;
-    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}" title="${escapeHtml(avatarName(avatar,lang))}">
+    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
       <span class="avatar-choice-emoji" aria-hidden="true">${avatarVisualMarkup(avatar,"avatar-choice-svg")}</span>
     </button>`;
   }).join("");
