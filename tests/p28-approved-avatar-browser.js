@@ -6,6 +6,27 @@ const LANDSCAPES={panda:"environment","brown-bear":"pardo-grass-anchored",
  "polar-bear":"snow-particles",dog:"park-grounded-trunks",monkey:"jungle-branches"};
 runBrowserTest("p28-approved-avatars",async test=>{
  const {page,baseURL}=test;
+ // Observe before the interaction: short transitions can finish before a
+ // subsequent Playwright round trip, especially with the full SVG in WebKit.
+ const expectTransition=async(expected,trigger)=>{
+  await page.evaluate(expected=>{
+   const current=window.ROBOTITO_APPROVED_AVATAR.current,avatar=current.avatar;
+   window.__p28Transition=new Promise(resolve=>{
+    const finish=observed=>{
+     clearTimeout(deadline);observer.disconnect();
+     resolve({observed,id:current.id,mood:avatar.dataset.mood,classes:avatar.getAttribute("class"),expected});
+    };
+    const observer=new MutationObserver(()=>{
+     if(expected.mood?avatar.dataset.mood===expected.mood:avatar.classList.contains(expected.action))finish(true);
+    });
+    const deadline=setTimeout(()=>finish(false),15000);
+    observer.observe(avatar,{attributes:true,attributeFilter:["class","data-mood"]});
+   });
+  },expected);
+  await trigger();
+  const transition=await page.evaluate(()=>window.__p28Transition);
+  assert.equal(transition.observed,true,"Missing approved-avatar transition: "+JSON.stringify(transition));
+ };
  test.phase("load-five-exact-svg-references");
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
@@ -82,14 +103,11 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.role,"img");
   assert.ok(meta.geometry>250);
   assert.equal(meta.sourceView,"0 0 700 635");
-  await page.evaluate(()=>setMood("embarrassed"));
-  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current.avatar.dataset.mood==="avergonzado");
-  await page.evaluate(()=>setMood("happy"));
-  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current.avatar.dataset.mood==="feliz");
-  await page.locator('[data-action="highfive"]').click();
-  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current.avatar.classList.contains("action-chocar"));
-  await page.locator('[data-action="pet"]').click();
-  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current.avatar.classList.contains("action-acariciar"));
+  test.phase("approved-avatar-moods-and-actions",APPROVED.indexOf(id),{avatar:id});
+  await expectTransition({mood:"avergonzado"},()=>page.evaluate(()=>setMood("embarrassed")));
+  await expectTransition({mood:"feliz"},()=>page.evaluate(()=>setMood("happy")));
+  await expectTransition({action:"action-chocar"},()=>page.locator('[data-action="highfive"]').click());
+  await expectTransition({action:"action-acariciar"},()=>page.locator('[data-action="pet"]').click());
   await page.locator("#changeAvatarBtn").click();
   const index=APPROVED.indexOf(id),next=APPROVED[index+1];
   if(next)await page.locator('#avatarChoices [data-avatar-id="'+next+'"]').click();
