@@ -39,7 +39,7 @@ assert.equal(scene.request("Mostrame un objeto imposible"),true);
 assert.ok(reply.pop().includes("No tengo una representación"));
 assert.equal(prop,null);
 assert.equal(scene.request("Mostrame una manzana"),true);
-flush(4);
+flush(3);
 assert.equal(prop?.textContent,"🍎");
 assert.equal(robot.style.left,"50%");
 assert.ok(classes.has("object-trip-presenting"));
