@@ -2184,6 +2184,24 @@ function speciesIntroduction(id=state.avatar){
   return uiText("Soy {name}. {trait}.",{name:avatarName(avatar,responseLanguage()),trait:profile.trait},responseLanguage());
 }
 function handleSpeciesQuestion(rawText){
+  const topic=window.ROBOTITO_SPECIES_KNOWLEDGE?.answer?.(rawText,{
+    id:state.avatar,lang:responseLanguage(),name:avatarName(avatarById(state.avatar),responseLanguage())
+  });
+  if(topic?.handled){
+    say(topic.text,Math.max(4200,Math.min(9000,topic.text.length*55)),responseLanguage());
+    speciesAct(topic.kind==="diet"?"feed":"introduce",1600);
+    return true;
+  }
+  // Explicit food offers are checked against the active species. Unknown or
+  // unsuitable foods never change the hunger meter or trigger an eating scene.
+  const offered=window.ROBOTITO_SPECIES_KNOWLEDGE?.feedingOffer?.(rawText,{
+    id:state.avatar,lang:responseLanguage()
+  });
+  if(offered?.handled){
+    if(offered.ok)feedRobot(false,{foodEmoji:offered.emoji,reply:offered.text});
+    else{say(offered.text,5200,responseLanguage());speciesAct("surprise",900);}
+    return true;
+  }
   const text=normalizeText(rawText);
   if(/\b(que|cual|what|which|qual)\s+(animal|especie|bicho)\b/.test(text)
     ||/\b(que animal sos|que animal eres|what are you|qual animal voce e)\b/.test(text)){
@@ -2253,6 +2271,8 @@ function applyAvatar(id,{persist=true}={}){
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
   updateAvatarMoodIcon();
+  const food=$("#robotito .food-prop");
+  if(food)food.textContent=window.ROBOTITO_SPECIES_KNOWLEDGE?.foodEmoji?.(avatar.id)||"🍓";
   // Same central state, but the approved SVG replaces the prior generic illustration.
   void window.ROBOTITO_APPROVED_AVATAR?.activate?.(avatar.id,{mood:state.mood,language:avatarLanguage()});
   return avatar;
@@ -5477,13 +5497,17 @@ function animatePoke(){
   setTimeout(()=>robot.classList.remove("poked"),900);
 }
 
-function feedRobot(shared=false){
+function feedRobot(shared=false,{foodEmoji,reply}={}){
+  const emoji=foodEmoji||window.ROBOTITO_SPECIES_KNOWLEDGE?.foodEmoji?.(state.avatar)||"🍓";
+  const food=$("#robotito .food-prop");
+  if(food)food.textContent=emoji;
+  window.ROBOTITO_APPROVED_AVATAR?.showFood?.(emoji,1650);
   localStorage.setItem(KEYS.lastFed,String(Date.now()));
   state.hunger=0;
   changeMoodScore(shared?2:4);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:shared?.35:.60,trust:shared?.25:.45,irritation:-.18});
   recordVisitorInteraction("feed");
-  const line=shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed");
+  const line=reply||(shared?"¿Comemos juntos? "+speciesLine("feed"):speciesLine("feed"));
   setMood("happy",line);
   speciesAct("feed",1600);
   animateEat();
