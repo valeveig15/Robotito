@@ -172,7 +172,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **26.** Redimensionamiento horizontal y desplazamiento del panel derecho — EN PROGRESO (divisor de extremos ampliados, teclado, persistencia y scroll interno; falta validación táctil física; ver [P26-STATUS.md](P26-STATUS.md)).
 - [ ] **27.** Selección de avatar al inicio y catálogo de especies — EN PROGRESO (50 avatares, seis idiomas, selección inicial, restauración persistente y recuperación de preferencias legadas; pruebas de navegador; pendiente validación física y lectores de pantalla; ver P27-STATUS.md)
 - [ ] **28.** Integración visual de los cinco avatares nuevos como referencia prioritaria — EN PROGRESO (cinco SVG/escenarios exactos de las últimas referencias aprobadas, puente de emociones/acciones/voz e integración al Robotito principal; falta revisión visual comparativa y móviles físicos; ver P28-STATUS.md)
-- [ ] **29.** Especie, alimentación, camaleón y preguntas sobre sí mismo — POR AUDITAR
+- [ ] **29.** Especie, alimentación, camaleón y preguntas sobre sí mismo — EN PROGRESO (50 perfiles con hábitat/dieta/parientes/curiosidades, seis idiomas, origen de Robotito en Uruguay distinto de animales, comidas ilustrativas propias y camaleón reactivo; pruebas Node/navegador; validación en hardware físico pendiente; ver P29-STATUS.md)
 - [ ] **30.** Gestos, acciones y eliminación de abrazar/chocar los cinco — POR AUDITAR
 - [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — POR AUDITAR
 - [ ] **32.** Emociones visuales coherentes y vínculo personal — POR AUDITAR
