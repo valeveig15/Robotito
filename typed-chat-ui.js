@@ -71,7 +71,7 @@
   function init(){
     ensureRoot();
     render();
-    window.addEventListener("robotito:languagechange",render);
+    document.addEventListener("robotito:languagechange",render);
     window.visualViewport?.addEventListener("resize",adjustViewport,{passive:true});
     document.getElementById("robotitoTextInput")?.addEventListener("focus",adjustViewport);
   }
