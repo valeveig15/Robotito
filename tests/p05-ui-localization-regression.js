@@ -62,7 +62,7 @@ ok(!/Which language do you prefer\?\s*·/.test(html),"Startup versions are not j
 ok(script.includes('languageLocale(state.languageMode||"es")'),
  "Memory dates use selected locale");
 ok(script.includes('t?.("uiAvatarAria",lang)'),"Avatar accessibility uses all six languages");
-ok(script.includes("updateAvatarAria();\n  populateVoiceSelect();"),
+ok(script.includes("updateAvatarAria();\n  window.ROBOTITO_APPROVED_AVATAR?.setLanguage?.(mode);\n  populateVoiceSelect();"),
  "Language changes refresh dynamic avatar labels");
 const controls=[
  "uiTrialSummary","uiTrialStart","uiTrialStop","uiTrialExport","uiTrialClear",

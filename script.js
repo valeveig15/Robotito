@@ -67,7 +67,8 @@ const ROBOTITO_AVATARS = [
 
 const state = {
   started: false,
-  avatar: localStorage.getItem(KEYS.avatar) || "panda",
+  avatar: ROBOTITO_AVATARS.some(item=>item.id===localStorage.getItem(KEYS.avatar))
+    ?localStorage.getItem(KEYS.avatar):"panda",
   mood: "calm",
   moodScore: 55,
   energy: 100,
@@ -454,6 +455,7 @@ function setVoicePlaybackStatus(status){
     muted:"La voz permanece en silencio durante Modo Clase o un silencio solicitado.",
     recording:"Terminá o descartá la muestra antes de probar una voz."};
   state.voicePlaybackStatus=status;
+  window.ROBOTITO_APPROVED_AVATAR?.speak?.(status==="playing");
   uiSet($("#voicePlaybackStatus"),messages[status]??messages.failed);
   if($("#stopVoiceBtn"))$("#stopVoiceBtn").disabled=!state.speaking;
 }
@@ -736,6 +738,7 @@ function setMood(mood, reason=""){
   uiSet($("#moodLabel"),labels[mood]||mood);
   if(reason) uiSet($("#statusText"),reason);
   updateAvatarMoodIcon(mood);
+  window.ROBOTITO_APPROVED_AVATAR?.setMood?.(mood);
 }
 
 function ensureBond(p){
@@ -959,6 +962,7 @@ function singleBlink(duration=115){
   requestAnimationFrame(()=>{
     if(eyesLocked()||document.hidden)return;
     robot.classList.add("blink");
+    window.ROBOTITO_APPROVED_AVATAR?.blink?.();
     state.lastBlinkAt=Date.now();
     state.blinkCloseTimer=setTimeout(()=>{
       robot.classList.remove("blink");
@@ -2237,7 +2241,7 @@ function applyAvatar(id,{persist=true}={}){
   const avatar=avatarById(id);
   window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   state.avatar=avatar.id;
-  if(persist)localStorage.setItem(KEYS.avatar,avatar.id);
+  if(persist){try{localStorage.setItem(KEYS.avatar,avatar.id);}catch(error){console.warn("avatar preference",error);}}
   if(robot){
     for(const item of ROBOTITO_AVATARS)robot.classList.remove("avatar-"+item.id);
     robot.classList.add("avatar-"+avatar.id);
@@ -2252,6 +2256,8 @@ function applyAvatar(id,{persist=true}={}){
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
   updateAvatarMoodIcon();
+  // Same central state, but the approved SVG replaces the prior generic illustration.
+  void window.ROBOTITO_APPROVED_AVATAR?.activate?.(avatar.id,{mood:state.mood,language:avatarLanguage()});
   return avatar;
 }
 
@@ -2285,7 +2291,7 @@ function renderAvatarChoices(){
   if(!container)return;
   const lang=avatarLanguage();
   container.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.("avatarAvailable",lang)||"Avatares disponibles");
-  container.innerHTML=ROBOTITO_AVATARS.map((avatar,index)=>{
+  container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
     const selected=avatar.id===state.avatar;
     return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
       <span class="avatar-choice-emoji" aria-hidden="true">${avatarVisualMarkup(avatar,"avatar-choice-svg")}</span>
@@ -2375,6 +2381,7 @@ function setLanguageMode(mode){
   window.ROBOTITO_I18N?.apply?.(mode);
   if($("#startBtn"))$("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
   if(typeof updateAvatarAria==="function")updateAvatarAria();
+  window.ROBOTITO_APPROVED_AVATAR?.setLanguage?.(mode);
   populateVoiceSelect();
   if(typeof refreshLocalizedUI==="function")refreshLocalizedUI();
   if(typeof applyDayNightMode==="function")applyDayNightMode(new Date());
@@ -6424,16 +6431,25 @@ async function init(){
     gate.style.display="";
     gate.classList.remove("hidden");
   }
-  const savedLanguage=localStorage.getItem("robotito.languageMode.v1");
+  let savedLanguage=null,savedAvatar=null;
+  try{
+    savedLanguage=localStorage.getItem("robotito.languageMode.v1");
+    savedAvatar=localStorage.getItem(KEYS.avatar);
+  }catch(error){console.warn("startup preferences",error);}
   if(window.ROBOTITO_I18N?.supported?.(savedLanguage)){
     setLanguageMode(savedLanguage);
-    const gateForReturn=$("#languageGate");
-    if(gateForReturn){
-      gateForReturn.hidden=true;gateForReturn.classList.add("hidden");
-      gateForReturn.style.display="none";gateForReturn.setAttribute("aria-hidden","true");
+    if(ROBOTITO_AVATARS.some(item=>item.id===savedAvatar)){
+      const gateForReturn=$("#languageGate");
+      if(gateForReturn){
+        gateForReturn.hidden=true;gateForReturn.classList.add("hidden");
+        gateForReturn.style.display="none";gateForReturn.setAttribute("aria-hidden","true");
+      }
+      $("#startBtn").disabled=false;
+      $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
+    }else{
+      // Upgraded users who already chose a language still get to choose their avatar once.
+      showStartupStep("avatar");
     }
-    $("#startBtn").disabled=false;
-    $("#startBtn").textContent=window.ROBOTITO_I18N.t("start",savedLanguage);
   }else if($("#languageMode"))$("#languageMode").value="es";
   if($("#voiceEnabled"))$("#voiceEnabled").checked=state.voiceEnabled;
   if(!Number.isFinite(state.voicePitch)||state.voicePitch<=0)state.voicePitch=.65;
