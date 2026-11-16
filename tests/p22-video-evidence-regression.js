@@ -53,4 +53,9 @@ assert.equal(failure.snapshot().length,oldCount,"Failed write cannot mutate the 
 assert.throws(()=>store.addBatch({...common,items:[{kind:"inferred",text:"Predicción",atSec:-2}]}),/temporal/);
 assert.equal(store.removeSource("yt-12345678"),0,"Source removal is scoped and complete");
 assert.equal(createStore({storage}).snapshot().length,0);
+const fs=require("node:fs");
+const path=require("node:path");
+const bridge=fs.readFileSync(path.join(__dirname,"..","video-material.js"),"utf8");
+assert.match(bridge,/const second=Math\.max\(0,Math\.round\(\(Date\.now\(\)-captureBeganAt\)\/1000\)\)/,
+ "Video-frame observations must be timed from the capture start clock");
 console.log("P22 consent, caption timing, visual uncertainty, class scope, persistence and source deletion: passed");
