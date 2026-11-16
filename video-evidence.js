@@ -13,6 +13,9 @@ function captionTime(value){
  return (Number(m[1]||0)*3600+Number(m[2])*60+Number(m[3])+Number("0."+(m[4]||"0")));
 }
 function segmentCaptions(text,{maxChars=430,maxSegments=240}={}){
+ maxChars=Number.isSafeInteger(maxChars)?Math.min(430,Math.max(1,maxChars)):430;
+ maxSegments=Number.isSafeInteger(maxSegments)?Math.min(240,Math.max(0,maxSegments)):240;
+ if(maxSegments===0)return [];
  const raw=String(text||"").replace(/\r/g,"").trim();
  if(!raw)return [];
  const chunks=raw.replace(/^WEBVTT[^\n]*\n/,"").split(/\n\s*\n/);
