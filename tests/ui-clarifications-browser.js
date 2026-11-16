@@ -58,6 +58,18 @@ runBrowserTest("avatar-language-text-footer",async test=>{
   await composer.fill("Hola desde el chat");
   assert.equal(await composer.inputValue(),"Hola desde el chat");
  }
+ test.phase("spoken-commands-are-not-saved-in-horarios");
+ const command=await page.evaluate(async()=>{
+   const engine=window.ROBOTITO_TEMPORAL_RULES.attach();
+   const before=engine.list("local").length;
+   await window.ROBOTITO_CHAT.send("En 1 minuto decime tomar agua");
+   return {before,after:engine.list("local").length,
+      temporary:engine.temporaryList("local").map(row=>row.text),
+      storage:JSON.parse(localStorage.getItem("robotito.temporal-rules.v1")||"[]").length};
+ });
+ assert.equal(command.before,command.after);
+ assert.ok(command.temporary.includes("tomar agua"),"spoken reminder exists only in session");
+ assert.equal(command.storage,command.after,"spoken reminder never writes to localStorage");
  await page.locator("#robotitoTextSend").click();
  await page.waitForFunction(()=>document.querySelector(".typed-chat-user")?.textContent.includes("Hola desde el chat"),null,{timeout:8000});
  assert.deepEqual(test.report.pageErrors,[]);
