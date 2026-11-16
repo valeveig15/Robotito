@@ -1663,6 +1663,7 @@ Object.assign(LABELS,{
 });
 // User clarification: speaking a timed command is not the same as saving an alarm.
 Object.assign(LABELS,{
+  "avatarChanged": {"es":"Avatar actualizado. Robotito sigue despierto.","en":"Avatar updated. Robotito is still awake.","pt":"Avatar atualizado. Robotito continua acordado.","fr":"Avatar mis à jour. Robotito reste éveillé.","it":"Avatar aggiornato. Robotito è ancora sveglio.","de":"Avatar geändert. Robotito bleibt wach."},
   "changeAvatarAction": {
     "es": "Cambiar avatar",
     "en": "Change avatar",
