@@ -4124,6 +4124,8 @@ function selectRobotitoContext(owner){
   return robotitoConversationContext;
 }
 async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={}){
+  // A new explicit request interrupts any earlier fetch-and-present scene.
+  if(!atomic)window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   // P10/P11: explicit literal-response instructions are parsed conservatively
   // before generic intent planning. Class audio is educational material, never
   // a source of automatic personal commands.
