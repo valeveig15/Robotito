@@ -2335,8 +2335,7 @@ function finishStartupAvatar(id){
   // Selecting a new appearance never resets an already-awake Robotito.
   $("#startBtn").disabled=Boolean(state.started);
   $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
-  $("#statusText").textContent=mode==="es"?speciesIntroduction(id):
-    window.ROBOTITO_I18N?.t?.("avatarReady",mode);
+  $("#statusText").textContent=window.ROBOTITO_I18N?.t?.(state.started?"avatarChanged":"avatarReady",mode)||"Robotito está listo.";
   applyDayNightMode(new Date());
   flushPendingBatteryAlert();
 }
