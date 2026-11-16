@@ -35,6 +35,7 @@ runBrowserTest("p27-avatar-picker",async test=>{
    assert.ok((await page.locator("#avatarStepTitle").textContent()).length>5);
    await page.locator('#avatarChoices [data-avatar-id="cat"]').click();
    assert.equal(await page.locator("#robotito").getAttribute("data-avatar"),"cat");
+  assert.equal(await page.evaluate(()=>localStorage.getItem("robotito.languageMode.v1")),lang, "Language persistence for "+lang);
  }
  test.phase("awake-change-keeps-sensors-state");
  const same=await page.evaluate(()=>{
@@ -46,7 +47,9 @@ runBrowserTest("p27-avatar-picker",async test=>{
  await page.locator('#avatarChoices [data-avatar-id="dog"]').click();
  assert.equal(await page.evaluate(()=>state.started),true);
  assert.equal(await page.locator("#robotito").getAttribute("data-avatar"),"dog");
+ assert.equal(await page.evaluate(()=>localStorage.getItem("robotito.languageMode.v1")),"de","The selected language must be persisted before reload");
  await page.reload({waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
  assert.equal(await page.locator("html").getAttribute("lang"),"de");
  assert.equal(await page.locator("#robotito").getAttribute("data-avatar"),"dog");
  test.phase("legacy-language-without-avatar");
