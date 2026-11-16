@@ -202,6 +202,7 @@ const allowed={
 };
 function feedingOffer(raw,{id='panda',lang='es'}={}){
  const fact=data[id],s=norm(raw);if(!fact||!s)return null;
+ if(/^(?:no|nunca|not|dont|do not|non|nao|nicht|jamais|mai)\b/.test(s))return null;
  if(!/\b(?:te doy|te ofrezco|te traje|quiero darte|dale de comer|darte de comer|i give you|i offer you|feed you|here is some|eu te dou|eu te ofereco|je te donne|je t offre|ti do|ti offro|ich gebe dir|ich futtere dich)\b/.test(s))return null;
  const kind=FOOD_TERMS.find(([,re])=>re.test(s))?.[0]||null;
  if(!kind)return null; // Never steal unrelated commands such as 'te doy un abrazo'.
