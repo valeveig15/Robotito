@@ -3176,3 +3176,30 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
   .world-scene{min-height:300px}
   .typed-chat-history{max-height:100px}
 }
+
+/* P26 — desktop panes can expand almost to either edge while preserving useful minima. */
+@media(min-width:901px){
+  .layout{grid-template-columns:minmax(260px,1.6fr) 20px minmax(245px,.75fr);gap:0;min-width:0}
+  .world{min-width:260px}
+  .panel{
+    min-width:245px;min-height:0;max-width:100%;
+    height:calc(100dvh - 116px);max-height:calc(100dvh - 116px);
+    overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;
+    scrollbar-gutter:stable;
+  }
+  .panel .tabs{
+    position:sticky;top:0;z-index:11;
+    display:flex;flex-wrap:nowrap;gap:5px;
+    overflow-x:auto;overflow-y:hidden;max-width:100%;
+    scrollbar-width:thin;
+  }
+  .panel .tab{flex:0 0 auto;min-width:66px;max-width:140px;white-space:normal}
+  .panel .tabpage{min-width:0;overflow-wrap:anywhere}
+  .layout-resizer{width:20px;min-width:20px;touch-action:none}
+  .layout-resizer-grip{width:32px;min-height:48px}
+  .layout-resizer:focus-visible{outline:2px solid #527e77;outline-offset:2px;border-radius:12px}
+}
+@media(max-width:900px){
+  .layout-resizer{display:none!important}
+  .panel{height:auto;max-height:none;overflow:visible;min-width:0}
+}
