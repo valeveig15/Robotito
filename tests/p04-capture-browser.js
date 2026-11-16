@@ -8,6 +8,7 @@ runBrowserTest("p04-capture",async test=>{
  report.media="simulated tracks and ASR";
  await context.addInitScript(()=>{
   localStorage.setItem("robotito.languageMode.v1","es");
+  localStorage.setItem("robotito.avatar.v1","panda");
   localStorage.setItem("robotito.voiceEnabled.v1","false");
   window.__recognizers=[];window.__tracks=[];window.__hands=[];
   window.SpeechRecognition=class{
