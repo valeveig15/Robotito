@@ -150,7 +150,7 @@
     try{
       state.objectModel=state.objectModel||await cocoSsd.load({base:"lite_mobilenet_v2"});
       const predictions=await state.objectModel.detect(preview,12,.52);
-      const second=Math.max(0,Math.round((Date.now()-(state.classStartedAt||Date.now()))/1000));
+      const second=Math.max(0,Math.round((Date.now()-captureBeganAt)/1000));
       predictions.filter(x=>Number(x.score)>=.58).forEach(x=>{
         const name=x.class;
         const previous=visualObservations.get(name)||{name,count:0,firstAt:second,lastAt:second,best:0};

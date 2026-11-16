@@ -13,6 +13,9 @@ function captionTime(value){
  return (Number(m[1]||0)*3600+Number(m[2])*60+Number(m[3])+Number("0."+(m[4]||"0")));
 }
 function segmentCaptions(text,{maxChars=430,maxSegments=240}={}){
+ maxChars=Number.isSafeInteger(maxChars)?Math.min(430,Math.max(1,maxChars)):430;
+ maxSegments=Number.isSafeInteger(maxSegments)?Math.min(240,Math.max(0,maxSegments)):240;
+ if(maxSegments===0)return [];
  const raw=String(text||"").replace(/\r/g,"").trim();
  if(!raw)return [];
  const chunks=raw.replace(/^WEBVTT[^\n]*\n/,"").split(/\n\s*\n/);
@@ -21,12 +24,18 @@ function segmentCaptions(text,{maxChars=430,maxSegments=240}={}){
   const lines=chunk.split("\n").map(s=>s.trim()).filter(Boolean);
   const idx=lines.findIndex(x=>x.includes("-->"));
   if(idx<0)continue;
-  const start=captionTime(lines[idx].split("-->")[0]);
+  const timing=lines[idx].split("-->");
+  const start=captionTime(timing[0]);
+  const end=captionTime((timing[1]||"").trim().split(/\s+/)[0]);
   const text=clean(lines.slice(idx+1).filter(x=>!/^<[^>]+>$/.test(x)).join(" ")).replace(/<[^>]+>/g,"");
-  if(start!==null&&text.length>=3)timed.push({text:text.slice(0,maxChars),atSec:start,complete:false});
+  if(start!==null&&end!==null&&end>start&&text.length>=3)
+   timed.push({text:text.slice(0,maxChars),atSec:start,complete:false});
   if(timed.length>=maxSegments)break;
  }
  if(timed.length)return timed;
+ // Malformed timed captions are NOT a plain transcript: never index raw
+ // --> cue headers as educational speech or fabricate a timestamp.
+ if(raw.includes("-->"))return [];
  // A pasted transcript without reliable timecodes must never acquire fake timestamps.
  return (raw.match(/[^.!?。]+[.!?。]?/g)||[raw]).reduce((acc,part)=>{
   let current=clean(part);

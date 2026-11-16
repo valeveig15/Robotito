@@ -10,6 +10,15 @@ const segments=segmentCaptions("WEBVTT\n\n00:00:01.500 --> 00:00:03.000\nLa cél
 assert.equal(segments.length,2);
 assert.equal(segments[0].atSec,1.5);
 assert.equal(segments.every(s=>s.complete===false),true);
+assert.deepEqual(segmentCaptions("WEBVTT\n\n00:00:10.000 --> 00:00:05.000\nContenido fuera de orden."),
+ [],"A reversed subtitle cue must not be imported as spoken evidence");
+assert.deepEqual(segmentCaptions("00:00:10.000 --> tiempo inválido\nSupuesto audio."),
+ [],"Malformed cue headers must not be treated as untimed speech");
+assert.equal(segmentCaptions("WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nTexto válido.\n\n00:00:09.000 --> 00:00:05.000\nTexto descartado.").length,
+ 1,"Mixed valid and invalid cues import only validated timings");
+assert.deepEqual(segmentCaptions("Material largo.",{maxChars:0,maxSegments:0}),[]);
+assert.ok(segmentCaptions("El material se parte en fragmentos legibles.",{maxChars:0,maxSegments:5}).length<=5,
+ "Nonpositive chunk width must never loop forever");
 const plain=segmentCaptions("El transporte activo requiere energía. La membrana tiene proteínas.");
 assert.equal(plain[0].atSec,null,"Pasted un-timed captions cannot acquire fabricated timestamps");
 let now=1234,store=createStore({storage,now:()=>now});
@@ -44,4 +53,9 @@ assert.equal(failure.snapshot().length,oldCount,"Failed write cannot mutate the 
 assert.throws(()=>store.addBatch({...common,items:[{kind:"inferred",text:"Predicción",atSec:-2}]}),/temporal/);
 assert.equal(store.removeSource("yt-12345678"),0,"Source removal is scoped and complete");
 assert.equal(createStore({storage}).snapshot().length,0);
+const fs=require("node:fs");
+const path=require("node:path");
+const bridge=fs.readFileSync(path.join(__dirname,"..","video-material.js"),"utf8");
+assert.match(bridge,/const second=Math\.max\(0,Math\.round\(\(Date\.now\(\)-captureBeganAt\)\/1000\)\)/,
+ "Video-frame observations must be timed from the capture start clock");
 console.log("P22 consent, caption timing, visual uncertainty, class scope, persistence and source deletion: passed");
