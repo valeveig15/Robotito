@@ -129,7 +129,7 @@ async function activate(id,{mood="calm",language="es"}={}){
   const shadow=host.shadowRoot||host.attachShadow({mode:"open"});
   shadow.replaceChildren(content);
   const overrides=document.createElement("style");
-  overrides.textContent=String.raw\`
+  overrides.textContent=String.raw`
 :host{display:block;height:100%;width:100%;font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif}
 .stage{height:100%;width:100%;aspect-ratio:auto!important;border-radius:0!important;overflow:hidden!important}
 .stage #stage-svg{width:100%;height:100%;display:block;touch-action:manipulation}
@@ -137,7 +137,7 @@ async function activate(id,{mood="calm",language="es"}={}){
 @media(prefers-reduced-motion:reduce){
  #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion{animation:none!important;transition:none!important}
 }
-\`;
+`;
   shadow.appendChild(overrides);
   const stage=shadow.querySelector("#stage-svg"),avatar=shadow.querySelector("#avatar");
   if(!stage||!avatar)throw new Error("Invalid approved avatar "+id);
