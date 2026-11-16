@@ -3084,3 +3084,18 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .native-task-row{padding:13px 12px;margin-block:9px;overflow-wrap:anywhere}
 .study-success{font-weight:700;letter-spacing:.01em}
 @media(max-width:500px){.native-task-form{grid-template-columns:1fr}.native-task-controls{gap:6px}.native-task-controls input[type=date]{max-width:100%}}
+
+
+/* P24 — object is carried by the avatar, never placed on a floating card. */
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.robotito.object-trip-walking{transition:left .85s ease-in-out!important}
+.robotito.object-trip-searching{opacity:.45;transition:opacity .25s}
+.robotito.object-trip-presenting .object-scene-prop{animation:objectInPaw .35s ease-out both}
+.object-scene-prop{position:absolute;z-index:22;left:74%;top:60%;transform:translate(-50%,-50%);font-size:clamp(42px,6vw,75px);line-height:1;filter:drop-shadow(0 5px 3px rgba(0,0,0,.18));pointer-events:none}
+.robotito:is(.avatar-dog,.avatar-cat,.avatar-iguana,.avatar-chameleon,.avatar-horse,.avatar-cow,.avatar-dolphin,.avatar-crocodile,.avatar-turtle) .object-scene-prop{left:67%;top:55%}
+.robotito:is(.avatar-penguin,.avatar-owl,.avatar-swan,.avatar-parrot) .object-scene-prop{left:69%;top:65%}
+@keyframes objectInPaw{from{opacity:0;transform:translate(-50%,-20%) scale(.4)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+  .robotito.object-trip-walking{transition:none!important}
+  .robotito.object-trip-presenting .object-scene-prop{animation:none}
+}
