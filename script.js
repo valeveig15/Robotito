@@ -2370,6 +2370,7 @@ function setLanguageMode(mode){
   if($("#languageMode"))$("#languageMode").value=mode;
   if($("#quickLanguageSelect"))$("#quickLanguageSelect").value=mode;
   window.ROBOTITO_I18N?.apply?.(mode);
+  if($("#startBtn"))$("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
   if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
   if(typeof refreshLocalizedUI==="function")refreshLocalizedUI();
