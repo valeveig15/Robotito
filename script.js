@@ -2167,8 +2167,10 @@ function speciesLine(action,id=state.avatar){
     || speciesProfile(id).lines?.idle
     || "Estoy acá contigo.";
 }
+let speciesActionEpoch=0;
 function speciesAct(action="play",ms=1700){
   if(!robot)return;
+  const actionEpoch=++speciesActionEpoch;
   const profile=speciesProfile();
   const motion=profile.motion||"bounce";
   [...robot.classList].filter(name=>name.startsWith("species-motion-")).forEach(name=>robot.classList.remove(name));
@@ -2177,6 +2179,7 @@ function speciesAct(action="play",ms=1700){
   robot.classList.add("species-reacting","species-motion-"+motion);
   robot.dataset.speciesAction=action;
   setTimeout(()=>{
+    if(actionEpoch!==speciesActionEpoch)return;
     robot.classList.remove("species-reacting","species-motion-"+motion);
     delete robot.dataset.speciesAction;
   },ms);

@@ -11,6 +11,30 @@ runBrowserTest("p28-approved-avatars",async test=>{
  await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
  await page.locator('[data-start-language="es"]').click();
  await page.locator('#avatarChoices [data-avatar-id="panda"]').click();
+ await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR?.current?.id==="panda");
+ test.phase("late-action-cleanup-preserves-latest-action");
+ const actionRace=await page.evaluate(async()=>{
+  const nativeTimeout=window.setTimeout,pending=[];
+  // Deliver old completions after a different action and a repeated action start.
+  // Real DOM mutations and the approved-avatar observer remain active.
+  window.setTimeout=(callback,delay,...args)=>{pending.push(()=>callback(...args));return 0;};
+  try{
+   speciesAct("highfive",1300);
+   speciesAct("pet",1500);
+   speciesAct("pet",1500);
+  }finally{window.setTimeout=nativeTimeout;}
+  pending[0]();pending[1]();
+  await new Promise(resolve=>nativeTimeout(resolve,0));
+  const robot=document.querySelector("#robotito");
+  const active={action:robot.dataset.speciesAction,reacting:robot.classList.contains("species-reacting"),
+   visible:window.ROBOTITO_APPROVED_AVATAR.current.avatar.classList.contains("action-acariciar")};
+  pending[2]();
+  await new Promise(resolve=>nativeTimeout(resolve,0));
+  return {timers:pending.length,active,finished:!robot.dataset.speciesAction&&!robot.classList.contains("species-reacting"),
+   cleared:!window.ROBOTITO_APPROVED_AVATAR.current.avatar.classList.contains("action-acariciar")};
+ });
+ assert.deepEqual(actionRace,{timers:3,active:{action:"pet",reacting:true,visible:true},finished:true,cleared:true});
+ test.phase("load-five-exact-svg-references");
  for(const id of APPROVED){
   await page.waitForFunction(id=>window.ROBOTITO_APPROVED_AVATAR?.current?.id===id,id,{timeout:20000});
   const meta=await page.evaluate(({id,landscape})=>{
@@ -79,6 +103,6 @@ runBrowserTest("p28-approved-avatars",async test=>{
  await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.speak(false));
  assert.deepEqual(test.report.pageErrors,[]);
  test.report.result={sourceAvatars:5,worlds:5,actions:["highfive","pet"],moods:["happy","embarrassed"],
-   sizes:[360,430,1280],noSeparatedPages:true,physicalReview:false};
+   sizes:[360,430,1280],lateActionCleanup:true,noSeparatedPages:true,physicalReview:false};
  console.log("P28 "+test.engineName+" exact user-approved avatar SVG worlds and app integration passed");
 }).catch(e=>{console.error(e);process.exitCode=1;});
