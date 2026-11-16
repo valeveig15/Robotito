@@ -171,7 +171,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **25.** Interfaz móvil sin superposiciones y chat escrito visible — EN PROGRESO (chat escrito visible, aislamiento por usuario, escena/controles separados y pruebas de navegador; faltan pruebas en móviles físicos y lector de pantalla; ver [P25-STATUS.md](P25-STATUS.md)).
 - [ ] **26.** Redimensionamiento horizontal y desplazamiento del panel derecho — EN PROGRESO (divisor de extremos ampliados, teclado, persistencia y scroll interno; falta validación táctil física; ver [P26-STATUS.md](P26-STATUS.md)).
 - [ ] **27.** Selección de avatar al inicio y catálogo de especies — EN PROGRESO (50 avatares, seis idiomas, selección inicial, restauración persistente y recuperación de preferencias legadas; pruebas de navegador; pendiente validación física y lectores de pantalla; ver P27-STATUS.md)
-- [ ] **28.** Integración visual de los cinco avatares nuevos como referencia prioritaria — POR AUDITAR
+- [ ] **28.** Integración visual de los cinco avatares nuevos como referencia prioritaria — EN PROGRESO (cinco SVG/escenarios exactos de las últimas referencias aprobadas, puente de emociones/acciones/voz e integración al Robotito principal; falta revisión visual comparativa y móviles físicos; ver P28-STATUS.md)
 - [ ] **29.** Especie, alimentación, camaleón y preguntas sobre sí mismo — POR AUDITAR
 - [ ] **30.** Gestos, acciones y eliminación de abrazar/chocar los cinco — POR AUDITAR
 - [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — POR AUDITAR
