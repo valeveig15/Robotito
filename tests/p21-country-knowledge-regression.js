@@ -45,7 +45,19 @@ const client=create({now:()=>t,fetcher:async url=>{
  const source=require("node:fs").readFileSync(require("node:path").join(__dirname,"../presidents.js"),"utf8");
  assert.match(source,/verified:false,checkedAt:today/);
  assert.match(source,/fuente oficial independiente/);
- const second={name:{common:"Republic of Testland",official:"Test Republic"},
+ let crossDay=Date.parse("2026-11-15T23:55:00Z"),crossCalls=0;
+ const dated=create({now:()=>crossDay,fetcher:async()=>{
+  crossCalls++;return {ok:true,json:async()=>[france]};
+ }});
+ const yesterday=await dated.answer("capital de Francia");
+ crossDay=Date.parse("2026-11-16T00:05:00Z");
+ const todayCached=await dated.answer("capital de Francia");
+ assert.equal(yesterday.checkedAt,"2026-11-15");
+ assert.equal(todayCached.checkedAt,"2026-11-15",
+  "Cached country data must display the original source check date, not today's date");
+ assert.match(todayCached.text,/2026-11-15/);
+ assert.equal(crossCalls,2,"Cache survives midnight without inventing a new retrieval");
+  const second={name:{common:"Republic of Testland",official:"Test Republic"},
   cca2:"TL",capital:["Central City"],translations:{spa:{common:"Tierra Prueba"}},altSpellings:[]};
  let callsExact=0;
  const fallback=create({fetcher:async url=>{
