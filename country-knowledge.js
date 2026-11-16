@@ -73,10 +73,14 @@ function create({fetcher=root.fetch?.bind(root),now=()=>Date.now()}={}){
  }
  async function answer(raw,lang="es"){
   const parsed=parseQuestion(raw);if(!parsed)return {handled:false};
-  const L=messages[locale[lang]||"es"],day=new Date(now()).toISOString().slice(0,10);
-  const result=(text,source=null,more={})=>({handled:true,text,source,checkedAt:day,...more});
+  const L=messages[locale[lang]||"es"];
+  let checkedAt=now();
+  const day=()=>new Date(checkedAt).toISOString().slice(0,10);
+  const result=(text,source=null,more={})=>({handled:true,text,source,checkedAt:day(),...more});
   try{
    const matches=await lookup(parsed.country);
+   // A cache hit retains the original fetch date, not an invented "today".
+   checkedAt=cache.get(fold(parsed.country))?.at??now();
    if(matches.length>1)return result(L.unclear,null,{ambiguous:true});
    if(!matches.length)return result(L.none,null,{unknown:true});
    const row=matches[0],capital=Array.isArray(row.capital)?row.capital.filter(Boolean):[];
@@ -86,7 +90,7 @@ function create({fetcher=root.fetch?.bind(root),now=()=>Date.now()}={}){
    const title=capital.length>1?L.many:L.capital;
    const sentence=title.replace("{country}",country).replace("{capital}",capital.join(", "));
    const url="https://restcountries.com/v3.1/alpha/"+encodeURIComponent(row.cca2||"");
-   return result(sentence+" "+L.source.replace("{date}",day),"REST Countries",{url,capital,cca2:row.cca2});
+   return result(sentence+" "+L.source.replace("{date}",day()),"REST Countries",{url,capital,cca2:row.cca2});
   }catch{return result(L.offline,null,{error:"source-unavailable"});}
  }
  return {answer,lookup};
