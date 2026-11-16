@@ -8,12 +8,12 @@ function normalize(value){return String(value||"").normalize("NFD").replace(/[\u
 function classify(raw){
  const text=normalize(raw);if(!text||text.length>500)return null;
  // A factual query about "a chameleon" belongs to general knowledge.
- const color=/^(?:por que|como|cuando|why|how|porque|pourquoi|comment|perche|come|warum|wie)?\s*(?:(?:te|tu|you|voce|du)\s+)?(?:cambias|cambiás|te cambias|te pones|te camuflas|change|changes|muda|mudas|cambi|wechselst|wechseln|farbwechsel)/.test(text)&&
+ const color=/^(?:por que|como|cuando|why|how|porque|pourquoi|comment|perche|come|warum|wie)?\s*(?:(?:te|tu|you|do you|voce|du)\s+)?(?:cambias|cambiás|te cambias|te pones|te camuflas|change|changes|muda|mudas|cambi|wechselst|wechseln|farbwechsel)/.test(text)&&
   /(?:color|cor|couleur|colore|farbe|camufl)/.test(text)
   ||/^(?:puedes|podes|podrias|can you|voce pode|tu peux|puoi|kannst du)\s+(?:cambiar|mudar|change|changer|cambiare|wechseln).*(?:color|cor|couleur|colore|farbe)/.test(text);
  if(color)return "chameleon";
  if(/^(?:quien sos|quien eres|que sos|que eres|what are you|who are you|quem e voce|o que voce e|qui es tu|qu es tu|chi sei|cosa sei|wer bist du|was bist du|bist du ein roboter)/.test(text)
- ||/^(?:que|cual|what|which|qual|quel|quelle|che|welche|was fur)\s+(?:(?:tipo de|kind of|type of|sorte de|art von)\s+)?(?:animal|especie|species|espece|specie|tier|tierart)\s+(?:sos|eres|are you|voce e|es tu|sei|bist du)/.test(text)
+ ||/^(?:que|cual|what|which|qual|quel|quelle|che|welche|was fur)\s+(?:(?:tipo de|kind of|type of|sorte de|art von|ein|eine)\s+)?(?:animal|especie|species|espece|specie|tier|tierart)\s+(?:sos|eres|are you|voce e|es tu|sei|bist du)/.test(text)
  ||/^(?:de que especie|de qual especie|de quelle espece|di che specie|zu welcher tierart)\s+(?:sos|eres|are you|voce e|es tu|sei|bist du)/.test(text))return "identity";
  if(/^(?:que comes|que te gusta comer|cual es tu comida|cual es tu alimento|what do you eat|what food do you eat|what is your favorite food|do you eat|o que voce come|qual e sua comida|qu est ce que tu manges|que manges tu|cosa mangi|che cosa mangi|qual e il tuo cibo|was isst du|was frisst du|was isst robotito|te gusta comer)/.test(text))return "diet";
  if(/^(?:que tienes de especial|que te hace especial|que habilidades tienes|cuales son tus caracteristicas|contame de tu especie|tell me about your species|what makes you special|what are your traits|fale da sua especie|parle moi de ton espece|raccontami della tua specie|erzahl mir von deiner tierart)/.test(text))return "ability";
