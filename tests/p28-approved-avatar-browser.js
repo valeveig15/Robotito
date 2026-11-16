@@ -34,6 +34,28 @@ runBrowserTest("p28-approved-avatars",async test=>{
    cleared:!window.ROBOTITO_APPROVED_AVATAR.current.avatar.classList.contains("action-acariciar")};
  });
  assert.deepEqual(actionRace,{timers:3,active:{action:"pet",reacting:true,visible:true},finished:true,cleared:true});
+ test.phase("late-mood-recovery-preserves-newer-choice");
+ const moodRace=await page.evaluate(async()=>{
+  const nativeTimeout=window.setTimeout,pending=[];
+  window.setTimeout=(callback,delay,...args)=>{pending.push(()=>callback(...args));return 0;};
+  let savedMood,changedAvatar,currentRecovery=false;
+  try{
+   setMood("excited");
+   scheduleMoodRecovery(()=>setMood("happy"),1300);
+   setMood("embarrassed");
+   pending.shift()();
+   savedMood=state.mood;
+   scheduleMoodRecovery(()=>{changedAvatar=true;},1300);
+   const originalAvatar=state.avatar;
+   try{state.avatar="dog";pending.shift()();}finally{state.avatar=originalAvatar;}
+   scheduleMoodRecovery(()=>{currentRecovery=true;},1300);
+   pending.shift()();
+  }finally{window.setTimeout=nativeTimeout;}
+  await new Promise(resolve=>nativeTimeout(resolve,0));
+  return {savedMood,changedAvatar:!!changedAvatar,currentRecovery,
+   visible:window.ROBOTITO_APPROVED_AVATAR.current.avatar.dataset.mood};
+ });
+ assert.deepEqual(moodRace,{savedMood:"embarrassed",changedAvatar:false,currentRecovery:true,visible:"avergonzado"});
  test.phase("load-five-exact-svg-references");
  for(const id of APPROVED){
   await page.waitForFunction(id=>window.ROBOTITO_APPROVED_AVATAR?.current?.id===id,id,{timeout:20000});
@@ -103,6 +125,6 @@ runBrowserTest("p28-approved-avatars",async test=>{
  await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.speak(false));
  assert.deepEqual(test.report.pageErrors,[]);
  test.report.result={sourceAvatars:5,worlds:5,actions:["highfive","pet"],moods:["happy","embarrassed"],
-   sizes:[360,430,1280],lateActionCleanup:true,noSeparatedPages:true,physicalReview:false};
+   sizes:[360,430,1280],lateActionCleanup:true,lateMoodRecovery:true,noSeparatedPages:true,physicalReview:false};
  console.log("P28 "+test.engineName+" exact user-approved avatar SVG worlds and app integration passed");
 }).catch(e=>{console.error(e);process.exitCode=1;});

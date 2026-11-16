@@ -726,6 +726,7 @@ function toast(text){
 }
 
 function setMood(mood, reason=""){
+  state.moodRevision=(state.moodRevision||0)+1;
   const allMoods=["calm","happy","sad","angry","scared","hungry","sleepy","curious","focused","bored","affectionate","proud","confused","excited","embarrassed","annoyed"];
   allMoods.forEach(m=>robot.classList.remove("mood-"+m));
   const visualMap={curious:"happy",focused:"calm",bored:"sleepy",affectionate:"happy",proud:"happy",confused:"scared",excited:"happy",embarrassed:"sad",annoyed:"calm"};
@@ -739,6 +740,14 @@ function setMood(mood, reason=""){
   if(reason) uiSet($("#statusText"),reason);
   updateAvatarMoodIcon(mood);
   window.ROBOTITO_APPROVED_AVATAR?.setMood?.(mood);
+}
+
+function scheduleMoodRecovery(callback,ms){
+  const revision=state.moodRevision,avatar=state.avatar;
+  setTimeout(()=>{
+    if(revision!==state.moodRevision||avatar!==state.avatar)return;
+    callback();
+  },ms);
 }
 
 function ensureBond(p){
@@ -5534,7 +5543,7 @@ function highFiveRobot(){
   temporaryRobotClass("highfive",1200);
   speciesAct("highfive",1300);
   say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.",speciesLine("play")]));
-  setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
+  scheduleMoodRecovery(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
 }
 function playRobot(){
   changeMoodScore(4);
@@ -5546,7 +5555,7 @@ function playRobot(){
   temporaryRobotClass("playing",2300);
   speciesAct("play",2300);
   say(line);
-  setTimeout(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},2400);
+  scheduleMoodRecovery(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},2400);
 }
 
 function scareRobot(){
@@ -5556,7 +5565,7 @@ function scareRobot(){
   setMood("scared",line);
   speciesAct("surprise",1000);
   say(line);
-  setTimeout(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
+  scheduleMoodRecovery(()=>{ if(state.hunger>=95)setMood("hungry"); else setMood("calm","Ya se le pasó el susto."); },900);
 }
 
 function pokeRobot(){
@@ -5568,7 +5577,7 @@ function pokeRobot(){
   speciesAct("poke",1200);
   animatePoke();
   say(line);
-  setTimeout(()=>setMood("calm","Ya se le pasó."),1200);
+  scheduleMoodRecovery(()=>setMood("calm","Ya se le pasó."),1200);
 }
 
 function hungerTick(){
