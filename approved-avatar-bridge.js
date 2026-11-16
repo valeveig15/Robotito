@@ -76,6 +76,7 @@ function actionFromRobot(robot){
  if(robot.classList.contains("object-trip-walking")||robot.classList.contains("object-trip-searching"))
    return "caminar";
  if(robot.classList.contains("clapping"))return "aplaudir";
+ if(robot.dataset.speciesAction&&ACTIONS[robot.dataset.speciesAction])return ACTIONS[robot.dataset.speciesAction];
  if(robot.classList.contains("highfive"))return "chocar";
  if(robot.classList.contains("dancing"))return "bailar";
  if(robot.classList.contains("playing"))return "saltar";
