@@ -1661,6 +1661,121 @@ Object.assign(LABELS,{
     "de": "Ich bin nicht sicher, ob du das ernst meinst. Soll ich es tun?"
   }
 });
+// User clarification: speaking a timed command is not the same as saving an alarm.
+Object.assign(LABELS,{
+  "changeAvatarAction": {
+    "es": "Cambiar avatar",
+    "en": "Change avatar",
+    "pt": "Trocar avatar",
+    "fr": "Changer d’avatar",
+    "it": "Cambia avatar",
+    "de": "Avatar wechseln"
+  },
+  "quickLanguageAction": {
+    "es": "Idioma",
+    "en": "Language",
+    "pt": "Idioma",
+    "fr": "Langue",
+    "it": "Lingua",
+    "de": "Sprache"
+  },
+  "p10RulesTab": {
+    "es": "Horarios",
+    "en": "Schedules",
+    "pt": "Horários",
+    "fr": "Horaires",
+    "it": "Orari",
+    "de": "Zeitplan"
+  },
+  "p10RulesTitle": {
+    "es": "Horarios y recordatorios guardados",
+    "en": "Schedules and saved reminders",
+    "pt": "Horários e lembretes salvos",
+    "fr": "Horaires et rappels enregistrés",
+    "it": "Orari e promemoria salvati",
+    "de": "Zeitplan und gespeicherte Erinnerungen"
+  },
+  "p10RulesScope": {
+    "es": "Pedile a Robotito las cosas directamente; no hace falta guardarlas. Esta sección es solo para los recordatorios que quieras conservar como alarmas. Los avisos funcionan con la pestaña abierta y visible.",
+    "en": "Tell Robotito directly; you don't need to save commands. This section is only for reminders you choose to keep, like alarms. Alerts work while the tab is open and visible.",
+    "pt": "Peça diretamente ao Robotito, sem salvar comandos. Esta seção é só para lembretes que deseja guardar, como alarmes. Funcionam com a aba aberta e visível.",
+    "fr": "Demande directement à Robotito, sans enregistrer d'ordres. Ici, conserve uniquement les rappels souhaités, comme des alarmes. L'onglet doit rester ouvert et visible.",
+    "it": "Chiedi direttamente a Robotito, senza salvare gli ordini. Qui puoi conservare i promemoria desiderati, come sveglie. La scheda deve restare aperta e visibile.",
+    "de": "Sag Robotito direkt, was es tun soll, ohne Befehle zu speichern. Hier kannst du Erinnerungen wie Alarme speichern. Der Tab muss geöffnet und sichtbar sein."
+  },
+  "p10RulesInputLabel": {
+    "es": "Recordatorio que querés guardar",
+    "en": "Reminder to save",
+    "pt": "Lembrete para salvar",
+    "fr": "Rappel à enregistrer",
+    "it": "Promemoria da salvare",
+    "de": "Erinnerung zum Speichern"
+  },
+  "p10RulesAdd": {
+    "es": "Guardar recordatorio",
+    "en": "Save reminder",
+    "pt": "Salvar lembrete",
+    "fr": "Enregistrer le rappel",
+    "it": "Salva promemoria",
+    "de": "Erinnerung speichern"
+  },
+  "p10RulesSaved": {
+    "es": "Mis recordatorios guardados",
+    "en": "My saved reminders",
+    "pt": "Meus lembretes salvos",
+    "fr": "Mes rappels enregistrés",
+    "it": "I miei promemoria salvati",
+    "de": "Meine gespeicherten Erinnerungen"
+  },
+  "p10RulesSafety": {
+    "es": "Guardar acá es opcional. Las órdenes que digas o escribas en el chat no aparecen en esta lista. Los recordatorios funcionan solo con Robotito abierto y visible.",
+    "en": "Saving here is optional. Commands in chat or speech do not appear on this list. Reminders only work while Robotito is open and visible.",
+    "pt": "Salvar aqui é opcional. Comandos falados ou escritos no chat não aparecem nesta lista. Funcionam apenas com o Robotito aberto e visível.",
+    "fr": "L'enregistrement est facultatif. Les commandes orales ou du chat n'apparaissent pas dans cette liste. Les rappels nécessitent Robotito ouvert et visible.",
+    "it": "Il salvataggio qui è facoltativo. I comandi a voce o in chat non appaiono qui. I promemoria funzionano con Robotito aperto e visibile.",
+    "de": "Das Speichern hier ist optional. Gesprochene Befehle oder Chatbefehle erscheinen nicht in dieser Liste. Erinnerungen funktionieren nur bei geöffnetem und sichtbarem Robotito."
+  },
+  "p10RulesSavedOK": {
+    "es": "Recordatorio guardado en Horarios.",
+    "en": "Reminder saved in Schedules.",
+    "pt": "Lembrete salvo em Horários.",
+    "fr": "Rappel enregistré dans Horaires.",
+    "it": "Promemoria salvato in Orari.",
+    "de": "Erinnerung im Zeitplan gespeichert."
+  },
+  "p10RulesStoredVoice": {
+    "es": "Recordatorio guardado en Horarios. Te aviso mientras la página esté abierta y visible.",
+    "en": "Reminder saved in Schedules. I'll notify you while the page is open and visible.",
+    "pt": "Lembrete salvo em Horários. Vou avisar enquanto a página estiver aberta e visível.",
+    "fr": "Rappel enregistré dans Horaires. Je te préviens lorsque la page est ouverte et visible.",
+    "it": "Promemoria salvato in Orari. Ti avviserò mentre la pagina è aperta e visibile.",
+    "de": "Erinnerung gespeichert. Ich melde mich, solange die Seite geöffnet und sichtbar ist."
+  },
+  "p10RulesTransientVoice": {
+    "es": "Entendido. Te aviso mientras Robotito esté abierto y visible; no lo guardé en Horarios.",
+    "en": "Got it. I'll remind you while Robotito stays open and visible; I haven't saved it to Schedules.",
+    "pt": "Entendido. Vou avisar enquanto o Robotito estiver aberto e visível; não salvei em Horários.",
+    "fr": "D'accord. Je te préviendrai si Robotito reste ouvert et visible ; ce n'est pas enregistré.",
+    "it": "Va bene. Ti avviserò mentre Robotito resta aperto e visibile; non è salvato.",
+    "de": "Verstanden. Ich erinnere dich, solange Robotito geöffnet und sichtbar ist; ich habe es nicht gespeichert."
+  },
+  "p10RulesCancelAll": {
+    "es": "¿Cancelar todos tus recordatorios y órdenes pendientes de esta sesión?",
+    "en": "Cancel all saved reminders and pending commands for this session?",
+    "pt": "Cancelar todos os lembretes e comandos pendentes desta sessão?",
+    "fr": "Annuler tous les rappels et commandes en attente de cette session ?",
+    "it": "Annullare tutti i promemoria e comandi in sospeso di questa sessione?",
+    "de": "Alle gespeicherten Erinnerungen und ausstehenden Befehle dieser Sitzung abbrechen?"
+  },
+  "p10RulesCancelled": {
+    "es": "Recordatorios y órdenes pendientes cancelados.",
+    "en": "Saved reminders and pending commands cancelled.",
+    "pt": "Lembretes e comandos pendentes cancelados.",
+    "fr": "Rappels et commandes en attente annulés.",
+    "it": "Promemoria e comandi in sospeso annullati.",
+    "de": "Erinnerungen und ausstehende Befehle abgebrochen."
+  }
+});
 root.ROBOTITO_I18N={supported,locale:code=>LOCALES[code]||LOCALES.es,t,fixedReply,message,parseCommand,parseTranslation,languageFromName,apply,text,bindText,refreshBindings,addMessages,addSingular,
  catalog:()=>[...COPY.entries()].map(([source,translations])=>({source,translations})),languages:Object.keys(LOCALES)};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_I18N;
