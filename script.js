@@ -2244,7 +2244,7 @@ function applyAvatar(id,{persist=true}={}){
   }
   $("#world")?.classList.toggle("panda-reference-world",avatar.id==="panda");
   setAvatarVisual($("#animalAvatarEmoji"),avatar,"avatar-main-svg");
-  if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatar);
+  // No visible animal-species caption: the avatar art is its own presentation.
   setAvatarVisual($("#startupMascot"),avatar,"avatar-startup-svg");
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
@@ -2282,13 +2282,10 @@ function renderAvatarChoices(){
   if(!container)return;
   const lang=avatarLanguage();
   container.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.("avatarAvailable",lang)||"Avatares disponibles");
-  container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
+  container.innerHTML=ROBOTITO_AVATARS.map((avatar,index)=>{
     const selected=avatar.id===state.avatar;
-    const profile=speciesProfile(avatar.id);
-    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}: ${escapeHtml(profile.trait)}">
+    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
       <span class="avatar-choice-emoji" aria-hidden="true">${avatarVisualMarkup(avatar,"avatar-choice-svg")}</span>
-      <span class="avatar-choice-name">${escapeHtml(avatarName(avatar,lang))}</span>
-      <span class="avatar-special">${escapeHtml(profile.trait)}</span>
     </button>`;
   }).join("");
 }
@@ -2315,6 +2312,16 @@ function showStartupStep(step){
     setTimeout(()=>$("#avatarChoices .selected, #avatarChoices .avatar-choice")?.focus(),0);
   }
 }
+function reopenAvatarPicker(){
+  // Reuse the original accessible picker without restarting sensors or losing the current avatar.
+  const gate=$("#languageGate");
+  if(!gate)return;
+  gate.hidden=false;
+  gate.removeAttribute("aria-hidden");
+  gate.style.display="";
+  gate.classList.remove("hidden");
+  showStartupStep("avatar");
+}
 function finishStartupAvatar(id){
   applyAvatar(id);
   const gate=$("#languageGate");
@@ -2325,10 +2332,10 @@ function finishStartupAvatar(id){
     gate.style.display="none";
   }
   const mode=avatarLanguage();
-  $("#startBtn").disabled=false;
-  $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("start",mode)||"Despertar sentidos";
-  $("#statusText").textContent=mode==="es"?speciesIntroduction(id):
-    window.ROBOTITO_I18N?.t?.("avatarReady",mode);
+  // Selecting a new appearance never resets an already-awake Robotito.
+  $("#startBtn").disabled=Boolean(state.started);
+  $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
+  $("#statusText").textContent=window.ROBOTITO_I18N?.t?.(state.started?"avatarChanged":"avatarReady",mode)||"Robotito está listo.";
   applyDayNightMode(new Date());
   flushPendingBatteryAlert();
 }
@@ -2361,7 +2368,9 @@ function setLanguageMode(mode){
     catch(error){console.warn("language preference",error);if(typeof toast==="function")toast("No pude guardar el idioma en este dispositivo.");}
   }
   if($("#languageMode"))$("#languageMode").value=mode;
+  if($("#quickLanguageSelect"))$("#quickLanguageSelect").value=mode;
   window.ROBOTITO_I18N?.apply?.(mode);
+  if($("#startBtn"))$("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
   if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
   if(typeof refreshLocalizedUI==="function")refreshLocalizedUI();
@@ -6117,7 +6126,8 @@ function bindUI(){
   });
   $("#backToLanguage")?.addEventListener("click",()=>showStartupStep("language"));
   $("#startBtn").addEventListener("click",startSenses);
-  $("#stopSensesBtn")?.addEventListener("click",()=>stopSenses());
+  $("#changeAvatarBtn")?.addEventListener("click",reopenAvatarPicker);
+  $("#quickLanguageSelect")?.addEventListener("change",event=>setLanguageMode(event.target.value));
   $("#languageMode")?.addEventListener("change",e=>{
     const mode=e.target.value;
     setLanguageMode(mode);

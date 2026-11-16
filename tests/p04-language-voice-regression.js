@@ -156,7 +156,9 @@ for(const [id,translated] of Object.entries(translatedNames))
   "Missing "+language+" name for "+id);
 for(const key of ["avatarAvailable","avatarStepTitle","avatarStepDescription","avatarBack","avatarReady"])
  for(const language of langs)ok(i18n.t(key,language)!==key,"Missing "+key+"/"+language);
-ok(source.includes('t?.("avatarReady",mode)'),"Startup ready state localized");
+ok(source.includes('state.started?"avatarChanged":"avatarReady"') &&
+   i18n.t("avatarChanged","es")!=="avatarChanged",
+   "Startup and post-wakeup avatar updates use localized, species-neutral labels");
 ok(source.includes('t?.("avatarStepTitle",lang)'),"Avatar screen localized");
 for(const key of ["uiUnderstood","uiClassMode","uiSubject","uiClassTopic","uiStartClass","uiStopClass","uiSavedClasses","uiClassEdit","uiTopic","uiDateTime","uiCancel","uiSaveChanges","uiClassRecordings","uiLearned","uiRefreshSummary","uiVideoTitle","uiVideoURL","uiVideoName","uiYoutubeOpen","uiVideoStop","uiUploadMaterials","uiAskClasses","uiAsk","uiFlashcards","uiVisualMath","uiRecognizeObject","uiTasksSheet","uiConnectTasks","uiPendingTasks","uiRefresh","uiRegisterPerson","uiName","uiBirthday","uiEnroll","uiPeopleRemembered","uiMyBooks","uiReadingChoice","uiDescription","uiBookRecommendations","uiAutoMemory","uiAddMemory","uiSaveMemory","uiMemories","uiDeleteMemory","uiVoiceSampleTitle","uiRecordSample","uiDeleteSample"]){
  for(const language of langs)ok(i18n.t(key,language)!==key,
@@ -181,7 +183,7 @@ ok(!source.includes("if(forcedLang)return false;"),"Forced language cannot bypas
 ok(source.includes("francais|french|italiano|italian|aleman|deutsch|german"),"Six-language say command vocabulary");
 ok(sampleUI.includes('root.addEventListener("pagehide",()=>{++view;capture.cancel();clearPlayer();});'),
  "BFCache return must permit a new voice sample recording");
-for(const version of ["i18n.js?v=20261107-p05","script.js?v=20261108-p06","speech-fallback.js?v=20261105-p04-capture","voice-sample-capture.js?v=20261108-p06"])
+for(const version of ["i18n.js?v=20261115-interface-clarified","script.js?v=20261115-interface-clarified","speech-fallback.js?v=20261105-p04-capture","voice-sample-capture.js?v=20261108-p06"])
  ok(html.includes(version),"Assets load updated P04 implementation "+version);
 // Frequent class, tasks and library messages work without a downloaded model.
 for(const original of ["Ya puedo hablar de nuevo.","Todavía no importaste tu biblioteca de Goodreads.","No tengo tu cumpleaños registrado.","Hoy todavía no escuché ninguna clase.","Ahora mismo no veo a nadie.","Ahora mismo no veo ninguna mano.","No tengo una edad humana. Soy una mascota virtual.","Soy Robotito, un panda virtual.","Estoy durmiendo.","Estoy bailando porque detecté música.","No encontré información suficiente para contestar eso.","No encontré evidencia suficiente en las transcripciones para contestar eso.","No encontré ese cumpleaños entre las personas registradas.","No veo tareas pendientes en la hoja conectada.","No tengo registrada una comida todavía.","No pude encontrar una recomendación ahora mismo.","Entendido, no voy a hacer eso.","Todavía no había dicho nada."]){

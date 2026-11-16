@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261108-p06" />
+  <link rel="stylesheet" href="style.css?v=20261115-interface-clarified" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -25,8 +25,8 @@
   <script defer src="study-planner.js?v=20261115-p18"></script>
   <script defer src="study-planner-ui.js?v=20261115-p18"></script>
   <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="temporal-rules.js?v=20261115-p10-p11"></script>
-  <script defer src="i18n.js?v=20261107-p05"></script>
+  <script defer src="temporal-rules.js?v=20261115-interface-clarified"></script>
+  <script defer src="i18n.js?v=20261115-interface-clarified"></script>
   <script defer src="ui-messages.js?v=20261108-p06"></script>
   <script defer src="localized-content.js?v=20261107-p05"></script>
   <script defer src="voice-system.js?v=20261108-p06"></script>
@@ -60,7 +60,7 @@
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
-  <script defer src="script.js?v=20261108-p06"></script>
+  <script defer src="script.js?v=20261115-interface-clarified"></script>
   <script defer src="typed-chat-ui.js?v=20261115-p25"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
@@ -142,7 +142,14 @@
     <div class="top-actions">
       <span id="clock" class="clock"></span>
       <button id="startBtn" class="primary" type="button" data-ui-copy=Despertar%20sentidos>Despertar sentidos</button>
-      <button id="stopSensesBtn" type="button" data-i18n="captureStop" disabled>Detener cámara y micrófono</button>
+      <button id="changeAvatarBtn" type="button" aria-haspopup="dialog" data-i18n="changeAvatarAction">Cambiar avatar</button>
+      <label class="quick-language-label" for="quickLanguageSelect"><span data-i18n="quickLanguageAction">Idioma</span>
+        <select id="quickLanguageSelect" aria-label="Cambiar idioma" data-i18n-aria-label="quickLanguageAction">
+          <option value="es">Español</option><option value="en">English</option>
+          <option value="pt">Português</option><option value="fr">Français</option>
+          <option value="it">Italiano</option><option value="de">Deutsch</option>
+        </select>
+      </label>
     </div>
   </header>
 
@@ -182,7 +189,7 @@
           <span id="animalAvatarEmoji" class="animal-avatar-emoji">🐼</span>
           <span id="animalAvatarHeartEyes" class="animal-avatar-heart-eyes">💗 💗</span>
           <span id="animalAvatarMood" class="animal-avatar-mood">✨</span>
-          <span id="animalAvatarName" class="animal-avatar-name">Panda</span>
+
         </div>
         <svg class="panda-svg" viewBox="0 0 320 380" aria-hidden="true">
           <defs>
@@ -363,7 +370,7 @@
           <button type="button" data-action="poke" data-i18n="poke">👉 Molestar</button>
         </div>
         <div id="typedChatHistory" class="typed-chat-history" role="log" aria-label="Conversación escrita" aria-live="polite" aria-relevant="additions text"></div>
-        <form id="robotitoTextForm" class="robotito-text-form">
+        <form id="robotitoTextForm" class="robotito-text-form" aria-label="Escribirle a Robotito">
           <label for="robotitoTextInput" data-i18n="typedChat">Escribile a Robotito</label>
           <div class="robotito-text-form-row">
             <input id="robotitoTextInput" data-i18n-placeholder="uiInputPrompt" type="text" autocomplete="off"
@@ -385,7 +392,7 @@
         <button type="button" class="tab active" data-tab="status" data-i18n="status">Estado</button>
         <button type="button" class="tab" data-tab="class" data-i18n="class">Clase</button>
         <button type="button" class="tab" data-tab="tasks" data-i18n="tasks">Tareas</button>
-        <button type="button" class="tab" data-tab="temporal" data-i18n="p10RulesTab">Órdenes y reglas</button>
+        <button type="button" class="tab" data-tab="temporal" data-i18n="p10RulesTab">Horarios</button>
         <button type="button" class="tab" data-tab="people" data-i18n="people">Personas</button>
         <button type="button" class="tab" data-tab="books" data-i18n="books">Libros</button>
         <button type="button" class="tab" data-tab="memory" data-i18n="memory">Memoria</button>
@@ -740,19 +747,19 @@
 
       <section class="tabpage" id="tab-temporal">
         <div class="card">
-          <h2 data-i18n="p10RulesTitle">Órdenes temporales y reglas personalizadas</h2>
-          <p class="muted" data-i18n="p10RulesScope">Estas órdenes funcionan únicamente con Robotito abierto y visible. No envían notificaciones con la pestaña cerrada ni activan cámara, micrófono o acciones peligrosas.</p>
-          <label><span data-i18n="p10RulesInputLabel">Escribí una orden segura</span>
+          <h2 data-i18n="p10RulesTitle">Horarios y recordatorios guardados</h2>
+          <p class="muted" data-i18n="p10RulesScope">Los pedidos que le decís a Robotito se cumplen directamente sin guardarlos. Acá podés guardar recordatorios para que aparezcan en tu lista, como alarmas. Solo funcionan mientras Robotito está abierto y visible.</p>
+          <label><span data-i18n="p10RulesInputLabel">Recordatorio que querés guardar</span>
             <input id="temporalRuleInput" autocomplete="off" maxlength="420" data-i18n-placeholder="p10RulesPlaceholder" placeholder="En 5 minutos decime tomar agua" />
           </label>
           <div class="actions">
-            <button id="temporalRuleAdd" type="button" class="primary" data-i18n="p10RulesAdd">Guardar orden</button>
+            <button id="temporalRuleAdd" type="button" class="primary" data-i18n="p10RulesAdd">Guardar recordatorio</button>
           </div>
           <p id="temporalRuleStatus" class="muted" aria-live="polite"></p>
           <p class="muted" data-i18n="p10RulesExamples">Ejemplos: «En 5 minutos decime tomar agua», «Cada 10 minutos por 3 veces decime estirar», «Si digo hola robotito, decí buen día», «Todos los días a las 14:30 decime estudiar».</p>
-          <h3 data-i18n="p10RulesSaved">Órdenes guardadas del perfil activo</h3>
+          <h3 data-i18n="p10RulesSaved">Mis recordatorios guardados</h3>
           <div id="temporalRuleList"></div>
-          <p class="muted" data-i18n="p10RulesSafety">Las reglas solo producen mensajes de texto o voz y se pueden cancelar individualmente. No se ejecutan instrucciones de código ni operaciones irreversibles.</p>
+          <p class="muted" data-i18n="p10RulesSafety">Guardar acá es opcional. Decir «en 5 minutos recordame tomar agua» en el chat o por voz no agrega nada a esta lista. Los avisos requieren que Robotito siga abierto y visible.</p>
         </div>
       </section>
 

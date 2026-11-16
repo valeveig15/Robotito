@@ -3203,3 +3203,60 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
   .layout-resizer{display:none!important}
   .panel{height:auto;max-height:none;overflow:visible;min-width:0}
 }
+
+
+/* Clarificación de interfaz — la decoración vive solo en el escenario. */
+.world{isolation:isolate}
+.world-scene{z-index:0;isolation:isolate;flex-shrink:0}
+.world-scene :is(.night-sky,.night-stars,.night-moon,.day-sun){pointer-events:none!important}
+.world-controls{
+  display:flex!important;flex-direction:column;align-items:stretch;
+  position:relative!important;inset:auto!important;
+  z-index:6!important;isolation:isolate;
+  gap:8px;max-width:100%;flex-shrink:0;
+  background:rgba(255,251,254,.98);
+}
+.world-controls .hud{order:1;position:relative!important;z-index:1}
+.world-controls .quick-actions{order:2;position:relative!important;z-index:2}
+#typedChatHistory{order:3;position:relative;z-index:3;pointer-events:auto}
+#robotitoTextForm{
+  order:4;display:block;position:relative!important;inset:auto!important;
+  z-index:9!important;isolation:isolate;pointer-events:auto!important;
+  padding:9px 8px max(10px,env(safe-area-inset-bottom));
+  border:1px solid rgba(85,64,88,.13);
+  border-radius:14px;background:#fff;
+  box-shadow:0 5px 16px rgba(50,43,50,.07);
+}
+#robotitoTextForm :is(input,button,label){pointer-events:auto!important;position:relative;z-index:1}
+#robotitoTextInput{display:block;opacity:1!important;visibility:visible!important;touch-action:manipulation}
+#robotitoTextInput:focus-visible{outline:3px solid #8ac7bb;outline-offset:1px}
+#robotitoTextSend{touch-action:manipulation}
+
+/* Compact top controls: change appearance any time without starting over. */
+.topbar{gap:12px}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}
+.top-actions #startBtn{flex:0 0 auto}
+#changeAvatarBtn{min-height:44px;white-space:normal}
+.quick-language-label{
+  display:flex;align-items:center;gap:6px;margin:0;
+  color:var(--text);font-size:12px;font-weight:800;min-width:0;
+}
+.quick-language-label select{
+  width:auto;min-width:118px;max-width:170px;
+  margin:0;padding:9px 8px;border:1px solid var(--line);
+  background:#fff;border-radius:12px;min-height:44px;color:var(--text);font:inherit;
+}
+.avatar-choice{display:grid;place-items:center;padding:10px;min-height:92px}
+.avatar-choice-emoji{margin:0}
+.animal-avatar-name{display:none!important}
+@media(max-width:600px){
+  .topbar{flex-wrap:wrap;align-items:flex-start}
+  .top-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .top-actions #startBtn,.top-actions #changeAvatarBtn{min-width:0;width:100%;font-size:12px;padding:9px}
+  .quick-language-label{grid-column:1/-1;justify-content:space-between}
+  .quick-language-label select{flex:1;max-width:none}
+}
+@media(max-width:380px){
+  .world-controls{gap:7px}
+  #robotitoTextForm{padding:7px}
+}

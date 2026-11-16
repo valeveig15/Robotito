@@ -18,7 +18,8 @@ runBrowserTest("p05-dynamic-content",async test=>{
   await page.evaluate(lang=>setLanguageMode(lang),lang);
   await page.waitForTimeout(30);
   const result=await page.evaluate(lang=>({
-   traits:[...document.querySelectorAll(".avatar-special")].map(n=>n.textContent),
+   traits:[...document.querySelectorAll("#avatarChoices [data-avatar-id]")].map(n=>ROBOTITO_SPECIES.profile(n.dataset.avatarId,lang).trait),
+   visibleSpeciesLabels:document.querySelectorAll(".avatar-choice-name,.avatar-special").length,
    expectedTraits:ROBOTITO_AVATARS.map(a=>ROBOTITO_SPECIES.profile(a.id,lang).trait),
    person:document.querySelector("#peopleList strong")?.textContent,
    memory:document.querySelector("#memoryList p")?.textContent,
@@ -32,6 +33,7 @@ runBrowserTest("p05-dynamic-content",async test=>{
   }),lang);
   assert.deepEqual(result.traits,result.expectedTraits,lang+": every avatar trait");
   assert.equal(result.traits.length,50);
+  assert.equal(result.visibleSpeciesLabels,0,"Avatar picker no longer prints obvious animal names or traits");
   assert.equal(result.person,"Borrar",lang+": name must not translate like a button");
   assert.equal(result.memory,'Guardar archivo <img src=x onerror="throw 1">',lang+": original memory preserved");
   assert.equal(result.memoryLanguage,"es");assert.equal(result.noInjectedImage,true);

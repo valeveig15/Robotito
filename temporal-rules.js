@@ -44,6 +44,9 @@ function parseInstruction(raw){
  if(m&&safeText(m[1],MAX_RULE_TRIGGER)&&safeText(m[2]))return {kind:"phrase",trigger:m[1].trim(),text:m[2].trim()};
  m=s.match(/^(?:todos los d[ií]as|cada d[ií]a|every day|todo dia|tous les jours|ogni giorno|jeden tag)\s+(?:a las|at|as|a|um)\s+([01]?\d|2[0-3]):([0-5]\d)\s*[,;:]?\s*(?:dec[ií]|decime|dime|d[ií]|di'|say|tell me|diga|dis|sage)\s+(.+)$/i);
  if(m&&safeText(m[3]))return {kind:"daily",time:String(Number(m[1])).padStart(2,"0")+":"+m[2],text:m[3].trim()};
+ // The natural spoken order can place the time after the requested message.
+ m=s.match(/^(?:decime|dime|recordame|recuerdame|avisame|say|tell me|remind me)\s+(.+?)\s+(?:en|dentro de|in|daqui a|dans|tra)\s+(\d{1,4})\s*(segundos?|seconds?|minutos?|minutes?|minuti?|minuten?|horas?|hours?|heures?|stunden?)$/i);
+ if(m){const ms=duration(m[2],fold(m[3]));return ms&&safeText(m[1])?{kind:"once",ms,text:m[1].trim()}:null;}
  return null;
 }
 function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
@@ -55,12 +58,13 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
   }catch{return [];}
  };
  let rows=load();
+ let temporary=[]; // Commands spoken in conversation exist only in the open session.
  const save=()=>{storage.setItem(KEY,JSON.stringify(rows));onChange(rows.map(r=>({...r})));};
  const list=(owner)=>rows.filter(r=>r.owner===owner).map(r=>({...r}));
- const create=(spec,owner)=>{
+ const create=(spec,owner,{persist=true}={})=>{
   if(!validOwner(owner)||!spec||!["once","repeat","phrase","daily"].includes(spec.kind)||
      !safeText(spec.text))throw new Error("Invalid instruction or profile");
-  if(rows.length>=MAX)throw new Error("Maximum 40 instructions");
+  if(rows.length+temporary.length>=MAX)throw new Error("Maximum 40 instructions");
   const t=now();
   const row={id:uid(),owner,kind:spec.kind,text:spec.text,createdAt:t};
   if(spec.kind==="phrase"){
@@ -81,59 +85,71 @@ function createEngine({storage,now=()=>Date.now(),onChange=()=>{}}={}){
    }
   }
   if(!safeRow(row))throw new Error("Invalid scheduled instruction");
-  rows=[...rows,row];save();return {...row};
+  if(persist){rows=[...rows,row];save();}
+  else temporary=[...temporary,row];
+  return {...row};
  };
  const cancel=(id,owner)=>{
   const count=rows.length;
   rows=rows.filter(r=>!(r.id===id&&r.owner===owner));
-  if(count!==rows.length){save();return true;}
-  return false;
+  const oldTemporary=temporary.length;
+  temporary=temporary.filter(r=>!(r.id===id&&r.owner===owner));
+  if(count!==rows.length)save();
+  return count!==rows.length||temporary.length!==oldTemporary;
  };
- const clear=(owner)=>{if(!validOwner(owner))return 0;const n=rows.length;
-  rows=rows.filter(r=>r.owner!==owner);if(n!==rows.length)save();return n-rows.length;};
+ const clear=(owner)=>{if(!validOwner(owner))return 0;const n=rows.length,t=temporary.length;
+  rows=rows.filter(r=>r.owner!==owner);
+  temporary=temporary.filter(r=>r.owner!==owner);
+  if(n!==rows.length)save();return n-rows.length+t-temporary.length;};
  const tick=({owner,visible=true,emit=()=>{}}={})=>{
   if(!visible||!validOwner(owner))return 0;
-  const t=now(),today=new Date(t).toLocaleDateString("en-CA"),hm=
-   String(new Date(t).getHours()).padStart(2,"0")+":"+
-   String(new Date(t).getMinutes()).padStart(2,"0");
-  const due=[];let changed=false;
-  rows=rows.filter(row=>{
-   if(row.owner!==owner)return true;
-   if(row.kind==="phrase")return true;
-   if(row.kind==="daily"){
-    if(row.time!==hm||row.lastDate===today)return true;
-    row.lastDate=today;due.push(row.text);changed=true;return true;
-   }
-   if(t<row.dueAt)return true;
-   if(t-row.dueAt<=GRACE)due.push(row.text);
-   changed=true;
-   if(row.kind==="once")return false;
-   row.remaining--;
-   if(row.remaining<=0||t-row.dueAt>GRACE)return false;
-   row.dueAt=t+row.intervalMs;return true;
-  });
-  // Mark first: callback failure or unexpected rerender cannot replay.
-  if(changed)save();
+  const t=now(),date=new Date(t),today=date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+  const hm=String(date.getHours()).padStart(2,"0")+":"+String(date.getMinutes()).padStart(2,"0");
+  const due=[];
+  const process=list=>{
+   let changed=false;
+   const remaining=list.filter(row=>{
+    if(row.owner!==owner)return true;
+    if(row.kind==="phrase")return true;
+    if(row.kind==="daily"){
+     if(row.time!==hm||row.lastDate===today)return true;
+     row.lastDate=today;due.push(row.text);changed=true;return true;
+    }
+    if(t<row.dueAt)return true;
+    if(t-row.dueAt<=GRACE)due.push(row.text);
+    changed=true;
+    if(row.kind==="once")return false;
+    row.remaining--;
+    if(row.remaining<=0||t-row.dueAt>GRACE)return false;
+    row.dueAt=t+row.intervalMs;return true;
+   });
+   return {remaining,changed};
+  };
+  const stored=process(rows),session=process(temporary);
+  rows=stored.remaining;temporary=session.remaining;
+  // Persist only explicitly saved reminders, never spoken commands.
+  if(stored.changed)save();
   for(const text of due.slice(0,3))emit(text);
   return Math.min(due.length,3);
  };
- const speech=(raw,{owner,emit=()=>{},visible=true}={})=>{
+ const speech=(raw,{owner,emit=()=>{},visible=true,persist=false}={})=>{
   if(!visible||!validOwner(owner))return {handled:false};
   const instruction=parseInstruction(raw);
   if(instruction){
-   try{const row=create(instruction,owner);return {handled:true,created:row};}
+   try{const row=create(instruction,owner,{persist});return {handled:true,created:row,temporary:!persist};}
    catch(error){return {handled:true,error:String(error.message)};}
   }
   const normalized=fold(raw);if(!normalized)return {handled:false};
   if(/^(?:cancela|cancelar|borra|borrar|elimina|delete|remove) (?:todas |all )?(?:las )?(?:ordenes|reglas|reminders|rules)$/.test(normalized))
    return {handled:true,needsConfirmation:true};
-  const triggered=rows.find(row=>row.kind==="phrase"&&row.owner===owner&&
+  const triggered=[...temporary,...rows].find(row=>row.kind==="phrase"&&row.owner===owner&&
    fold(row.trigger)===normalized);
   if(!triggered)return {handled:false};
   emit(triggered.text);return {handled:true,triggered:triggered.id};
  };
  const reload=()=>{rows=load();onChange(rows.map(r=>({...r})));return rows.length;};
- return {create,list,cancel,clear,tick,speech,reload,parseInstruction};
+ return {create,list,cancel,clear,tick,speech,reload,parseInstruction,
+  temporaryList:owner=>temporary.filter(row=>row.owner===owner).map(row=>({...row}))};
 }
 let engine=null,context=null,timer=null;
 function label(key,fallback){const lang=root.document?.documentElement?.lang||"es";
@@ -147,7 +163,7 @@ function attach({say=()=>{},owner=()=> "local"}={}){
  const $=id=>root.document?.getElementById(id);
  const submit=()=>{
   const box=$("temporalRuleInput"),raw=box?.value?.trim();if(!raw)return;
-  const result=engine.speech(raw,{owner:context.owner(),emit:context.say});
+  const result=engine.speech(raw,{owner:context.owner(),emit:context.say,persist:true});
   const status=$("temporalRuleStatus");
   if(status)status.textContent=result.created?label("p10RulesSavedOK","Instrucción guardada para este perfil."):
    result.error?label("p10RulesInvalid","No pude guardar esa orden."):
@@ -189,7 +205,9 @@ function handle(raw,options={}){
  if(!engine)return {handled:false};
  const result=engine.speech(raw,{owner:context.owner(),visible:!root.document.hidden,
   emit:context.say});
- if(result.handled&&result.created)context.say(label("p10RulesStoredVoice","Orden guardada. La ejecutaré mientras esta página esté abierta y visible."));
+ if(result.handled&&result.created)context.say(result.temporary?
+  label("p10RulesTransientVoice","Entendido. Te aviso mientras Robotito esté abierto y visible; no lo guardé en Horarios."):
+  label("p10RulesStoredVoice","Recordatorio guardado en Horarios mientras esta página esté abierta y visible."));
  else if(result.needsConfirmation){
   if(root.confirm?.(label("p10RulesCancelAll","¿Cancelar todas las órdenes y reglas de este perfil?"))){
    engine.clear(context.owner());context.say(label("p10RulesCancelled","Órdenes y reglas de este perfil canceladas."));
