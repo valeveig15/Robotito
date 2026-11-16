@@ -49,7 +49,17 @@ runBrowserTest("p29-species-feeding",async test=>{
  await page.evaluate(()=>{state.hunger=47;updateMeters();});
  await page.locator("#robotitoTextInput").fill("Te doy chocolate");
  await page.locator("#robotitoTextSend").click();
- await page.waitForFunction(()=>document.querySelector("#speechBubble")?.textContent.includes("No sé si ese alimento"));
+ try{
+  await page.waitForFunction(()=>document.querySelector("#speechBubble")?.textContent.includes("No sé si ese alimento"),null,{timeout:9000});
+ }catch(error){
+  const diagnostic=await page.evaluate(()=>({
+    bubble:document.querySelector("#speechBubble")?.textContent,
+    avatar:state.avatar,hunger:state.hunger,
+    offered:window.ROBOTITO_SPECIES_KNOWLEDGE?.feedingOffer?.("Te doy chocolate",{id:state.avatar,lang:state.languageMode}),
+    messages:[...document.querySelectorAll(".typed-chat-line")].slice(-3).map(n=>n.textContent)
+  }));
+  throw new Error("Rejected-food chat route: "+JSON.stringify(diagnostic)+" / "+error.message);
+ }
  assert.equal(await page.evaluate(()=>state.hunger),47);
  await page.locator("#robotitoTextInput").fill("Te doy carne");
  await page.locator("#robotitoTextSend").click();
