@@ -45,5 +45,28 @@ const client=create({now:()=>t,fetcher:async url=>{
  const source=require("node:fs").readFileSync(require("node:path").join(__dirname,"../presidents.js"),"utf8");
  assert.match(source,/verified:false,checkedAt:today/);
  assert.match(source,/fuente oficial independiente/);
- console.log("P21 country capitals, source timing, ambiguity, stale authority protection: passed");
+ const second={name:{common:"Republic of Testland",official:"Test Republic"},
+  cca2:"TL",capital:["Central City"],translations:{spa:{common:"Tierra Prueba"}},altSpellings:[]};
+ let callsExact=0;
+ const fallback=create({fetcher:async url=>{
+  callsExact++;
+  if(url.includes("/translation/"))return {ok:true,json:async()=>[france]};
+  return {ok:true,json:async()=>[second]};
+ }});
+ const f=await fallback.answer("capital de Tierra Prueba","es");
+ assert.equal(f.cca2,"TL","A nonmatching first endpoint must not block valid second endpoint");
+ assert.match(f.text,/Tierra Prueba/,"Localized country label should use REST language codes");
+ assert.equal(callsExact,2);
+ let partial=0;
+ const outage=create({fetcher:async url=>{
+  partial++;
+  if(url.includes("/name/"))throw Error("temporary outage");
+  return {ok:true,json:async()=>[france]};
+ }});
+ const online=await outage.answer("capital de Francia");
+ assert.equal(online.handled,true);
+ const used=partial;
+ await outage.answer("capital de Francia");
+ assert.ok(partial>used,"Partial source failures are not cached as conclusive results");
+  console.log("P21 country capitals, source timing, ambiguity, stale authority protection: passed");
 })().catch(e=>{console.error(e);process.exitCode=1;});
