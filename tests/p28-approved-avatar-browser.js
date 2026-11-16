@@ -13,19 +13,19 @@ runBrowserTest("p28-approved-avatars",async test=>{
  await page.locator('#avatarChoices [data-avatar-id="panda"]').click();
  for(const id of APPROVED){
   await page.waitForFunction(id=>window.ROBOTITO_APPROVED_AVATAR?.current?.id===id,id,{timeout:20000});
-  const meta=await page.evaluate(id=>{
+  const meta=await page.evaluate(({id,landscape})=>{
     const r=window.ROBOTITO_APPROVED_AVATAR.current;
     const stage=r.shadow.getElementById("stage-svg");
     const style=r.shadow.querySelector("style");
     const all=stage.querySelectorAll("g[id],path,circle,ellipse,polygon").length;
-    return {id:r.id,landscape:!!stage.querySelector("#"+LANDSCAPES[id]),
+    return {id:r.id,landscape:!!stage.querySelector("#"+landscape),
      polygons:all,hasStyle:style.textContent.length>30000,
      noScripts:r.shadow.querySelectorAll("script,button,input").length===0,
      role:document.querySelector("#approvedAvatarHost").getAttribute("role"),
      originalHidden:document.querySelector("#robotito").getAttribute("aria-hidden"),
      geometry:document.querySelector("#approvedAvatarHost").getBoundingClientRect().width,
      sourceView:stage.getAttribute("viewBox"),shadow:!!stage.querySelector("#shadow")};
-  },id);
+  },{id,landscape:LANDSCAPES[id]});
   assert.equal(meta.id,id);
   assert.equal(meta.landscape,true,"Correct approved environment "+id);
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
