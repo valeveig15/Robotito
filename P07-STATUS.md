@@ -1,6 +1,6 @@
 # P07 — Memoria contextual, fechas y datos durables
 
-Revisión del 15/11/2026. **Implementación de software terminada en el alcance documentado; validación física pendiente.** La aceptación automatizada y la publicación deben corresponder al HEAD final del PR. No equivale a certificar dispositivos ni identificación biométrica.
+Revisión del 16/11/2026. **Implementación de software terminada en el alcance documentado; validación física pendiente.** La aceptación automatizada y la publicación deben corresponder al HEAD final del PR. No equivale a certificar dispositivos ni identificación biométrica.
 
 ## Funcionalidad integrada
 
@@ -9,9 +9,11 @@ Revisión del 15/11/2026. **Implementación de software terminada en el alcance 
 - El planificador autoriza la consulta antes de recuperar datos; seis idiomas cubiertos en pruebas del recorrido real planificador→buscador. Órdenes negadas, citas y preguntas generales no habilitan búsquedas privadas.
 - Sesiones sin identidad confirmada permanecen en RAM y no entran al respaldo. La recarga crea otra sesión. Un cambio de propietario oculta el historial anterior antes de cargar el siguiente y descarta respuestas demoradas de otro propietario.
 - Personas registradas requieren la confirmación de voz reciente de P08 y coherencia con el rostro si está presente. La nueva separación no convierte un nombre, una cara aislada o una clave de visitante en autenticación biométrica.
-- Clases, transcripciones, apuntes, libros, tareas, recuerdos y preferencias personales usan ámbitos separados. Las reglas de P10/P11, tareas nativas de P18 y evidencias de vídeo de P22 también se integran en colecciones tipadas por propietario; las capturas de vídeo conservan su propietario inicial.
+- Clases, transcripciones, apuntes, libros, tareas, recuerdos y preferencias personales usan ámbitos separados. Los recordatorios guardados expresamente en Horarios (P10/P11), tareas nativas de P18 y evidencias de vídeo de P22 también se integran en colecciones tipadas por propietario; las capturas de vídeo conservan su propietario inicial.
 - Los datos antiguos explícitamente atribuidos conservan su perfil. Los datos compartidos o sin atribución se guardan en `legacy:unassigned`, visibles en el archivo anterior de solo lectura, sin asignarlos al siguiente visitante. La migración del planificador/vídeos antiguos conserva los datos antes de retirar la copia de localStorage.
 - Corrección y borrado por ID, propietario y revisión. Conflictos entre pestañas se rechazan sin sobrescritura silenciosa; los cambios en colecciones actualizan las revisiones de los registros. El borrado de un historial elimina sus archivos y conserva los demás, incluso con nombres que comparten prefijos.
+
+Las órdenes dadas en conversación conservan el comportamiento transitorio del PR #150: no se escriben en Horarios. El chat visible de P25 se cambia inmediatamente junto con el propietario, sin esperar al siguiente mensaje.
 
 ## Visitantes y reversibilidad
 
@@ -41,7 +43,7 @@ Ver [P07-MEMORY-BACKUP.md](P07-MEMORY-BACKUP.md).
 | `tests/p07-archive-browser.js` | 36 comprobaciones: archivo binario de 17.825.795 bytes, igualdad exacta, contraseña equivocada, alteración, truncamiento, cuota fallida, restauración, deshacer, preferencias y pestaña desactualizada |
 | `tests/p07-scoped-modules-browser.js` | 9 comprobaciones: tareas/vídeos/reglas por propietario, recarga, migración antigua, prefijos de nombres, archivos de sesión y deshacer después de corregir una tarea |
 | Cuatro suites P07 históricas | JSON, edición/borrado con espejo antiguo, cifrado anterior, recuperación de un paso |
-| `npm run test:ci` | Regresión del repositorio, incluidos P01–P23 y «Chocar los cinco» |
+| `npm run test:ci` | Regresión del repositorio, incluidos P01–P26 y «Chocar los cinco» |
 | CI `cross-browser` | Mismos recorridos de aplicación y P07 en Firefox y WebKit, además de Chromium en regresión |
 
 ## Límites de aceptación

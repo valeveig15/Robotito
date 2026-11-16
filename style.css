@@ -3084,3 +3084,179 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .native-task-row{padding:13px 12px;margin-block:9px;overflow-wrap:anywhere}
 .study-success{font-weight:700;letter-spacing:.01em}
 @media(max-width:500px){.native-task-form{grid-template-columns:1fr}.native-task-controls{gap:6px}.native-task-controls input[type=date]{max-width:100%}}
+
+
+/* P24 — object is carried by the avatar, never placed on a floating card. */
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.robotito.object-trip-walking{transition:left .85s ease-in-out!important}
+.robotito.object-trip-searching{opacity:.45;transition:opacity .25s}
+.robotito.object-trip-presenting .object-scene-prop{animation:objectInPaw .35s ease-out both}
+.object-scene-prop{position:absolute;z-index:22;left:74%;top:60%;transform:translate(-50%,-50%);font-size:clamp(42px,6vw,75px);line-height:1;filter:drop-shadow(0 5px 3px rgba(0,0,0,.18));pointer-events:none}
+.robotito:is(.avatar-dog,.avatar-cat,.avatar-iguana,.avatar-chameleon,.avatar-horse,.avatar-cow,.avatar-dolphin,.avatar-crocodile,.avatar-turtle) .object-scene-prop{left:67%;top:55%}
+.robotito:is(.avatar-penguin,.avatar-owl,.avatar-swan,.avatar-parrot) .object-scene-prop{left:69%;top:65%}
+@keyframes objectInPaw{from{opacity:0;transform:translate(-50%,-20%) scale(.4)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+  .robotito.object-trip-walking{transition:none!important}
+  .robotito.object-trip-presenting .object-scene-prop{animation:none}
+}
+
+
+/* P25 — keep the animated scene separate from status, actions and written conversation. */
+.typed-chat-history{
+  min-width:0;max-width:100%;max-height:148px;min-height:40px;
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  display:flex;flex-direction:column;align-items:flex-start;gap:7px;
+  padding:7px 8px;border:1px solid rgba(72,57,77,.12);
+  border-radius:13px;background:rgba(255,255,255,.73);
+  scrollbar-width:thin;
+}
+.typed-chat-placeholder{margin:5px 2px;color:var(--muted);font-size:12px}
+.typed-chat-line{
+  display:grid;gap:3px;max-width:min(95%,480px);min-width:0;
+  padding:7px 10px;border-radius:12px;
+  font-size:12px;line-height:1.4;overflow-wrap:anywhere;word-break:normal;
+  border:1px solid rgba(85,64,88,.12);
+  background:#fff;
+}
+.typed-chat-line strong{font-size:10px;color:#625569}
+.typed-chat-line span{white-space:pre-wrap;overflow-wrap:anywhere}
+.typed-chat-user{align-self:flex-end;background:#e8f6f1}
+.typed-chat-assistant{align-self:flex-start;background:#fdf9ff}
+.robotito-text-form{min-width:0;margin:0}
+.robotito-text-form-row{min-width:0}
+.robotito-text-form input{font-size:16px;max-width:100%;width:100%}
+.robotito-text-form button{touch-action:manipulation;min-height:44px}
+@media(min-width:901px){
+  .world{display:flex;flex-direction:column}
+  .world-scene{
+    position:relative;inset:auto;flex:1 0 420px;min-height:420px;width:100%;
+  }
+  .world-controls{
+    display:grid;position:relative!important;inset:auto!important;
+    flex:0 0 auto;gap:8px;padding:10px;
+    border-top:1px solid rgba(78,59,80,.11);background:rgba(255,251,254,.96);
+  }
+  .world-controls .hud{
+    position:relative!important;inset:auto!important;
+    display:flex;flex-wrap:nowrap;gap:6px;
+    overflow-x:auto;width:100%;max-width:100%;
+  }
+  .world-controls .quick-actions{
+    position:relative!important;inset:auto!important;
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+    width:100%;max-width:100%;gap:6px;
+  }
+  .world-controls .quick-actions button{min-width:0;white-space:normal}
+}
+@media(max-width:900px){
+  .world-controls{min-width:0;width:100%}
+  .world-controls .hud,.world-controls .quick-actions{min-width:0}
+  .world-controls .quick-actions button{min-height:44px}
+  .typed-chat-history{max-height:146px}
+  .robotito-text-form{padding:5px}
+  .robotito-text-form-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .robotito-text-form-row button{min-width:82px;max-width:100%;padding:8px 11px}
+  .robotito-text-form-row input{min-width:0;min-height:44px}
+  .world-scene{min-height:clamp(340px,53svh,490px)}
+}
+@media(max-width:440px){
+  .robotito-text-form-row{grid-template-columns:minmax(0,1fr) auto}
+  .robotito-text-form-row button{width:auto;min-width:74px;padding:8px 9px}
+  .robotito-text-form-row input{min-width:0;font-size:16px}
+  .typed-chat-history{max-height:116px}
+}
+@media(max-width:360px){
+  .world-controls{padding:8px}
+  .world-controls .quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .robotito-text-form-row{grid-template-columns:1fr}
+  .robotito-text-form-row button{width:100%}
+  .world-scene{min-height:340px}
+}
+@media(orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  .world-scene{min-height:300px}
+  .typed-chat-history{max-height:100px}
+}
+
+/* P26 — desktop panes can expand almost to either edge while preserving useful minima. */
+@media(min-width:901px){
+  .layout{grid-template-columns:minmax(260px,1.6fr) 20px minmax(245px,.75fr);gap:0;min-width:0}
+  .world{min-width:260px}
+  .panel{
+    min-width:245px;min-height:0;max-width:100%;
+    height:calc(100dvh - 116px);max-height:calc(100dvh - 116px);
+    overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;
+    scrollbar-gutter:stable;
+  }
+  .panel .tabs{
+    position:sticky;top:0;z-index:11;
+    display:flex;flex-wrap:nowrap;gap:5px;
+    overflow-x:auto;overflow-y:hidden;max-width:100%;
+    scrollbar-width:thin;
+  }
+  .panel .tab{flex:0 0 auto;min-width:66px;max-width:140px;white-space:normal}
+  .panel .tabpage{min-width:0;overflow-wrap:anywhere}
+  .layout-resizer{width:20px;min-width:20px;touch-action:none}
+  .layout-resizer-grip{width:32px;min-height:48px}
+  .layout-resizer:focus-visible{outline:2px solid #527e77;outline-offset:2px;border-radius:12px}
+}
+@media(max-width:900px){
+  .layout-resizer{display:none!important}
+  .panel{height:auto;max-height:none;overflow:visible;min-width:0}
+}
+
+
+/* Clarificación de interfaz — la decoración vive solo en el escenario. */
+.world{isolation:isolate}
+.world-scene{z-index:0;isolation:isolate;flex-shrink:0}
+.world-scene :is(.night-sky,.night-stars,.night-moon,.day-sun){pointer-events:none!important}
+.world-controls{
+  display:flex!important;flex-direction:column;align-items:stretch;
+  position:relative!important;inset:auto!important;
+  z-index:6!important;isolation:isolate;
+  gap:8px;max-width:100%;flex-shrink:0;
+  background:rgba(255,251,254,.98);
+}
+.world-controls .hud{order:1;position:relative!important;z-index:1}
+.world-controls .quick-actions{order:2;position:relative!important;z-index:2}
+#typedChatHistory{order:3;position:relative;z-index:3;pointer-events:auto}
+#robotitoTextForm{
+  order:4;display:block;position:relative!important;inset:auto!important;
+  z-index:9!important;isolation:isolate;pointer-events:auto!important;
+  padding:9px 8px max(10px,env(safe-area-inset-bottom));
+  border:1px solid rgba(85,64,88,.13);
+  border-radius:14px;background:#fff;
+  box-shadow:0 5px 16px rgba(50,43,50,.07);
+}
+#robotitoTextForm :is(input,button,label){pointer-events:auto!important;position:relative;z-index:1}
+#robotitoTextInput{display:block;opacity:1!important;visibility:visible!important;touch-action:manipulation}
+#robotitoTextInput:focus-visible{outline:3px solid #8ac7bb;outline-offset:1px}
+#robotitoTextSend{touch-action:manipulation}
+
+/* Compact top controls: change appearance any time without starting over. */
+.topbar{gap:12px}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}
+.top-actions #startBtn{flex:0 0 auto}
+#changeAvatarBtn{min-height:44px;white-space:normal}
+.quick-language-label{
+  display:flex;align-items:center;gap:6px;margin:0;
+  color:var(--text);font-size:12px;font-weight:800;min-width:0;
+}
+.quick-language-label select{
+  width:auto;min-width:118px;max-width:170px;
+  margin:0;padding:9px 8px;border:1px solid var(--line);
+  background:#fff;border-radius:12px;min-height:44px;color:var(--text);font:inherit;
+}
+.avatar-choice{display:grid;place-items:center;padding:10px;min-height:92px}
+.avatar-choice-emoji{margin:0}
+.animal-avatar-name{display:none!important}
+@media(max-width:600px){
+  .topbar{flex-wrap:wrap;align-items:flex-start}
+  .top-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .top-actions #startBtn,.top-actions #changeAvatarBtn{min-width:0;width:100%;font-size:12px;padding:9px}
+  .quick-language-label{grid-column:1/-1;justify-content:space-between}
+  .quick-language-label select{flex:1;max-width:none}
+}
+@media(max-width:380px){
+  .world-controls{gap:7px}
+  #robotitoTextForm{padding:7px}
+}

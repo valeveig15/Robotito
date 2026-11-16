@@ -167,9 +167,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **21.** Países, capitales, autoridades e historia contextualizada — EN PROGRESO (capitales dinámicas con fuente y fecha; autoridades actuales sin corroboración oficial se marcan no verificadas; faltan gobierno e historia exhaustivos; ver [P21-STATUS.md](P21-STATUS.md)).
 - [ ] **22.** Vídeos y materiales de estudio — EN PROGRESO (evidencias subtituladas/auditivas/visuales con fuente, tiempos, consentimiento y búsqueda temática; faltan validación física y precisión; ver [P22-STATUS.md](P22-STATUS.md)).
 - [ ] **23.** Visión de objetos y seguimiento visual — EN PROGRESO (consenso temporal de objetos, incertidumbre y dedos estables; faltan calibración real y móviles; ver [P23-STATUS.md](P23-STATUS.md)).
-- [ ] **24.** Mostrar objetos mediante una pequeña escena, no un cartel — POR AUDITAR
-- [ ] **25.** Interfaz móvil sin superposiciones y chat escrito visible — POR AUDITAR
-- [ ] **26.** Redimensionamiento horizontal y desplazamiento del panel derecho — POR AUDITAR
+- [ ] **24.** Mostrar objetos mediante una pequeña escena, no un cartel — EN PROGRESO (escena con avatar, cancelación y regresiones Node/navegador; pendiente validación física y accesibilidad; ver [P24-STATUS.md](P24-STATUS.md)).
+- [ ] **25.** Interfaz móvil sin superposiciones y chat escrito visible — EN PROGRESO (chat escrito visible, aislamiento por usuario, escena/controles separados y pruebas de navegador; faltan pruebas en móviles físicos y lector de pantalla; ver [P25-STATUS.md](P25-STATUS.md)).
+- [ ] **26.** Redimensionamiento horizontal y desplazamiento del panel derecho — EN PROGRESO (divisor de extremos ampliados, teclado, persistencia y scroll interno; falta validación táctil física; ver [P26-STATUS.md](P26-STATUS.md)).
 - [ ] **27.** Selección de avatar al inicio y catálogo de especies — POR AUDITAR
 - [ ] **28.** Integración visual de los cinco avatares nuevos como referencia prioritaria — POR AUDITAR
 - [ ] **29.** Especie, alimentación, camaleón y preguntas sobre sí mismo — POR AUDITAR

@@ -27,6 +27,7 @@ function changed(value=computedOwner()){
  if(visitor&&current!==visitor.id&&!store.isEphemeral(current))visitor=null;
  if(state.classMode){state.classMode=false;void root.ROBOTITO_CLASS_AUDIO?.stop?.();state.classSessionId=null;}
  activeOwner=current;generation++;loading=true;
+ root.ROBOTITO_TYPED_CHAT?.onOwnerChange?.(current);root.ROBOTITO_OBJECT_SCENE?.cancel?.();
  // Hide the previous profile synchronously, before any IndexedDB await.
  state.memories=[];for(const [field] of Object.values(api.collections))state[field]=[];
  for(const [field,fallback] of Object.values(settings))state[field]=structuredClone(fallback);
@@ -155,6 +156,7 @@ async function deleteCurrent(){
  if(!root.confirm(text("Se borrarán los recuerdos, clases, libros, tareas y archivos del historial activo. Los demás historiales se conservan.")))return;
  if(root.prompt(text("Escribí BORRAR para eliminar este historial."))!=="BORRAR")return;
  await api.deleteOwner(current,{confirmation:"BORRAR"});
+ root.ROBOTITO_TYPED_CHAT?.clearOwner?.(current);
  if(visitor?.id===current)visitor=null;
  if(owner()!==activeOwner){changed();await readyPromise;}else{generation++;await hydrate(owner(),generation);}
  status("Historial eliminado. Las copias descargadas deben borrarse por separado.");

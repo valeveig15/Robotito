@@ -674,6 +674,7 @@ function commitSpeechMessage(text,ms,lang,token,ownerAtRequest){
   if(!b)return;
   b.textContent=text;
   b.classList.remove("hidden");
+  window.ROBOTITO_TYPED_CHAT?.onReply?.(text,replyOwner);
   const displayMs=readingDisplayTime(text,ms);
   scheduleSpeechBubbleHide(token,Date.now()+displayMs);
   speakResponse(text,lang);
@@ -2234,6 +2235,7 @@ function updateAvatarMoodIcon(mood=state.mood){
 }
 function applyAvatar(id,{persist=true}={}){
   const avatar=avatarById(id);
+  window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   state.avatar=avatar.id;
   if(persist)localStorage.setItem(KEYS.avatar,avatar.id);
   if(robot){
@@ -2245,7 +2247,7 @@ function applyAvatar(id,{persist=true}={}){
   }
   $("#world")?.classList.toggle("panda-reference-world",avatar.id==="panda");
   setAvatarVisual($("#animalAvatarEmoji"),avatar,"avatar-main-svg");
-  if($("#animalAvatarName"))$("#animalAvatarName").textContent=avatarName(avatar);
+  // No visible animal-species caption: the avatar art is its own presentation.
   setAvatarVisual($("#startupMascot"),avatar,"avatar-startup-svg");
   document.title="Robotito "+avatar.emoji;
   updateAvatarAria();
@@ -2283,13 +2285,10 @@ function renderAvatarChoices(){
   if(!container)return;
   const lang=avatarLanguage();
   container.setAttribute("aria-label",window.ROBOTITO_I18N?.t?.("avatarAvailable",lang)||"Avatares disponibles");
-  container.innerHTML=ROBOTITO_AVATARS.map(avatar=>{
+  container.innerHTML=ROBOTITO_AVATARS.map((avatar,index)=>{
     const selected=avatar.id===state.avatar;
-    const profile=speciesProfile(avatar.id);
-    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}: ${escapeHtml(profile.trait)}">
+    return `<button type="button" class="avatar-choice${selected?" selected":""}" data-avatar-id="${avatar.id}" role="option" aria-selected="${selected}" aria-label="${escapeHtml(avatarName(avatar,lang))}">
       <span class="avatar-choice-emoji" aria-hidden="true">${avatarVisualMarkup(avatar,"avatar-choice-svg")}</span>
-      <span class="avatar-choice-name">${escapeHtml(avatarName(avatar,lang))}</span>
-      <span class="avatar-special">${escapeHtml(profile.trait)}</span>
     </button>`;
   }).join("");
 }
@@ -2316,6 +2315,16 @@ function showStartupStep(step){
     setTimeout(()=>$("#avatarChoices .selected, #avatarChoices .avatar-choice")?.focus(),0);
   }
 }
+function reopenAvatarPicker(){
+  // Reuse the original accessible picker without restarting sensors or losing the current avatar.
+  const gate=$("#languageGate");
+  if(!gate)return;
+  gate.hidden=false;
+  gate.removeAttribute("aria-hidden");
+  gate.style.display="";
+  gate.classList.remove("hidden");
+  showStartupStep("avatar");
+}
 function finishStartupAvatar(id){
   applyAvatar(id);
   const gate=$("#languageGate");
@@ -2326,10 +2335,10 @@ function finishStartupAvatar(id){
     gate.style.display="none";
   }
   const mode=avatarLanguage();
-  $("#startBtn").disabled=false;
-  $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.("start",mode)||"Despertar sentidos";
-  $("#statusText").textContent=mode==="es"?speciesIntroduction(id):
-    window.ROBOTITO_I18N?.t?.("avatarReady",mode);
+  // Selecting a new appearance never resets an already-awake Robotito.
+  $("#startBtn").disabled=Boolean(state.started);
+  $("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
+  $("#statusText").textContent=window.ROBOTITO_I18N?.t?.(state.started?"avatarChanged":"avatarReady",mode)||"Robotito está listo.";
   applyDayNightMode(new Date());
   flushPendingBatteryAlert();
 }
@@ -2362,7 +2371,9 @@ function setLanguageMode(mode){
     catch(error){console.warn("language preference",error);if(typeof toast==="function")toast("No pude guardar el idioma en este dispositivo.");}
   }
   if($("#languageMode"))$("#languageMode").value=mode;
+  if($("#quickLanguageSelect"))$("#quickLanguageSelect").value=mode;
   window.ROBOTITO_I18N?.apply?.(mode);
+  if($("#startBtn"))$("#startBtn").textContent=window.ROBOTITO_I18N?.t?.(state.started?"active":"start",mode)||"Despertar sentidos";
   if(typeof updateAvatarAria==="function")updateAvatarAria();
   populateVoiceSelect();
   if(typeof refreshLocalizedUI==="function")refreshLocalizedUI();
@@ -4124,6 +4135,7 @@ function selectRobotitoContext(owner){
   if(owner===robotitoContextOwner)return robotitoConversationContext;
   robotitoContextsByOwner.set(robotitoContextOwner,robotitoConversationContext);
   robotitoContextOwner=owner;
+  window.ROBOTITO_TYPED_CHAT?.onOwnerChange?.(owner);
   robotitoConversationContext=robotitoContextsByOwner.get(owner)
     ||window.ROBOTITO_SEMANTIC_PLANNER?.createContext?.()||{turns:[],focus:null};
   if(robotitoContextsByOwner.size>24)robotitoContextsByOwner.delete(robotitoContextsByOwner.keys().next().value);
@@ -4134,6 +4146,8 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   await window.ROBOTITO_MEMORY?.ready?.();
   if(ownerBeforeReady!==window.ROBOTITO_MEMORY?.owner?.())return;
   const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
+  // A new explicit request interrupts any earlier fetch-and-present scene.
+  if(!atomic)window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   // P10/P11: explicit literal-response instructions are parsed conservatively
   // before generic intent planning. Class audio is educational material, never
   // a source of automatic personal commands.
@@ -6127,6 +6141,7 @@ function bindUI(){
     entry.value="";
     $("#transcript").textContent=question;
     autoRemember(question);
+    window.ROBOTITO_TYPED_CHAT?.onTurn?.(question,window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
     try{await handleSpeech(question,{channel:"text"});}
     catch(error){console.warn("typed question",error);say(window.ROBOTITO_I18N?.t?.("notSure",responseLanguage())||"No pude procesar eso.");}
   });
@@ -6137,7 +6152,8 @@ function bindUI(){
   });
   $("#backToLanguage")?.addEventListener("click",()=>showStartupStep("language"));
   $("#startBtn").addEventListener("click",startSenses);
-  $("#stopSensesBtn")?.addEventListener("click",()=>stopSenses());
+  $("#changeAvatarBtn")?.addEventListener("click",reopenAvatarPicker);
+  $("#quickLanguageSelect")?.addEventListener("change",event=>setLanguageMode(event.target.value));
   $("#languageMode")?.addEventListener("change",e=>{
     const mode=e.target.value;
     setLanguageMode(mode);

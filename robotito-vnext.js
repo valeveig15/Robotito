@@ -344,6 +344,8 @@
   async function handle(raw,{lang="es",plan=null}={}){
     const info=classify(raw,plan);
     if(info.shouldExecute===false)return false;
+    // Requests to SHOW a catalogued object use the avatar scene, not camera recognition.
+    if(window.ROBOTITO_OBJECT_SCENE?.request?.(raw,{language:lang}))return true;
     if(info.intent==="country-capital"){
       const result=await window.ROBOTITO_COUNTRY_KNOWLEDGE.answer(raw,lang);
       if(result?.handled){

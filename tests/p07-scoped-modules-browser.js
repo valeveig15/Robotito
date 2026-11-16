@@ -13,12 +13,14 @@ runBrowserTest("p07-scoped-modules",async test=>{
   const rules=m.create({...m.rules,factory:ROBOTITO_TEMPORAL_RULES.createEngine});
   const videos=m.create({...m.video,factory:ROBOTITO_VIDEO_EVIDENCE.createStore});
   const owner=ROBOTITO_MEMORY.owner();
+  ROBOTITO_TYPED_CHAT.onTurn("Texto privado de esta sesión",owner);
   await native.run(p=>p.addTask({title:"Tarea anónima"}));
   await rules.run(p=>p.create({kind:"phrase",trigger:"secreto",text:"Regla temporal"},owner));
   await videos.run(p=>p.addBatch({owner,sourceId:"test",subject:"Biología",consent:true,
    items:[{kind:"provided-caption",text:"Evidencia privada temporal"}]}));
   const temporary=(await native.read()).snapshot().tasks.length;
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
+  const chatHidden=!document.getElementById("typedChatHistory").textContent.includes("Texto privado de esta sesión");
   const other=(await native.read()).snapshot().tasks.length;
   const otherRules=(await rules.read()).list("Ada").length;
   const otherVideo=(await videos.read()).search({owner:"Ada",subject:"Biología"}).length;
@@ -26,9 +28,9 @@ runBrowserTest("p07-scoped-modules",async test=>{
   const durable=await a.collection("Ada",m.native.key);
   const typed=(await s.queryRecords({owner:"Ada",type:"tasks",limit:Infinity})).some(r=>r.data.title==="Tarea de Ada");
   const backup=await s.exportBackup();
-  return {temporary,other,otherVideo,otherRules,durable:durable.items.length,typed,leaked:backup.records.some(r=>r.owner===owner),local:localStorage.getItem(m.native.key)};
+  return {temporary,other,otherVideo,otherRules,chatHidden,durable:durable.items.length,typed,leaked:backup.records.some(r=>r.owner===owner),local:localStorage.getItem(m.native.key)};
  });
- eq(results,{temporary:1,other:0,otherVideo:0,otherRules:0,durable:1,typed:true,leaked:false,local:null},"Tasks/video/rule engines isolate anonymous and registered histories");
+ eq(results,{temporary:1,other:0,otherVideo:0,otherRules:0,chatHidden:true,durable:1,typed:true,leaked:false,local:null},"Tasks/video/rule engines isolate anonymous and registered histories");
  await page.reload();await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
  const reload=await page.evaluate(async()=>{
   const m=ROBOTITO_MEMORY_MODULES,n=m.create({...m.native,factory:ROBOTITO_STUDY_PLANNER.createPlanner});

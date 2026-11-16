@@ -28,6 +28,7 @@ runBrowserTest("p04-capture",async test=>{
  });
  await page.goto(test.baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.querySelector("#startBtn")?.disabled===false);
+ assert.equal(await page.locator("#stopSensesBtn").count(),0,"Stop camera and microphone button was intentionally removed");
  await page.evaluate(()=>{
   window.__hidden=false;
   Object.defineProperty(document,"hidden",{configurable:true,get:()=>window.__hidden});
@@ -102,11 +103,11 @@ runBrowserTest("p04-capture",async test=>{
   return {closed:old.closed,visible:state.visibleHands};
  });
  assert.deepEqual(hands,{closed:true,visible:0},"Old hand results cannot affect a restarted avatar");
- await page.locator("#stopSensesBtn").click();
+ await page.evaluate(()=>stopSenses());
  test.phase("late-permission-cancellation");
  await page.evaluate(()=>{navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>{window.__grant=()=>resolve(window.__makeStream());});});
  await page.locator("#startBtn").click();
- await page.locator("#stopSensesBtn").click();
+ await page.evaluate(()=>stopSenses());
  await page.evaluate(()=>window.__grant());
  await page.waitForFunction(()=>window.__tracks.every(t=>t.stops>0));
  assert.equal(await page.evaluate(()=>state.started),false);
@@ -117,7 +118,7 @@ runBrowserTest("p04-capture",async test=>{
    window.__grants.push(()=>resolve(window.__makeStream()));
   });
  });
- await page.locator("#startBtn").click();await page.locator("#stopSensesBtn").click();
+ await page.locator("#startBtn").click();await page.evaluate(()=>stopSenses());
  await page.locator("#startBtn").click();
  await page.evaluate(()=>window.__grants[1]());
  await page.waitForFunction(()=>state.stream&&state.recognition);
@@ -125,7 +126,7 @@ runBrowserTest("p04-capture",async test=>{
  await page.waitForFunction(()=>window.__tracks.slice(-2).every(t=>t.stops>0));
  assert.equal(await page.evaluate(()=>state.stream===window.__currentStream&&
   state.stream.getTracks().every(t=>t.readyState==="live")),true,"Old permission cannot close the new stream");
- await page.locator("#stopSensesBtn").click();
+ await page.evaluate(()=>stopSenses());
  test.phase("hidden-during-camera-play");
  await page.evaluate(()=>{
   navigator.mediaDevices.getUserMedia=async()=>window.__makeStream();
@@ -150,6 +151,6 @@ runBrowserTest("p04-capture",async test=>{
  await page.evaluate(()=>window.dispatchEvent(new Event("pagehide")));
  assert.equal(await page.evaluate(()=>!state.started&&window.__tracks.every(t=>t.stops>0)),true);
  report.checked=["hidden","resume","old ASR","class capture stop","mute","unmute","independent final words",
-  "ended","retry","old hands","stop","late permission","out-of-order permission","hidden play","denied","pagehide"];
+  "ended","retry","old hands","internal teardown","late permission","out-of-order permission","hidden play","denied","pagehide"];
  console.log("P04 real-app capture lifecycle:",test.engineName,"passed; synthetic media only");
 }).catch(error=>{console.error(error);process.exitCode=1;});
