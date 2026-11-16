@@ -4250,7 +4250,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     .catch(e=>console.warn("conversation storage",e));
   // A clearly addressed feeding offer is a direct user action, not a generic
   // overheard statement. Negations, quoted text and class speech remain inert.
-  const directFood=/^(?:robotito[, ]+)?(?:te doy|te ofrezco|te traje|quiero darte|dale de comer|darte de comer|i give you|i offer you|feed you|here is some|eu te dou|eu te ofereco|je te donne|je t offre|ti do|ti offro|ich gebe dir|ich futtere dich)\\b/.test(text);
+  const directFood=/^(?:robotito[, ]+)?(?:te doy|te ofrezco|te traje|quiero darte|dale de comer|darte de comer|i give you|i offer you|feed you|here is some|eu te dou|eu te ofereco|je te donne|je t offre|ti do|ti offro|ich gebe dir|ich futtere dich)\b/.test(text);
   if(directFood&&!state.classMode&&!interpretation?.negative&&!interpretation?.quotedContent&&handleSpeciesFoodOffer(interpreted))return;
   // An overheard statement must not start class, web, book, math or camera actions.
   if(interpretation&&interpretation.shouldExecute===false){
