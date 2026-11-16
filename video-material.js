@@ -12,22 +12,23 @@
   let visualObservations=new Map();
   let activeVideo=null,activeScope=null,captureBeganAt=0,evidenceStore=null;
   function evidence(){
-    if(!evidenceStore)evidenceStore=window.ROBOTITO_VIDEO_EVIDENCE?.createStore?.();
+    if(!evidenceStore)evidenceStore=window.ROBOTITO_MEMORY_MODULES.create({...window.ROBOTITO_MEMORY_MODULES.video,factory:window.ROBOTITO_VIDEO_EVIDENCE.createStore});
     if(!evidenceStore)throw new Error("Evidence store unavailable");
     return evidenceStore;
   }
   function classScope(){
-    return {subject:norm(document.querySelector("#classSubject")?.value||state.classSubject),
+    return {owner:window.ROBOTITO_MEMORY.owner(),subject:norm(document.querySelector("#classSubject")?.value||state.classSubject),
       topic:norm(document.querySelector("#classTopic")?.value||state.classTopic),
       sessionId:norm(state.classSessionId)};
   }
-  function storeEvidence(video,items,scope=classScope()){ 
+  async function storeEvidence(video,items,scope=classScope()){
     if(!scope.subject||!items.length)return 0;
     try{
-      return evidence().addBatch({
+      if(scope.owner!==window.ROBOTITO_MEMORY.owner())throw Error("History changed; evidence discarded");
+      return await evidence().run(store=>store.addBatch({
         sourceId:video.id,sourceUrl:video.url,title:video.title,
-        ...scope,owner:"local",consent:true,items
-      });
+        ...scope,consent:true,items
+      }));
     }catch(e){console.warn("video evidence persistence",e);setStatus(
       "No pude guardar el índice de evidencias: "+String(e.message||e),"error");return 0;}
   }
@@ -109,7 +110,9 @@
     await window.ROBOTITO_CLASS_ORGANIZER?.importAcademicFiles?.([file]);
   }
   async function savePastedTranscript(){
+    const scope=classScope();
     const video=await prepareVideo();
+    if(scope.owner!==window.ROBOTITO_MEMORY.owner())return;
     if(!video)return;
     const textarea=document.querySelector("#youtubeTranscript");
     const transcript=norm(textarea?.value);
@@ -126,10 +129,11 @@
       transcript
     ].join("\n");
     await saveTextMaterial(material,"YouTube_"+safeName(video.title)+".txt");
+    if(scope.owner!==window.ROBOTITO_MEMORY.owner())return;
     // Pasted captions are supplied text, not something that Robotito actually heard.
-    storeEvidence(video,window.ROBOTITO_VIDEO_EVIDENCE?.segmentCaptions?.(transcript)?.map(row=>({
+    await storeEvidence(video,window.ROBOTITO_VIDEO_EVIDENCE?.segmentCaptions?.(transcript)?.map(row=>({
       kind:"provided-caption",text:row.text,atSec:row.atSec,complete:false
-    }))||[]);
+    }))||[],scope);
     if(textarea)textarea.value="";
     setStatus("Transcripción guardada como material académico de la materia y el tema actuales.","success");
     toast?.("Transcripción del video incorporada.");
@@ -172,6 +176,7 @@
     setTimeout(inspectFrame,1800);
   }
   async function importVisualObservations(video){
+    if(activeScope?.owner!==window.ROBOTITO_MEMORY.owner())return;
     const rows=[...visualObservations.values()]
       .filter(x=>x.count>=2&&x.best>=.70)
       .sort((a,b)=>b.count-a.count);
@@ -185,7 +190,7 @@
       ...rows.map(x=>uiText("- {name} (detectado entre {start} s y {end} s; confianza máxima {confidence}%)",{name:translatedObject(x.name),start:x.firstAt,end:x.lastAt,confidence:Math.round(x.best*100)}))
     ];
     await saveTextMaterial(lines.join("\n"),"Observaciones_visuales_"+safeName(video.title)+".txt");
-    storeEvidence(video,rows.map(x=>({kind:"seen",text:translatedObject(x.name),
+    await storeEvidence(video,rows.map(x=>({kind:"seen",text:translatedObject(x.name),
       atSec:x.firstAt,score:x.best,samples:x.count,complete:false})),activeScope||classScope());
   }
   async function restoreNormalListening(){
@@ -210,8 +215,9 @@
   }
   async function startCapture(){
     if(captureActive||captureStopping)return;
+    const owner=window.ROBOTITO_MEMORY.owner();
     const video=await prepareVideo();
-    if(!video)return;
+    if(!video||owner!==window.ROBOTITO_MEMORY.owner())return;
     if(!state.started){
       toast?.("Primero despertá los sentidos de Robotito.");
       setStatus("Primero elegí el idioma y despertá los sentidos.","error");
@@ -237,6 +243,7 @@
         surfaceSwitching:"include",
         systemAudio:"include"
       });
+      if(owner!==window.ROBOTITO_MEMORY.owner()){captureStream.getTracks().forEach(track=>track.stop());captureStream=null;throw Error("History changed");}
       if(!captureStream.getAudioTracks().length){
         captureStream.getTracks().forEach(track=>track.stop());
         captureStream=null;
@@ -319,8 +326,9 @@
     const video=activeVideo||{id,url:"https://www.youtube.com/watch?v="+id,title:titleForVideo(id)};
 
     try{
+      if(activeScope?.owner!==window.ROBOTITO_MEMORY.owner())throw Error("History changed; capture discarded");
       if(startedClassForCapture&&state.classMode)await stopClassMode();
-      storeEvidence(video,transcriptSegments.map(x=>({kind:"heard",text:x.text,
+      await storeEvidence(video,transcriptSegments.map(x=>({kind:"heard",text:x.text,
         atSec:x.atSec,capture:true,complete:false})).slice(0,240),activeScope||classScope());
       await importVisualObservations(video);
     }catch(e){
@@ -346,14 +354,16 @@
     captureStopping=false;
     await restoreNormalListening();
   }
-  function searchEvidence(){
+  async function searchEvidence(){
+    const scope=classScope();
     const out=document.querySelector("#videoEvidenceResults");
     if(!out)return;
     out.replaceChildren();
     let rows=[];
     try{
-      rows=evidence().search({...classScope(),
-        query:norm(document.querySelector("#videoEvidenceQuery")?.value),owner:"local",limit:12});
+      rows=(await evidence().read()).search({...scope,
+        query:norm(document.querySelector("#videoEvidenceQuery")?.value),limit:12});
+      if(scope.owner!==window.ROBOTITO_MEMORY.owner())return;
     }catch(e){out.textContent="No pude consultar las evidencias guardadas: "+e.message;return;}
     if(!rows.length){out.textContent="No hay fragmentos coincidentes en la materia y el tema seleccionados.";return;}
     const labels={"provided-caption":"Subtítulo aportado","heard":"Audio transcrito",
@@ -384,6 +394,10 @@
     setButtons(false);
   }
 
+  window.addEventListener("robotito:memoryscopechange",()=>{
+    for(const id of ["videoEvidenceResults","youtubeTranscript","youtubeVisualStatus"]) {const el=document.getElementById(id);if(el){el.replaceChildren();if("value" in el)el.value="";}}
+    if(captureActive||captureStream)void stopCapture();
+  });
   window.ROBOTITO_YOUTUBE_MATERIAL={
     parseYouTubeId,
     prepareVideo,

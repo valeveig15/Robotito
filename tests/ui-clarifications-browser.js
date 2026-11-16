@@ -60,16 +60,26 @@ runBrowserTest("avatar-language-text-footer",async test=>{
  }
  test.phase("spoken-commands-are-not-saved-in-horarios");
  const command=await page.evaluate(async()=>{
+   await ROBOTITO_MEMORY.ready();
+   const owner=ROBOTITO_MEMORY.owner();
    const engine=window.ROBOTITO_TEMPORAL_RULES.attach();
-   const before=engine.list("local").length;
+   const before=engine.list(owner).length;
    await window.ROBOTITO_CHAT.send("En 1 minuto decime tomar agua");
-   return {before,after:engine.list("local").length,
-      temporary:engine.temporaryList("local").map(row=>row.text),
+   return {before,after:engine.list(owner).length,
+      temporary:engine.temporaryList(owner).map(row=>row.text),
       storage:JSON.parse(localStorage.getItem("robotito.temporal-rules.v1")||"[]").length};
  });
  assert.equal(command.before,command.after);
  assert.ok(command.temporary.includes("tomar agua"),"spoken reminder exists only in session");
  assert.equal(command.storage,command.after,"spoken reminder never writes to localStorage");
+ test.phase("transient-order-survives-engine-refresh");
+ await page.evaluate(async()=>{
+   const rules=ROBOTITO_TEMPORAL_RULES;
+   await rules.handle("En 1 segundo decime prueba temporal completada");
+   await rules.refresh();
+ });
+ await page.waitForFunction(()=>document.getElementById("typedChatHistory").textContent.includes("prueba temporal completada"),null,{timeout:7000});
+ assert.equal(await page.evaluate(()=>ROBOTITO_TEMPORAL_RULES.attach().temporaryList(ROBOTITO_MEMORY.owner()).some(row=>row.text==="prueba temporal completada")),false,"expired transient order removed without persistence");
  await page.locator("#robotitoTextSend").click();
  await page.waitForFunction(()=>document.querySelector(".typed-chat-user")?.textContent.includes("Hola desde el chat"),null,{timeout:8000});
  assert.deepEqual(test.report.pageErrors,[]);

@@ -1,55 +1,55 @@
 # P07 — Memoria contextual, fechas y datos durables
 
-Estado auditado el 14/11/2026: **EN PROGRESO**. Este documento separa funcionamiento comprobable de aceptación física o todavía pendiente.
+Revisión del 16/11/2026. **Implementación de software terminada en el alcance documentado; validación física pendiente.** La aceptación automatizada y la publicación deben corresponder al HEAD final del PR. No equivale a certificar dispositivos ni identificación biométrica.
 
-## Base ya integrada en main antes del P07 actual
+## Funcionalidad integrada
 
-- IndexedDB v4 con 17 tipos de registros, índices por tipo/propietario/fecha, relaciones y blobs.
-- Recuperación de recuerdos, conversaciones y clases con filtros por propietario, fecha, materia/tema y seis idiomas; nunca presentar una pregunta actual como prueba de un recuerdo.
-- Migraciones idempotentes de datos históricos, estado y archivos; aislamiento de propietarios en recuperación.
-- Copia local JSON de las cuatro tablas IndexedDB, validación estructural y restauración transaccional con confirmación explícita. Ver [P07-MEMORY-BACKUP.md](P07-MEMORY-BACKUP.md).
+- IndexedDB v4 conserva registros tipados, archivos y migraciones compatibles. Se añade el tipo `relationships` sin romper los tipos anteriores.
+- Recuperación por propietario, categoría, fecha y tema. «Ayer», «la última vez», «hace una semana», fechas ISO y fechas de calendario se resuelven sin inventar recuerdos. Una fecha imposible no devuelve datos de otra fecha. La búsqueda recorre todo el historial del propietario, incluso cuando la coincidencia queda fuera de los primeros 100 registros.
+- El planificador autoriza la consulta antes de recuperar datos; seis idiomas cubiertos en pruebas del recorrido real planificador→buscador. Órdenes negadas, citas y preguntas generales no habilitan búsquedas privadas.
+- Sesiones sin identidad confirmada permanecen en RAM y no entran al respaldo. La recarga crea otra sesión. Un cambio de propietario oculta el historial anterior antes de cargar el siguiente y descarta respuestas demoradas de otro propietario.
+- Personas registradas requieren la confirmación de voz reciente de P08 y coherencia con el rostro si está presente. La nueva separación no convierte un nombre, una cara aislada o una clave de visitante en autenticación biométrica.
+- Clases, transcripciones, apuntes, libros, tareas, recuerdos y preferencias personales usan ámbitos separados. Los recordatorios guardados expresamente en Horarios (P10/P11), tareas nativas de P18 y evidencias de vídeo de P22 también se integran en colecciones tipadas por propietario; las capturas de vídeo conservan su propietario inicial.
+- Los datos antiguos explícitamente atribuidos conservan su perfil. Los datos compartidos o sin atribución se guardan en `legacy:unassigned`, visibles en el archivo anterior de solo lectura, sin asignarlos al siguiente visitante. La migración del planificador/vídeos antiguos conserva los datos antes de retirar la copia de localStorage.
+- Corrección y borrado por ID, propietario y revisión. Conflictos entre pestañas se rechazan sin sobrescritura silenciosa; los cambios en colecciones actualizan las revisiones de los registros. El borrado de un historial elimina sus archivos y conserva los demás, incluso con nombres que comparten prefijos.
 
-## Incremento en PR #118 — edición y borrado de recuerdos
+Las órdenes dadas en conversación conservan el comportamiento transitorio del PR #150: no se escriben en Horarios. El chat visible de P25 se cambia inmediatamente junto con el propietario, sin esperar al siguiente mensaje.
 
-- Crear un recuerdo nuevo ahora escribe a la vez el registro tipado y su vista antigua dentro de la misma transacción. Si falla, no queda una mitad del dato.
-- El panel permite corregir y borrar recuerdos individualmente, con mensajes en español, inglés, portugués, francés, italiano y alemán.
-- Las mutaciones exigen coincidencia exacta con propietario y versión esperada; si otra pestaña modificó la fila, no se sobrescribe sin aviso.
-- Los IDs existentes no se pueden reutilizar para apropiarse de registros ajenos. El historial antiguo solo recibe un ID editable si coincide con una fila local migrada.
-- El borrado individual elimina relaciones y archivos vinculados. La opción «Borrar recuerdos» elimina solo los del perfil activo, jamás los de otros propietarios.
-- Se conserva «Chocar los cinco», sin cambios en P01–P06.
+## Visitantes y reversibilidad
 
-Las etiquetas de propietario evitan mezclas accidentales en el uso normal del panel y la recuperación, **pero no son autenticación ni aislamiento criptográfico** entre personas que comparten el mismo perfil de navegador.
+El panel Memoria permite crear un historial pseudónimo con consentimiento explícito. La clave privada permite retomarlo manualmente; solo se guarda un hash del secreto. Una recarga no identifica automáticamente al visitante y los recuerdos anónimos anteriores no se transfieren.
 
-## Incremento de copia cifrada opcional (PR posterior a #118)
+Para vincular el historial a un perfil registrado se revisan el destino y el número de registros, se escribe el nombre de destino y se comprueba otra vez la revisión del historial dentro de una transacción. Se conservan relaciones, archivos y colecciones, con procedencia `identityConfirmed: false`. La clave permite deshacer una vinculación equivocada: devuelve los registros, mantiene las correcciones posteriores y no resucita lo eliminado.
 
-- Exportación optativa a archivo cifrado localmente con Web Crypto AES-256-GCM, sal y nonce aleatorios por copia, PBKDF2-HMAC-SHA-256 con 310.000 iteraciones. Sin servidores, sin librerías externas ni almacenamiento de la contraseña.
-- Importación de respaldos cifrados y archivos JSON originales sin cifrar; rechazo de contraseña errónea, contenido alterado, formato y parámetros inesperados. Confirmación destructiva original conservada.
-- Botones, contraseñas y advertencias localizados a seis idiomas; contraseña nueva confirmada para evitar errores involuntarios.
-- `tests/p07-encrypted-backup-browser.js` prueba un ciclo completo con audio binario y perfiles, adulteración de archivo y UI real en navegadores.
-- No da protección criptográfica a los datos que siguen en IndexedDB, ni supera el límite de tamaño existente.
+Este flujo es continuidad voluntaria del historial. La bóveda biométrica de P09 conserva su propio consentimiento y cifrado; la clave de historial no sustituye su evaluación ni convierte sus vínculos biométricos en enlaces reversibles.
 
-## Incremento de restauración reversible (PR posterior al respaldo cifrado)
+## Copia, restauración y concurrencia
 
-- Un checkpoint local del estado anterior se guarda **atómicamente** junto con la restauración. Si no hay capacidad suficiente o un registro no puede preservarse, la restauración aborta sin sustituir nada.
-- Opciones de deshacer una vez (confirmación `DESHACER`) y descartar definitivamente el checkpoint; mensajes localizados a seis idiomas.
-- El checkpoint interno queda fuera de los respaldos exportados, para que datos antiguos y posibles olvidos no reaparezcan en archivos compartidos.
-- El borrado de recuerdos o audios invalida el checkpoint para impedir recuperación no deseada.
-- Alcance limitado al mismo navegador y a 64 MiB estimados. No sustituye un respaldo externo ni protege si el almacenamiento se elimina.
+Ver [P07-MEMORY-BACKUP.md](P07-MEMORY-BACKUP.md).
 
-## Puertas de calidad
+- Formato binario completo hasta 256 MiB y 128 MiB por archivo, con comprobaciones de estructura, propietarios, tamaños y SHA-256. La metadata tiene un límite de 32 MiB y cada tabla admite hasta 50.000 filas.
+- Cifrado optativo AES-256-GCM, PBKDF2-SHA-256 con 310.000 iteraciones y valores aleatorios por exportación. Contraseña nunca guardada. Compatibilidad con JSON anterior sin cifrar o cifrado; versiones de base 3 y 4 aceptadas, versiones futuras rechazadas antes de escribir.
+- Estado, registros, archivos y migraciones se reemplazan juntos y se conserva un único punto de recuperación en la misma transacción. Deshacer funciona después de recargar y consume el punto de recuperación.
+- Un cambio de generación impide que una pestaña abierta antes de restaurar escriba datos anteriores sobre el estado restaurado. Es necesario recargar esa pestaña antes de seguir escribiendo.
+- El formato completo incluye preferencias `robotito.*`. IndexedDB y localStorage no comparten transacción: las preferencias se aplican desde una operación pendiente recuperable. Si falla, la interfaz distingue los datos ya restaurados y permite reintentar al recargar.
+- El respaldo excluye sesiones temporales y el punto de recuperación interno. El borrado invalida la recuperación para evitar resucitar datos eliminados. Las grabaciones activas deben finalizar antes de exportar o restaurar.
 
-- Repetir `npm run test:memory`, `npm run test:p07:browser` y `npm run test:ci` en la rama.
-- Verificar regresión de propietario, recuperación temporal, modificación/borrado, rechazo de cambios desactualizados, preservación de otras personas, exportación/restauración y pruebas en Chromium/Firefox/WebKit.
-- Fusionar el PR solo si el HEAD exacto tiene todos los trabajos exigidos aprobados. Verificar nuevamente CI y publicación de Pages tras fusionar.
+## Evidencia reproducible
 
-## Limitaciones y tareas sin resolver: no declarar P07 completo
+| Prueba | Alcance |
+|---|---|
+| `tests/p07-contextual-memory-regression.js` | 88 comprobaciones: seis idiomas, fechas, planificador real, ausencia de evidencia, propietario, negación, citas y búsqueda fuera de la primera ventana |
+| `tests/p07-memory-browser.js` | 34 comprobaciones: sesión temporal, consentimiento, recarga, edición, vínculo/deshacer, carreras entre pestañas, borrado y actualización real de IndexedDB v3 |
+| `tests/p07-archive-browser.js` | 36 comprobaciones: archivo binario de 17.825.795 bytes, igualdad exacta, contraseña equivocada, alteración, truncamiento, cuota fallida, restauración, deshacer, preferencias y pestaña desactualizada |
+| `tests/p07-scoped-modules-browser.js` | 9 comprobaciones: tareas/vídeos/reglas por propietario, recarga, migración antigua, prefijos de nombres, archivos de sesión y deshacer después de corregir una tarea |
+| Cuatro suites P07 históricas | JSON, edición/borrado con espejo antiguo, cifrado anterior, recuperación de un paso |
+| `npm run test:ci` | Regresión del repositorio, incluidos P01–P26 y «Chocar los cinco» |
+| CI `cross-browser` | Mismos recorridos de aplicación y P07 en Firefox y WebKit, además de Chromium en regresión |
 
-1. **Archivos grandes:** respaldo JSON tiene tope de 32 MiB y 12 MiB por blob. Falta empaquetado o transmisión fragmentada, importación/exportación bajo cuota y prueba con archivos realmente grandes.
-2. **Privacidad de respaldo:** disponible exportación cifrada voluntaria, cuya aceptación multiplataforma depende de CI. El JSON antiguo no cifrado sigue disponible para compatibilidad. Falta cifrado en reposo de datos dentro de IndexedDB y políticas claras de contraseñas/custodia; si se olvida la contraseña de un respaldo cifrado, no se puede recuperar.
-3. **Datos complementarios y versiones:** localStorage y archivos externos no se incluyen; restauración de versiones futuras/antiguas no compatible aún. Probar cambios de versión e interrupciones de migración.
-4. **Deshacer y recuperación:** hay un checkpoint transaccional local de un paso y opción de borrarlo, sujeto a CI del nuevo PR y al límite de 64 MiB. Falta recuperación ante pérdida total del dispositivo, límites de almacenamiento y varias pestañas; se recomienda mantener una copia externa.
-5. **Concurrencia y resiliencia:** faltan pruebas de exportación/restauración con escritura en otra pestaña, bloqueo/recarga y fallos de cuota o energía; el control de versión del PR solo cubre mutaciones individuales de recuerdos.
-6. **Visitantes pseudónimos:** falta vinculación explícita, verificable y reversible con registro y consentimiento vigente. Nunca asociar identidades automáticamente por rostro, voz o nombre coincidente.
-7. **Escala y dispositivos:** probar cientos de miles de recuerdos, múltiples blobs, Android/iPhone/escritorio, borrado con fallos y recuperación real. CI sintética no es certificación del hardware.
+## Límites de aceptación
 
-Mantener estos pendientes hasta contar con implementación conectada y evidencia. No iniciar P08 por considerar terminada únicamente la edición de recuerdos.
+Los límites son explícitos y un exceso se rechaza sin entregar una copia parcial. No se afirma haber probado 256 MiB ni 50.000 filas: el archivo binario automatizado pesa aproximadamente 17 MiB. Exportar/descifrar y crear el punto de recuperación necesitan memoria y cuota adicionales del dispositivo.
+
+Las etiquetas de propietario previenen mezclas en los recorridos normales; no aíslan criptográficamente a personas que comparten el perfil del navegador. IndexedDB ordinario no se cifra en reposo. Los respaldos cifrados y la bóveda P09 tienen sus protecciones específicas.
+
+No hay sincronización automática entre dispositivos. La pérdida del navegador/dispositivo requiere una copia descargada; perder su contraseña impide descifrarla. Siguen pendientes ensayos en Android/iPhone físicos, presión real de memoria/disco, pérdida de energía y exactitud de identidad con personas reales. Las pruebas de cuota usan un fallo inyectado en la escritura IndexedDB real, no una interrupción eléctrica.

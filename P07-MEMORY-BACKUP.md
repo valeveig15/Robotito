@@ -1,26 +1,42 @@
-# Punto 07 — copia local y recuperación de memoria
+# P07 — Copias y recuperación de memoria
 
-El botón **Descargar copia de seguridad** del panel **Memoria** exporta el contenido actual de las cuatro tablas de **IndexedDB** de Robotito (estado, registros tipados, audios/PDF binarios y marcadores de migración). Es una operación local y voluntaria: no hay subida automática a GitHub ni a ningún servidor.
+En **Memoria → Descargar copia de seguridad** se puede elegir entre dos formatos:
 
-## Privacidad y funcionamiento
+| Formato | Incluye | Límite |
+|---|---|---|
+| Completo `.robotito` (predeterminado) | Cuatro tablas IndexedDB, archivos finalizados y preferencias `robotito.*` | 256 MiB en total; 128 MiB por archivo; 32 MiB de metadata; 50.000 filas por tabla |
+| JSON compatible | Cuatro tablas IndexedDB, con archivos codificados en base64 | 32 MiB de JSON; 12 MiB por archivo |
 
-- La copia contiene datos de múltiples personas, muestras de audio, identificadores, recuerdos, transcripciones o metadatos biométricos. **Por defecto el JSON continúa sin cifrar** para conservar compatibilidad. Activar **«Cifrar esta copia con una contraseña»** antes de descargar para proteger el archivo mediante AES-256-GCM con derivación PBKDF2-HMAC-SHA-256 (310.000 iteraciones, sal aleatoria de 128 bits y nonce aleatorio de 96 bits). La contraseña **nunca se almacena** ni se envía a servidores. Si se pierde, **no existe recuperación automática del respaldo cifrado**.
-- Para restaurar una copia cifrada, escribir su contraseña en el campo local antes de seleccionar el archivo. El descifrado comprueba la integridad: contraseña errónea o archivo alterado no reemplazan los datos. Se aceptan también archivos JSON anteriores sin cifrar. No guardar copias sin cifrar en lugares compartidos ni adjuntarlas a incidencias.
-- La copia es **de este navegador**, no de toda la cuenta ni de todos los dispositivos. No incluye datos ubicados exclusivamente en localStorage, archivos fuera de IndexedDB ni permisos del sistema.
-- Antes de restaurar, Robotito exige haber preparado una copia actual en esa sesión, una confirmación afirmativa y escribir exactamente `RESTAURAR`. Hay que comprobar además que el navegador **efectivamente guardó** el archivo descargado.
-- La restauración **reemplaza** las tablas IndexedDB, no combina historias. Mantiene etiquetas de propietarios originales (`local`, personas registradas y visitantes pseudónimos), sin vincular perfiles o identidades automáticamente.
-- Los cuatro almacenes se escriben en **una sola transacción**. Un error de escritura o de cuota provoca el aborto de la transacción, en lugar de dejar la mitad de las tablas restauradas.
-- El JSON se valida antes de modificar los datos: estructura, versión, IDs duplicados, tipos permitidos, tamaño de archivos y correspondencia entre cada registro y su audio. No instala código de un archivo importado.
-- Límite intencional de un respaldo JSON: **32 MiB**, con **12 MiB por archivo binario**. Cuando se supera el límite, la exportación se rechaza sin entregar una copia incompleta. Un conjunto de clases o audios grandes podría requerir en el futuro un respaldo fragmentado. El cifrado opcional protege la confidencialidad e integridad del archivo, **no amplía** esos límites.
-- Antes de restaurar, cerrar otras pestañas de Robotito para evitar cambios simultáneos. Después de una restauración exitosa, la página se recarga.
-- **Reversibilidad local de un paso:** antes de reemplazar los datos, Robotito conserva en **la misma transacción IndexedDB** una copia estructurada del estado anterior. El botón **Deshacer última restauración** permite recuperarla UNA vez, con confirmación expresa `DESHACER`. Este deshacer reemplaza cualquier cambio realizado después de la última restauración y no puede volver a deshacerse automáticamente. La opción **Eliminar punto de recuperación** borra esa copia de la base local.
-- Si falta espacio o un dato antiguo no puede conservarse con seguridad, la restauración se rechaza sin reemplazar los registros previos. El punto de recuperación se limita a **64 MiB** de datos estimados. No es un backup independiente: se encuentra en el mismo navegador, se pierde si se borra el almacenamiento y no protege ante fallo total del dispositivo.
-- Por privacidad, una eliminación de recuerdos, registros o audios invalida también el punto de recuperación, para impedir que un deshacer posterior resucite datos eliminados. Las copias JSON descargadas manualmente siguen siendo responsabilidad de quien las guarda. No desaparecen al eliminar la recuperación local.
-- Los puntos de recuperación no se incluyen dentro de nuevas exportaciones JSON o cifradas, para evitar copias recursivas y exportar recuerdos borrados. Igual conviene conservar una copia descargada **antes** de restaurar y guardarla en un lugar seguro.
-- Para visitantes, el respaldo no es autorización para fusionar rostros ni identidades. El enlace voluntario al registro queda sujeto a un flujo adicional de consentimiento y verificación.
+Las sesiones temporales en RAM y el punto de recuperación interno quedan fuera de ambas copias. No se exportan permisos del sistema, pestañas abiertas ni archivos que no se hayan incorporado a Robotito. El formato completo no puede abrirse en versiones antiguas de la aplicación; para ellas se conserva JSON.
 
-## Pruebas
+## Crear la copia
 
-Ejecutar `npm run test:p07:browser` (Chromium real con IndexedDB): exportación y restauración, aislamiento por propietario, PDF/audio binario, identificadores duplicados, bytes corruptos, confirmación rechazada y reemplazo de datos. Después ejecutar `npm run test:ci`.
+1. Terminá las clases y grabaciones en curso y esperá a que se guarden.
+2. Elegí el formato. Para datos privados, activá **Cifrar esta copia con una contraseña**, introducí una contraseña de 12 a 256 caracteres y repetila.
+3. Descargá y comprobá que el navegador guardó el archivo. Guardá la contraseña por separado.
 
-**Limitaciones abiertas:** conservación de archivos individuales mayores de 12 MiB; backup/exportación de datos que solo viven en localStorage; restauración entre versiones incompatibles; concurrencia durante exportación, varias pestañas y otros dispositivos; punto de recuperación limitado y localizado en el mismo navegador; asociación pseudónima consentida; validación de casos con archivos grandes reales. La restauración cifrada requiere Web Crypto y contexto seguro HTTPS/localhost, y no protege los datos mientras siguen almacenados en IndexedDB. No declarar el punto 7 concluido por una prueba en Chromium.
+El cifrado ocurre localmente mediante Web Crypto AES-256-GCM, PBKDF2-HMAC-SHA-256 con 310.000 iteraciones, sal aleatoria de 128 bits y nonce de 96 bits. La contraseña no se guarda ni se envía. Sin contraseña, el archivo puede ser leído por quien tenga acceso a él. El SHA-256 del formato sin cifrar detecta corrupción accidental; no autentica al autor.
+
+La copia abarca **todos los historiales guardados en ese navegador**, incluidas muestras y perfiles. No es una exportación de una sola persona ni un respaldo de toda la cuenta. No se sube automáticamente a ningún servidor.
+
+## Restaurar y deshacer
+
+1. Prepará primero una copia actual desde el mismo panel.
+2. Si el archivo está cifrado, introducí su contraseña en el campo de restauración.
+3. Seleccioná el archivo, confirmá y escribí `RESTAURAR`.
+
+La importación valida estructura, versión, IDs, relaciones de archivos y propietarios antes de sustituir datos. Acepta versiones de base 3 y 4 y JSON anterior, cifrado o sin cifrar. Una versión futura, contraseña errónea, archivo alterado o truncado se rechaza. **Restaurar reemplaza los historiales; no los fusiona ni confirma identidades.**
+
+Las cuatro tablas y el punto de recuperación anterior se escriben en una sola transacción IndexedDB. Si falla la escritura o falta cuota, no se reemplazan parcialmente. El punto de recuperación tiene un límite estimado de 256 MiB y 50.000 filas por tabla. La pestaña que restaura se recarga; otras pestañas anteriores quedan impedidas de escribir hasta recargarse.
+
+Las preferencias del formato completo se aplican después de confirmar la transacción. Si localStorage falla, los datos ya están restaurados: el aviso lo explica y la aplicación reintenta las preferencias al recargar. No se promete una transacción conjunta entre ambas APIs.
+
+**Deshacer última restauración** pide confirmar y escribir `DESHACER`. Recupera una vez el estado anterior, incluso después de recargar. Reemplaza los cambios realizados después de restaurar y consume ese punto; no ofrece una cadena de deshacer. **Eliminar punto de recuperación** lo descarta de forma expresa.
+
+El borrado de recuerdos, registros, audios o de un historial invalida también la recuperación local para impedir que un deshacer resucite datos borrados. Las copias descargadas deben eliminarse por separado.
+
+## Alcance comprobado
+
+`npm run test:p07:browser` conserva las suites JSON/cifrado/deshacer originales y añade un ciclo con **17.825.795 bytes binarios**, comparación exacta, archivo cifrado, corrupción, propietario incorrecto, cuota simulada, reversión y pestaña desactualizada. La matriz de CI ejecuta los recorridos en Chromium, Firefox y WebKit.
+
+El tamaño máximo anunciado es un límite de formato, no una promesa de capacidad para todo teléfono. Las operaciones usan memoria y espacio adicionales. No hay recuperación sin una copia externa cuando se pierde el dispositivo, ni recuperación de una contraseña olvidada. El cifrado del archivo no cifra la base IndexedDB ordinaria en reposo. La continuidad voluntaria por clave de visitante y su vinculación reversible se describen en [P07-STATUS.md](P07-STATUS.md).

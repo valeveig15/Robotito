@@ -18,16 +18,16 @@
   <script defer src="object-presentation-scene.js?v=20261115-p24"></script>
   <script defer src="physics-momentum.js"></script>
   <script defer src="spoken-math.js?v=20261107-p05"></script>
+  <script defer src="nlu-temporal.js?v=20261115-p07"></script>
   <script defer src="algebra-tutor.js?v=20261115-p19"></script>
   <script defer src="algebra-tutor-ui.js?v=20261115-p19"></script>
   <script defer src="chemistry-nomenclature.js?v=20261115-p20"></script>
   <script defer src="chemistry-nomenclature-ui.js?v=20261115-p20"></script>
   <script defer src="study-planner.js?v=20261115-p18"></script>
-  <script defer src="study-planner-ui.js?v=20261115-p18"></script>
-  <script defer src="nlu-temporal.js?v=20261024-context2"></script>
-  <script defer src="temporal-rules.js?v=20261115-interface-clarified"></script>
-  <script defer src="i18n.js?v=20261115-interface-clarified"></script>
-  <script defer src="ui-messages.js?v=20261108-p06"></script>
+  <script defer src="study-planner-ui.js?v=20261115-p07"></script>
+  <script defer src="temporal-rules.js?v=20261116-p07"></script>
+  <script defer src="i18n.js?v=20261116-p07"></script>
+  <script defer src="ui-messages.js?v=20261115-p07"></script>
   <script defer src="localized-content.js?v=20261107-p05"></script>
   <script defer src="voice-system.js?v=20261108-p06"></script>
   <script defer src="voice-sample-capture.js?v=20261108-p06"></script>
@@ -40,33 +40,37 @@
   <script defer src="audio-microphone-gate.js?v=20261028-track-guard1"></script>
   <script defer src="weather-forecast.js?v=20261024-context2"></script>
 
-  <script defer src="memory-retrieval.js?v=20261030-p01-context"></script>
-  <script defer src="semantic-planner.js?v=20261030-p01-context"></script>
+  <script defer src="memory-retrieval.js?v=20261115-p07"></script>
+  <script defer src="semantic-planner.js?v=20261115-p07"></script>
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
-  <script defer src="robotito-store.js?v=20261030-p02-portable"></script>
+  <script defer src="robotito-store.js?v=20261115-p07"></script>
+  <script defer src="memory-state.js?v=20261115-p07"></script>
+  <script defer src="memory-session.js?v=20261115-p07"></script>
+  <script defer src="memory-module-store.js?v=20261115-p07"></script>
   <script defer src="visitor-memory.js?v=20261114-p09-private"></script>
-  <script defer src="p07-backup-crypto.js?v=20261114-p07-encrypted"></script>
-  <script defer src="memory-backup-ui.js?v=20261114-p07-encrypted"></script>
+  <script defer src="p07-backup-crypto.js?v=20261115-p07"></script>
+  <script defer src="memory-archive.js?v=20261115-p07"></script>
+  <script defer src="memory-backup-ui.js?v=20261115-p07"></script>
   <script defer src="presidents.js"></script>
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
   <script defer src="country-knowledge.js?v=20261115-p21"></script>
   <script defer src="speech-fallback.js?v=20261105-p04-capture"></script>
-  <script defer src="class-audio.js?v=20261107-p05"></script>
+  <script defer src="class-audio.js?v=20261115-p07"></script>
+  <script defer src="class-organizer.js?v=20261115-p07"></script>
   <script defer src="class-summary-aggregate.js?v=20261115-p15"></script>
-  <script defer src="class-organizer.js?v=20261107-p05"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
-  <script defer src="class-verification.js?v=20261108-p06"></script>
+  <script defer src="class-verification.js?v=20261115-p07"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
   <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
-  <script defer src="script.js?v=20261116-p28"></script>
-  <script defer src="typed-chat-ui.js?v=20261115-p25"></script>
+  <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
+  <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
   <script defer src="video-evidence.js?v=20261115-p22"></script>
-  <script defer src="video-material.js?v=20261107-p05"></script>
+  <script defer src="video-material.js?v=20261115-p07"></script>
   <script defer src="robotito-tests.js?v=20261105-p04-capture"></script>
   <script defer src="robotito-regression-suite.js?v=20261105-p04-capture"></script>
 </head>
@@ -941,6 +945,25 @@
       </section>
 
       <section class="tabpage" id="tab-memory">
+        <div class="card memory-scope">
+          <h2 data-ui-copy="Historial%20activo">Historial activo</h2>
+          <p id="memoryOwner" role="status"></p>
+          <button id="deleteMemoryHistory" type="button" class="ghost danger" data-ui-copy="Eliminar%20todo%20este%20historial">Eliminar todo este historial</button>
+          <button id="newMemorySession" type="button" class="ghost" data-ui-copy="Nuevo%20visitante%20sin%20historial">Nuevo visitante sin historial</button>
+          <details><summary data-ui-copy="Conservar%20o%20retomar%20un%20historial%20de%20visitante">Conservar o retomar un historial de visitante</summary>
+            <label class="check"><input id="visitorMemoryConsent" type="checkbox" /><span data-ui-copy="Autorizo%20guardar%20este%20historial%20pseud%C3%B3nimo%20en%20el%20dispositivo.">Autorizo guardar este historial pseudónimo en el dispositivo.</span></label>
+            <button id="createVisitorMemory" type="button" class="ghost" data-ui-copy="Crear%20historial%20con%20consentimiento">Crear historial con consentimiento</button>
+            <label for="visitorMemoryKey" data-ui-copy="Clave%20privada%20del%20historial">Clave privada del historial</label>
+            <input id="visitorMemoryKey" type="password" autocomplete="off" spellcheck="false" />
+            <button id="copyVisitorMemoryKey" type="button" class="ghost" data-ui-copy="Copiar%20clave">Copiar clave</button>
+            <button id="resumeVisitorMemory" type="button" class="ghost" data-ui-copy="Retomar%20con%20la%20clave">Retomar con la clave</button>
+            <label for="visitorLinkTarget" data-ui-copy="Nombre%20exacto%20del%20perfil%20registrado">Nombre exacto del perfil registrado</label>
+            <input id="visitorLinkTarget" type="text" autocomplete="off" />
+            <button id="linkVisitorMemory" type="button" class="ghost" data-ui-copy="Revisar%20y%20vincular">Revisar y vincular</button>
+            <button id="undoVisitorMemory" type="button" class="ghost" data-ui-copy="Deshacer%20vinculaci%C3%B3n">Deshacer vinculación</button>
+          </details>
+          <p id="memoryActionStatus" role="status" aria-live="polite"></p>
+        </div>
         <div class="card memory-info">
           <h2 data-i18n="uiAutoMemory">Memoria automática</h2>
           <p data-i18n="uiMemoryHelp">Robotito guarda por su cuenta las frases que logra entender y, en modo clase, conserva las explicaciones como material de estudio.</p>
@@ -948,6 +971,8 @@
         </div>
         <div class="card">
           <h2 data-i18n="uiAddMemory">Agregar un recuerdo manual</h2>
+          <label for="memorySaveType" data-ui-copy="Categor%C3%ADa">Categoría</label>
+          <select id="memorySaveType"><option value="memories" data-i18n="uiMemories">Recuerdos</option><option value="preferences" data-ui-copy="Preferencias">Preferencias</option><option value="relationships" data-ui-copy="Observaciones%20de%20la%20relaci%C3%B3n">Observaciones de la relación</option></select>
           <textarea id="memoryInput" data-i18n-placeholder="uiMemoryExample" rows="3" placeholder="Ej. Mi color favorito es el verde"></textarea>
           <button id="rememberBtn" type="button" class="primary full" data-i18n="uiSaveMemory">Guardar recuerdo</button>
         </div>
@@ -955,7 +980,10 @@
           <details class="memory-backup">
             <summary data-i18n="p07BackupTitle">Respaldo y recuperación de memoria local</summary>
             <p class="muted" data-i18n="p07BackupWarning">El archivo JSON puede incluir recuerdos privados, rostros, audios y transcripciones. No está cifrado: guardalo en un lugar privado y no lo compartas.</p>
-            <p class="muted" data-i18n="p07BackupScope">La copia contiene los datos de IndexedDB de este navegador, de todas las personas y sesiones guardadas. No incluye archivos ni preferencias fuera de IndexedDB.</p>
+            <p class="muted" data-i18n="p07BackupScope">El formato completo incluye historiales guardados, archivos finalizados y preferencias de Robotito de este navegador. El JSON anterior solo incluye IndexedDB. Las sesiones temporales y el punto de recuperación no se exportan.</p>
+            <label for="memoryBackupFormat" data-ui-copy="Formato%20de%20la%20copia">Formato de la copia</label>
+            <select id="memoryBackupFormat"><option value="complete" data-ui-copy="Completo%3A%20archivos%20grandes%20y%20preferencias">Completo: archivos grandes y preferencias</option><option value="legacy" data-ui-copy="Compatible%20con%20versiones%20anteriores%3A%20JSON%20hasta%2032%20MiB">Compatible con versiones anteriores: JSON hasta 32 MiB</option></select>
+            <p class="muted" data-ui-copy="Hasta%20256%20MiB%20por%20copia%20y%20128%20MiB%20por%20archivo.%20Termin%C3%A1%20las%20grabaciones%20antes%20de%20crear%20la%20copia.">Hasta 256 MiB por copia y 128 MiB por archivo. Terminá las grabaciones antes de crear la copia.</p>
             <label class="check"><input id="encryptMemoryBackup" type="checkbox" /><span data-i18n="p07BackupEncryptLabel">Cifrar esta copia con una contraseña</span></label>
             <div id="memoryBackupEncryptionFields" hidden>
               <label><span data-i18n="p07BackupPasswordLabel">Contraseña nueva (12 caracteres o más)</span>
@@ -972,7 +1000,7 @@
               <button id="undoMemoryRestore" type="button" class="ghost" data-i18n="p07UndoRestoreLabel" disabled>Deshacer última restauración</button>
               <button id="discardMemoryUndo" type="button" class="ghost danger" data-i18n="p07UndoDiscardLabel" disabled>Eliminar punto de recuperación</button>
             </div>
-            <input id="memoryBackupFile" type="file" accept="application/json,.json" hidden aria-label="Archivo local de respaldo Robotito" data-i18n-aria-label="p07BackupFileAria" />
+            <input id="memoryBackupFile" type="file" accept="application/json,application/octet-stream,.json,.robotito" hidden aria-label="Archivo local de respaldo Robotito" data-i18n-aria-label="p07BackupFileAria" />
             <p id="memoryBackupStatus" class="muted" role="status" aria-live="polite"></p>
           </details>
         </div>
@@ -981,6 +1009,9 @@
             <h2 data-i18n="uiMemories">Recuerdos</h2>
             <button id="clearMemoryBtn" type="button" class="ghost danger" data-i18n="uiDeleteMemory">Borrar recuerdos</button>
           </div>
+          <label for="memoryType" data-ui-copy="Categor%C3%ADa">Categoría</label>
+          <select id="memoryType"><option value="memories" data-i18n="uiMemories">Recuerdos</option><option value="conversations" data-ui-copy="Conversaciones">Conversaciones</option><option value="preferences" data-ui-copy="Preferencias">Preferencias</option><option value="relationships" data-ui-copy="Observaciones%20de%20la%20relaci%C3%B3n">Observaciones de la relación</option><option value="classes" data-ui-copy="Clases">Clases</option><option value="books" data-ui-copy="Libros">Libros</option><option value="tasks" data-ui-copy="Tareas">Tareas</option></select>
+          <label class="check"><input id="memoryLegacy" type="checkbox" /><span data-ui-copy="Ver%20archivo%20anterior%20sin%20atribuir%20%28solo%20lectura%29">Ver archivo anterior sin atribuir (solo lectura)</span></label>
           <div id="memoryList" class="memory-list"></div>
         </div>
       </section>

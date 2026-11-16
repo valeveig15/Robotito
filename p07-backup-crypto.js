@@ -81,7 +81,7 @@ async function decrypt(envelope,password){
   return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(plain));
  }finally{plain.fill(0);}
 }
-root.ROBOTITO_BACKUP_CRYPTO={encrypt,decrypt,isEncrypted,maxEncryptedFileBytes:MAX_ENCRYPTED_BYTES,
+root.ROBOTITO_BACKUP_CRYPTO={encrypt,decrypt,isEncrypted,deriveKey:derive,maxEncryptedFileBytes:MAX_ENCRYPTED_BYTES,
  format:FORMAT,schema:SCHEMA};
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_BACKUP_CRYPTO;
 })(typeof window!=="undefined"?window:globalThis);

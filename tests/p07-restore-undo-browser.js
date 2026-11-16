@@ -7,6 +7,8 @@ runBrowserTest("p07-restore-undo",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.undoLastRestore
   &&window.ROBOTITO_STORE?.restoreBackup),null,{timeout:20000});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
+ await page.evaluate(()=>ROBOTITO_MEMORY.flush());
  const result=await page.evaluate(async()=>{
   const s=window.ROBOTITO_STORE;
   const expectReject=async task=>{
@@ -68,6 +70,7 @@ runBrowserTest("p07-restore-undo",async test=>{
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="memory"]').click();
  await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
  await page.waitForFunction(()=>!document.getElementById("undoMemoryRestore").disabled);
  await page.evaluate(()=>{
   window.__p07UndoConfirmed=0;
@@ -94,6 +97,7 @@ runBrowserTest("p07-restore-undo",async test=>{
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="memory"]').click();
  await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
  await page.waitForFunction(()=>!document.getElementById("discardMemoryUndo").disabled);
  await page.evaluate(()=>window.confirm=()=>true);
  await page.locator("#discardMemoryUndo").click();

@@ -371,6 +371,7 @@ Respondé únicamente JSON válido:
     }
   }
   async function stopClassMode(){
+    const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
     if(!state.classMode)return;
     const endedAt=Date.now();
     state.classMode=false;
@@ -382,7 +383,9 @@ Respondé únicamente JSON válido:
     const recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
     uiSet($("#classBadge"),"apagado");
 
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     const summary=await window.ROBOTITO_CLASS_ORGANIZER?.generateAndSaveClassSummary?.(endedAt,recording);
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     state.selectedClassSessionId=state.classSessionId;
     state.classSessionId=null;
     window.ROBOTITO_CLASS_ORGANIZER?.render?.();

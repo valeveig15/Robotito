@@ -81,6 +81,7 @@
     onReply:(text,owner)=>push("assistant",text,owner),
     onOwnerChange:select,
     clear:()=>{messagesByOwner.delete(activeOwner);render();},
+    clearOwner:owner=>{messagesByOwner.delete(ownerOf(owner));if(ownerOf(owner)===activeOwner)render();},
     get activeOwner(){return activeOwner;},
     get size(){return record(activeOwner).length;}
   };

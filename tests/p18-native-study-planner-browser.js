@@ -6,6 +6,8 @@ runBrowserTest("p18-native-tasks",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STUDY_PLANNER_UI?.engine)&&
   document.querySelector("#nativeTaskForm"),null,{timeout:20000});
+ await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ await page.evaluate(async()=>{state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();await ROBOTITO_STUDY_PLANNER_UI.render();});
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="tasks"]').click();
  await page.locator("#nativeTaskName").fill("Preparar prueba de química");
@@ -17,15 +19,23 @@ runBrowserTest("p18-native-tasks",async test=>{
  const list=page.locator("#nativeTaskList");
  await list.getByText("Preparar prueba de química").waitFor();
  assert.match(await list.innerText(),/ATRASADA/,"Past due remains visible");
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
  let snapshot=await page.evaluate(()=>window.ROBOTITO_STUDY_PLANNER_UI.engine.snapshot());
  assert.equal(snapshot.tasks.length,1);assert.equal(snapshot.tasks[0].subject,"Química");
  test.phase("p18-complete");
  await list.getByRole("button",{name:/Completar/}).click();
+ await list.getByText(/Completada/).waitFor();
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
+ assert.equal(await page.evaluate(()=>ROBOTITO_STUDY_PLANNER_UI.engine.snapshot().tasks[0].done),true,"Completion is committed before reload");
  assert.match(await list.innerText(),/Completada/);
  assert.match(await list.innerText(),/Felicitaciones/);
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
  await page.reload({waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ await page.evaluate(async()=>{state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();await ROBOTITO_STUDY_PLANNER_UI.render();});
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="tasks"]').click();
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
  snapshot=await page.evaluate(()=>window.ROBOTITO_STUDY_PLANNER_UI.engine.snapshot());
  assert.equal(snapshot.tasks[0].done,true,"Completion survives reload");
  test.phase("p18-explicit-import");
@@ -34,9 +44,11 @@ runBrowserTest("p18-native-tasks",async test=>{
    {task:"Tarea ya entregada",subject:"Inglés",due:"",status:"hecho"}
  ];});
  await page.locator("#nativeSheetImport").click();
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
  snapshot=await page.evaluate(()=>window.ROBOTITO_STUDY_PLANNER_UI.engine.snapshot());
  assert.equal(snapshot.tasks.length,2,"Only pending Sheet rows copied after explicit action");
  await page.locator("#nativeSheetImport").click();
+ await page.evaluate(()=>ROBOTITO_MEMORY_MODULES.flush());
  snapshot=await page.evaluate(()=>window.ROBOTITO_STUDY_PLANNER_UI.engine.snapshot());
  assert.equal(snapshot.tasks.length,2,"Repeated import must not duplicate tasks");
  assert.equal(await page.evaluate(()=>state.tasks.length),2,"Legacy Sheet source remains intact");

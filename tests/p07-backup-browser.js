@@ -7,6 +7,8 @@ runBrowserTest("p07-backup",async test=>{
   await page.goto(baseURL,{waitUntil:"domcontentloaded"});
   await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.exportBackup)
    &&Boolean(window.ROBOTITO_STORE?.restoreBackup),null,{timeout:20000});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
+ await page.evaluate(()=>ROBOTITO_MEMORY.flush());
   const result=await page.evaluate(async()=>{
    const store=window.ROBOTITO_STORE;
    // Include the failing boundary in diagnostics from engines that omit an
@@ -81,6 +83,7 @@ runBrowserTest("p07-backup",async test=>{
   await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
   await page.locator('[data-tab="memory"]').click();
   await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
   assert.equal(await page.locator("#chooseMemoryBackup").isDisabled(),true);
   let download;
   try{

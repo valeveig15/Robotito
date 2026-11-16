@@ -7,9 +7,10 @@ runBrowserTest("p07-owned-memory",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.appendMemory)
   &&Boolean(window.ROBOTITO_STORE?.updateOwnedMemory),null,{timeout:20000});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
  const fixture=await page.evaluate(async()=>{
   const s=window.ROBOTITO_STORE;
-  const first=await s.appendMemory({owner:"local",person:"Visitante",
+  const first=await s.appendMemory({owner:"Ada",person:"Visitante",
    text:"Mi color favorito es el azul",language:"es",source:"manual"});
   const id=first.record.id;
   const expectReject=async(cb,msg)=>{
@@ -18,23 +19,25 @@ runBrowserTest("p07-owned-memory",async test=>{
   };
   await expectReject(()=>s.updateOwnedMemory({id,owner:"otro",
    text:"dato ajeno",expectedVersion:1}),"owner mismatch");
-  await expectReject(()=>s.updateOwnedMemory({id,owner:"local",
+  await expectReject(()=>s.updateOwnedMemory({id,owner:"Ada",
    text:"dato obsoleto",expectedVersion:2}),"stale version");
   await expectReject(()=>s.putRecord({id,type:"memories",owner:"otro",
    data:{text:"ataque"}}),"cross-owner overwrite");
   if((await s.getRecord(id)).data.text!=="Mi color favorito es el azul")
    throw Error("Rejection modified stored data");
-  const tmp=await s.updateOwnedMemory({id,owner:"local",
+  const tmp=await s.updateOwnedMemory({id,owner:"Ada",
    expectedVersion:1,text:"Mi color favorito es el verde"});
   if(tmp.record.version!==2||tmp.memories.find(m=>m.id===id)?.text!=="Mi color favorito es el verde")
    throw Error("Edited typed memory and legacy mirror disagree");
-  const second=await s.appendMemory({owner:"local",person:"Visitante",
+  const second=await s.appendMemory({owner:"Ada",person:"Visitante",
    text:"Mi materia es Física",source:"manual"});
   const other=await s.appendMemory({owner:"Otra persona",person:"Otra persona",
    text:"Este dato no debe aparecer en el panel local",source:"manual"});
   return {id,second:second.record.id,other:other.record.id};
  });
  await page.reload({waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
+ await page.evaluate(async()=>{state.currentPerson="Ada";state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.appendMemory),null,{timeout:20000});
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="memory"]').click();
@@ -60,7 +63,7 @@ runBrowserTest("p07-owned-memory",async test=>{
   async({id,text})=>{
    try{
     await window.ROBOTITO_STORE.updateOwnedMemory({
-     id,owner:"local",expectedVersion:1,text
+     id,owner:"Ada",expectedVersion:1,text
     });
     return "updated";
    }catch(error){return "conflict";}

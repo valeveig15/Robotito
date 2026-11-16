@@ -8,6 +8,8 @@ runBrowserTest("p07-encrypted-backup",async test=>{
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>Boolean(window.ROBOTITO_STORE?.exportBackup
   &&window.ROBOTITO_BACKUP_CRYPTO?.encrypt),null,{timeout:20000});
+ await page.waitForFunction(()=>window.ROBOTITO_MEMORY?.active);
+ await page.evaluate(()=>ROBOTITO_MEMORY.flush());
  const marker="Confidencial: prueba de cifrado P07";
  await page.evaluate(async marker=>{
   await window.ROBOTITO_STORE.putRecord({id:"p07-encrypted-memory",
@@ -43,6 +45,7 @@ runBrowserTest("p07-encrypted-backup",async test=>{
  await page.addStyleTag({content:"#languageGate{display:none !important;pointer-events:none !important;}"});
  await page.locator('[data-tab="memory"]').click();
  await page.locator("details.memory-backup summary").click();
+ await page.locator("#memoryBackupFormat").selectOption("legacy");
  await page.locator("#encryptMemoryBackup").check();
  assert.equal(await page.locator("#memoryBackupEncryptionFields").isVisible(),true);
  await page.locator("#memoryBackupPassword").fill("contraseña1");

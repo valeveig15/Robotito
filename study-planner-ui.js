@@ -1,15 +1,17 @@
 // Robotito P18 — local task forms, scheduling and explicit Sheet import.
 (function(root){
 "use strict";
-let planner=null;
-try{planner=root.ROBOTITO_STUDY_PLANNER?.createPlanner?.({storage:root.localStorage});}
-catch(error){console.warn("Study planner unavailable",error);}
+let planner=null,service=null;
+function scoped(){return service ||= root.ROBOTITO_MEMORY_MODULES.create({...root.ROBOTITO_MEMORY_MODULES.native,factory:root.ROBOTITO_STUDY_PLANNER.createPlanner});}
 const $=selector=>document.querySelector(selector);
 function message(value){const el=$("#nativeTaskStatus");if(el)el.textContent=String(value);}
 const node=(tag,text="",className="")=>{
  const el=document.createElement(tag);el.textContent=text;if(className)el.className=className;return el;
 };
-function safe(call){try{return call();}catch(e){message(e.message||"No pude guardar los cambios.");return null;}}
+async function safe(call){try{
+ const result=await scoped().run(engine=>{planner=engine;return call();});render();return result;
+ }catch(e){planner=null;try{planner=await scoped().read();}catch{}render();message(e.message||"No pude guardar los cambios.");return null;}}
+async function refresh(){try{planner=await scoped().read();render();}catch(e){planner=null;render();message(e.message);}}
 function formValue(id){return $(id)?.value?.trim()||"";}
 function announce(task,allDone){
  if(typeof root.setMood==="function")root.setMood("proud","Robotito celebra tu progreso de estudio.");
@@ -99,7 +101,7 @@ function bind(){
   if(typeof state==="undefined"||!Array.isArray(state.tasks)){message("No hay filas disponibles para importar.");return;}
   safe(()=>{const n=importRows(state.tasks);message(n+" tareas copiadas a tu planificador local.");render();});
  });
- render();
+ void refresh();
 }
 function importRows(rows){
  if(!planner)throw new Error("Planificador no disponible.");
@@ -119,12 +121,14 @@ function importRows(rows){
  }
  return imported;
 }
-function speech(value){
- if(!planner)return {handled:false};
- const result=planner.speech(value);
- if(result.handled)render();
- return result;
+async function speech(value){
+ // Classify using an empty engine before reading any personal task history.
+ const probe=root.ROBOTITO_STUDY_PLANNER.createPlanner({storage:{getItem:()=>null,setItem:()=>{}}}).speech(value);
+ if(!probe.handled)return probe;
+ return (await safe(()=>planner.speech(value)))||{handled:false};
 }
-root.ROBOTITO_STUDY_PLANNER_UI={render,importRows,speech,engine:planner};
+root.ROBOTITO_STUDY_PLANNER_UI={render:refresh,importRows:rows=>safe(()=>importRows(rows)),speech,get engine(){return service?.engine||null;}};
+root.addEventListener("robotito:memoryscopechange",()=>{planner=null;for(const id of ["#nativeTaskList","#nativeTaskBlocks","#nativeTaskDaySummary"])$(id)?.replaceChildren();});
+root.addEventListener("robotito:memoryscopeready",()=>void refresh());
 if(root.document)document.addEventListener("DOMContentLoaded",bind);
 })(typeof window!=="undefined"?window:globalThis);

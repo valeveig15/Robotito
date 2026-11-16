@@ -11,7 +11,7 @@ function attach(){
   unlock=byId("memoryBackupRestorePassword"),fields=byId("memoryBackupEncryptionFields"),
   undo=byId("undoMemoryRestore"),discard=byId("discardMemoryUndo");
  if(!exporter||!chooser||!file)return;
- let exported=false;
+ let exported=false,busy=false;
  async function refreshUndoControls(){
   try{
    const checkpoint=await root.ROBOTITO_STORE.getRestoreUndoInfo();
@@ -27,12 +27,16 @@ function attach(){
  undo?.addEventListener("click",async()=>{
   if(!root.confirm(t("p07UndoRestoreConfirm")))return;
   if(root.prompt(t("p07UndoRestoreType"))!=="DESHACER")return;
+  let committed=false;
   try{
-   await root.ROBOTITO_STORE.undoLastRestore({confirmation:"DESHACER"});
+   await root.ROBOTITO_MEMORY?.flush?.();root.stopSenses?.();
+   await root.ROBOTITO_STORE.undoLastRestore({confirmation:"DESHACER"});committed=true;
+   await root.ROBOTITO_STORE.applyPendingPreferences();
    status("p07UndoRestoreDone");
    root.location.reload();
   }catch(error){console.warn("Memory restore undo refused",error?.name);
-   status("p07UndoRestoreFailed");await refreshUndoControls();}
+   if(committed)root.ROBOTITO_I18N.bindText(byId("memoryBackupStatus"),"Los datos anteriores se recuperaron. Recargá para reintentar la aplicación de sus preferencias.");
+   else status("p07UndoRestoreFailed");await refreshUndoControls();}
  });
  discard?.addEventListener("click",async()=>{
   if(!root.confirm(t("p07UndoDiscardConfirm")))return;
@@ -51,21 +55,26 @@ function attach(){
   });
  }
  exporter.addEventListener("click",async()=>{
-  exported=false;chooser.disabled=true;
+  if(busy)return;busy=true;exporter.disabled=true;exported=false;chooser.disabled=true;
   const shouldEncrypt=!!encryptBox?.checked;
   try{
    if(shouldEncrypt&&(!password||!repeat||password.value.length<12||
        password.value.length>256||password.value!==repeat.value)){
     status("p07BackupPasswordError");return;
    }
-   const archive=await root.ROBOTITO_STORE.exportBackup();
-   const output=shouldEncrypt
-    ?await root.ROBOTITO_BACKUP_CRYPTO.encrypt(archive,password.value):archive;
-   const blob=new Blob([JSON.stringify(output)],{type:"application/json"});
+   const complete=byId("memoryBackupFormat")?.value!=="legacy";
+   await root.ROBOTITO_MEMORY?.flush?.();
+   let blob;
+   if(complete)blob=await root.ROBOTITO_ARCHIVE.exportFile({password:shouldEncrypt?password.value:""});
+   else{
+    const archive=await root.ROBOTITO_STORE.exportBackup();
+    const output=shouldEncrypt?await root.ROBOTITO_BACKUP_CRYPTO.encrypt(archive,password.value):archive;
+    blob=new Blob([JSON.stringify(output)],{type:"application/json"});
+   }
    const url=URL.createObjectURL(blob),link=document.createElement("a");
    link.href=url;
-   link.download=(shouldEncrypt?"robotito-encrypted-":"robotito-indexeddb-")+
-    new Date().toISOString().slice(0,10)+".json";
+   link.download=(complete?"robotito-memory-":shouldEncrypt?"robotito-encrypted-":"robotito-indexeddb-")+
+    new Date().toISOString().slice(0,10)+(complete?".robotito":".json");
    document.body.appendChild(link);
    link.click();
    link.remove();
@@ -73,32 +82,29 @@ function attach(){
    exported=true;chooser.disabled=false;
    status(shouldEncrypt?"p07EncryptedBackupReady":"p07BackupReady");
   }catch(e){console.warn("Memory backup failed",e?.name);status("p07BackupFailed");}
-  finally{if(password)password.value="";if(repeat)repeat.value="";}
+  finally{busy=false;exporter.disabled=false;if(password)password.value="";if(repeat)repeat.value="";}
  });
  chooser.addEventListener("click",()=>{if(exported)file.click();});
  file.addEventListener("change",async event=>{
   const selected=event.target.files?.[0];event.target.value="";
-  if(!selected||!exported)return;
-  let encrypted=false;
+  if(!selected||!exported||busy)return;
+  busy=true;exporter.disabled=true;chooser.disabled=true;
+  let encrypted=false,committed=false;
   try{
-   if(selected.size>48*1024*1024)throw Error("Backup file is too large");
-   let archive=JSON.parse(await selected.text());
-   encrypted=!!root.ROBOTITO_BACKUP_CRYPTO?.isEncrypted(archive);
-   if(encrypted){
-    if(!unlock?.value)throw Error("Missing backup password");
-    archive=await root.ROBOTITO_BACKUP_CRYPTO.decrypt(archive,unlock.value);
-   }else if(selected.size>32*1024*1024){
-    throw Error("Unencrypted backup is too large");
-   }
-   root.ROBOTITO_STORE.validateBackup(archive);
+   encrypted=Boolean(unlock?.value);
+   const parsed=await root.ROBOTITO_ARCHIVE.readFile(selected,{password:unlock?.value||""});
    if(!root.confirm(t("p07RestoreConfirm")))return;
    if(root.prompt(t("p07RestoreType"))!=="RESTAURAR")return;
-   await root.ROBOTITO_STORE.restoreBackup(archive,{confirmation:"RESTAURAR"});
+   await root.ROBOTITO_MEMORY?.flush?.();root.stopSenses?.();
+   if(parsed.legacy)await root.ROBOTITO_STORE.restoreBackup(parsed.legacy,{confirmation:"RESTAURAR"});
+   else await root.ROBOTITO_STORE.replaceSnapshot(parsed.snapshot,{confirmation:"RESTAURAR"});
+   committed=true;await root.ROBOTITO_STORE.applyPendingPreferences();
    status("p07RestoreDone");
    root.location.reload();
   }catch(e){console.warn("Memory restore refused",e?.name);
-   status(encrypted?"p07EncryptedRestoreFailed":"p07RestoreFailed");}
-  finally{if(unlock)unlock.value="";}
+   if(committed)root.ROBOTITO_I18N.bindText(byId("memoryBackupStatus"),"Los datos se restauraron. No pude aplicar las preferencias: recargá para reintentarlo o deshacé la restauración.");
+   else status(encrypted?"p07EncryptedRestoreFailed":"p07RestoreFailed");}
+  finally{busy=false;exporter.disabled=false;chooser.disabled=!exported;if(unlock)unlock.value="";}
  });
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",attach,{once:true});
