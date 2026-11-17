@@ -67,6 +67,8 @@ const ROBOTITO_AVATARS = [
 
 const state = {
   started: false,
+  everAwakened: false,
+  emotionHoldUntil: 0,
   avatar: ROBOTITO_AVATARS.some(item=>item.id===localStorage.getItem(KEYS.avatar))
     ?localStorage.getItem(KEYS.avatar):"panda",
   mood: "calm",
@@ -961,7 +963,7 @@ function clearBlinkState(){
   robot.classList.remove("blink");
 }
 function eyesLocked(){
-  return state.sleeping || robot.classList.contains("heart-eyes");
+  return state.sleeping || robot.classList.contains("pre-awake") || robot.classList.contains("heart-eyes");
 }
 function singleBlink(duration=115){
   if(eyesLocked()||document.hidden)return false;
@@ -1164,6 +1166,10 @@ async function startSenses(){
   const startupText=key=>window.ROBOTITO_I18N?.t?.(key,state.languageMode)||key;
   const mobile=isMobileSpeech();
   state.started=true;
+  state.everAwakened=true;
+  robot.classList.remove("pre-awake","drowsy");
+  clearBlinkState();
+  if(!state.nightSleep){state.sleeping=false;robot.classList.remove("sleeping");setMood("calm");}
   const epoch=state.captureEpoch=(state.captureEpoch||0)+1;
   state.captureRevision=(state.captureRevision||0)+1;
   state.captureSuspended=false;clearCaptureIdentity();
@@ -4544,6 +4550,7 @@ function dayPartGreeting(){
 }
 function wakeFromNight(){
   state.nightSleep=false;
+  robot.classList.remove("pre-awake","drowsy");
   state.sleeping=false;
   stopSnoring();
   clearBlinkState();
@@ -4555,6 +4562,7 @@ function wakeFromNight(){
 }
 function sleepForNight(){
   hidePlayInvitation();
+  robot.classList.remove("drowsy");
   state.nightSleep=true;
   state.sleeping=true;
   clearBlinkState();
@@ -5635,47 +5643,61 @@ function hungerTick(){
   else if(hours>=3) setMood("hungry","Robotito tiene muchísima hambre.");
 }
 
+const DOZE_START_SECONDS=135,INACTIVITY_SLEEP_SECONDS=150;
 function inactivityTick(){
+  // Without initial user activation Robotito is peacefully resting, not
+  // incrementing inactivity toward an apparent automatic wake/sleep.
+  if(!state.everAwakened){
+    robot.classList.add("pre-awake");
+    robot.classList.remove("drowsy");
+    return;
+  }
   if(state.nightSleep){
+    robot.classList.remove("drowsy");
     state.sleeping=true;
     robot.classList.add("sleeping");
-    setMood("sleepy","Robotito está durmiendo.");
+    if(state.mood!=="sleepy")setMood("sleepy","Robotito está durmiendo.");
     return;
   }
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
-
   if(state.classMode){
     state.sleeping=false;
-    robot.classList.remove("sleeping");
-    setMood("focused","Robotito está concentrado escuchando la clase.");
+    robot.classList.remove("sleeping","drowsy");
+    if(state.mood!=="focused")setMood("focused","Robotito está concentrado escuchando la clase.");
     return;
   }
-
-  if(quietFor>150){
-    state.sleeping=true;
-    robot.classList.add("sleeping");
-    startSnoring();
-    setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
+  if(quietFor>=INACTIVITY_SLEEP_SECONDS){
+    if(!state.sleeping){
+      hidePlayInvitation();
+      clearBlinkState();
+      robot.classList.remove("heart-eyes","drowsy");
+      state.sleeping=true;
+      robot.classList.add("sleeping");
+      startSnoring();
+      setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
+    }
     if(!state.batterySupported)state.energy=clamp(state.energy+.35,0,100);
-  }else if(quietFor>95){
-    state.sleeping=false;
-    stopSnoring();
-    robot.classList.remove("sleeping");
-    setMood("sleepy","Robotito está cabeceando de sueño.");
+    return;
+  }
+  const wasSleeping=state.sleeping;
+  state.sleeping=false;
+  if(wasSleeping){
+    stopSnoring();clearBlinkState();robot.classList.remove("sleeping","drowsy");
+    setMood("calm","Robotito abrió los ojos al detectar actividad.");
+    say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó?"]));
+  }
+  if(quietFor>=DOZE_START_SECONDS){
+    // Exactly the last fifteen seconds are a progressive doze, not deep sleep.
+    robot.classList.add("drowsy");
+    robot.style.setProperty("--doze-progress",String(clamp((quietFor-DOZE_START_SECONDS)/15,0,1)));
+    if(state.mood!=="sleepy")setMood("sleepy","Robotito está empezando a cabecear.");
     if(!state.batterySupported)state.energy=clamp(state.energy-.05,0,100);
-  }else if(quietFor>45){
-    state.sleeping=false;
-    stopSnoring();
-    robot.classList.remove("sleeping");
-    setMood("bored",speciesLine("idle"));
-    maybeSpeciesIdleComment(quietFor);
-    if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }else{
-    const wasSleeping=state.sleeping;
-    state.sleeping=false;
-    stopSnoring();
-    robot.classList.remove("sleeping");
-    if(wasSleeping)say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó?"]));
+    robot.classList.remove("drowsy");robot.style.removeProperty("--doze-progress");
+    if(quietFor>45){
+      if(state.mood!=="bored")setMood("bored",speciesLine("idle"));
+      maybeSpeciesIdleComment(quietFor);
+    }else if(wasSleeping&&state.mood!=="calm")setMood("calm");
     if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }
 }
@@ -6461,6 +6483,7 @@ async function init(){
   // Browser controls are not interactive until migrations and listener wiring finish.
   document.documentElement.dataset.robotitoUiReady="true";
   bindPandaReferenceViews();
+  robot.classList.add("pre-awake");
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("language");
   ensureClassLineIds();
