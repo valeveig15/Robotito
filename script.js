@@ -2252,6 +2252,7 @@ function updateAvatarMoodIcon(mood=state.mood){
 function applyAvatar(id,{persist=true}={}){
   const avatar=avatarById(id);
   window.ROBOTITO_OBJECT_SCENE?.cancel?.();
+  if(typeof hidePlayInvitation==="function")hidePlayInvitation();
   state.avatar=avatar.id;
   if(persist){try{localStorage.setItem(KEYS.avatar,avatar.id);}catch(error){console.warn("avatar preference",error);}}
   if(robot){
@@ -4312,6 +4313,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   // Object display is handled by ROBOTITO_ROUTER and drawRequestedThing.
   if(await handleSayInLanguageCommand(interpreted))return;
   if(handleSocialSpeech(text)) return;
+  if(pendingPlay&&/^(?:ya lo hice|lo hice|listo|termine|terminé|i did it|done|ja fiz|c est fait|fatto|geschafft)$/.test(text)){finishPlay(true);return;}
   if(/\b(choca los cinco|chocame los cinco|dame cinco|high[ -]five)\b/.test(text)){highFiveRobot();return;}
   if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
   const nomenclature=window.ROBOTITO_CHEM_NOMENCLATURE?.query?.(rawText);
@@ -4552,6 +4554,7 @@ function wakeFromNight(){
   setMood("calm","Robotito está despierto otra vez.");
 }
 function sleepForNight(){
+  hidePlayInvitation();
   state.nightSleep=true;
   state.sleeping=true;
   clearBlinkState();
@@ -5545,17 +5548,55 @@ function highFiveRobot(){
   say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.",speciesLine("play")]));
   scheduleMoodRecovery(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
 }
-function playRobot(){
+const PLAY_LANGUAGES={
+ es:{invite:"¡Jugamos! Mirá mi movimiento e intentá hacerlo vos. Cuando termines, decímelo o tocá «¡Ya lo hice!».",confirm:"¡Ya lo hice!",cancel:"Ahora no",done:"¡Buenísimo! Jugamos juntos.",timeout:"Después jugamos otra vez."},
+ en:{invite:"Let's play! Watch my move and copy it. When you're done, tell me or press ‘I did it!’.",confirm:"I did it!",cancel:"Not now",done:"Great! We played together.",timeout:"Let's play again later."},
+ pt:{invite:"Vamos brincar! Veja meu movimento e tente imitá-lo. Depois, diga ou toque em «Já fiz!».",confirm:"Já fiz!",cancel:"Agora não",done:"Muito bem! Brincamos juntos.",timeout:"Brincamos depois."},
+ fr:{invite:"On joue ? Regarde mon mouvement et imite-le. Puis dis-le ou appuie sur «C'est fait !».",confirm:"C'est fait !",cancel:"Pas maintenant",done:"Super ! On a joué ensemble.",timeout:"On jouera plus tard."},
+ it:{invite:"Giochiamo! Guarda il mio movimento e prova a imitarlo. Poi dimmelo o premi «Fatto!».",confirm:"Fatto!",cancel:"Non ora",done:"Benissimo! Abbiamo giocato insieme.",timeout:"Giochiamo più tardi."},
+ de:{invite:"Spielen wir! Schau meine Bewegung an und mach sie nach. Sag Bescheid oder drücke „Geschafft!“.",confirm:"Geschafft!",cancel:"Jetzt nicht",done:"Prima! Wir haben zusammen gespielt.",timeout:"Später spielen wir wieder."}
+};
+let pendingPlay=null,playEpoch=0,playTimeout=null;
+function hidePlayInvitation(){
+  ++playEpoch;
+  clearTimeout(playTimeout);playTimeout=null;pendingPlay=null;
+  const panel=$("#playInvitation");
+  if(panel){panel.hidden=true;panel.classList.add("hidden");}
+}
+function finishPlay(completed=false){
+  if(!pendingPlay||pendingPlay.avatar!==state.avatar||Date.now()>pendingPlay.expiresAt){
+    hidePlayInvitation();return false;
+  }
+  const lang=PLAY_LANGUAGES[responseLanguage()]||PLAY_LANGUAGES.es;
+  hidePlayInvitation();
+  if(!completed)return true;
   changeMoodScore(4);
-  if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
   recordVisitorInteraction("play");
-  const line=speciesLine("play");
-  setMood("excited",line);
+  setMood("happy",lang.done);say(lang.done);
+  speciesAct("play",950);
+  return true;
+}
+function playRobot(){
+  if(state.classMode||state.sleeping||state.nightSleep)return false;
+  hidePlayInvitation();
+  const lang=PLAY_LANGUAGES[responseLanguage()]||PLAY_LANGUAGES.es;
+  const token=playEpoch;
+  pendingPlay={avatar:state.avatar,expiresAt:Date.now()+20000};
+  $("#playInstruction").textContent=lang.invite;
+  $("#playConfirmBtn").textContent=lang.confirm;
+  $("#playCancelBtn").textContent=lang.cancel;
+  const panel=$("#playInvitation");
+  panel.hidden=false;panel.classList.remove("hidden");
+  setMood("excited",speciesLine("play"));
   temporaryRobotClass("playing",2300);
   speciesAct("play",2300);
-  say(line);
-  scheduleMoodRecovery(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},2400);
+  say(lang.invite,7200);
+  playTimeout=setTimeout(()=>{
+    if(token!==playEpoch)return;
+    hidePlayInvitation();
+  },20000);
+  return true;
 }
 
 function scareRobot(){
@@ -6291,6 +6332,8 @@ function bindUI(){
     if(t.dataset.tab==="memory")void window.ROBOTITO_MEMORY?.render?.();
   }));
 
+  $("#playConfirmBtn")?.addEventListener("click",()=>finishPlay(true));
+  $("#playCancelBtn")?.addEventListener("click",()=>finishPlay(false));
   $(".quick-actions").addEventListener("click",e=>{
     const btn=e.target.closest("[data-action]");
     if(!btn)return;
