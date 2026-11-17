@@ -3325,3 +3325,42 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 #playInstruction{margin:0 0 8px;line-height:1.5;font-weight:650}
 #playInvitation button{min-height:44px;margin:0 6px 4px 0}
 #playInvitation button:focus-visible{outline:3px solid #5baea1;outline-offset:2px}
+
+
+/* P31 — actual eyelid state, not a blink left stuck on the face. */
+.robotito.pre-awake .eye-white-svg,.robotito.pre-awake .iris,
+.robotito.pre-awake .pupil-svg,.robotito.pre-awake .avatar-character .avatar-eye-group,
+.robotito.sleeping .avatar-character .avatar-eye-group{opacity:0!important}
+.robotito.pre-awake .blink-line,.robotito.sleeping .blink-line{opacity:.94!important}
+.robotito.pre-awake .panda-whole{animation:none!important}
+.robotito.drowsy:not(.sleeping) .head-group,
+.robotito.drowsy:not(.sleeping) .avatar-character .avatar-head-group{
+  animation:gradualDoze 15s ease-in forwards!important;
+}
+.robotito.drowsy:not(.sleeping) .eye-white-svg{transform:scaleY(.68)}
+.robotito.drowsy:not(.sleeping) .avatar-character .avatar-eye-group{transform:scaleY(.7)}
+@keyframes gradualDoze{
+  0%{transform:rotate(0) translateY(0)}
+  55%{transform:rotate(1.2deg) translateY(2px)}
+  83%{transform:rotate(2.4deg) translateY(5px)}
+  100%{transform:rotate(4deg) translateY(8px)}
+}
+/* P32 — incompatible signs must never coexist. */
+.robotito:is(.mood-scared,.mood-angry,.mood-annoyed,.mood-sad,.mood-hungry,.sleeping,.pre-awake)
+  :is(.animal-avatar-heart-eyes,.eye-spark,.avatar-eye-shine,.heart-eyes-art,.hearts-art){
+  opacity:0!important;animation:none!important;
+}
+.robotito.mood-scared .cheek{opacity:.18}
+.robotito.mood-angry .cheek{fill:#ef8f99}
+.robotito.mood-annoyed .cheek{opacity:.34}
+.robotito.mood-hungry .mouth-line{stroke-width:5.5}
+.robotito.mood-affectionate .cheek{opacity:1}
+.robotito:is(.mood-scared,.mood-angry) .avatar-character .avatar-eye-shine{opacity:0!important}
+.robotito.avatar-dog.mood-scared .avatar-tail-wag,
+.robotito.avatar-wolf.mood-scared .avatar-tail,
+.robotito.avatar-fox.mood-scared .avatar-tail{animation:none!important}
+.robotito.avatar-monkey.mood-sad .avatar-head-group{transform:rotate(-3deg)}
+.robotito.avatar-polar-bear.mood-scared .avatar-whole{filter:brightness(.98)}
+@media(prefers-reduced-motion:reduce){
+ .robotito.drowsy .head-group,.robotito.drowsy .avatar-character .avatar-head-group{animation:none!important}
+}
