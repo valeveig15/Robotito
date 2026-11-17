@@ -3312,3 +3312,16 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
  .robotito.avatar-chameleon.chameleon-color-demo .animal-avatar-emoji{animation:none!important}
 }
+
+
+/* P30 — two-way play stays inside controls, never over the avatar or composer. */
+#playInvitation{
+  order:2;position:relative;z-index:5;
+  margin:4px 4px 6px;padding:12px 14px;
+  border:1px solid #b4d7cb;border-radius:14px;
+  background:rgba(241,251,246,.98);color:#294b42;
+}
+#playInvitation[hidden],#playInvitation.hidden{display:none!important}
+#playInstruction{margin:0 0 8px;line-height:1.5;font-weight:650}
+#playInvitation button{min-height:44px;margin:0 6px 4px 0}
+#playInvitation button:focus-visible{outline:3px solid #5baea1;outline-offset:2px}
