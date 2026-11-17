@@ -83,9 +83,10 @@ runBrowserTest("p30-p32-avatar-lifecycle",async test=>{
   await page.waitForFunction(id=>window.ROBOTITO_APPROVED_AVATAR.current?.id===id,id,{timeout:20000});
   await page.evaluate(()=>setMood("scared"));
   await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.dataset.mood==="asustado");
-  await page.evaluate(()=>{state.sleeping=true;document.querySelector("#robotito").classList.add("sleeping");setMood("sleepy");});
+  await page.evaluate(()=>{state.nightSleep=true;state.sleeping=true;document.querySelector("#robotito").classList.add("sleeping");setMood("sleepy");});
   await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.dataset.mood==="dormido");
-  await page.evaluate(()=>{state.sleeping=false;document.querySelector("#robotito").classList.remove("sleeping");setMood("calm");});
+  await page.evaluate(()=>{state.nightSleep=false;state.sleeping=false;document.querySelector("#robotito").classList.remove("sleeping");setMood("calm");});
+  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.dataset.mood==="tranquilo");
  }
  test.phase("quoted-and-class-dialogue-is-not-a-reaction");
  assert.equal(await page.evaluate(()=>window.ROBOTITO_EMOTION_DIALOGUE.classify("Mi profesora dijo: te quiero")),null);
