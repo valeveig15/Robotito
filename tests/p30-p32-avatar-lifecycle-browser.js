@@ -65,15 +65,16 @@ runBrowserTest("p30-p32-avatar-lifecycle",async test=>{
   const ago=seconds=>{state.lastSeenAt=now-seconds*1000;state.lastHeardAt=now-seconds*1000;};
   ago(134);inactivityTick();
   const pre=window.ROBOTITO_AVATAR_LIFECYCLE.restState;
-  ago(140);inactivityTick();
+  ago(140);inactivityTick();ambientMood();
   const drowsy=window.ROBOTITO_AVATAR_LIFECYCLE.restState;
+  const drowsyMood=state.mood;
   ago(151);inactivityTick();
   const sleeping=window.ROBOTITO_AVATAR_LIFECYCLE.restState;
   const blink=window.ROBOTITO_AVATAR_LIFECYCLE.singleBlink();
   ago(0);inactivityTick();
-  return {pre,drowsy,sleeping,blink,awake:window.ROBOTITO_AVATAR_LIFECYCLE.restState};
+  return {pre,drowsy,drowsyMood,sleeping,blink,awake:window.ROBOTITO_AVATAR_LIFECYCLE.restState};
  });
- assert.deepEqual(steps,{pre:"awake",drowsy:"drowsy",sleeping:"sleeping",blink:false,awake:"awake"});
+ assert.deepEqual(steps,{pre:"awake",drowsy:"drowsy",drowsyMood:"sleepy",sleeping:"sleeping",blink:false,awake:"awake"});
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.dataset.mood==="tranquilo");
  test.phase("all-approved-art-states");
  for(const id of ["panda","brown-bear","polar-bear","dog","monkey"]){
