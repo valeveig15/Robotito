@@ -5652,6 +5652,9 @@ function hungerTick(){
 
   const hours=(Date.now()-last)/36e5;
   state.hunger=clamp(hours/4*100,0,100);
+  // Hunger is a need, not permission to overwrite closed sleeping eyes or
+  // a focused class. The need remains visible in the hunger meter.
+  if(state.sleeping||state.nightSleep||state.classMode||robot.classList.contains("pre-awake"))return;
 
   if(hours>=4) setMood("angry","Robotito está muy enojado porque hace más de 4 horas que no come.");
   else if(hours>=3) setMood("hungry","Robotito tiene muchísima hambre.");
