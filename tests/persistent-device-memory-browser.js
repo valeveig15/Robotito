@@ -31,7 +31,9 @@ runBrowserTest("persistent-device-memory",async test=>{
  await page.locator("#robotitoTextSend").click();
  await page.waitForFunction(async words=>{
   const rows=await window.ROBOTITO_STORE.queryRecords({type:"conversations",owner:window.ROBOTITO_MEMORY.owner(),limit:Infinity});
-  return rows.some(row=>row.data?.role==="user"&&row.data.text===words);
+  const memories=await window.ROBOTITO_STORE.queryRecords({type:"memories",owner:window.ROBOTITO_MEMORY.owner(),limit:Infinity});
+  return rows.some(row=>row.data?.role==="user"&&row.data.text===words)
+    && memories.some(row=>row.data?.text===words);
  },words);
  await page.reload({waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
