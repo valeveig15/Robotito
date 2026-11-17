@@ -16,7 +16,8 @@ runBrowserTest("avatar-language-text-footer",async test=>{
  assert.equal(await page.locator("#avatar-choice-name").count(),0);
  test.phase("change-avatar-after-initial-selection");
  const old=await page.locator("#robotito").getAttribute("data-avatar");
- await page.locator("#changeAvatarBtn").click();
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
  assert.equal(await page.locator("#languageGate").isVisible(),true);
  const choices=page.locator("#avatarChoices [data-avatar-id]");
  assert.ok(await choices.count()>1);
@@ -27,10 +28,12 @@ runBrowserTest("avatar-language-text-footer",async test=>{
  assert.equal(await page.locator("#robotito").getAttribute("data-avatar"),fresh);
  assert.equal(await page.locator("#languageGate").isVisible(),false);
  test.phase("quick-language");
- await page.locator("#quickLanguageSelect").selectOption("pt");
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#quickLanguageSelect").selectOption("pt");
  assert.equal(await page.locator("html").getAttribute("lang"),"pt");
  assert.equal(await page.locator("#languageMode").inputValue(),"pt");
- await page.locator("#quickLanguageSelect").selectOption("es");
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#quickLanguageSelect").selectOption("es");
  test.phase("night-scene-and-clickable-bottom-composer");
  for(const [width,height] of [[320,750],[390,844],[1280,900]]){
   await page.setViewportSize({width,height});
