@@ -3359,3 +3359,6 @@ body.robotito-low-power .world-scene video { opacity:.12; }
  .birthday-present{animation:none!important;}
  body.robotito-low-power .world-scene{transition:none!important;}
 }
+
+.birthday-scene.gift-opened{background:radial-gradient(circle,rgba(255,247,251,.35),rgba(241,231,246,.20));pointer-events:none;}
+.birthday-scene.gift-opened .birthday-buttons,.birthday-scene.gift-opened .birthday-text{pointer-events:auto;background:rgba(255,255,255,.86);border-radius:12px;padding:7px;}
