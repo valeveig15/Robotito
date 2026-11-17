@@ -2198,6 +2198,30 @@ function speciesIntroduction(id=state.avatar){
   const profile=speciesProfile(id,responseLanguage());
   return uiText("Soy {name}. {trait}.",{name:avatarName(avatar,responseLanguage()),trait:profile.trait},responseLanguage());
 }
+// P30: explicit gestures are actions, never forced on questions, negations or quotes.
+function handleAvatarActionCommand(raw){
+ const t=normalizeText(raw).trim();
+ if(!t||t.length>155||/^(?:no|nunca|jamas|dont|do not|nao|não|ne pas|non|nicht|nie)\b/.test(t))return false;
+ if(/^(?:que|cual|como|porque|por que|what|why|how|qu est ce|como se dice|define|explica|traduce)\b/.test(t))return false;
+ const actions=[
+  ["highfive",/^(?:(?:robotito|por favor)\s+)?(?:choca(?:me)?(?: los)? cinco|dame(?: los)? cinco|high[ -]?five|give me (?:a )?high[ -]?five|bate aqui|toca aqui|tope la|tape m en cinq|batti cinque|gib mir funf)\b/],
+  ["pet",/^(?:(?:robotito|por favor)\s+)?(?:acaricia(?:te)?|acariciarte|quiero acariciarte|deja(?:me)? acariciarte|te acaricio|pet you|let me pet you|caress you|fazer carinho|te faire une caresse|accarezzarti|streicheln)\b/],
+  ["feed",/^(?:(?:robotito|por favor)\s+)?(?:come(?:te)? esto|te doy de comer|quiero alimentarte|te alimento|alimentate|eat this|let me feed you|feed you|vou te alimentar|te nourrir|darti da mangiare|ich futtere dich)\b/],
+  ["play",/^(?:(?:robotito|por favor)\s+)?(?:juguemos|vamos a jugar|quiero jugar contigo|play with me|lets play|vamos brincar|jouons|giochiamo|lass uns spielen)\b/],
+  ["surprise",/^(?:(?:robotito|por favor)\s+)?(?:buu+|boo+|te asusto|quiero asustarte|i scare you|je te fais peur|ti spavento|ich erschrecke dich)\b/],
+  ["poke",/^(?:(?:robotito|por favor)\s+)?(?:te molesto|te pincho|poke you|i poke you|je te taquine|ti punzecchio|ich stupse dich)\b/]
+ ];
+ const hit=actions.find(([,re])=>re.test(t));
+ if(!hit)return false;
+ const handlers={highfive:highFiveRobot,pet:petRobot,feed:feedRobot,
+   play:playRobot,surprise:scareRobot,poke:pokeRobot};
+ if(state.sleeping&&!state.nightSleep)wakeFromNight();
+ // Night sleep does not allow accidental interaction.
+ if(state.nightSleep)return false;
+ handlers[hit[0]]();
+ return true;
+}
+
 function handleSpeciesQuestion(rawText){
   // P29: distinguish questions directed at the selected character from
   // general zoology questions. No saved profile or personal records consulted.
@@ -4292,6 +4316,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   }
 
   if(handleSpeciesQuestion(interpreted))return;
+  if(!generalAcademic&&!interpretation?.quotedContent&&handleAvatarActionCommand(interpreted))return;
 
   // Emotional meaning comes before generic knowledge so Robotito can react naturally
   // to affection, rejection, threats, sad stories, praise and apologies.
@@ -6291,6 +6316,12 @@ function bindUI(){
     if(t.dataset.tab==="memory")void window.ROBOTITO_MEMORY?.render?.();
   }));
 
+  // The non-reference illustrations share the same pet action as approved SVGs.
+  // Do not intercept pointer events on the buttons or duplicate the approved host click.
+  robot?.addEventListener("click",event=>{
+    if(event.detail>=2||state.nightSleep||event.target.closest?.("button"))return;
+    petRobot();
+  });
   $(".quick-actions").addEventListener("click",e=>{
     const btn=e.target.closest("[data-action]");
     if(!btn)return;
