@@ -729,10 +729,13 @@ function setMood(mood, reason=""){
   state.moodRevision=(state.moodRevision||0)+1;
   const allMoods=["calm","happy","sad","angry","scared","hungry","sleepy","curious","focused","bored","affectionate","proud","confused","excited","embarrassed","annoyed"];
   allMoods.forEach(m=>robot.classList.remove("mood-"+m));
-  const visualMap={curious:"happy",focused:"calm",bored:"sleepy",affectionate:"happy",proud:"happy",confused:"scared",excited:"happy",embarrassed:"sad",annoyed:"calm"};
-  const visual=visualMap[mood]||mood;
-  robot.classList.add("mood-"+visual);
-  if(visual!==mood)robot.classList.add("mood-"+mood);
+  // Every supported mood retains its own silhouette, eyes and cheeks.
+  robot.classList.add("mood-"+mood);
+  if(!["affectionate","happy","excited"].includes(mood)){
+    state.affectionToken=(state.affectionToken||0)+1;
+    clearTimeout(state.heartEyeTimer);
+    robot.classList.remove("heart-eyes");
+  }
   state.mood=mood;
   state.emotion=mood;
   const labels={calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",hungry:"hambriento",sleepy:"con sueño",curious:"curioso",focused:"concentrado",bored:"aburrido",affectionate:"cariñoso",proud:"orgulloso",confused:"confundido",excited:"emocionado",embarrassed:"avergonzado",annoyed:"molesto"};
@@ -2815,15 +2818,17 @@ function drawRequestedThing(rawText,lang="es"){
 }
 
 function animateAffection(){
-  if(state.sleeping)return;
+  if(state.sleeping||state.nightSleep)return;
+  const epoch=state.affectionToken=(state.affectionToken||0)+1;
   clearBlinkState();
   clearTimeout(state.heartEyeTimer);
   robot.classList.remove("heart-eyes");
   resetEyes();
   requestAnimationFrame(()=>{
-    if(state.sleeping)return;
+    if(epoch!==state.affectionToken||state.sleeping||state.nightSleep)return;
     robot.classList.add("heart-eyes");
     state.heartEyeTimer=setTimeout(()=>{
+      if(epoch!==state.affectionToken)return;
       robot.classList.remove("heart-eyes");
       state.heartEyeTimer=null;
       clearBlinkState();
@@ -4584,6 +4589,7 @@ function wakeFromNight(){
   stopSnoring();
   clearBlinkState();
   clearTimeout(state.heartEyeTimer);
+  ++state.affectionToken;
   robot.classList.remove("heart-eyes");
   robot.classList.remove("sleeping");
   robot.classList.add("waking");
@@ -4601,6 +4607,7 @@ function sleepForNight(){
   state.sleeping=true;
   clearBlinkState();
   clearTimeout(state.heartEyeTimer);
+  ++state.affectionToken;
   robot.classList.remove("heart-eyes");
   resetEyes();
   robot.classList.add("sleeping");
