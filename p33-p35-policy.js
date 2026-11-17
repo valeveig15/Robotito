@@ -35,7 +35,7 @@
     return isbn?"isbn:"+isbn:"title:"+normalizedTitle(book?.title)+"|"+normalizedTitle((book?.authors||[])[0]);
   }
   function safeHttps(value){
-    try{const url=new URL(String(value));if(url.protocol==="http:" && /(^|\\.)(googleusercontent\\.com|google\\.com|googleapis\\.com|gstatic\\.com)$/.test(url.hostname))url.protocol="https:";return url.protocol==="https:"?url.href:"";}catch{return "";}
+    try{const url=new URL(String(value));if(url.protocol==="http:" && /(^|\.)(googleusercontent\.com|google\.com|googleapis\.com|gstatic\.com)$/.test(url.hostname))url.protocol="https:";return url.protocol==="https:"?url.href:"";}catch{return "";}
   }
   root.ROBOTITO_P33_P35=Object.freeze({batteryThreshold,birthdaySlot,birthdayDay,isBirthday,birthdayKey,normalizedTitle,bookIdentity,safeHttps});
 })(typeof window!=="undefined"?window:globalThis);
