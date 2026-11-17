@@ -67,6 +67,8 @@ const ROBOTITO_AVATARS = [
 
 const state = {
   started: false,
+  everAwakened: false,
+  emotionHoldUntil: 0,
   avatar: ROBOTITO_AVATARS.some(item=>item.id===localStorage.getItem(KEYS.avatar))
     ?localStorage.getItem(KEYS.avatar):"panda",
   mood: "calm",
@@ -726,6 +728,12 @@ function toast(text){
 }
 
 function setMood(mood, reason=""){
+  // A single canonical mood owns the face. Never leave romantic eyes, an
+  // old blink or a sleeping gesture over fear, anger, sadness or hunger.
+  if(!["affectionate","happy","proud","excited"].includes(mood)){
+    clearTimeout(state.heartEyeTimer);state.heartEyeTimer=null;
+    robot.classList.remove("heart-eyes");
+  }
   state.moodRevision=(state.moodRevision||0)+1;
   const allMoods=["calm","happy","sad","angry","scared","hungry","sleepy","curious","focused","bored","affectionate","proud","confused","excited","embarrassed","annoyed"];
   allMoods.forEach(m=>robot.classList.remove("mood-"+m));
@@ -961,7 +969,7 @@ function clearBlinkState(){
   robot.classList.remove("blink");
 }
 function eyesLocked(){
-  return state.sleeping || robot.classList.contains("heart-eyes");
+  return state.sleeping || robot.classList.contains("pre-awake") || robot.classList.contains("heart-eyes");
 }
 function singleBlink(duration=115){
   if(eyesLocked()||document.hidden)return false;
@@ -1164,6 +1172,10 @@ async function startSenses(){
   const startupText=key=>window.ROBOTITO_I18N?.t?.(key,state.languageMode)||key;
   const mobile=isMobileSpeech();
   state.started=true;
+  state.everAwakened=true;
+  robot.classList.remove("pre-awake","drowsy");
+  clearBlinkState();
+  if(!state.nightSleep){state.sleeping=false;robot.classList.remove("sleeping");setMood("calm");}
   const epoch=state.captureEpoch=(state.captureEpoch||0)+1;
   state.captureRevision=(state.captureRevision||0)+1;
   state.captureSuspended=false;clearCaptureIdentity();
@@ -2252,6 +2264,7 @@ function updateAvatarMoodIcon(mood=state.mood){
 function applyAvatar(id,{persist=true}={}){
   const avatar=avatarById(id);
   window.ROBOTITO_OBJECT_SCENE?.cancel?.();
+  if(typeof hidePlayInvitation==="function")hidePlayInvitation();
   state.avatar=avatar.id;
   if(persist){try{localStorage.setItem(KEYS.avatar,avatar.id);}catch(error){console.warn("avatar preference",error);}}
   if(robot){
@@ -2793,7 +2806,7 @@ function animateAffection(){
   robot.classList.remove("heart-eyes");
   resetEyes();
   requestAnimationFrame(()=>{
-    if(state.sleeping)return;
+    if(state.sleeping||!["happy","affectionate","proud","excited"].includes(state.mood))return;
     robot.classList.add("heart-eyes");
     state.heartEyeTimer=setTimeout(()=>{
       robot.classList.remove("heart-eyes");
@@ -4165,6 +4178,13 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   await window.ROBOTITO_MEMORY?.ready?.();
   if(ownerBeforeReady!==window.ROBOTITO_MEMORY?.owner?.())return;
   const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
+  // An acknowledgment is directed at the current game, not generic planning,
+  // and must never be credited to someone else's active profile.
+  if(pendingPlay&&/^(?:ya lo hice|lo hice|listo|termine|terminé|i did it|done|ja fiz|c est fait|fatto|geschafft)$/.test(normalizeText(rawText))){
+    if(pendingPlay.owner===owner)finishPlay(true);
+    else hidePlayInvitation();
+    return;
+  }
   // A new explicit request interrupts any earlier fetch-and-present scene.
   if(!atomic)window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   // P10/P11: explicit literal-response instructions are parsed conservatively
@@ -4542,6 +4562,7 @@ function dayPartGreeting(){
 }
 function wakeFromNight(){
   state.nightSleep=false;
+  robot.classList.remove("pre-awake","drowsy");
   state.sleeping=false;
   stopSnoring();
   clearBlinkState();
@@ -4552,6 +4573,8 @@ function wakeFromNight(){
   setMood("calm","Robotito está despierto otra vez.");
 }
 function sleepForNight(){
+  hidePlayInvitation();
+  robot.classList.remove("drowsy");
   state.nightSleep=true;
   state.sleeping=true;
   clearBlinkState();
@@ -5545,17 +5568,57 @@ function highFiveRobot(){
   say(sample(["¡Choca esos cinco! ✋","¡Paf! Perfecto.",speciesLine("play")]));
   scheduleMoodRecovery(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},1300);
 }
-function playRobot(){
+const PLAY_LANGUAGES={
+ es:{invite:"¡Jugamos! Mirá mi movimiento e intentá hacerlo vos. Cuando termines, decímelo o tocá «¡Ya lo hice!».",confirm:"¡Ya lo hice!",cancel:"Ahora no",done:"¡Buenísimo! Jugamos juntos.",timeout:"Después jugamos otra vez."},
+ en:{invite:"Let's play! Watch my move and copy it. When you're done, tell me or press ‘I did it!’.",confirm:"I did it!",cancel:"Not now",done:"Great! We played together.",timeout:"Let's play again later."},
+ pt:{invite:"Vamos brincar! Veja meu movimento e tente imitá-lo. Depois, diga ou toque em «Já fiz!».",confirm:"Já fiz!",cancel:"Agora não",done:"Muito bem! Brincamos juntos.",timeout:"Brincamos depois."},
+ fr:{invite:"On joue ? Regarde mon mouvement et imite-le. Puis dis-le ou appuie sur «C'est fait !».",confirm:"C'est fait !",cancel:"Pas maintenant",done:"Super ! On a joué ensemble.",timeout:"On jouera plus tard."},
+ it:{invite:"Giochiamo! Guarda il mio movimento e prova a imitarlo. Poi dimmelo o premi «Fatto!».",confirm:"Fatto!",cancel:"Non ora",done:"Benissimo! Abbiamo giocato insieme.",timeout:"Giochiamo più tardi."},
+ de:{invite:"Spielen wir! Schau meine Bewegung an und mach sie nach. Sag Bescheid oder drücke „Geschafft!“.",confirm:"Geschafft!",cancel:"Jetzt nicht",done:"Prima! Wir haben zusammen gespielt.",timeout:"Später spielen wir wieder."}
+};
+let pendingPlay=null,playEpoch=0,playTimeout=null;
+function hidePlayInvitation(){
+  ++playEpoch;
+  clearTimeout(playTimeout);playTimeout=null;pendingPlay=null;
+  const panel=$("#playInvitation");
+  if(panel){panel.hidden=true;panel.classList.add("hidden");}
+}
+function finishPlay(completed=false){
+  if(!pendingPlay||pendingPlay.avatar!==state.avatar||state.sleeping||state.classMode||
+     pendingPlay.owner!==(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local")||
+     Date.now()>pendingPlay.expiresAt){
+    hidePlayInvitation();return false;
+  }
+  const lang=PLAY_LANGUAGES[responseLanguage()]||PLAY_LANGUAGES.es;
+  hidePlayInvitation();
+  if(!completed)return true;
   changeMoodScore(4);
-  if(!state.batterySupported)state.energy=clamp(state.energy-2,0,100);
   adjustBond(state.currentVoicePerson||state.currentPerson,{affection:.55,trust:.25,irritation:-.28});
   recordVisitorInteraction("play");
-  const line=speciesLine("play");
-  setMood("excited",line);
+  setMood("happy",lang.done);say(lang.done);
+  speciesAct("play",950);
+  return true;
+}
+function playRobot(){
+  if(state.classMode||state.sleeping||state.nightSleep)return false;
+  hidePlayInvitation();
+  const lang=PLAY_LANGUAGES[responseLanguage()]||PLAY_LANGUAGES.es;
+  const token=playEpoch;
+  pendingPlay={avatar:state.avatar,owner:(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"),expiresAt:Date.now()+20000};
+  $("#playInstruction").textContent=lang.invite;
+  $("#playConfirmBtn").textContent=lang.confirm;
+  $("#playCancelBtn").textContent=lang.cancel;
+  const panel=$("#playInvitation");
+  panel.hidden=false;panel.classList.remove("hidden");
+  setMood("excited",speciesLine("play"));
   temporaryRobotClass("playing",2300);
   speciesAct("play",2300);
-  say(line);
-  scheduleMoodRecovery(()=>{if(!state.sleeping&&!state.classMode)setMood("happy");},2400);
+  say(lang.invite,7200);
+  playTimeout=setTimeout(()=>{
+    if(token!==playEpoch)return;
+    hidePlayInvitation();
+  },20000);
+  return true;
 }
 
 function scareRobot(){
@@ -5589,52 +5652,71 @@ function hungerTick(){
 
   const hours=(Date.now()-last)/36e5;
   state.hunger=clamp(hours/4*100,0,100);
+  // Hunger is a need, not permission to overwrite closed sleeping eyes or
+  // a focused class. The need remains visible in the hunger meter.
+  if(state.sleeping||state.nightSleep||state.classMode||robot.classList.contains("pre-awake"))return;
 
   if(hours>=4) setMood("angry","Robotito está muy enojado porque hace más de 4 horas que no come.");
   else if(hours>=3) setMood("hungry","Robotito tiene muchísima hambre.");
 }
 
+const DOZE_START_SECONDS=135,INACTIVITY_SLEEP_SECONDS=150;
 function inactivityTick(){
+  // Without initial user activation Robotito is peacefully resting, not
+  // incrementing inactivity toward an apparent automatic wake/sleep.
+  if(!state.everAwakened){
+    robot.classList.add("pre-awake");
+    robot.classList.remove("drowsy");
+    return;
+  }
   if(state.nightSleep){
+    robot.classList.remove("drowsy");
     state.sleeping=true;
     robot.classList.add("sleeping");
-    setMood("sleepy","Robotito está durmiendo.");
+    if(state.mood!=="sleepy")setMood("sleepy","Robotito está durmiendo.");
     return;
   }
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
-
   if(state.classMode){
     state.sleeping=false;
-    robot.classList.remove("sleeping");
-    setMood("focused","Robotito está concentrado escuchando la clase.");
+    robot.classList.remove("sleeping","drowsy");
+    if(state.mood!=="focused")setMood("focused","Robotito está concentrado escuchando la clase.");
     return;
   }
-
-  if(quietFor>150){
-    state.sleeping=true;
-    robot.classList.add("sleeping");
-    startSnoring();
-    setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
+  if(quietFor>=INACTIVITY_SLEEP_SECONDS){
+    if(!state.sleeping){
+      hidePlayInvitation();
+      clearBlinkState();
+      robot.classList.remove("heart-eyes","drowsy");
+      state.sleeping=true;
+      robot.classList.add("sleeping");
+      startSnoring();
+      setMood("sleepy","No ve ni escucha a nadie hace rato. Se quedó dormido.");
+    }
     if(!state.batterySupported)state.energy=clamp(state.energy+.35,0,100);
-  }else if(quietFor>95){
-    state.sleeping=false;
-    stopSnoring();
-    robot.classList.remove("sleeping");
-    setMood("sleepy","Robotito está cabeceando de sueño.");
+    return;
+  }
+  const wasSleeping=state.sleeping;
+  state.sleeping=false;
+  if(wasSleeping){
+    stopSnoring();clearBlinkState();robot.classList.remove("sleeping","drowsy");
+    setMood("calm","Robotito abrió los ojos al detectar actividad.");
+    say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó?"]));
+  }
+  if(quietFor>=DOZE_START_SECONDS){
+    // Exactly the last fifteen seconds are a progressive doze, not deep sleep.
+    robot.classList.add("drowsy");
+    robot.style.setProperty("--doze-progress",String(clamp((quietFor-DOZE_START_SECONDS)/15,0,1)));
+    if(state.mood!=="sleepy")setMood("sleepy","Robotito está empezando a cabecear.");
     if(!state.batterySupported)state.energy=clamp(state.energy-.05,0,100);
-  }else if(quietFor>45){
-    state.sleeping=false;
-    stopSnoring();
-    robot.classList.remove("sleeping");
-    setMood("bored",speciesLine("idle"));
-    maybeSpeciesIdleComment(quietFor);
-    if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }else{
-    const wasSleeping=state.sleeping;
-    state.sleeping=false;
-    stopSnoring();
-    robot.classList.remove("sleeping");
-    if(wasSleeping)say(sample(["¿Mm? Ya volviste.","Ah… me despertaste.","¿Qué pasó?"]));
+    const wasDrowsy=robot.classList.contains("drowsy");
+    robot.classList.remove("drowsy");robot.style.removeProperty("--doze-progress");
+    if(wasDrowsy&&!wasSleeping)setMood("calm","Robotito abrió los ojos porque volviste.");
+    if(quietFor>45){
+      if(state.mood!=="bored")setMood("bored",speciesLine("idle"));
+      maybeSpeciesIdleComment(quietFor);
+    }else if(wasSleeping&&state.mood!=="calm")setMood("calm");
     if(!state.batterySupported)state.energy=clamp(state.energy-.02,0,100);
   }
 }
@@ -6143,7 +6225,8 @@ function ambientMood(){
   }
   inactivityTick();
   if(state.classMode){updateMeters();return;}
-  if(!state.sleeping&&state.hunger<70&&state.emotion!=="bored"){
+  if(Date.now()<state.emotionHoldUntil){updateMeters();return;}
+  if(!state.sleeping&&!robot.classList.contains("drowsy")&&state.hunger<70&&state.emotion!=="bored"){
     if(state.moodScore>=70)setMood("happy");
     else if(state.moodScore<30)setMood("sad");
     else if(!["scared","angry"].includes(state.mood))setMood("calm");
@@ -6291,10 +6374,19 @@ function bindUI(){
     if(t.dataset.tab==="memory")void window.ROBOTITO_MEMORY?.render?.();
   }));
 
+  $("#playConfirmBtn")?.addEventListener("click",()=>finishPlay(true));
+  $("#playCancelBtn")?.addEventListener("click",()=>finishPlay(false));
   $(".quick-actions").addEventListener("click",e=>{
     const btn=e.target.closest("[data-action]");
     if(!btn)return;
     const a=btn.dataset.action;
+    if(!state.everAwakened){
+      // Direct interaction is itself an intentional awakening even without
+      // granting microphone/camera permissions.
+      state.everAwakened=true;
+      robot.classList.remove("pre-awake","drowsy");
+      clearBlinkState();setMood("calm");
+    }
     if(a==="feed")feedRobot(false);
     else if(a==="pet")petRobot();
     else if(a==="highfive")highFiveRobot();
@@ -6336,6 +6428,12 @@ function purgeNamedPeople(){
 }
 
 window.ROBOTITO_CHAT={send:handleSpeech,context:()=>robotitoConversationContext};
+window.ROBOTITO_AVATAR_LIFECYCLE={
+  get restState(){return robot.classList.contains("sleeping")?"sleeping":robot.classList.contains("drowsy")?"drowsy":robot.classList.contains("pre-awake")?"resting":"awake";},
+  inactivityTick,singleBlink,clearBlinkState,
+  play:playRobot,confirmPlay:()=>finishPlay(true),cancelPlay:()=>finishPlay(false),
+  wake:wakeFromNight,nightSleep:sleepForNight
+};
 
 window.ROBOTITO_SPEECH_QA={
   cleanTranscript:cleanRecognitionTranscript,
@@ -6418,6 +6516,7 @@ async function init(){
   // Browser controls are not interactive until migrations and listener wiring finish.
   document.documentElement.dataset.robotitoUiReady="true";
   bindPandaReferenceViews();
+  robot.classList.add("pre-awake");
   applyAvatar(state.avatar,{persist:false});
   showStartupStep("language");
   ensureClassLineIds();

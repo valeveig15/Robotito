@@ -23,7 +23,9 @@
 
   function isQuotedOrAcademic(text){
     return /^(?:que significa|que quiere decir|como se dice|como se escribe|traduce|traduci|repeti|repite|dame un ejemplo|la frase)\b/.test(text)
-      || /\b(?:significado|traduccion|transcripcion)\s+de\b/.test(text);
+      || /\b(?:significado|traduccion|transcripcion)\s+de\b/.test(text)
+      || /^(?:(?:en|segun) (?:la clase|el video|el libro|la cita|el texto|la cancion)|(?:mi|el|la) (?:profe|profesor|profesora|maestro|maestra)|(?:alguien|una persona|un personaje|ella|el) (?:dijo|escribio)|(?:en la cita|la cita|el texto|el libro|cita textual|ejemplo de dialogo))\b/.test(text)
+      || /\b(?:dijo|escribio|cito|citaba|dice el texto|en la transcripcion)\b.{0,75}\b(?:te quiero|te odio|tengo miedo|sos tonto)\b/.test(text);
   }
 
   const DETECTORS=[
@@ -192,10 +194,25 @@
     }
   };
 
-  function respond(id){
+  function respond(id,{cautious=false,trusted=false}={}){
     const lang=typeof responseLanguage==="function"?responseLanguage():"es";
     const choices=RESPONSES[lang]?.[id]||RESPONSES.es[id]||["Te escuché."];
-    const answer=typeof sample==="function"?sample(choices):choices[Math.floor(Math.random()*choices.length)];
+    const special=cautious&&id==="affection"?{
+      es:"Te escucho. Prefiero que vayamos con calma y recuperemos la confianza.",
+      en:"I hear you. Let's take things slowly and build trust.",
+      pt:"Eu te ouvi. Vamos com calma e recuperar a confiança.",
+      fr:"Je t'entends. Allons doucement pour retrouver confiance.",
+      it:"Ti ascolto. Andiamo piano e ricostruiamo la fiducia.",
+      de:"Ich höre dich. Lass uns langsam wieder Vertrauen aufbauen."
+    }:trusted&&id==="fear"?{
+      es:"Me asusté, pero tu compañía me ayuda a tranquilizarme.",
+      en:"That scared me, but your company helps me feel safer.",
+      pt:"Fiquei assustado, mas sua companhia me acalma.",
+      fr:"J'ai eu peur, mais ta présence me rassure.",
+      it:"Mi sono spaventato, ma la tua compagnia mi rassicura.",
+      de:"Das hat mich erschreckt, aber bei dir fühle ich mich sicherer."
+    }:null;
+    const answer=special?(special[lang]||special.es):(typeof sample==="function"?sample(choices):choices[Math.floor(Math.random()*choices.length)]);
     if(typeof sayInLanguage==="function")sayInLanguage(answer,lang);
     else if(typeof say==="function")say(answer);
   }
@@ -206,6 +223,13 @@
     if(!reaction)return false;
     const token=++reactionToken;
     const who=context.who||(typeof state!=="undefined"?(state.currentVoicePerson||state.currentPerson):null);
+    const person=typeof state!=="undefined"&&who?state.people?.find?.(p=>p.name===who):null;
+    const category=person&&typeof bondCategory==="function"?bondCategory(person):"neutral";
+    const cautious=category==="afraid"||category==="dislikes";
+    const trusted=category==="loves"||category==="trusts"||category==="likes";
+    // A previously frightened character will not show hearts merely because
+    // someone speaks affectionately once. Rebuild trust gradually.
+    const appliedMood=cautious&&reaction.id==="affection"?"confused":reaction.mood;
 
     if(typeof changeMoodScore==="function")changeMoodScore(reaction.delta||0);
     if(typeof adjustBond==="function")adjustBond(who,reaction.bond||{});
@@ -221,17 +245,19 @@
         apology:"Robotito aceptó la disculpa.",
         reassurance:"Robotito entendió que ya no había peligro."
       };
-      setMood(reaction.mood,reasons[reaction.id]||"Robotito reaccionó a lo que escuchó.");
+      setMood(appliedMood,reasons[reaction.id]||"Robotito reaccionó a lo que escuchó.");
     }
 
-    if(reaction.hearts&&typeof animateAffection==="function")animateAffection();
-    respond(reaction.id);
+    if(typeof state!=="undefined")state.emotionHoldUntil=Date.now()+(reaction.duration||6000);
+    if(reaction.hearts&&!cautious&&typeof animateAffection==="function")animateAffection();
+    respond(reaction.id,{cautious,trusted});
 
-    const moodAtReaction=reaction.mood;
+    const moodAtReaction=appliedMood;
     setTimeout(()=>{
       if(token!==reactionToken||typeof state==="undefined"||state.sleeping||state.classMode)return;
       if(state.emotion!==moodAtReaction)return;
       if(typeof setMood==="function")setMood(moodAtReaction==="affectionate"||moodAtReaction==="proud"||moodAtReaction==="excited"?"happy":"calm");
+      state.emotionHoldUntil=0;
     },reaction.duration||6000);
     return true;
   }

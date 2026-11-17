@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261116-p28" />
+  <link rel="stylesheet" href="style.css?v=20261116-p30-p32" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -60,13 +60,13 @@
   <script defer src="class-summary-aggregate.js?v=20261115-p15"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
   <script defer src="class-verification.js?v=20261115-p07"></script>
-  <script defer src="emotional-dialogue.js"></script>
+  <script defer src="emotional-dialogue.js?v=20261116-p30-p32"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
-  <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
+  <script defer src="approved-avatar-bridge.js?v=20261116-p30-p32"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
-  <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
+  <script defer src="script.js?v=20261116-p30-p32"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
@@ -376,6 +376,11 @@
           <button type="button" data-action="poke" data-i18n="poke">👉 Molestar</button>
         </div>
         <div id="typedChatHistory" class="typed-chat-history" role="log" aria-label="Conversación escrita" aria-live="polite" aria-relevant="additions text"></div>
+        <div id="playInvitation" class="play-invitation hidden" role="group" aria-label="Juego propuesto por Robotito" hidden>
+          <p id="playInstruction" aria-live="polite"></p>
+          <button id="playConfirmBtn" type="button">¡Ya lo hice!</button>
+          <button id="playCancelBtn" type="button" class="ghost">Ahora no</button>
+        </div>
         <form id="robotitoTextForm" class="robotito-text-form" aria-label="Escribirle a Robotito">
           <label for="robotitoTextInput" data-i18n="typedChat">Escribile a Robotito</label>
           <div class="robotito-text-form-row">

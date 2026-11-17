@@ -1,0 +1,4 @@
+# P30 — Gestos y juego interactivo
+Se mantienen Acariciar, Alimentar, **Chocar los cinco**, Jugar, Asustar y Molestar. «Abrazar» no aparece en los controles. La creadora rectificó el documento de octubre y **exigió conservar Chocar los cinco**, en voz, botón y animación.
+Jugar ahora muestra una invitación accesible debajo de las acciones, con confirmación de participación («¡Ya lo hice!» o voz), cancelación, caducidad, aislamiento por avatar y perfil y copias en seis idiomas. No se acredita juego si la persona no responde. No pretende detectar un movimiento real.
+Prueba en `tests/p30-p32-avatar-lifecycle-browser.js`. Faltan pruebas táctiles reales y lector de pantalla.

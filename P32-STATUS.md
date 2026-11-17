@@ -1,0 +1,4 @@
+# P32 — Emociones coherentes y vínculo
+La emoción canónica cancela corazones y señales tiernas incompatibles con miedo, tristeza, enojo, fastidio, hambre o sueño. Los cinco SVG aprobados ocultan estrellas/corazones cuando están asustados y diferencian fastidio, sueño y alimentación sin reemplazar la geometría aprobada.
+El motor emocional ignora citas, narraciones académicas y Modo Clase, respeta el vínculo de personas reconocidas y no convierte un vínculo temeroso en afecto inmediato. Evita que el ambiente interrumpa una emoción antes de terminar.
+Pruebas en `tests/p32-emotion-coherence-regression.js` y `tests/p30-p32-avatar-lifecycle-browser.js`. Pendiente revisión humana de todos los estados y dispositivos físicos.

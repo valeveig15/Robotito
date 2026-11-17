@@ -91,8 +91,14 @@ runBrowserTest("p07-encrypted-backup",async test=>{
   window.confirm=()=>true;window.prompt=()=>"RESTAURAR";
  });
  await page.locator("#memoryBackupRestorePassword").fill(password);
- await page.locator("#memoryBackupFile").setInputFiles(saved);
+ // A successful restore reloads the page. Await the new document before
+ // reading IndexedDB: Firefox can otherwise destroy the old execution context.
+ await Promise.all([
+  page.waitForEvent("domcontentloaded",{timeout:20000}),
+  page.locator("#memoryBackupFile").setInputFiles(saved)
+ ]);
  await page.waitForFunction(async()=>{
+  if(document.documentElement.dataset.robotitoUiReady!=="true")return false;
   const store=window.ROBOTITO_STORE;
   return !!store?.getRecord&&!(await store.getRecord("p07-after-encrypted-export"))&&
    !!(await store.getRecord("p07-encrypted-memory"));
