@@ -1,0 +1,3 @@
+# P31 — Ojos y descanso
+Reposo inicial con ojos cerrados hasta el primer despertar. Al despertar se abren los ojos y funciona el parpadeo natural, salvo durante el sueño. La inactividad inicia cabeceo a los 135 segundos y sueño a los 150 segundos (15 segundos de transición); el retorno de actividad abre los ojos. Modo Clase, noche y batería conservan sus prioridades. El puente de los cinco SVG aprobados sincroniza descanso, parpadeo, sueño y reactivación.
+Prueba en `tests/p30-p32-avatar-lifecycle-browser.js`. Faltan cámara/micrófono real, móviles y lector de pantalla.
