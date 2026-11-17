@@ -4198,6 +4198,15 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   await window.ROBOTITO_MEMORY?.ready?.();
   if(ownerBeforeReady!==window.ROBOTITO_MEMORY?.owner?.())return;
   const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
+  // Log every user turn before early command/clarification returns.
+  // Atomic subplans belong to the same original turn and must not duplicate it.
+  if(!atomic){
+    void window.ROBOTITO_STORE?.putRecord?.({
+      type:"conversations",owner,timestamp:Date.now(),source:"dialogue",
+      language:state.languageMode||"es",
+      data:{role:"user",text:String(rawText).slice(0,2000),channel}
+    }).catch(error=>console.warn("conversation storage",error));
+  }
   // A new explicit request interrupts any earlier fetch-and-present scene.
   if(!atomic)window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   // P10/P11: explicit literal-response instructions are parsed conservatively
@@ -4277,12 +4286,6 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   // Robotito keeps recognition active while muted and can therefore hear "ya podés hablar".
   if(handleSilenceCommand(interpreted))return;
   if(!generalAcademic&&!interpretation?.quotedContent&&handleLanguageCommand(interpreted))return;
-  // Conversation records remain local and attributable to the active profile.
-  window.ROBOTITO_STORE?.putRecord?.({type:"conversations",owner,
-    timestamp:Date.now(),source:"dialogue",language:state.languageMode||"es",
-    topic:interpretation?.entities?.topic||"",data:{role:"user",text:String(rawText).slice(0,2000),
-      intent:understood.intent||"unknown",source:interpretation?.source||"none",channel}})
-    .catch(e=>console.warn("conversation storage",e));
   // An overheard statement must not start class, web, book, math or camera actions.
   if(interpretation&&interpretation.shouldExecute===false){
     if(interpretation.negative){
