@@ -3298,3 +3298,17 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
  .approved-avatar-host .approved-object-prop{animation:none}
 }
+
+
+/* P29: demonstrate color shifting only for the chameleon avatar. */
+.robotito.avatar-chameleon.chameleon-color-demo .animal-avatar-emoji{
+ animation:chameleonAnswerColors 1.7s ease-in-out 1!important;
+}
+@keyframes chameleonAnswerColors{
+  0%,100%{filter:hue-rotate(var(--chameleon-hue,0deg)) saturate(1.42) drop-shadow(0 12px 11px rgba(55,42,58,.17))}
+  30%{filter:hue-rotate(110deg) saturate(1.48)}
+  68%{filter:hue-rotate(225deg) saturate(1.48)}
+}
+@media(prefers-reduced-motion:reduce){
+ .robotito.avatar-chameleon.chameleon-color-demo .animal-avatar-emoji{animation:none!important}
+}
