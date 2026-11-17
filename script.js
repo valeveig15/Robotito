@@ -728,6 +728,12 @@ function toast(text){
 }
 
 function setMood(mood, reason=""){
+  // A single canonical mood owns the face. Never leave romantic eyes, an
+  // old blink or a sleeping gesture over fear, anger, sadness or hunger.
+  if(!["affectionate","happy","proud","excited"].includes(mood)){
+    clearTimeout(state.heartEyeTimer);state.heartEyeTimer=null;
+    robot.classList.remove("heart-eyes");
+  }
   state.moodRevision=(state.moodRevision||0)+1;
   const allMoods=["calm","happy","sad","angry","scared","hungry","sleepy","curious","focused","bored","affectionate","proud","confused","excited","embarrassed","annoyed"];
   allMoods.forEach(m=>robot.classList.remove("mood-"+m));
@@ -2800,7 +2806,7 @@ function animateAffection(){
   robot.classList.remove("heart-eyes");
   resetEyes();
   requestAnimationFrame(()=>{
-    if(state.sleeping)return;
+    if(state.sleeping||!["happy","affectionate","proud","excited"].includes(state.mood))return;
     robot.classList.add("heart-eyes");
     state.heartEyeTimer=setTimeout(()=>{
       robot.classList.remove("heart-eyes");
@@ -6206,6 +6212,7 @@ function ambientMood(){
   }
   inactivityTick();
   if(state.classMode){updateMeters();return;}
+  if(Date.now()<state.emotionHoldUntil){updateMeters();return;}
   if(!state.sleeping&&state.hunger<70&&state.emotion!=="bored"){
     if(state.moodScore>=70)setMood("happy");
     else if(state.moodScore<30)setMood("sad");
@@ -6401,6 +6408,12 @@ function purgeNamedPeople(){
 }
 
 window.ROBOTITO_CHAT={send:handleSpeech,context:()=>robotitoConversationContext};
+window.ROBOTITO_AVATAR_LIFECYCLE={
+  get restState(){return robot.classList.contains("sleeping")?"sleeping":robot.classList.contains("drowsy")?"drowsy":robot.classList.contains("pre-awake")?"resting":"awake";},
+  inactivityTick,singleBlink,clearBlinkState,
+  play:playRobot,confirmPlay:()=>finishPlay(true),cancelPlay:()=>finishPlay(false),
+  wake:wakeFromNight,nightSleep:sleepForNight
+};
 
 window.ROBOTITO_SPEECH_QA={
   cleanTranscript:cleanRecognitionTranscript,
