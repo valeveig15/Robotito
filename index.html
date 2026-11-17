@@ -376,6 +376,11 @@
           <button type="button" data-action="poke" data-i18n="poke">👉 Molestar</button>
         </div>
         <div id="typedChatHistory" class="typed-chat-history" role="log" aria-label="Conversación escrita" aria-live="polite" aria-relevant="additions text"></div>
+        <div id="playInvitation" class="play-invitation hidden" role="group" aria-label="Juego propuesto por Robotito" hidden>
+          <p id="playInstruction" aria-live="polite"></p>
+          <button id="playConfirmBtn" type="button">¡Ya lo hice!</button>
+          <button id="playCancelBtn" type="button" class="ghost">Ahora no</button>
+        </div>
         <form id="robotitoTextForm" class="robotito-text-form" aria-label="Escribirle a Robotito">
           <label for="robotitoTextInput" data-i18n="typedChat">Escribile a Robotito</label>
           <div class="robotito-text-form-row">
