@@ -6377,6 +6377,13 @@ function bindUI(){
     const btn=e.target.closest("[data-action]");
     if(!btn)return;
     const a=btn.dataset.action;
+    if(!state.everAwakened){
+      // Direct interaction is itself an intentional awakening even without
+      // granting microphone/camera permissions.
+      state.everAwakened=true;
+      robot.classList.remove("pre-awake","drowsy");
+      clearBlinkState();setMood("calm");
+    }
     if(a==="feed")feedRobot(false);
     else if(a==="pet")petRobot();
     else if(a==="highfive")highFiveRobot();
