@@ -20,7 +20,7 @@ runBrowserTest("settings-gear-avatar-size",async test=>{
  await page.locator("#quickLanguageSelect").selectOption("en");
  assert.equal(await page.locator("html").getAttribute("lang"),"en");
  test.phase("size-persistence-and-original-avatar-geometry");
- await page.locator("#settingsAvatarSize").fill("60");
+ await page.locator("#settingsAvatarSize").evaluate(el=>{el.value="60";el.dispatchEvent(new Event("input",{bubbles:true}));});
  assert.equal(await page.locator("#settingsAvatarSizeValue").innerText(),"60 %");
  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector("#robotito")).scale),"0.6");
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR?.current?.id==="panda");
