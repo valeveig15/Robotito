@@ -8,7 +8,7 @@ function normalize(value){return String(value||"").normalize("NFD").replace(/[\u
 function classify(raw){
  const text=normalize(raw);if(!text||text.length>500)return null;
  // A factual query about "a chameleon" belongs to general knowledge.
- const color=/^(?:por que|como|cuando|why|how|porque|pourquoi|comment|perche|come|warum|wie)?\s*(?:(?:te|tu|you|do you|voce|du)\s+)?(?:cambias|cambiás|te cambias|te pones|te camuflas|change|changes|muda|mudas|cambi|wechselst|wechseln|farbwechsel)/.test(text)&&
+ const color=/^(?:por que|como|cuando|why|how|porque|pourquoi|comment|perche|come|warum|wie)?\s*(?:(?:te|tu|you|do you|voce|du)\s+)?(?:cambias|cambiás|te cambias|te pones|te camuflas|change|changes|muda|mudas|cambi\b|wechselst|wechseln|farbwechsel)/.test(text)&&
   /(?:color|cor|couleur|colore|farbe|camufl)/.test(text)
   ||/^(?:puedes|podes|podrias|can you|voce pode|tu peux|puoi|kannst du)\s+(?:cambiar|mudar|change|changer|cambiare|wechseln).*(?:color|cor|couleur|colore|farbe)/.test(text);
  if(color)return "chameleon";
