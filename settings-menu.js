@@ -15,6 +15,11 @@ const limit=value=>Math.min(100,Math.max(45,Math.round((Number(value)||70)/5)*5)
 function applySize(size,{persist=true}={}){
  const value=limit(size);
  document.documentElement.style.setProperty("--robotito-avatar-scale",String(value/100));
+ const group=document.getElementById("approvedAvatarHost")?.shadowRoot?.getElementById("approvedAvatarScale");
+ if(group){
+  const scale=value/100;
+  group.setAttribute("transform","translate("+((1-scale)*350)+" "+((1-scale)*580)+") scale("+scale+")");
+ }
  if($("#settingsAvatarSize"))$("#settingsAvatarSize").value=String(value);
  if($("#settingsAvatarSizeValue"))$("#settingsAvatarSizeValue").textContent=value+" %";
  if(persist){try{localStorage.setItem(KEY,String(value));}catch{}}
