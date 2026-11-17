@@ -19,6 +19,7 @@ const ACTIONS={
 };
 let requested=0,current=null,root=null,observer=null,speechTimer=null,blinkTimer=null;
 let pendingSync=false;
+const pendingAssetFetches=new Set();
 const cached=new Map(),path=id=>"assets/approved-avatars/"+REFS[id]+".fragment.html";
 function getRobot(){return document.getElementById("robotito");}
 function getWorld(){return document.getElementById("world");}
@@ -43,6 +44,9 @@ function ensureHost(){
 }
 function reset(){
  ++requested;
+ // Stop SVG asset requests for a document that is navigating away.
+ for(const controller of pendingAssetFetches)controller.abort();
+ pendingAssetFetches.clear();
  observer?.disconnect();observer=null;
  clearTimeout(speechTimer);clearTimeout(blinkTimer);
  speechTimer=null;blinkTimer=null;current=null;pendingSync=false;
@@ -55,7 +59,9 @@ function reset(){
 }
 async function fetchMarkup(id){
  if(cached.has(id))return cached.get(id);
- const promise=fetch(path(id),{credentials:"same-origin",cache:"force-cache"}).then(r=>{
+ const controller=new AbortController();
+ pendingAssetFetches.add(controller);
+ const promise=fetch(path(id),{credentials:"same-origin",cache:"force-cache",signal:controller.signal}).then(r=>{
    if(!r.ok)throw new Error("Approved avatar asset "+id+": "+r.status);
    return r.text();
  }).then(html=>{
@@ -71,6 +77,7 @@ async function fetchMarkup(id){
  });
  cached.set(id,promise);
  try{return await promise;}catch(error){cached.delete(id);throw error;}
+ finally{pendingAssetFetches.delete(controller);}
 }
 function actionFromRobot(robot){
  if(robot.classList.contains("object-trip-walking")||robot.classList.contains("object-trip-searching"))
@@ -185,6 +192,7 @@ async function activate(id,{mood="calm",language="es"}={}){
   sync();
   return true;
  }catch(error){
+  if(error?.name==="AbortError"||token!==requested)return false;
   console.warn("Approved avatar unavailable; using safe existing rendering",error);
   if(token===requested)reset();
   return false;
