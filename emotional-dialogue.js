@@ -189,6 +189,39 @@
       affection:["Ah… eu também te amo. ♡","Isso me deixa muito, muito feliz. ♡"],
       praise:["Obrigado! Agora estou muito orgulhoso.","Isso me fez sentir incrível."],
       excitement:["Que emoção! Conta tudo.","Oba! Agora estou super animado."]
+    },
+    fr:{
+      reassurance:["Ouf, tout va bien. Je suis rassuré.","C'était une blague ! Me voilà rassuré."],
+      fear:["Oh ! Tu m'as fait peur.","J'ai peur. Reste près de moi."],
+      grief:["C'est vraiment triste.","Oh non… quelle triste histoire."],
+      rejection:["Ça me rend un peu triste.","Aïe… ça m'a blessé."],
+      anger:["Ce n'était pas gentil.","Je n'aime pas qu'on me parle ainsi."],
+      apology:["Merci pour tes excuses. On fait la paix ?","Je te pardonne."],
+      affection:["Moi aussi, je tiens à toi ! ♡","Tes mots me font plaisir. ♡"],
+      praise:["Merci, je suis très fier !","Ça me rend heureux."],
+      excitement:["Quelle joie ! Raconte-moi !","Je suis super enthousiaste !"]
+    },
+    it:{
+      reassurance:["Meno male, sono più tranquillo.","Ah, era uno scherzo. Che sollievo!"],
+      fear:["Ah! Mi sono spaventato.","Ho paura. Rimani vicino a me."],
+      grief:["È una storia molto triste.","Oh no… mi dispiace davvero."],
+      rejection:["Questo mi rende un po' triste.","Ahi… mi hai ferito."],
+      anger:["Non è stato gentile.","Non mi piace quando mi parli così."],
+      apology:["Grazie per le scuse. Facciamo pace?","Ti perdono."],
+      affection:["Ti voglio bene anch'io! ♡","Che bello sentirlo! ♡"],
+      praise:["Grazie, sono molto orgoglioso!","Mi rende felice."],
+      excitement:["Che emozione! Raccontami!","Sono felicissimo!"]
+    },
+    de:{
+      reassurance:["Puh, jetzt bin ich beruhigt.","Ach, nur ein Scherz. Gut!"],
+      fear:["Ah! Das hat mich erschreckt.","Ich habe Angst. Bleib bei mir."],
+      grief:["Das ist wirklich traurig.","Oh nein… das tut mir leid."],
+      rejection:["Das macht mich ein wenig traurig.","Autsch… das hat wehgetan."],
+      anger:["Das war nicht nett.","So möchte ich nicht angesprochen werden."],
+      apology:["Danke für die Entschuldigung. Frieden?","Ich verzeihe dir."],
+      affection:["Ich mag dich auch sehr! ♡","Wie schön, das zu hören! ♡"],
+      praise:["Danke, jetzt bin ich stolz!","Das macht mich froh."],
+      excitement:["Wie aufregend! Erzähl mehr!","Ich bin ganz begeistert!"]
     }
   };
 
@@ -228,8 +261,12 @@
     respond(reaction.id);
 
     const moodAtReaction=reaction.mood;
+    const revisionAtReaction=typeof state!=="undefined"?state.moodRevision:0;
+    const avatarAtReaction=typeof state!=="undefined"?state.avatar:null;
     setTimeout(()=>{
       if(token!==reactionToken||typeof state==="undefined"||state.sleeping||state.classMode)return;
+      if(state.moodRevision!==revisionAtReaction||state.avatar!==avatarAtReaction||
+         (state.currentVoicePerson||state.currentPerson||null)!==(who||null))return;
       if(state.emotion!==moodAtReaction)return;
       if(typeof setMood==="function")setMood(moodAtReaction==="affectionate"||moodAtReaction==="proud"||moodAtReaction==="excited"?"happy":"calm");
     },reaction.duration||6000);

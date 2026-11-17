@@ -173,9 +173,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **27.** Selección de avatar al inicio y catálogo de especies — EN PROGRESO (50 avatares, seis idiomas, selección inicial, restauración persistente y recuperación de preferencias legadas; pruebas de navegador; pendiente validación física y lectores de pantalla; ver P27-STATUS.md)
 - [ ] **28.** Integración visual de los cinco avatares nuevos como referencia prioritaria — EN PROGRESO (cinco SVG/escenarios exactos de las últimas referencias aprobadas, puente de emociones/acciones/voz e integración al Robotito principal; falta revisión visual comparativa y móviles físicos; ver P28-STATUS.md)
 - [ ] **29.** Especie, alimentación, camaleón y preguntas sobre sí mismo — EN PROGRESO (50 fichas de alimentación por categoría, respuestas del avatar seleccionado en seis idiomas, camaleón con cambio de color según ánimo y prueba de no interceptar biología general; falta validación en móviles físicos y revisión editorial de cada especie; ver [P29-STATUS.md](P29-STATUS.md)).
-- [ ] **30.** Gestos, acciones y eliminación de abrazar/chocar los cinco — POR AUDITAR
-- [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — POR AUDITAR
-- [ ] **32.** Emociones visuales coherentes y vínculo personal — POR AUDITAR
+- [ ] **30.** Gestos y acciones — EN PROGRESO (gestos directos por voz y clic/tacto, control único para las seis acciones, alta preservación de «Chocar los cinco», sin «Abrazar» como acción independiente; pendiente prueba táctil física; ver [P30-STATUS.md](P30-STATUS.md)).
+- [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — EN PROGRESO (cancelación de parpadeos y sueños obsoletos, transición de párpados, coherencia con cinco SVG y reducción de movimiento; falta comprobación física visual; ver [P31-STATUS.md](P31-STATUS.md)).
+- [ ] **32.** Emociones visuales coherentes y vínculo personal — EN PROGRESO (16 estados visuales diferenciados, seis idiomas de diálogo emocional, recuperación por revisión/identidad, vínculo por perfil; falta calibración con participantes y dispositivos reales; ver [P32-STATUS.md](P32-STATUS.md)).
 - [ ] **33.** Batería real, avisos e inactividad — POR AUDITAR
 - [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — POR AUDITAR
 - [ ] **35.** Libros sin Goodreads y metadatos verificables — POR AUDITAR
