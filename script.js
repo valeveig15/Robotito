@@ -909,7 +909,16 @@ function syncBatteryState({announce=true}={}){
   state.energy=level;
   state.batteryPreviousLevel=level;
 
-  const threshold=window.ROBOTITO_P33_P35.batteryThreshold(previous,level,state.batteryCharging);
+  let threshold=window.ROBOTITO_P33_P35.batteryThreshold(previous,level,state.batteryCharging);
+  // Do not warn again on reload in the same tab if the same level was already announced.
+  try{
+    const last=sessionStorage.getItem("robotito.battery.alert-bucket.v1");
+    if(state.batteryCharging||level>50)sessionStorage.removeItem("robotito.battery.alert-bucket.v1");
+    else if(threshold){
+      if(previous===null&&last===String(threshold))threshold=null;
+      else sessionStorage.setItem("robotito.battery.alert-bucket.v1",String(threshold));
+    }
+  }catch(error){console.warn("battery alert persistence unavailable",error);}
   applyBatteryCriticalState();
   updateMeters();
   const source=$("#batterySourceText");
