@@ -24,7 +24,7 @@
   function isQuotedOrAcademic(text){
     return /^(?:que significa|que quiere decir|como se dice|como se escribe|traduce|traduci|repeti|repite|dame un ejemplo|la frase)\b/.test(text)
       || /\b(?:significado|traduccion|transcripcion)\s+de\b/.test(text)
-      || /^(?:(?:en|segun) (?:la clase|el video|el libro|la cita|el texto|la cancion)|(?:mi|el|la) (?:profe|profesor|profesora|maestro|maestra)|(?:alguien|una persona|un personaje|ella|el) (?:dijo|escribio)|(?:en la cita|cita textual|ejemplo de dialogo))\b/.test(text)
+      || /^(?:(?:en|segun) (?:la clase|el video|el libro|la cita|el texto|la cancion)|(?:mi|el|la) (?:profe|profesor|profesora|maestro|maestra)|(?:alguien|una persona|un personaje|ella|el) (?:dijo|escribio)|(?:en la cita|la cita|cita textual|ejemplo de dialogo))\b/.test(text)
       || /\b(?:dijo|escribio|cito|citaba|dice el texto|en la transcripcion)\b.{0,75}\b(?:te quiero|te odio|tengo miedo|sos tonto)\b/.test(text);
   }
 
