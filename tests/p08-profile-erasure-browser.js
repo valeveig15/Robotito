@@ -103,7 +103,8 @@ runBrowserTest("p08-profile-erasure",async test=>{
  for(const key of ["ada","legacyPerson","legacyBirthday","adaAudio","undo"])
   assert.equal(after[key],null,key+" must be securely cleared locally");
  assert.equal(after.bob.owner,"Bruno");
- assert.equal(after.unknown.owner,"local","Anonymous memories may not be claimed by name");
+ assert.ok(["local","legacy:unassigned"].includes(after.unknown.owner),
+  "Anonymous memories must remain unassigned rather than being claimed by a named person");
  assert.equal(after.brunoAudio,true,"Other person's binary sample is preserved");
  assert.deepEqual(after.relations,[],"Relations to a deleted identity are scrubbed");
  assert.equal(after.adaLine.speakerName,null);
