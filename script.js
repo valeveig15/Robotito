@@ -4589,7 +4589,7 @@ function wakeFromNight(){
   stopSnoring();
   clearBlinkState();
   clearTimeout(state.heartEyeTimer);
-  ++state.affectionToken;
+  state.affectionToken=(state.affectionToken||0)+1;
   robot.classList.remove("heart-eyes");
   robot.classList.remove("sleeping");
   robot.classList.add("waking");
@@ -4607,7 +4607,7 @@ function sleepForNight(){
   state.sleeping=true;
   clearBlinkState();
   clearTimeout(state.heartEyeTimer);
-  ++state.affectionToken;
+  state.affectionToken=(state.affectionToken||0)+1;
   robot.classList.remove("heart-eyes");
   resetEyes();
   robot.classList.add("sleeping");
