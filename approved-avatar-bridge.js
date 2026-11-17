@@ -9,12 +9,12 @@ const REFS=Object.freeze({
 });
 const MOODS={
  calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",
- hungry:"hambriento",sleepy:"dormido",curious:"curioso",focused:"curioso",
+ hungry:"hambriento",sleepy:"tranquilo",curious:"curioso",focused:"curioso",
  bored:"aburrido",affectionate:"enamorado",proud:"feliz",confused:"confundido",
  excited:"emocionado",embarrassed:"avergonzado",annoyed:"enojado"
 };
 const ACTIONS={
- highfive:"chocar",pet:"acariciar",feed:"acariciar",play:"saltar",
+ highfive:"chocar",pet:"acariciar",feed:"",play:"saltar",
  introduce:"saludar",idle:"saludar",surprise:"saltar",poke:"saltar"
 };
 let requested=0,current=null,root=null,observer=null,speechTimer=null,blinkTimer=null;
@@ -99,6 +99,9 @@ function sync(){
  const resting=robot.classList.contains("pre-awake")||robot.classList.contains("sleeping");
  avatar.dataset.mood=resting?"dormido":MOODS[current.mood]||MOODS[readMood(robot)]||"tranquilo";
  avatar.classList.toggle("drowsy",!resting&&robot.classList.contains("drowsy"));
+ avatar.classList.toggle("mood-annoyed",!resting&&current.mood==="annoyed");
+ avatar.classList.toggle("mood-sleepy",!resting&&current.mood==="sleepy");
+ avatar.classList.toggle("feeding",!resting&&robot.classList.contains("eating"));
  host.dataset.restState=resting?"closed":robot.classList.contains("drowsy")?"drowsy":"awake";
  // Class/mood changes supersede an unfinished blink, not the approved SVG's art.
  if(resting)avatar.classList.remove("blink");
@@ -111,6 +114,13 @@ function sync(){
  stage.classList.toggle("shadow-jumping",action==="saltar");
  stage.classList.toggle("shadow-dancing",action==="bailar");
  host.classList.toggle("approved-is-walking",walk);
+ // Food must not look identical to petting. The original SVG remains intact.
+ let snack=current.shadow.querySelector(".approved-food-prop");
+ if(!resting&&robot.classList.contains("eating")){
+  if(!snack){snack=document.createElement("span");snack.className="approved-food-prop";snack.setAttribute("aria-hidden","true");current.shadow.appendChild(snack);}
+  const foodIcons={"panda":"🎋","brown-bear":"🍯","polar-bear":"🐟","dog":"🦴","monkey":"🍌"};
+  snack.textContent=foodIcons[current.id]||"🍎";
+ }else snack?.remove();
  const oldProp=robot.querySelector("#objectSceneProp");
  let prop=current.shadow.querySelector(".approved-object-prop");
  if(robot.classList.contains("object-trip-presenting")&&oldProp){
@@ -141,7 +151,7 @@ async function activate(id,{mood="calm",language="es"}={}){
   overrides.textContent=String.raw`
 :host{display:block;height:100%;width:100%;font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif}
 #avatar.drowsy #eye-open{transform:scaleY(.62);transform-origin:350px 242px}
-#avatar.drowsy #head{animation:approvedDrowsyNod 1.9s ease-in-out infinite alternate}
+#avatar.drowsy #head{animation:approvedDrowsyNod 15s ease-in forwards}
 @keyframes approvedDrowsyNod{from{transform:rotate(-1deg) translateY(1px)}to{transform:rotate(3deg) translateY(7px)}}
 #avatar[data-mood="asustado"] #heart-eyes,#avatar[data-mood="asustado"] #star-eyes,
 #avatar[data-mood="enojado"] #heart-eyes,#avatar[data-mood="triste"] #star-eyes,
@@ -150,8 +160,15 @@ async function activate(id,{mood="calm",language="es"}={}){
 .stage #stage-svg{width:100%;height:100%;display:block;touch-action:manipulation}
 .stage .cornerlabel,.stage button{display:none!important}
 .approved-object-prop{position:absolute;left:58%;top:48%;font-size:clamp(24px,5vw,51px);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(40,30,40,.22))}
+.approved-food-prop{position:absolute;left:57%;top:49%;font-size:clamp(23px,4.5vw,43px);pointer-events:none;animation:approvedFeed 1.35s ease-out forwards}
+@keyframes approvedFeed{from{opacity:0;transform:translateY(25px) scale(.6)}40%{opacity:1}to{opacity:0;transform:translate(-12px,-18px) scale(.75)}}
+#avatar.mood-annoyed #anger-mark{opacity:0!important}
+#avatar.mood-annoyed #head{transform:rotate(-2deg)}
+#avatar.mood-sleepy #eye-open{transform:scaleY(.72);transform-origin:350px 242px}
+#avatar.feeding #mouth-neutral{opacity:0}
+
 @media(prefers-reduced-motion:reduce){
- #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion,#avatar.drowsy #head{animation:none!important;transition:none!important}
+ #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion,#avatar.drowsy #head,.approved-food-prop{animation:none!important;transition:none!important}
 }
 `;
   shadow.appendChild(overrides);
