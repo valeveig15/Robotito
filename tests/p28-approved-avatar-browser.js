@@ -33,6 +33,8 @@ runBrowserTest("p28-approved-avatars",async test=>{
  await page.locator('[data-start-language="es"]').click();
  await page.locator('#avatarChoices [data-avatar-id="panda"]').click();
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR?.current?.id==="panda");
+ // P31 begins with closed eyes. Test reactions in the explicitly awake state.
+ await page.evaluate(()=>{state.everAwakened=true;document.querySelector("#robotito").classList.remove("pre-awake");});
  test.phase("late-action-cleanup-preserves-latest-action");
  const actionRace=await page.evaluate(async()=>{
   const nativeTimeout=window.setTimeout,pending=[];
