@@ -51,7 +51,7 @@
     const key=ownerOf(owner),storage=window.ROBOTITO_STORE;
     if(!storage?.queryRecords||storage.isEphemeral?.(key))return;
     try{
-      const rows=await storage.queryRecords({type:"conversations",owner:key,limit:Infinity});
+      const rows=await storage.queryRecords({type:"conversations",owner:key,limit:MAX_MESSAGES});
       if(revision!==viewRevision||key!==activeOwner)return;
       const fromStore=rows.filter(row=>(row.data?.role==="user"||row.data?.role==="assistant")&&typeof row.data.text==="string")
         .sort((a,b)=>a.timestamp-b.timestamp||String(a.id).localeCompare(String(b.id)))
