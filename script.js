@@ -6226,7 +6226,7 @@ function ambientMood(){
   inactivityTick();
   if(state.classMode){updateMeters();return;}
   if(Date.now()<state.emotionHoldUntil){updateMeters();return;}
-  if(!state.sleeping&&state.hunger<70&&state.emotion!=="bored"){
+  if(!state.sleeping&&!robot.classList.contains("drowsy")&&state.hunger<70&&state.emotion!=="bored"){
     if(state.moodScore>=70)setMood("happy");
     else if(state.moodScore<30)setMood("sad");
     else if(!["scared","angry"].includes(state.mood))setMood("calm");
