@@ -33,6 +33,17 @@
    return true;
   }catch(err){console.warn("birthday tune",err);return false;}
  }
+ function confetti(count=70){
+  const layer=$("#confettiLayer");if(!layer)return;
+  for(let i=0;i<count;i++){
+   const particle=document.createElement("div");
+   particle.className="confetti";particle.style.left=Math.random()*100+"vw";
+   particle.style.background="hsl("+Math.random()*360+" 75% 72%)";
+   particle.style.setProperty("--dx",(Math.random()*240-120)+"px");
+   particle.style.animationDuration=(2+Math.random()*2.8)+"s";
+   layer.appendChild(particle);setTimeout(()=>particle.remove(),5200);
+  }
+ }
  function celebrate(name="",{automatic=false}={}){
   const scene=$("#birthdayScene"),label=$("#birthdayText"),gift=$("#birthdayGift"),song=$("#birthdaySong");
   if(!scene||!label||!gift||!song)return false;
@@ -60,7 +71,7 @@
   $("#birthdayGift").hidden=true;
   $("#birthdayText").textContent=phrases()[2];
   $("#robotito")?.classList.remove("birthday-hidden");
-  tune();
+  tune();confetti(50);
  }
  function check(person,{started=false,classMode=false}={}){
   if(!started||classMode||document.hidden||!person?.birthday)return false;
