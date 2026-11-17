@@ -66,7 +66,9 @@
   <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
-  <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
+  <script defer src="p33-p35-policy.js?v=20261117-p33-p35"></script>
+  <script defer src="p34-birthday.js?v=20261117-p34"></script>
+  <script defer src="script.js?v=20261116-p07-p28-recovery&p33-p35=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
@@ -102,6 +104,7 @@
   </div>
 </div>
 
+<div class="birthday-shortcut"><button id="birthdayManualBtn" type="button" aria-label="Celebrar cumpleaños con Robotito" title="Celebrar cumpleaños">🎂</button></div>
 <details class="question-help-panel">
   <summary>
     <span aria-hidden="true">💬</span>
@@ -350,9 +353,14 @@
         </div>
       </div>
 
-      <div id="birthdayScene" class="birthday-scene hidden">
+      <div id="birthdayScene" class="birthday-scene hidden" role="dialog" aria-label="Celebración de cumpleaños" aria-modal="false">
         <div class="cake">🎂</div>
-        <div id="birthdayText" class="birthday-text"></div>
+        <div id="birthdayText" class="birthday-text" aria-live="polite"></div>
+        <button id="birthdayGift" type="button" class="birthday-present" hidden>🎁 Es para ti</button>
+        <div class="birthday-buttons">
+          <button id="birthdaySong" type="button">♫ Reproducir melodía</button>
+          <button id="birthdayClose" type="button" aria-label="Cerrar celebración">✕</button>
+        </div>
       </div>
 
       </div>
