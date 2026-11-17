@@ -96,7 +96,12 @@ function sync(){
  const robot=getRobot(),{host,stage,avatar}=current;
  if(!robot||!host.isConnected)return;
  if(robot.dataset.avatar!==current.id)return;
- avatar.dataset.mood=MOODS[current.mood]||MOODS[readMood(robot)]||"tranquilo";
+ const resting=robot.classList.contains("pre-awake")||robot.classList.contains("sleeping");
+ avatar.dataset.mood=resting?"dormido":MOODS[current.mood]||MOODS[readMood(robot)]||"tranquilo";
+ avatar.classList.toggle("drowsy",!resting&&robot.classList.contains("drowsy"));
+ host.dataset.restState=resting?"closed":robot.classList.contains("drowsy")?"drowsy":"awake";
+ // Class/mood changes supersede an unfinished blink, not the approved SVG's art.
+ if(resting)avatar.classList.remove("blink");
  const action=actionFromRobot(robot);
  for(const item of ["saludar","bailar","saltar","aplaudir","acariciar","caminar","chocar"])
   avatar.classList.toggle("action-"+item,item===action);
@@ -135,12 +140,18 @@ async function activate(id,{mood="calm",language="es"}={}){
   const overrides=document.createElement("style");
   overrides.textContent=String.raw`
 :host{display:block;height:100%;width:100%;font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif}
+#avatar.drowsy #eye-open{transform:scaleY(.62);transform-origin:350px 242px}
+#avatar.drowsy #head{animation:approvedDrowsyNod 1.9s ease-in-out infinite alternate}
+@keyframes approvedDrowsyNod{from{transform:rotate(-1deg) translateY(1px)}to{transform:rotate(3deg) translateY(7px)}}
+#avatar[data-mood="asustado"] #heart-eyes,#avatar[data-mood="asustado"] #star-eyes,
+#avatar[data-mood="enojado"] #heart-eyes,#avatar[data-mood="triste"] #star-eyes,
+#avatar[data-mood="dormido"] #heart-eyes,#avatar[data-mood="dormido"] #star-eyes{opacity:0!important;animation:none!important}
 .stage{height:100%;width:100%;aspect-ratio:auto!important;border-radius:0!important;overflow:hidden!important}
 .stage #stage-svg{width:100%;height:100%;display:block;touch-action:manipulation}
 .stage .cornerlabel,.stage button{display:none!important}
 .approved-object-prop{position:absolute;left:58%;top:48%;font-size:clamp(24px,5vw,51px);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(40,30,40,.22))}
 @media(prefers-reduced-motion:reduce){
- #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion{animation:none!important;transition:none!important}
+ #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion,#avatar.drowsy #head{animation:none!important;transition:none!important}
 }
 `;
   shadow.appendChild(overrides);
@@ -181,7 +192,7 @@ function speak(active=true){
  if(active)speechTimer=setTimeout(()=>avatar.classList.remove("speaking"),3500);
 }
 function blink(){
- if(!current||document.hidden)return;
+ if(!current||document.hidden||current.avatar.dataset.mood==="dormido")return;
  current.avatar.classList.add("blink");
  clearTimeout(blinkTimer);
  blinkTimer=setTimeout(()=>current?.avatar.classList.remove("blink"),140);
