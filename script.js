@@ -4178,6 +4178,13 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   await window.ROBOTITO_MEMORY?.ready?.();
   if(ownerBeforeReady!==window.ROBOTITO_MEMORY?.owner?.())return;
   const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
+  // An acknowledgment is directed at the current game, not generic planning,
+  // and must never be credited to someone else's active profile.
+  if(pendingPlay&&/^(?:ya lo hice|lo hice|listo|termine|terminé|i did it|done|ja fiz|c est fait|fatto|geschafft)$/.test(normalizeText(rawText))){
+    if(pendingPlay.owner===owner)finishPlay(true);
+    else hidePlayInvitation();
+    return;
+  }
   // A new explicit request interrupts any earlier fetch-and-present scene.
   if(!atomic)window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   // P10/P11: explicit literal-response instructions are parsed conservatively
@@ -4325,7 +4332,6 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   // Object display is handled by ROBOTITO_ROUTER and drawRequestedThing.
   if(await handleSayInLanguageCommand(interpreted))return;
   if(handleSocialSpeech(text)) return;
-  if(pendingPlay&&/^(?:ya lo hice|lo hice|listo|termine|terminé|i did it|done|ja fiz|c est fait|fatto|geschafft)$/.test(text)){finishPlay(true);return;}
   if(/\b(choca los cinco|chocame los cinco|dame cinco|high[ -]five)\b/.test(text)){highFiveRobot();return;}
   if(/\b(juguemos|vamos a jugar|quiero jugar|play with me)\b/.test(text)){playRobot();return;}
   const nomenclature=window.ROBOTITO_CHEM_NOMENCLATURE?.query?.(rawText);
@@ -5578,7 +5584,9 @@ function hidePlayInvitation(){
   if(panel){panel.hidden=true;panel.classList.add("hidden");}
 }
 function finishPlay(completed=false){
-  if(!pendingPlay||pendingPlay.avatar!==state.avatar||Date.now()>pendingPlay.expiresAt){
+  if(!pendingPlay||pendingPlay.avatar!==state.avatar||state.sleeping||state.classMode||
+     pendingPlay.owner!==(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local")||
+     Date.now()>pendingPlay.expiresAt){
     hidePlayInvitation();return false;
   }
   const lang=PLAY_LANGUAGES[responseLanguage()]||PLAY_LANGUAGES.es;
@@ -5596,7 +5604,7 @@ function playRobot(){
   hidePlayInvitation();
   const lang=PLAY_LANGUAGES[responseLanguage()]||PLAY_LANGUAGES.es;
   const token=playEpoch;
-  pendingPlay={avatar:state.avatar,expiresAt:Date.now()+20000};
+  pendingPlay={avatar:state.avatar,owner:(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local"),expiresAt:Date.now()+20000};
   $("#playInstruction").textContent=lang.invite;
   $("#playConfirmBtn").textContent=lang.confirm;
   $("#playCancelBtn").textContent=lang.cancel;
@@ -5699,7 +5707,9 @@ function inactivityTick(){
     if(state.mood!=="sleepy")setMood("sleepy","Robotito está empezando a cabecear.");
     if(!state.batterySupported)state.energy=clamp(state.energy-.05,0,100);
   }else{
+    const wasDrowsy=robot.classList.contains("drowsy");
     robot.classList.remove("drowsy");robot.style.removeProperty("--doze-progress");
+    if(wasDrowsy&&!wasSleeping)setMood("calm","Robotito abrió los ojos porque volviste.");
     if(quietFor>45){
       if(state.mood!=="bored")setMood("bored",speciesLine("idle"));
       maybeSpeciesIdleComment(quietFor);
