@@ -4,6 +4,31 @@
 "use strict";
 const api=root.ROBOTITO_MEMORY_STATE,store=root.ROBOTITO_STORE;
 let state=null,renderApp=()=>{},resetIdentity=()=>{},session="session:"+crypto.randomUUID(),visitor=null,activeOwner=null;
+const DEVICE_CONSENT="robotito.deviceMemory.consent.v1",DEVICE_ID="robotito.deviceMemory.id.v1";
+let deviceOwner=null;
+function readDeviceOwner(){
+ try{
+  if(localStorage.getItem(DEVICE_CONSENT)!=="yes")return null;
+  const id=localStorage.getItem(DEVICE_ID);
+  return /^device:[a-f0-9-]{36}$/i.test(id||"")?id:null;
+ }catch{return null;}
+}
+function setDeviceConsent(consent){
+ if(consent){
+  try{
+   const id=readDeviceOwner()||"device:"+crypto.randomUUID();
+   localStorage.setItem(DEVICE_ID,id);
+   localStorage.setItem(DEVICE_CONSENT,"yes");
+   deviceOwner=id;
+  }catch{deviceOwner=null;throw Error("Device storage unavailable");}
+ }else{
+  deviceOwner=null;
+  try{localStorage.removeItem(DEVICE_CONSENT);}catch{}
+ }
+ if(state)changed();
+ return deviceOwner;
+}
+
 let generation=0,readyPromise=Promise.resolve(),loading=false,viewLegacy=false;
 let initializedResolve;const initialized=new Promise(resolve=>{initializedResolve=resolve;});
 const versions=new Map(),queues=new Map();
@@ -18,7 +43,7 @@ function status(source){label(byId("memoryActionStatus"),source);}
 function computedOwner(){
  const age=Date.now()-Number(state?.lastVoiceConfirmedAt||0);
  const known=age>=0&&age<=8000&&state?.currentVoicePerson&&(!state.currentPerson||state.currentPerson===state.currentVoicePerson)?state.currentVoicePerson:null;
- return known&&known!=="local"&&!/^(?:session|visitor|legacy):/.test(known)?known:visitor?.id||session;
+ return known&&known!=="local"&&!/^(?:session|visitor|legacy):/.test(known)?known:visitor?.id||deviceOwner||session;
 }
 function owner(){const value=computedOwner();if(state&&activeOwner&&value!==activeOwner)changed(value);return computedOwner();}
 function changed(value=computedOwner()){
@@ -57,6 +82,7 @@ async function hydrate(current,epoch){
 }
 async function init(options){
  state=options.state;renderApp=options.refresh||(()=>{});resetIdentity=options.resetIdentity||(()=>{});
+ deviceOwner=readDeviceOwner();
  await api.migrate();
  for(const property of ["currentPerson","currentVoicePerson","lastVoiceConfirmedAt"]){
   let value=state[property];Object.defineProperty(state,property,{configurable:true,enumerable:true,
@@ -65,6 +91,7 @@ async function init(options){
     changed();}});
  }
  changed();await readyPromise;attach();root.ROBOTITO_MEMORY.active=true;initializedResolve();
+ updateDeviceUi();
  root.addEventListener("robotito:languagechange",render);
  let timer;
  root.addEventListener("robotito:memorychange",()=>{clearTimeout(timer);timer=setTimeout(()=>{if(byId("tab-memory")?.classList.contains("active"))render().catch(()=>{});},80);});
@@ -148,6 +175,8 @@ async function render(){
  if(rows.length>200){const count=document.createElement("p");label(count,"Mostrando 200 de {count} registros. La búsqueda y el respaldo incluyen todos.",{count:rows.length});rootList.append(count);}
 }
 async function newSession(){
+ // New visitor must never reuse or erase the opted-in personal-device history.
+ if(deviceOwner)setDeviceConsent(false);
  const old=session;session="session:"+crypto.randomUUID();visitor=null;resetIdentity();changed();
  await api.deleteOwner(old,{confirmation:"BORRAR"});await readyPromise;
 }
@@ -159,6 +188,7 @@ async function deleteCurrent(){
  root.ROBOTITO_TYPED_CHAT?.clearOwner?.(current);
  if(visitor?.id===current)visitor=null;
  if(owner()!==activeOwner){changed();await readyPromise;}else{generation++;await hydrate(owner(),generation);}
+ root.ROBOTITO_TYPED_CHAT?.clearOwner?.(current);
  status("Historial eliminado. Las copias descargadas deben borrarse por separado.");
 }
 async function clearMemories(){
@@ -168,7 +198,31 @@ async function clearMemories(){
  else await store.clearOwnedMemories(current);
  await hydrate(current,generation);
 }
+function updateDeviceUi(){
+ const check=byId("deviceMemoryEnabled"),information=byId("deviceMemoryStatus");
+ if(check)check.checked=!!deviceOwner;
+ if(information){
+  label(information,deviceOwner
+   ?"Memoria de este dispositivo activada. Las conversaciones y actividades se conservan al cerrar y volver a entrar con este navegador."
+   :"Modo visitante temporal. Activá la memoria de este dispositivo solo si es tuyo: otras personas con acceso al navegador podrían ver el historial.");
+ }
+}
 function attach(){
+ byId("deviceMemoryEnabled")?.addEventListener("change",async event=>{
+  const toggle=event.target,enabled=toggle.checked;
+  try{
+   if(enabled){
+    if(!root.confirm(text("¿Este navegador es personal y confiable? Las conversaciones y actividades nuevas quedarán guardadas en este dispositivo y podrán verse al volver a entrar. No se transfieren recuerdos temporales de otros visitantes."))){
+     toggle.checked=false;return;
+    }
+   }
+   await readyPromise;
+   setDeviceConsent(enabled);
+   await readyPromise;
+   updateDeviceUi();
+   await render();
+  }catch(error){console.warn("device memory",error);toggle.checked=!!deviceOwner;status("No pude guardar esta preferencia. Revisá el almacenamiento del navegador.");}
+ });
  byId("deleteMemoryHistory")?.addEventListener("click",()=>deleteCurrent().catch(()=>status("No pude cargar la memoria. Recargá la página antes de guardar.")));
  byId("copyVisitorMemoryKey")?.addEventListener("click",async()=>{
   try{await navigator.clipboard.writeText(byId("visitorMemoryKey").value);status("Clave copiada. Guardala en privado.");}
@@ -210,7 +264,7 @@ function attach(){
   }catch{status("No se pudo deshacer la vinculación. Revisá la clave y el estado del historial.");}
  });
 }
-root.ROBOTITO_MEMORY={active:false,init,owner,ready:async()=>{await initialized;owner();await readyPromise;},persist,remember,render,newSession,deleteCurrent,clearMemories,
+root.ROBOTITO_MEMORY={active:false,init,owner,get deviceOwner(){return deviceOwner;},setDeviceConsent,ready:async()=>{await initialized;owner();await readyPromise;},persist,remember,render,newSession,deleteCurrent,clearMemories,
  hasSetting:key=>Object.hasOwn(settings,key),load:(key,fallback)=>settingValues.get(api.scopeKey(owner(),key))??fallback,
  flush:async()=>{if(state?.classMode||root.ROBOTITO_CLASS_AUDIO?.isBusy?.())throw Error("Finish the active recording before backing up");await initialized;await readyPromise;await Promise.all([...queues.values()]);await root.ROBOTITO_MEMORY_MODULES?.flush?.();await store.flush();},
  offerLink:name=>{if(byId("visitorLinkTarget"))byId("visitorLinkTarget").value=name;status("El perfil se registró. Podés revisar y vincular un historial de visitante desde Memoria.");}};
