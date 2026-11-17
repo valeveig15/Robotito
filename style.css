@@ -3312,3 +3312,31 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
  .robotito.avatar-chameleon.chameleon-color-demo .animal-avatar-emoji{animation:none!important}
 }
+
+
+/* P30–P32: touch feedback, non-overlapping blink and emotion transitions. */
+.robotito:not(.sleeping){cursor:pointer;touch-action:manipulation}
+#approvedAvatarHost{touch-action:manipulation}
+.robotito.sleep-entering .lid-svg,
+.robotito.sleep-entering .lid{transition:transform .6s ease-out}
+.robotito.sleep-entering .eye-white-svg,.robotito.sleep-entering .iris{
+ transition:opacity .55s ease-out}
+.robotito.waking .lid-svg,.robotito.waking .lid{
+ transition:transform .55s cubic-bezier(.18,.75,.25,1)}
+.robotito.waking .eye-white-svg,.robotito.waking .iris{
+ transition:opacity .48s ease-in}
+.robotito.mood-embarrassed .cheek-left,
+.robotito.mood-embarrassed .cheek-right,
+.robotito.mood-embarrassed .cheek{
+ opacity:.86;filter:saturate(1.13)}
+.robotito.mood-angry .brow-left{transform:rotate(16deg) translateY(2px)}
+.robotito.mood-angry .brow-right{transform:rotate(-16deg) translateY(2px)}
+.robotito.mood-confused .brow-left{transform:rotate(-12deg) translateY(-4px)}
+.robotito.mood-confused .brow-right{transform:rotate(10deg) translateY(2px)}
+@media(prefers-reduced-motion:reduce){
+ .robotito.sleep-entering .lid-svg,.robotito.sleep-entering .lid,
+ .robotito.waking .lid-svg,.robotito.waking .lid,
+ .robotito.sleep-entering .eye-white-svg,.robotito.waking .eye-white-svg,
+ .robotito.sleep-entering .iris,.robotito.waking .iris{
+ transition:none!important;animation:none!important}
+}
