@@ -27,9 +27,11 @@ runBrowserTest("p27-avatar-picker",async test=>{
  assert.equal(await page.locator("html").getAttribute("lang"),"es");
  test.phase("six-locales-switch-without-loss");
  for(const lang of ["es","en","pt","fr","it","de"]){
-   await page.locator("#quickLanguageSelect").selectOption(lang);
+   if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#quickLanguageSelect").selectOption(lang);
    assert.equal(await page.locator("html").getAttribute("lang"),lang);
-   await page.locator("#changeAvatarBtn").click();
+   if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
    assert.equal(await page.locator("#avatarChoices [data-avatar-id]").count(),50);
    assert.equal(await page.locator(".avatar-choice-name,.avatar-special").count(),0);
    assert.ok((await page.locator("#avatarStepTitle").textContent()).length>5);
@@ -43,7 +45,8 @@ runBrowserTest("p27-avatar-picker",async test=>{
    return state.started;
  });
  assert.equal(same,true);
- await page.locator("#changeAvatarBtn").click();
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
  await page.locator('#avatarChoices [data-avatar-id="dog"]').click();
  assert.equal(await page.evaluate(()=>state.started),true);
  assert.equal(await page.locator("#robotito").getAttribute("data-avatar"),"dog");
