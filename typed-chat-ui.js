@@ -67,7 +67,6 @@
   function select(owner){
     activeOwner=ownerOf(owner);
     const revision=++viewRevision;
-    messagesByOwner.delete(activeOwner);
     render();
     void restore(activeOwner,revision);
   }
