@@ -954,6 +954,8 @@ function updateMeters(){
 }
 
 function clearBlinkState(){
+  state.blinkGeneration=(state.blinkGeneration||0)+1;
+
   clearTimeout(state.blinkCloseTimer);
   clearTimeout(state.blinkSequenceTimer);
   state.blinkCloseTimer=null;
@@ -961,19 +963,21 @@ function clearBlinkState(){
   robot.classList.remove("blink");
 }
 function eyesLocked(){
-  return state.sleeping || robot.classList.contains("heart-eyes");
+  return state.sleeping || state.nightSleep || robot.classList.contains("heart-eyes");
 }
 function singleBlink(duration=115){
   if(eyesLocked()||document.hidden)return false;
+  const generation=state.blinkGeneration=(state.blinkGeneration||0)+1;
   clearTimeout(state.blinkCloseTimer);
   robot.classList.remove("blink");
 
   requestAnimationFrame(()=>{
-    if(eyesLocked()||document.hidden)return;
+    if(generation!==state.blinkGeneration||eyesLocked()||document.hidden)return;
     robot.classList.add("blink");
     window.ROBOTITO_APPROVED_AVATAR?.blink?.();
     state.lastBlinkAt=Date.now();
     state.blinkCloseTimer=setTimeout(()=>{
+      if(generation!==state.blinkGeneration)return;
       robot.classList.remove("blink");
       state.blinkCloseTimer=null;
     },duration);
@@ -4565,7 +4569,16 @@ function dayPartGreeting(){
   if(h>=12&&h<18)return "Buenas tardes";
   return "Buenas noches";
 }
+let sleepTransitionEpoch=0;
+function queueNightSleep(){
+  const epoch=++sleepTransitionEpoch;
+  setTimeout(()=>{if(epoch===sleepTransitionEpoch&&!state.classMode)sleepForNight();},700);
+}
 function wakeFromNight(){
+  const epoch=++sleepTransitionEpoch;
+  robot?.classList.remove("sleep-entering");
+  robot?.classList.remove("waking");
+
   state.nightSleep=false;
   state.sleeping=false;
   stopSnoring();
@@ -4573,10 +4586,17 @@ function wakeFromNight(){
   clearTimeout(state.heartEyeTimer);
   robot.classList.remove("heart-eyes");
   robot.classList.remove("sleeping");
+  robot.classList.add("waking");
   resetEyes();
   setMood("calm","Robotito está despierto otra vez.");
+  setTimeout(()=>{if(epoch===sleepTransitionEpoch)robot.classList.remove("waking");},640);
 }
 function sleepForNight(){
+  const epoch=++sleepTransitionEpoch;
+  robot?.classList.remove("waking");
+  robot?.classList.add("sleep-entering");
+  setTimeout(()=>{if(epoch===sleepTransitionEpoch)robot?.classList.remove("sleep-entering");},780);
+
   state.nightSleep=true;
   state.sleeping=true;
   clearBlinkState();
@@ -4596,7 +4616,7 @@ function handleSocialSpeech(text){
   // of a real sneeze. They must not bypass the acoustic reaction policy.
   if(/\b(bom dia)\b/.test(text)){wakeFromNight();sayInLanguage("Bom dia"+enName+".","pt");return true;}
   if(/\b(boa tarde)\b/.test(text)){wakeFromNight();sayInLanguage("Boa tarde"+enName+".","pt");return true;}
-  if(/\b(boa noite)\b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");setTimeout(sleepForNight,700);return true;}
+  if(/\b(boa noite)\b/.test(text)){sayInLanguage("Boa noite"+enName+". Durma bem.","pt");queueNightSleep();return true;}
   if(/\b(ola|olá|oi|opa)\b/.test(text)){wakeFromNight();sayInLanguage("Olá"+enName+".","pt");return true;}
   if(/\b(tchau|adeus|ate logo|até logo|ate mais|até mais)\b/.test(text)){sayInLanguage(sample(["Tchau"+enName+".","Até logo"+enName+".","Se cuida"+enName+"."]),"pt");return true;}
   if(/\b(obrigado|obrigada|muito obrigado|muito obrigada)\b/.test(text)){sayInLanguage(sample(["De nada.","Por nada.","Sempre que quiser."]),"pt");return true;}
@@ -4604,7 +4624,7 @@ function handleSocialSpeech(text){
 
   if(/\b(good morning)\b/.test(text)){wakeFromNight();say("Good morning"+enName+".");return true;}
   if(/\b(good afternoon)\b/.test(text)){wakeFromNight();say("Good afternoon"+enName+".");return true;}
-  if(/\b(good night|goodnight)\b/.test(text)){say("Good night"+enName+". Sleep well.");setTimeout(sleepForNight,700);return true;}
+  if(/\b(good night|goodnight)\b/.test(text)){say("Good night"+enName+". Sleep well.");queueNightSleep();return true;}
   if(/\b(hello|hi|hey there|hiya)\b/.test(text)){wakeFromNight();say("Hello"+enName+".");return true;}
   if(/\b(bye|goodbye|see you|see you later|i have to go)\b/.test(text)){say(sample(["Bye"+enName+".","See you later"+enName+".","Take care"+enName+"."]));return true;}
   if(/\b(thank you|thanks|thank you very much)\b/.test(text)){say(sample(["You're welcome.","No problem.","Any time."]));return true;}
@@ -4622,7 +4642,7 @@ function handleSocialSpeech(text){
   }
   if(/\b(buenas noches|buena noche)\b/.test(text)){
     say(sample(["Buenas noches"+name+". Que descanses.","Buenas noches"+name+". Me voy a dormir.","Que descanses"+name+". Buenas noches."]));
-    setTimeout(sleepForNight,700);
+    queueNightSleep();
     return true;
   }
   if(/\b(chau|chao|adios|hasta luego|nos vemos|me voy|hasta manana|hasta mañana|bye)\b/.test(text)){
