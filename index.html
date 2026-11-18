@@ -45,7 +45,7 @@
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
   <script defer src="robotito-store.js?v=20261115-p07"></script>
   <script defer src="memory-state.js?v=20261115-p07"></script>
-  <script defer src="memory-session.js?v=20261115-p07"></script>
+  <script defer src="memory-session.js?v=20261117-persistent-device"></script>
   <script defer src="memory-module-store.js?v=20261115-p07"></script>
   <script defer src="visitor-memory.js?v=20261114-p09-private"></script>
   <script defer src="p07-backup-crypto.js?v=20261115-p07"></script>
@@ -67,7 +67,7 @@
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
-  <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
+  <script defer src="typed-chat-ui.js?v=20261117-persistent-chat"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
   <script defer src="video-evidence.js?v=20261115-p22"></script>
@@ -949,6 +949,13 @@
         <div class="card memory-scope">
           <h2 data-ui-copy="Historial%20activo">Historial activo</h2>
           <p id="memoryOwner" role="status"></p>
+          <div class="device-memory-option">
+            <label class="check" for="deviceMemoryEnabled">
+              <input type="checkbox" id="deviceMemoryEnabled" />
+              <span>Recordar mis conversaciones y actividades en este dispositivo</span>
+            </label>
+            <p id="deviceMemoryStatus" role="status">Solo para un navegador personal. El historial se restaura al volver a entrar.</p>
+          </div>
           <button id="deleteMemoryHistory" type="button" class="ghost danger" data-ui-copy="Eliminar%20todo%20este%20historial">Eliminar todo este historial</button>
           <button id="newMemorySession" type="button" class="ghost" data-ui-copy="Nuevo%20visitante%20sin%20historial">Nuevo visitante sin historial</button>
           <details><summary data-ui-copy="Conservar%20o%20retomar%20un%20historial%20de%20visitante">Conservar o retomar un historial de visitante</summary>

@@ -3340,3 +3340,10 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
  .robotito.sleep-entering .iris,.robotito.waking .iris{
  transition:none!important;animation:none!important}
 }
+
+
+/* PERSISTENT MEMORY — explicit device consent and clear privacy status. */
+.device-memory-option{margin:12px 0;padding:13px;border:1px solid #cbded5;border-radius:14px;background:#f2faf6;}
+.device-memory-option .check{display:flex;align-items:flex-start;gap:9px;line-height:1.35;font-weight:800;}
+.device-memory-option input{width:19px;height:19px;min-width:19px;accent-color:#4d8e77;}
+.device-memory-option p{margin:8px 0 0;font-size:12px;line-height:1.45;color:#536a60;}
