@@ -27,19 +27,16 @@ function addBook(book){
  renderShelves();status(t("saved"));return true;
 }
 function stopReading(){
- try{if(reading&&root.speechSynthesis)root.speechSynthesis.cancel();}catch{}
- reading=null;
+ if(reading){services?.stopSpeech?.();reading=null;}
 }
 function readDescription(text,sourceLang){
  const description=safeText(text,16000);if(!description){status(t("missing"));return false;}
  stopReading();
- if(!root.speechSynthesis||!root.SpeechSynthesisUtterance){status("La lectura en voz alta no está disponible en este navegador.");return false;}
- const utterance=new SpeechSynthesisUtterance(description);
- utterance.lang=(sourceLang&&sourceLang!=="und"?sourceLang:lang());
- utterance.rate=0.92;
- reading=utterance;
- utterance.onend=utterance.onerror=()=>{if(reading===utterance)reading=null;};
- root.speechSynthesis.speak(utterance);return true;
+ // Reuse Robotito's speaking pipeline; it suspends microphone recognition and
+ // honors quiet mode, permissions, language and the user's selected voice.
+ const ok=services?.speak?.(description,sourceLang||lang())===true;
+ if(!ok){status("No se pudo reproducir: revisá la voz, el idioma y el modo silencio.");return false;}
+ reading={text:description};return true;
 }
 function attachDescriptions(results){
  const cards=[...document.querySelectorAll("#bookResults .book-card")];
