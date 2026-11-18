@@ -70,6 +70,8 @@
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
   <script defer src="study-tools-policy.js?v=20261118-p60-p75"></script>
   <script defer src="study-tools-ui.js?v=20261118-p60-p75"></script>
+  <script defer src="clock-countdown-policy.js?v=20261118-p51"></script>
+  <script defer src="clock-countdown-ui.js?v=20261118-p51"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -756,6 +758,20 @@
       </section>
 
       <section class="tabpage" id="tab-temporal">
+        <div class="card clock-dashboard">
+          <h2>🕒 Hora y cuenta regresiva</h2>
+          <p class="muted">Reloj del dispositivo, actualizado mientras la pestaña está visible. No puede garantizar sincronización con una hora oficial.</p>
+          <time id="clockVisual" class="clock-visual" role="timer" aria-live="off">00:00:00</time>
+          <p id="clockDate" class="clock-date"></p>
+          <button id="clockSpeak" type="button">🔊 Decir la hora en voz alta</button>
+          <div class="clock-inputs">
+            <label>Hora de destino (próxima ocurrencia) <input id="clockTargetTime" type="time" value="18:00" /></label>
+            <button id="clockSetTarget" type="button">Iniciar cuenta regresiva</button>
+            <button id="clockClearTarget" type="button">Cancelar</button>
+          </div>
+          <output id="clockCountdownRemaining" class="clock-countdown">Sin cuenta regresiva activa</output>
+          <p id="clockStatus" role="status" aria-live="polite"></p>
+        </div>
         <div class="card">
           <h2 data-i18n="p10RulesTitle">Horarios y recordatorios guardados</h2>
           <p class="muted" data-i18n="p10RulesScope">Los pedidos que le decís a Robotito se cumplen directamente sin guardarlos. Acá podés guardar recordatorios para que aparezcan en tu lista, como alarmas. Solo funcionan mientras Robotito está abierto y visible.</p>
