@@ -219,9 +219,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **73.** Modo de lectura con inicio de palabras destacado — POR AUDITAR
 - [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — POR AUDITAR
 - [ ] **75.** Mapas mentales automáticos de apuntes extensos — POR AUDITAR
-- [ ] **76.** Activación de Modo Clase muy visible y accesible — POR AUDITAR
-- [ ] **77.** Marcadores de colores durante clases grabadas — POR AUDITAR
-- [ ] **78.** Sincronización bidireccional entre audio y transcripción — POR AUDITAR
+- [ ] **76.** Activación de Modo Clase muy visible y accesible — SOFTWARE IMPLEMENTADO PARCIALMENTE (acceso e indicador activo; CI y accesibilidad física pendientes); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **77.** Marcadores de colores durante clases grabadas — SOFTWARE IMPLEMENTADO PARCIALMENTE (marcadores por color y tiempo; validación de grabaciones reales pendiente); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **78.** Sincronización bidireccional entre audio y transcripción — PARCIAL (salto desde marcadores a audio guardado; falta sincronización palabra/transcripción real); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
 - [ ] **79.** Minijuegos educativos interactivos basados en clases — POR AUDITAR
 - [ ] **80.** Progreso visual por integrantes en equipos y grupos de estudio — POR AUDITAR
 - [ ] **81.** Exámenes adaptativos por tema y carpeta de materia — POR AUDITAR
