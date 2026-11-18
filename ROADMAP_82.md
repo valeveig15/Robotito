@@ -179,9 +179,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **33.** Batería real, avisos e inactividad — POR AUDITAR
 - [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — POR AUDITAR
 - [ ] **35.** Libros sin Goodreads y metadatos verificables — POR AUDITAR
-- [ ] **36.** Simulación de al menos 50 perfiles lectores — POR AUDITAR
-- [ ] **37.** Lectura y traducción de descripciones de libros — POR AUDITAR
-- [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — POR AUDITAR
+- [ ] **36.** Simulación de al menos 50 perfiles lectores — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
+- [ ] **37.** Lectura y traducción de descripciones de libros — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
+- [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **39.** Clubes de lectura y valoraciones por aspectos — POR AUDITAR
 - [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — POR AUDITAR
 - [ ] **41.** Reproducción de música por tema, artista, banda o género — POR AUDITAR

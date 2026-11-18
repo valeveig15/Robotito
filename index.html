@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261116-p28" />
+  <link rel="stylesheet" href="style.css?v=20261116-p28&p36-p38=1" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -66,7 +66,9 @@
   <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
-  <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
+  <script defer src="book-extras-policy.js?v=20261117-p36-p38"></script>
+  <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
+  <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
@@ -928,6 +930,31 @@
             <p class="muted" data-i18n="uiGoodreadsData">Robotito usa ese CSV para saber qué leíste, qué tenés pendiente, tus estanterías, autores y calificaciones. El archivo se procesa en tu navegador.</p>
           </div>
           <p data-i18n="uiNoLibrary" id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
+        </div>
+        <div class="card" id="personalLibraryCard">
+          <h2>📚 Mi biblioteca y estanterías</h2>
+          <p class="muted">Organizá tus libros en estanterías decoradas. Podés cargarlos manualmente, buscar su ISBN o escanear el código de barras con permiso de cámara.</p>
+          <form id="shelfAddBook" class="shelf-form">
+            <label>Título <input id="shelfTitle" type="text" maxlength="300" required autocomplete="off" /></label>
+            <label>Autor <input id="shelfAuthor" type="text" maxlength="250" autocomplete="off" /></label>
+            <label>ISBN (opcional) <input id="shelfISBN" type="text" inputmode="text" maxlength="24" autocomplete="off" /></label>
+            <label>Estantería
+              <select id="shelfSelect">
+                <option value="to-read">Por leer</option>
+                <option value="currently-reading">Leyendo</option>
+                <option value="read">Leídos</option>
+              </select>
+            </label>
+            <div class="shelf-form-actions">
+              <button type="button" id="shelfLookupISBN">Buscar por ISBN</button>
+              <button type="button" id="shelfScan">📷 Escanear código</button>
+              <button type="button" id="shelfScanCancel">Cancelar escaneo</button>
+              <button type="submit" class="primary">Agregar libro</button>
+            </div>
+          </form>
+          <video id="bookScanPreview" autoplay muted playsinline hidden aria-label="Vista previa del código ISBN"></video>
+          <p id="shelfStatus" role="status" aria-live="polite"></p>
+          <div id="personalBookShelves" class="personal-book-shelves" aria-label="Estanterías personales"></div>
         </div>
         <div class="card">
           <h2 data-i18n="uiReadingChoice">¿Qué querés leer?</h2>
