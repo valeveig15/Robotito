@@ -24,6 +24,7 @@ runBrowserTest("p42-p43-weather-counter",async test=>{
  assert.equal(rejected,false);
  assert.equal(await page.locator("#weatherSceneBadge").isVisible(),false);
  assert.equal(await page.locator("#world").evaluate(el=>[...el.classList].some(x=>x.startsWith("weather-"))),false);
+ await page.locator(".question-help-panel summary").click();
  test.phase("truthful-non-global-session-count");
  assert.equal(await page.locator("#honestQuestionCount").innerText(),"0");
  await page.evaluate(()=>{window.ROBOTITO_TRUTHFUL_UI.recordQuestion();window.ROBOTITO_TRUTHFUL_UI.recordQuestion();});
