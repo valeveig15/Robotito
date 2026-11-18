@@ -194,7 +194,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **48.** Personalidad musical: rock and roll de Uruguay y Argentina — POR AUDITAR
 - [ ] **49.** Acceso web confiable y aprendizaje verificable de información pública — POR AUDITAR
 - [ ] **50.** Noticias del día: país del usuario, mundo y deduplicación semántica — POR AUDITAR
-- [ ] **51.** Reloj visual exacto, hora hablada y cuenta regresiva hasta otra hora — POR AUDITAR
+- [ ] **51.** Reloj visual exacto, hora hablada y cuenta regresiva hasta otra hora — SOFTWARE PARCIAL (visual, voz por acción explícita y cuenta regresiva local; falta verificación física y sincronización de hora; ver [P51-STATUS.md](P51-STATUS.md)).
 - [ ] **52.** Pruebas, cuestionarios y exámenes a partir de material cargado — POR AUDITAR
 - [ ] **53.** Migración incremental de los cinco avatares HTML aprobados — POR AUDITAR
 - [ ] **54.** Apuntes y punteos editables por clase, con historial — POR AUDITAR

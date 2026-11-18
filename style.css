@@ -3413,3 +3413,16 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-focus-mode .world-scene{transition:none}
 @media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
 @media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+
+/* P51 visible time and countdown. */
+.clock-dashboard{text-align:left}
+.clock-visual{display:block;font-variant-numeric:tabular-nums;font-size:clamp(36px,6vw,56px);font-weight:900;letter-spacing:.05em;line-height:1.25;color:#2c635d;text-align:center;margin:12px 0}
+.clock-date{text-align:center;color:var(--muted);font-size:13px;margin:5px 0 13px}
+.clock-inputs{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;align-items:end;margin:14px 0}
+.clock-inputs label{display:grid;gap:6px;font-size:12px;font-weight:750}
+.clock-inputs input{font-size:16px;min-height:44px}
+.clock-inputs button,#clockSpeak{min-height:44px}
+.clock-countdown{display:block;text-align:center;font-variant-numeric:tabular-nums;padding:12px;background:#eff9f4;border:1px solid #bfe0d1;color:#346f63;border-radius:12px;font-weight:850}
+#clockStatus{min-height:18px;font-size:12px;color:#527366}
+@media(max-width:540px){.clock-inputs{grid-template-columns:1fr}.clock-visual{letter-spacing:.01em}}
