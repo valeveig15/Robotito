@@ -863,6 +863,17 @@
             <p id="studyEstimateResult" role="status"></p>
           </details>
           <details>
+            <summary>Agenda de estudio y avisos escalonados</summary>
+            <p class="muted">Programá sesiones de estudio. Robotito muestra avisos una hora antes, 15 minutos antes y al empezar, únicamente si la página está abierta y no estás en modo concentración.</p>
+            <form id="studyAgendaForm" class="study-tool-grid">
+              <label>Materia <input id="studyAgendaSubject" maxlength="90" required /></label>
+              <label>Fecha y hora <input type="datetime-local" id="studyAgendaDate" required /></label>
+              <label>Duración (min) <input id="studyAgendaMinutes" type="number" min="1" max="1440" value="45" /></label>
+              <button type="submit">Programar sesión</button>
+            </form>
+            <div id="studyAgendaList" aria-label="Sesiones de estudio agendadas"></div>
+          </details>
+          <details>
             <summary>Metas y progreso semanal</summary>
             <label>Meta semanal (minutos) <input id="studyGoalMinutes" type="number" min="1" max="1440" value="120" /></label>
             <p id="studyWeekSummary" role="status"></p>
