@@ -3,8 +3,8 @@
 "use strict";
 const P=root.ROBOTITO_STUDY_POLICY,S=root.ROBOTITO_STORE;
 const $=id=>document.getElementById(id);
-const initial=()=>({sessions:[],cards:[],focus:false,goalMinutes:120,typography:"system",fontSize:100,theme:"default",bionic:false,lineGuide:false,subjectEstimate:{},lastProgressAt:Date.now()});
-let model=initial(),owner="",generation=0,queue=Promise.resolve(),timer=null,tickId=null,shownCard=null,lastTicker=0;
+const initial=()=>({sessions:[],cards:[],focus:false,goalMinutes:120,typography:"system",fontSize:100,theme:"default",bionic:false,lineGuide:false,subjectEstimate:{},lastProgressAt:Date.now(),readingText:""});
+let model=initial(),owner="",generation=0,queue=Promise.resolve(),timer=null,tickId=null,shownCard=null,saveReadingTimeout=null;
 const scope=who=>"memory-scope:"+encodeURIComponent(who)+":robotito.studyDesk.v1";
 const currentOwner=()=>root.ROBOTITO_MEMORY?.owner?.()||null;
 const isActive=()=>owner&&owner===currentOwner();
@@ -23,7 +23,7 @@ function save(next){
 }
 function load(){
  const who=currentOwner(),token=++generation;
- owner=who;model=initial();timer=null;shownCard=null;stopTicker();render();
+ owner=who;model=initial();timer=null;shownCard=null;stopTicker();clearTimeout(saveReadingTimeout);if($("studyReadingText"))$("studyReadingText").value="";render();
  if(!who||!S?.get)return;
  void S.get(scope(who),null).then(value=>{
   if(token!==generation||who!==currentOwner())return;
@@ -32,6 +32,7 @@ function load(){
     sessions:Array.isArray(value.sessions)?value.sessions.slice(-3000):[],
     cards:Array.isArray(value.cards)?value.cards.slice(-400):[]};
   }
+  if($("studyReadingText"))$("studyReadingText").value=String(model.readingText||"").slice(0,12000);
   render();
  }).catch(()=>toast("No pude cargar las herramientas de estudio."));
 }
@@ -187,7 +188,12 @@ function initialize(){
  $("studyReadingTheme")?.addEventListener("change",event=>setReadingPreference("theme",event.target.value));
  $("studyBionic")?.addEventListener("change",event=>setReadingPreference("bionic",event.target.checked));
  $("studyLineGuide")?.addEventListener("change",event=>setReadingPreference("lineGuide",event.target.checked));
- $("studyReadingText")?.addEventListener("input",()=>{renderReading();renderMap();});
+ $("studyReadingText")?.addEventListener("input",()=>{
+  model={...model,readingText:$("studyReadingText").value.slice(0,12000)};
+  renderReading();renderMap();clearTimeout(saveReadingTimeout);
+  const token=generation;
+  saveReadingTimeout=setTimeout(()=>{if(token===generation&&isActive())void save({...model}).catch(()=>toast("No se pudo guardar el apunte."));},650);
+ });
  document.addEventListener("visibilitychange",()=>{
   if(document.hidden){pauseTimer();return;}
   render();
