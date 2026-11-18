@@ -3381,3 +3381,6 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
  .question-help-panel:not([open]){width:max-content!important;max-width:calc(100vw - 16px);left:8px;}
  .question-help-panel:not([open]) summary{width:auto;}
 }
+
+/* Collapsed help must never intercept the settings controls; expanded help retains its overlay. */
+.question-help-panel:not([open]){z-index:10!important;}
