@@ -68,6 +68,8 @@
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
   <script defer src="book-extras-policy.js?v=20261117-p36-p38"></script>
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
+  <script defer src="study-tools-policy.js?v=20261118-p60-p75"></script>
+  <script defer src="study-tools-ui.js?v=20261118-p60-p75"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -829,6 +831,75 @@
           <div id="nativeTaskList" class="tasks-list"></div>
           <p class="mini-status" role="status" aria-live="polite" id="nativeTaskStatus"></p>
           <p class="muted">También podés decir «Anotá tarea repasar energía para Física» o «Terminé tarea repasar energía». Las tareas siguen siendo privadas de este navegador.</p>
+        </div>
+        <div class="card study-desk" id="studyDesk">
+          <h2>⏱️ Mi espacio de estudio</h2>
+          <p class="muted">Herramientas locales para estudiar y repasar. Los datos se guardan en tu perfil de este navegador; los avisos y temporizadores requieren que Robotito esté abierto.</p>
+          <details open>
+            <summary>Temporizador, cronómetro y sesiones</summary>
+            <div class="study-tool-grid">
+              <label>Modo <select id="studyTimerMode"><option value="stopwatch">Cronómetro</option><option value="countdown">Temporizador</option></select></label>
+              <label>Minutos para temporizador <input id="studyTimerMinutes" type="number" value="25" min="1" max="1440" /></label>
+            </div>
+            <div class="study-timer-display" id="studyTimerDisplay" role="timer" aria-live="off">00:00:00</div>
+            <progress id="studyTimerProgress" max="100" value="0" aria-label="Porcentaje del temporizador"></progress>
+            <div class="study-tool-actions">
+              <button type="button" class="primary" id="studyTimerStart">Comenzar / Reanudar</button>
+              <button type="button" id="studyTimerPause">Pausar</button>
+              <button type="button" id="studyTimerReset">Reiniciar</button>
+            </div>
+            <h3>Registrar una sesión terminada</h3>
+            <div class="study-tool-grid">
+              <label>Materia <input id="studySessionSubject" maxlength="90" placeholder="Física" /></label>
+              <label>Minutos reales <input id="studyMinutesDone" type="number" min="1" max="1440" value="25" /></label>
+            </div>
+            <button type="button" id="studyRecordSession">Guardar sesión</button>
+            <h3>Estimar el próximo estudio</h3>
+            <p class="muted">Utiliza tu ajuste manual hasta tener tres sesiones reales por materia; después propone la mediana observada, no una duración inventada.</p>
+            <div class="study-tool-actions">
+              <label>Minutos previstos <input id="studyEstimateManual" type="number" min="1" max="1440" value="30" /></label>
+              <button type="button" id="studyEstimateBtn">Calcular estimación</button>
+            </div>
+            <p id="studyEstimateResult" role="status"></p>
+          </details>
+          <details>
+            <summary>Metas y progreso semanal</summary>
+            <label>Meta semanal (minutos) <input id="studyGoalMinutes" type="number" min="1" max="1440" value="120" /></label>
+            <p id="studyWeekSummary" role="status"></p>
+            <progress id="studyGoalProgress" max="100" value="0" aria-label="Meta semanal completada"></progress>
+            <div id="studyWeekChart" class="study-week-chart" aria-label="Minutos de estudio diarios en la semana"></div>
+            <div id="studySubjectTotals" aria-label="Minutos por materia"></div>
+            <p id="studyNoProgressStatus" class="muted" role="status"></p>
+          </details>
+          <details>
+            <summary>Tarjetas de memoria y repaso</summary>
+            <form id="studyFlashcardForm" class="study-tool-grid">
+              <label>Pregunta <input id="flashcardFront" maxlength="400" required /></label>
+              <label>Respuesta <textarea id="flashcardBack" maxlength="1200" rows="2" required></textarea></label>
+              <label>Materia (opcional) <input id="flashcardSubject" maxlength="90" /></label>
+              <button type="submit">Agregar tarjeta</button>
+            </form>
+            <div id="studyFlashcardList" class="study-flashcards"></div>
+          </details>
+          <details>
+            <summary>Concentración y lectura accesible</summary>
+            <label class="check"><input type="checkbox" id="studyFocusMode" /> Modo concentración: silenciar recordatorios espontáneos de Robotito</label>
+            <div class="study-tool-grid">
+              <label>Tipografía <select id="studyTypography"><option value="system">Original</option><option value="readable">Legible y espaciada</option></select></label>
+              <label>Tamaño de lectura <select id="studyFontSize"><option value="90">90 %</option><option value="100">100 %</option><option value="115">115 %</option><option value="130">130 %</option><option value="150">150 %</option></select></label>
+              <label>Fondo <select id="studyReadingTheme"><option value="default">Original</option><option value="mint">Verde suave</option><option value="blue">Azul suave</option><option value="dark">Oscuro</option></select></label>
+              <label class="check"><input type="checkbox" id="studyBionic" /> Destacar el inicio de palabras</label>
+              <label class="check"><input type="checkbox" id="studyLineGuide" /> Guía de lectura por línea</label>
+            </div>
+            <label>Texto o apuntes para leer y organizar
+              <textarea id="studyReadingText" rows="7" maxlength="12000" placeholder="Pegá tus propios apuntes aquí. Se procesan en este dispositivo."></textarea>
+            </label>
+            <div id="studyReadingPreview" class="study-reading-preview" aria-label="Texto en modo lectura"></div>
+            <h3>Esquema de apuntes</h3>
+            <p class="muted">El primer renglón es el tema central y los siguientes son ramas. Es una organización literal, no relaciones inventadas.</p>
+            <div id="studyMindMap" class="study-mind-map"></div>
+          </details>
+          <p id="studyDeskStatus" role="status" aria-live="polite"></p>
         </div>
         <div class="card">
           <h2 data-i18n="uiTasksSheet">Tu hoja de tareas</h2>
