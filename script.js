@@ -6488,6 +6488,7 @@ async function init(){
   renderPeople();
   renderMemories();
   updateLibraryStats();
+  window.ROBOTITO_READING_UI?.init?.({getBooks:()=>state.library,owner:()=>window.ROBOTITO_MEMORY?.owner?.()});
   window.ROBOTITO_BOOK_EXTRAS?.init?.({
     getBooks:()=>state.library,
     saveBooks:books=>{state.library=books;save(KEYS.goodreads,books);updateLibraryStats();},
