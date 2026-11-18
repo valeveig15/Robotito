@@ -1,0 +1,42 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p79-p82-learning",async test=>{
+ const {page,baseURL}=test;
+ await page.goto(baseURL,{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
+ if(await page.locator("#languageGate").isVisible()){
+  await page.locator('[data-start-language="es"]').click();
+  await page.locator('#avatarChoices [data-avatar-id="panda"]').click();
+ }
+ await page.locator('[data-tab="tasks"]').click();
+ test.phase("source-grounded-questions");
+ await page.locator("#learningSubject").fill("Biología");
+ await page.locator("#learningTopic").fill("Membrana");
+ await page.locator("#learningSource").fill("ATP: Trifosfato de adenosina\nMembrana: Barrera selectiva\nDifusión: Movimiento de solutos");
+ await page.locator("#learningMaterialForm button[type=submit]").click();
+ await page.waitForFunction(()=>document.querySelectorAll("#learningDeck option").length===1);
+ assert.match(await page.locator("#learningGame").innerText(),/ATP/);
+ test.phase("adaptive-recording");
+ await page.locator(".learning-choices button").first().click();
+ await page.waitForFunction(()=>window.ROBOTITO_LEARNING_UI.history.length===1);
+ assert.match(await page.locator("#learningGame").innerText(),/respuestas registradas/);
+ await page.locator("#learningMode").selectOption("exam");
+ assert.equal(await page.locator("#learningGame input").count(),1);
+ test.phase("local-team-progress-no-network");
+ await page.locator("#learningDesk details").nth(2).locator("summary").click();
+ await page.locator("#learningMemberName").fill("Ana");
+ await page.locator("#learningMemberMinutes").fill("45");
+ await page.locator("#learningMemberTasks").fill("3");
+ await page.locator("#learningTeamForm button[type=submit]").click();
+ await page.waitForFunction(()=>document.getElementById("learningTeamSummary").textContent.includes("45 minutos"));
+ assert.match(await page.locator("#learningTeamSummary").innerText(),/Ana: 45 min/);
+ test.phase("reversible-festivity-not-interactive-overlay");
+ await page.locator("#learningDesk details").nth(3).locator("summary").click();
+ await page.locator("#learningTheme").selectOption("primavera");
+ await page.waitForFunction(()=>document.getElementById("world").dataset.festiveTheme==="primavera");
+ await page.locator("#learningTheme").selectOption("normal");
+ await page.waitForFunction(()=>document.getElementById("world").dataset.festiveTheme==="normal");
+ assert.equal(await page.locator("#robotito").count(),1);
+ assert.deepEqual(test.report.pageErrors,[]);
+});
