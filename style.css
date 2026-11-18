@@ -3413,3 +3413,29 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-focus-mode .world-scene{transition:none}
 @media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
 @media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+/* P76–P78: conspicuous Class Mode and accessible timestamp markers */
+.class-mode-shortcut{min-height:44px;white-space:nowrap;border:1px solid #5d9a89;background:#e2f6ec;color:#2d6757;font-weight:800}
+#classModeIndicator[hidden]{display:none!important}
+#classModeIndicator{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:9px 12px;background:#ba3131;color:#fff;font-size:12px;font-weight:900;letter-spacing:.025em;box-shadow:0 0 0 3px #e2b7b7;min-height:34px}
+.class-mode-indicator-active #startClassBtn.class-start-active{border:2px solid #b63737;box-shadow:0 0 0 3px #f5c8c8}
+.class-marker-tools{border:1px solid #c8dedb;border-radius:12px;background:#f5fcf9;margin:12px 0;padding:12px}
+.class-marker-tools h3{margin:0 0 7px;font-size:15px}
+.class-marker-form{display:grid;grid-template-columns:135px minmax(0,1fr) 150px;gap:8px;align-items:end;margin-bottom:9px}
+.class-marker-form label{display:grid;gap:5px;font-size:12px;font-weight:700;min-width:0}
+.class-marker-form :is(input,select){min-height:44px;width:100%;min-width:0;font-size:16px}
+.class-marker-form button{min-height:44px;font-weight:850}
+#classMarkerList{display:grid;gap:6px;max-height:250px;overflow:auto}
+.class-time-marker{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:9px;border-radius:8px;border-left:7px solid #dec365;background:#fffef2}
+.class-time-marker.mark-green{border-color:#7bb894;background:#f5fff6}
+.class-time-marker.mark-blue{border-color:#78a7d0;background:#f2f8ff}
+.class-time-marker.mark-pink{border-color:#d6a1c0;background:#fff4fa}
+.class-time-marker.current{outline:2px solid #4e817b}
+.class-time-marker span{flex:1 1 160px;overflow-wrap:anywhere;font-size:12px;font-weight:650}
+.class-time-marker button{min-height:38px}
+@media(max-width:630px){
+ .class-marker-form{grid-template-columns:1fr}
+ .class-mode-shortcut{white-space:normal;font-size:12px;padding:9px}
+ #classModeIndicator{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){#classModeIndicator{animation:none!important;transition:none!important}}
