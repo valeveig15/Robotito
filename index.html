@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261116-p28&p36-p38=1" />
+  <link rel="stylesheet" href="style.css?v=20261116-p28&p36-p38=1&settings=1&memory=1" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -45,7 +45,7 @@
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
   <script defer src="robotito-store.js?v=20261115-p07"></script>
   <script defer src="memory-state.js?v=20261115-p07"></script>
-  <script defer src="memory-session.js?v=20261115-p07"></script>
+  <script defer src="memory-session.js?v=20261118-persistent-device"></script>
   <script defer src="memory-module-store.js?v=20261115-p07"></script>
   <script defer src="visitor-memory.js?v=20261114-p09-private"></script>
   <script defer src="p07-backup-crypto.js?v=20261115-p07"></script>
@@ -63,15 +63,16 @@
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
-  <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
+  <script defer src="approved-avatar-bridge.js?v=20261116-p28&scale=1"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
   <script defer src="book-extras-policy.js?v=20261117-p36-p38"></script>
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
   <script defer src="study-tools-policy.js?v=20261118-p60-p75"></script>
   <script defer src="study-tools-ui.js?v=20261118-p60-p75"></script>
-  <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
-  <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
+  <script defer src="settings-menu.js?v=20261118-settings"></script>
+  <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1&memory=1"></script>
+  <script defer src="typed-chat-ui.js?v=20261118-persistent-chat"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
   <script defer src="video-evidence.js?v=20261115-p22"></script>
@@ -152,14 +153,29 @@
     <div class="top-actions">
       <span id="clock" class="clock"></span>
       <button id="startBtn" class="primary" type="button" data-ui-copy=Despertar%20sentidos>Despertar sentidos</button>
-      <button id="changeAvatarBtn" type="button" aria-haspopup="dialog" data-i18n="changeAvatarAction">Cambiar avatar</button>
-      <label class="quick-language-label" for="quickLanguageSelect"><span data-i18n="quickLanguageAction">Idioma</span>
-        <select id="quickLanguageSelect" aria-label="Cambiar idioma" data-i18n-aria-label="quickLanguageAction">
-          <option value="es">Español</option><option value="en">English</option>
-          <option value="pt">Português</option><option value="fr">Français</option>
-          <option value="it">Italiano</option><option value="de">Deutsch</option>
-        </select>
-      </label>
+      <div class="settings-container">
+        <button id="settingsToggle" class="settings-gear" type="button" aria-label="Ajustes" aria-haspopup="true" aria-expanded="false" aria-controls="settingsPanel" title="Ajustes">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.9 14 4l2.2-.3 1.2 2 2.1 1 .1 2.3 1.4 1.8-1.4 1.9-.1 2.2-2.1 1-1.2 2-2.2-.3-2 1.1-2-1.1-2.2.3-1.2-2-2.1-1-.1-2.2L3 10.8 4.4 9l.1-2.3 2.1-1 1.2-2L10 4z" transform="translate(0 1)"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <section id="settingsPanel" class="settings-panel" aria-label="Ajustes de Robotito" hidden>
+          <div class="settings-heading"><strong id="settingsTitle">Ajustes</strong><button type="button" id="settingsClose" aria-label="Cerrar ajustes">✕</button></div>
+          <label class="quick-language-label" for="quickLanguageSelect"><span data-i18n="quickLanguageAction">Idioma</span>
+            <select id="quickLanguageSelect" aria-label="Cambiar idioma" data-i18n-aria-label="quickLanguageAction">
+              <option value="es">Español</option><option value="en">English</option>
+              <option value="pt">Português</option><option value="fr">Français</option>
+              <option value="it">Italiano</option><option value="de">Deutsch</option>
+            </select>
+          </label>
+          <button id="changeAvatarBtn" type="button" aria-haspopup="dialog" data-i18n="changeAvatarAction">Cambiar avatar</button>
+          <label class="settings-size-label" for="settingsAvatarSize"><span id="settingsSizeText">Tamaño del avatar</span><output id="settingsAvatarSizeValue" for="settingsAvatarSize">70 %</output></label>
+          <input id="settingsAvatarSize" type="range" min="45" max="100" step="5" value="70" aria-label="Tamaño del avatar" />
+          <button type="button" class="settings-link" data-settings-target="voiceSelect">🔊 <span data-settings-text="voice">Voz y sonido</span></button>
+          <button type="button" class="settings-link" data-settings-target="tab-people">👤 <span data-settings-text="people">Personas y perfiles</span></button>
+          <button type="button" class="settings-link" data-settings-target="tab-memory">🔒 <span data-settings-text="privacy">Memoria y privacidad</span></button>
+          <button type="button" class="settings-link" data-settings-target="tab-temporal">🕒 <span data-settings-text="times">Horarios y recordatorios</span></button>
+          <button type="button" class="settings-link" data-settings-target="tab-status">⚙ <span data-settings-text="general">Estado y controles</span></button>
+        </section>
+      </div>
     </div>
   </header>
 
@@ -1058,6 +1074,7 @@
         <div class="card memory-scope">
           <h2 data-ui-copy="Historial%20activo">Historial activo</h2>
           <p id="memoryOwner" role="status"></p>
+          <div class="device-memory-option"><label class="check" for="deviceMemoryEnabled"><input type="checkbox" id="deviceMemoryEnabled" /><span>Recordar mis conversaciones y actividades en este dispositivo</span></label><p id="deviceMemoryStatus" role="status">Solo para un navegador personal. El historial se restaura al volver a entrar.</p></div>
           <button id="deleteMemoryHistory" type="button" class="ghost danger" data-ui-copy="Eliminar%20todo%20este%20historial">Eliminar todo este historial</button>
           <button id="newMemorySession" type="button" class="ghost" data-ui-copy="Nuevo%20visitante%20sin%20historial">Nuevo visitante sin historial</button>
           <details><summary data-ui-copy="Conservar%20o%20retomar%20un%20historial%20de%20visitante">Conservar o retomar un historial de visitante</summary>

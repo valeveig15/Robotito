@@ -146,6 +146,15 @@ async function activate(id,{mood="calm",language="es"}={}){
   shadow.appendChild(overrides);
   const stage=shadow.querySelector("#stage-svg"),avatar=shadow.querySelector("#avatar");
   if(!stage||!avatar)throw new Error("Invalid approved avatar "+id);
+  // Keep the user-approved animations intact: scale a parent SVG group, not #avatar itself.
+  const scaleWrapper=document.createElementNS("http://www.w3.org/2000/svg","g");
+  scaleWrapper.id="approvedAvatarScale";
+  avatar.parentNode.insertBefore(scaleWrapper,avatar);
+  scaleWrapper.appendChild(avatar);
+  let preferred=70;
+  try{preferred=Number(localStorage.getItem("robotito.avatarSize.v1")||70);}catch{}
+  const scale=Math.max(.45,Math.min(1,Number.isFinite(preferred)?preferred/100:.7));
+  scaleWrapper.setAttribute("transform","translate("+((1-scale)*350)+" "+((1-scale)*580)+") scale("+scale+")");
   stage.setAttribute("aria-hidden","true");
   const robot=getRobot();
   host.setAttribute("aria-label",robot?.getAttribute("aria-label")||"Robotito");
