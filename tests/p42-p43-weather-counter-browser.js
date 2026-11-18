@@ -30,6 +30,7 @@ runBrowserTest("p42-p43-weather-counter",async test=>{
  await page.evaluate(()=>{window.ROBOTITO_TRUTHFUL_UI.recordQuestion();window.ROBOTITO_TRUTHFUL_UI.recordQuestion();});
  assert.equal(await page.locator("#honestQuestionCount").innerText(),"2");
  assert.match(await page.locator("#honestQuestionScope").innerText(),/esta pestaña/);
+ await page.locator(".question-help-panel summary").click();
  test.phase("weather-does-not-cover-input-on-mobile");
  await page.setViewportSize({width:360,height:780});
  await page.evaluate(()=>window.ROBOTITO_TRUTHFUL_UI.updateWeather({current:{weather_code:71,temperature_2m:-2,is_day:0}}));
