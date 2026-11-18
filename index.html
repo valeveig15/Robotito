@@ -68,6 +68,8 @@
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
   <script defer src="book-extras-policy.js?v=20261117-p36-p38"></script>
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
+  <script defer src="reading-clubs-policy.js?v=20261118-p39-p40"></script>
+  <script defer src="reading-clubs-ui.js?v=20261118-p39-p40"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -970,6 +972,41 @@
           <p data-i18n="uiBooksHelp" class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
         </div>
         <div id="bookResults" class="book-results"></div>
+        <div class="card reading-circle-card">
+          <h2>📚 Clubes de lectura y valoraciones</h2>
+          <p class="muted">Planeá clubes de lectura locales, valorá los libros por aspectos y compartí voluntariamente un archivo con los planes. No hay chat ni sincronización en tiempo real.</p>
+          <form id="readingCircleForm" class="reading-circle-form">
+            <label>Nombre del club <input id="clubName" type="text" maxlength="300" required /></label>
+            <label>Libro <input id="clubBook" type="text" maxlength="300" required /></label>
+            <label>Próxima reunión <input id="clubMeeting" type="date" /></label>
+            <label>Notas <textarea id="clubNotes" rows="2" maxlength="300"></textarea></label>
+            <button type="submit" class="primary">Crear club local</button>
+          </form>
+          <div id="readingCirclesList"></div>
+          <div class="reading-circle-actions">
+            <button id="readingExportClubs" type="button">Exportar clubes</button>
+            <label class="file-label">Importar clubes desde archivo <input id="readingImportClubs" type="file" accept=".json,application/json" /></label>
+          </div>
+          <h3>Valorar un libro por aspectos</h3>
+          <form id="readingRatingForm" class="reading-rating-form">
+            <label>Libro <input id="readingRatingTitle" type="text" maxlength="300" required /></label>
+            <label>Trama <select id="rating-trama"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Personajes <select id="rating-personajes"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Mundo <select id="rating-mundo"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Escritura <select id="rating-escritura"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Ritmo <select id="rating-ritmo"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <button type="submit">Guardar valoración</button>
+          </form>
+          <div id="readingRatingsList" aria-live="polite"></div>
+          <h3>🎲 ¿Qué libro leo ahora?</h3>
+          <div class="reading-circle-actions">
+            <button id="readingDrawBtn" type="button">Sortear entre mis pendientes</button>
+            <button id="readingJokeBtn" type="button">Broma del libro abandonado</button>
+          </div>
+          <p id="readingDrawResult" role="status"></p>
+          <p id="readingStatus" role="status" aria-live="polite"></p>
+        </div>
+
       </section>
 
       <section class="tabpage" id="tab-memory">
