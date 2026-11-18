@@ -3413,3 +3413,53 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-focus-mode .world-scene{transition:none}
 @media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
 @media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+
+/* Compact preferences entry; all original handlers remain attached to their IDs. */
+:root{--robotito-avatar-scale:.7}
+#robotito {scale:var(--robotito-avatar-scale, .7);transform-origin:center 85%;}
+.settings-container{position:relative;display:flex;align-items:center;justify-content:flex-end;z-index:50;}
+.settings-gear{width:46px;height:46px;min-height:44px;padding:9px;display:grid;place-items:center;background:#f6faf8;border:1px solid #bdd9d1;border-radius:15px;color:#386a60;cursor:pointer;}
+.settings-gear[aria-expanded="true"]{background:#dff2eb;box-shadow:0 0 0 2px #83baab;}
+.settings-panel[hidden]{display:none!important;}
+.settings-panel{
+ position:absolute;right:0;top:calc(100% + 10px);width:min(345px,calc(100vw - 24px));
+ max-height:min(75dvh,600px);overflow-y:auto;overscroll-behavior:contain;
+ display:flex;flex-direction:column;gap:10px;
+ padding:15px;background:#fffefc;border:1px solid #c9dad1;border-radius:19px;
+ box-shadow:0 20px 54px rgba(25,51,47,.22);z-index:100;text-align:left;
+}
+.settings-heading{display:flex;align-items:center;justify-content:space-between;font-size:17px;color:#34574e;}
+.settings-heading #settingsClose{min-width:40px;min-height:40px;padding:7px;border-radius:11px;}
+.settings-panel .quick-language-label{display:flex;flex-direction:column;align-items:stretch;gap:5px;grid-column:auto;width:100%;}
+.settings-panel .quick-language-label select{max-width:none;width:100%;flex:none;}
+.settings-panel #changeAvatarBtn{width:100%;min-width:0;min-height:44px;text-align:left;background:#eef7f3;border-color:#c8e2d8;}
+.settings-size-label{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;color:#4d645c;}
+#settingsAvatarSize{display:block;accent-color:#508f7b;width:100%;height:26px;cursor:pointer;}
+.settings-link{display:flex;align-items:center;gap:10px;text-align:left;width:100%;min-height:44px;padding:10px 12px;white-space:normal;border:1px solid #e2ebe6;background:#fafcfb;color:#395b52;}
+.settings-link:hover,.settings-link:focus-visible{background:#eaf5f0;}
+.settings-gear:focus-visible,.settings-panel button:focus-visible,.settings-panel select:focus-visible,#settingsAvatarSize:focus-visible{outline:3px solid #528f7b;outline-offset:2px;}
+@media(max-width:600px){
+ .top-actions{display:flex!important;flex-wrap:nowrap!important;justify-content:flex-end;align-items:center;width:auto!important;min-width:0;gap:7px;}
+ .top-actions #startBtn{width:auto!important;max-width:min(48vw,180px);font-size:12px;min-height:44px;}
+ .top-actions .settings-container{flex:0 0 auto;grid-column:auto;}
+ .settings-panel{position:fixed;right:12px;top:76px;width:min(350px,calc(100vw - 24px));max-height:calc(100dvh - 94px);}
+}
+@media(max-width:390px){.topbar{gap:5px}.clock{display:none}.topbar h1{font-size:19px}.top-actions{gap:5px}}
+
+
+/* Keep the collapsed help bubble from covering the mobile settings gear. */
+.topbar.settings-open{z-index:125}
+@media(max-width:520px){
+ .question-help-panel:not([open]){width:max-content!important;max-width:calc(100vw - 16px);left:8px;}
+ .question-help-panel:not([open]) summary{width:auto;}
+}
+
+/* Collapsed help must never intercept the settings controls; expanded help retains its overlay. */
+.question-help-panel:not([open]){z-index:10!important;}
+
+/* PERSISTENT MEMORY — explicit device consent and clear privacy status. */
+.device-memory-option{margin:12px 0;padding:13px;border:1px solid #cbded5;border-radius:14px;background:#f2faf6;}
+.device-memory-option .check{display:flex;align-items:flex-start;gap:9px;line-height:1.35;font-weight:800;}
+.device-memory-option input{width:19px;height:19px;min-width:19px;accent-color:#4d8e77;}
+.device-memory-option p{margin:8px 0 0;font-size:12px;line-height:1.45;color:#536a60;}
