@@ -3373,3 +3373,11 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
  .settings-panel{position:fixed;right:12px;top:76px;width:min(350px,calc(100vw - 24px));max-height:calc(100dvh - 94px);}
 }
 @media(max-width:390px){.topbar{gap:5px}.clock{display:none}.topbar h1{font-size:19px}.top-actions{gap:5px}}
+
+
+/* Keep the collapsed help bubble from covering the mobile settings gear. */
+.topbar.settings-open{z-index:125}
+@media(max-width:520px){
+ .question-help-panel:not([open]){width:max-content!important;max-width:calc(100vw - 16px);left:8px;}
+ .question-help-panel:not([open]) summary{width:auto;}
+}
