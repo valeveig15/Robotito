@@ -187,8 +187,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **41.** Reproducción de música por tema, artista, banda o género — POR AUDITAR
 - [ ] **42.** Escenario de clima adaptado a las condiciones — POR AUDITAR
 - [ ] **43.** Panel de preguntas, feedback y contador honesto — POR AUDITAR
-- [ ] **44.** Modo foto/captura de pantalla con reacción simpática — POR AUDITAR
-- [ ] **45.** Analítica y reportes con consentimiento explícito — POR AUDITAR
+- [ ] **44.** Modo foto/captura de pantalla con reacción simpática — SOFTWARE PARCIAL (foto y captura consentida con reacción y descarga PNG; validación física pendiente); ver [P44-P45-STATUS.md](P44-P45-STATUS.md).
+- [ ] **45.** Analítica y reportes con consentimiento explícito — SOFTWARE PARCIAL (contadores locales de categorías con opt-in, borrado y exportación; validación privacidad pendiente); ver [P44-P45-STATUS.md](P44-P45-STATUS.md).
 - [ ] **46.** Integración final, rendimiento, privacidad y regresión — POR AUDITAR
 - [ ] **47.** Origen uruguayo, creadora y biografía adaptable según la especie — POR AUDITAR
 - [ ] **48.** Personalidad musical: rock and roll de Uruguay y Argentina — POR AUDITAR

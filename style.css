@@ -3413,3 +3413,17 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-focus-mode .world-scene{transition:none}
 @media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
 @media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+
+/* P44/P45 — permission-first private capture and content-free opt-in metrics */
+.private-tools-card h2{font-size:19px}
+.private-tools-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.private-tools-actions button{flex:1 1 135px;min-height:44px}
+#privateCaptureVideo,#privateCaptureImage{display:block;width:100%;max-height:360px;object-fit:contain;border-radius:14px;background:#1f3030;border:1px solid #aac8c0;margin:12px 0}
+#privateCaptureVideo[hidden],#privateCaptureImage[hidden]{display:none!important}
+#privateCaptureDownload{min-height:44px}
+#privateCaptureStatus,#privateMetricsStatus{font-size:12px;min-height:20px;color:#497367;margin-top:8px}
+#privateMetricsTotals{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:7px;margin:12px 0}
+#privateMetricsTotals p{padding:8px;background:#f1f8f5;border:1px solid #cde2d9;border-radius:9px;margin:0;font-size:12px}
+.private-tools-card .check{display:flex;align-items:flex-start;gap:10px}
+.private-tools-card .check input{width:20px;height:20px;flex:0 0 20px;accent-color:#518e7b}
