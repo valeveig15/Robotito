@@ -35,7 +35,7 @@ runBrowserTest("p44-p45-private-tools",async test=>{
   window.ROBOTITO_PRIVATE_METRICS.record("questions");
   window.ROBOTITO_PRIVATE_METRICS.record("classes");
  });
- await page.waitForFunction(()=>window.ROBOTITO_PRIVATE_METRICS.totals.questions===2);
+ await page.waitForFunction(()=>document.getElementById("privateMetricsTotals").textContent.includes("Preguntas enviadas: 2"));
  assert.match(await page.locator("#privateMetricsTotals").innerText(),/Preguntas enviadas: 2/);
  test.phase("turn-off-and-delete");
  await page.locator("#privateMetricsConsent").uncheck();
