@@ -108,6 +108,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
   await expectTransition({mood:"feliz"},()=>page.evaluate(()=>setMood("happy")));
   await expectTransition({action:"action-chocar"},()=>page.locator('[data-action="highfive"]').click());
   await expectTransition({action:"action-acariciar"},()=>page.locator('[data-action="pet"]').click());
+  if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
   await page.locator("#changeAvatarBtn").click();
   const index=APPROVED.indexOf(id),next=APPROVED[index+1];
   if(next)await page.locator('#avatarChoices [data-avatar-id="'+next+'"]').click();
@@ -118,7 +119,8 @@ runBrowserTest("p28-approved-avatars",async test=>{
  assert.equal(await page.locator("#robotito").getAttribute("aria-hidden"),null);
  assert.equal(await page.locator("#world").evaluate(el=>el.classList.contains("approved-art-world")),false);
  test.phase("layout-after-viewport-and-language-switch");
- await page.locator("#changeAvatarBtn").click();
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
  await page.locator('#avatarChoices [data-avatar-id="polar-bear"]').click();
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current?.id==="polar-bear");
  for(const [width,height] of [[360,740],[430,900],[1280,900]]){
@@ -135,7 +137,8 @@ runBrowserTest("p28-approved-avatars",async test=>{
   await page.locator("#robotitoTextInput").scrollIntoViewIfNeeded();
   await page.locator("#robotitoTextInput").click();
  }
- await page.locator("#quickLanguageSelect").selectOption("de");
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#quickLanguageSelect").selectOption("de");
  assert.equal(await page.locator("html").getAttribute("lang"),"de");
  assert.equal(await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.current?.id),"polar-bear");
  await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.speak(true));
