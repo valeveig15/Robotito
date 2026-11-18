@@ -22,7 +22,7 @@ runBrowserTest("p36-p38-reader-library",async test=>{
  await page.locator("#shelfAddBook button[type=submit]").click();
  assert.equal(await page.locator(".shelf-book").count(),1,"Duplicate manual book should not be added");
  await page.locator(".shelf-book-item select").selectOption("read");
- assert.equal(await page.locator(".shelf-read .shelf-book").count(),1);
+ assert.equal(await page.locator(".personal-shelf:first-child .shelf-book").count(),1);
  test.phase("isbn-validation-without-camera");
  await page.locator("#shelfISBN").fill("9780306406158");
  await page.locator("#shelfLookupISBN").click();
