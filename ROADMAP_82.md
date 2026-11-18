@@ -219,9 +219,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **73.** Modo de lectura con inicio de palabras destacado — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **75.** Mapas mentales automáticos de apuntes extensos — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
-- [ ] **76.** Activación de Modo Clase muy visible y accesible — POR AUDITAR
-- [ ] **77.** Marcadores de colores durante clases grabadas — POR AUDITAR
-- [ ] **78.** Sincronización bidireccional entre audio y transcripción — POR AUDITAR
+- [ ] **76.** Activación de Modo Clase muy visible y accesible — SOFTWARE PARCIAL (indicador visible, entrada directa, faltan pruebas físicas de accesibilidad); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **77.** Marcadores de colores durante clases grabadas — SOFTWARE PARCIAL (marcadores de 4 colores con tiempo y notas locales; validación real pendiente); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **78.** Sincronización bidireccional entre audio y transcripción — PARCIAL (saltos a audio desde marcadores; falta alineación real audio-transcripción); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
 - [ ] **79.** Minijuegos educativos interactivos basados en clases — POR AUDITAR
 - [ ] **80.** Progreso visual por integrantes en equipos y grupos de estudio — POR AUDITAR
 - [ ] **81.** Exámenes adaptativos por tema y carpeta de materia — POR AUDITAR
