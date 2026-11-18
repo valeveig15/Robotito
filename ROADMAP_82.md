@@ -176,9 +176,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **30.** Gestos y acciones — EN PROGRESO (gestos directos por voz y clic/tacto, control único para las seis acciones, alta preservación de «Chocar los cinco», sin «Abrazar» como acción independiente; pendiente prueba táctil física; ver [P30-STATUS.md](P30-STATUS.md)).
 - [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — EN PROGRESO (cancelación de parpadeos y sueños obsoletos, transición de párpados, coherencia con cinco SVG y reducción de movimiento; falta comprobación física visual; ver [P31-STATUS.md](P31-STATUS.md)).
 - [ ] **32.** Emociones visuales coherentes y vínculo personal — EN PROGRESO (16 estados visuales diferenciados, seis idiomas de diálogo emocional, recuperación por revisión/identidad, vínculo por perfil; falta calibración con participantes y dispositivos reales; ver [P32-STATUS.md](P32-STATUS.md)).
-- [ ] **33.** Batería real, avisos e inactividad — POR AUDITAR
-- [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — POR AUDITAR
-- [ ] **35.** Libros sin Goodreads y metadatos verificables — POR AUDITAR
+- [ ] **33.** Batería real, avisos e inactividad — SOFTWARE PARCIAL (batería real con avisos e inactividad visual; pruebas físicas pendientes); ver [P33-P35-STATUS.md](P33-P35-STATUS.md).
+- [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — SOFTWARE PARCIAL (cumpleaños en franjas horarias, melodía y regalo; validación de sonido y UI pendiente); ver [P33-P35-STATUS.md](P33-P35-STATUS.md).
+- [ ] **35.** Libros sin Goodreads y metadatos verificables — SOFTWARE PARCIAL (metadatos verificables y recomendaciones sin Goodreads; cobertura editorial pendiente); ver [P33-P35-STATUS.md](P33-P35-STATUS.md).
 - [ ] **36.** Simulación de al menos 50 perfiles lectores — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **37.** Lectura y traducción de descripciones de libros — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).

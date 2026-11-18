@@ -909,7 +909,15 @@ function syncBatteryState({announce=true}={}){
   state.energy=level;
   state.batteryPreviousLevel=level;
 
-  const threshold=batteryAlertThreshold(previous,level);
+  let threshold=window.ROBOTITO_P33_P35.batteryThreshold(previous,level,state.batteryCharging);
+  try{
+    const last=sessionStorage.getItem("robotito.battery.alert-bucket.v1");
+    if(state.batteryCharging||level>50)sessionStorage.removeItem("robotito.battery.alert-bucket.v1");
+    else if(threshold){
+      if(previous===null&&last===String(threshold))threshold=null;
+      else sessionStorage.setItem("robotito.battery.alert-bucket.v1",String(threshold));
+    }
+  }catch(error){console.warn("battery alert state unavailable",error)}
   applyBatteryCriticalState();
   updateMeters();
   if(announce&&threshold)announceBatteryAlert(threshold);
@@ -5509,6 +5517,7 @@ async function enrollPerson(){
 }
 
 function checkBirthday(p){
+  if(window.ROBOTITO_BIRTHDAY){window.ROBOTITO_BIRTHDAY.check(p,{started:state.started,classMode:state.classMode});return;}
   if(!p.birthday)return;
   const now=new Date();
   const d=new Date(p.birthday+"T12:00:00");
@@ -5516,6 +5525,7 @@ function checkBirthday(p){
 }
 
 function birthdayParty(name){
+  if(window.ROBOTITO_BIRTHDAY){window.ROBOTITO_BIRTHDAY.celebrate(name);return;}
   uiSet($("#birthdayText"),"¡Feliz cumpleaños, {name}! 🎉",{name});
   $("#birthdayScene").classList.remove("hidden");
   setMood("happy","Robotito reconoció a alguien que cumple años.");
@@ -5648,6 +5658,7 @@ function hungerTick(){
 }
 
 function inactivityTick(){
+  document.body.classList.toggle("robotito-low-power",!!state.nightSleep);
   if(state.nightSleep){
     state.sleeping=true;
     robot.classList.add("sleeping");
@@ -5655,6 +5666,7 @@ function inactivityTick(){
     return;
   }
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
+  document.body.classList.toggle("robotito-low-power",quietFor>150&&!state.classMode);
 
   if(state.classMode){
     state.sleeping=false;
@@ -6023,12 +6035,16 @@ async function fetchBookCandidates(profile){
       description:item.volumeInfo?.description||"",
       thumbnail:item.volumeInfo?.imageLinks?.thumbnail||"",
       language:item.volumeInfo?.language||"",
-      infoLink:item.volumeInfo?.infoLink||""
+      infoLink:item.volumeInfo?.infoLink||"",
+      averageRating:Number.isFinite(item.volumeInfo?.averageRating)?item.volumeInfo.averageRating:null,
+      ratingsCount:Number.isInteger(item.volumeInfo?.ratingsCount)?item.volumeInfo.ratingsCount:null,
+      publisher:item.volumeInfo?.publisher||"",publishedDate:item.volumeInfo?.publishedDate||"",
+      industryIdentifiers:item.volumeInfo?.industryIdentifiers||[]
     })).filter(book=>book.title));
   }
   const seen=new Set();
   return all.filter(book=>{
-    const key=normalizeText(book.title);
+    const key=window.ROBOTITO_P33_P35.bookIdentity(book);
     if(seen.has(key))return false;
     seen.add(key);
     return true;
@@ -6047,7 +6063,7 @@ async function recommendBook(promptOverride=null){
 
   const readTitles=new Set(state.library
     .filter(book=>(book["Exclusive Shelf"]||"").toLowerCase()==="read")
-    .map(book=>normalizeText(book["Title"])));
+    .map(book=>window.ROBOTITO_P33_P35.normalizedTitle(book["Title"])));
 
   if(only){
     if(!state.library.length){
@@ -6076,7 +6092,7 @@ async function recommendBook(promptOverride=null){
 
   try{
     let candidates=await fetchBookCandidates(profile);
-    if(exclude&&readTitles.size)candidates=candidates.filter(book=>!readTitles.has(normalizeText(book.title)));
+    if(exclude&&readTitles.size)candidates=candidates.filter(book=>!readTitles.has(window.ROBOTITO_P33_P35.normalizedTitle(book.title)));
     let ranked=candidates
       .map(book=>({book,...scoreBookCandidate(book,profile),owned:false}))
       .sort((a,b)=>b.score-a.score)
@@ -6087,7 +6103,7 @@ async function recommendBook(promptOverride=null){
     showBookRecommendations(ranked,profile,prompt);
   }catch(error){
     const ranked=LOCAL_BOOK_CATALOG
-      .filter(book=>!exclude||!readTitles.has(normalizeText(book.title)))
+      .filter(book=>!exclude||!readTitles.has(window.ROBOTITO_P33_P35.normalizedTitle(book.title)))
       .map(book=>({book:{...book,language:"es"},...scoreBookCandidate(book,profile),owned:false}))
       .sort((a,b)=>b.score-a.score)
       .slice(0,3);
@@ -6112,13 +6128,16 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
     ? '<p class="recommendation-note" data-ui-copy=No%20pude%20consultar%20el%20cat%C3%A1logo%20en%20l%C3%ADnea%2C%20as%C3%AD%20que%20us%C3%A9%20una%20selecci%C3%B3n%20disponible%20en%20Robotito.>No pude consultar el catálogo en línea, así que usé una selección disponible en Robotito.</p>'
     : "";
   $("#bookResults").innerHTML=intro+results.map(({book,matched,owned})=>`<div class="book-card">
-    ${book.thumbnail?`<img src="${book.thumbnail.replace("http:","https:")}" alt="${escapeHtml(uiText("Portada de {title}",{title:book.title}))}">`:"<div class=\"book-placeholder\">📖</div>"}
+    ${book.thumbnail?`<img src="${escapeHtml(window.ROBOTITO_P33_P35.safeHttps(book.thumbnail))}" alt="${escapeHtml(uiText("Portada de {title}",{title:book.title}))}">`:"<div class=\"book-placeholder\">📖</div>"}
     <div><strong>${escapeHtml(book.title)}</strong>
     <p>${escapeHtml((book.authors||[]).join(", ")||uiText("Autor no disponible"))}</p>
     <p class="book-match-reason"></p>
     <p class="book-description"></p>
     <span class="relation">${uiText(owned?"Ya está en tu biblioteca":"Sugerencia nueva")}</span>
-    ${book.infoLink?`<a class="book-more-link" href="${escapeHtml(book.infoLink)}" target="_blank" rel="noopener noreferrer" data-ui-copy=Ver%20m%C3%A1s%20informaci%C3%B3n%20%E2%86%97>Ver más información ↗</a>`:""}
+    ${book.averageRating!==null&&Number.isFinite(book.averageRating)?`<p>Google Books: ${book.averageRating}/5 · ${book.ratingsCount??"cantidad no disponible"} valoraciones</p>`:"<p>Valoración no disponible en esta fuente.</p>"}
+    ${book.publisher?`<p>Editorial: ${escapeHtml(book.publisher)}${book.publishedDate?" · "+escapeHtml(book.publishedDate):""}</p>`:""}
+    <p>Reseñas de lectores no disponibles en Google Books; no se inventan opiniones.</p>
+    ${book.infoLink?`<a class="book-more-link" href="${escapeHtml(window.ROBOTITO_P33_P35.safeHttps(book.infoLink))}" target="_blank" rel="noopener noreferrer" data-ui-copy=Ver%20m%C3%A1s%20informaci%C3%B3n%20%E2%86%97>Ver más información ↗</a>`:""}
     </div></div>`).join("");
   [...$("#bookResults").querySelectorAll(".book-card")].forEach((card,i)=>{
     const {book,matched,owned}=results[i];
