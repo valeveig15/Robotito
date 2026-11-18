@@ -66,6 +66,8 @@
   <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
+  <script defer src="weather-scene-policy.js?v=20261118-p42"></script>
+  <script defer src="weather-scene-ui.js?v=20261118-p42-p43"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -127,6 +129,10 @@
       <li data-i18n="uiAskQ14">¿Qué explicó la profesora sobre este tema?</li>
       <li data-i18n="uiAskQ15">Explicame paso a paso el ejercicio 4 de Física.</li>
     </ul>
+    <div class="honest-question-count" role="status">
+      <strong><span id="honestQuestionCount">0</span> preguntas</strong>
+      <span id="honestQuestionScope">Preguntas procesadas en esta pestaña: no es un contador global de Robotito.</span>
+    </div>
     <div class="question-help-contact">
       <strong data-i18n="uiHelpContactTitle">¿Falta alguna pregunta o función?</strong>
       <p data-i18n="uiHelpContactText">También podés avisarme si algo no funciona bien o contarme qué te gustaría que Robotito hiciera o tuviera.</p>
@@ -186,6 +192,7 @@
       <div id="groundShadow" class="ground-shadow"></div>
 
       <div id="speechBubble" class="speech-bubble hidden" role="status"></div>
+      <div id="weatherSceneBadge" class="weather-scene-badge" role="status" aria-live="polite" hidden></div>
 
       <div id="robotito" class="robotito mood-calm" role="img" aria-label="Robotito, panda virtual">
         <div class="mood-aura"></div>

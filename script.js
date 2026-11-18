@@ -2691,7 +2691,7 @@ function weatherCodeText(code,lang="es"){
   return en?"mixed conditions":"tiempo variable";
 }
 async function getWeatherNow(){
-  if(state.weatherCache&&Date.now()-state.weatherCache.at<10*60*1000)return state.weatherCache.data;
+  if(state.weatherCache&&Date.now()-state.weatherCache.at<10*60*1000){window.ROBOTITO_TRUTHFUL_UI?.updateWeather?.(state.weatherCache.data);return state.weatherCache.data;}
   const {lat,lon}=await geolocationOnce();
   const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon)
     +"&current=temperature_2m,apparent_temperature,is_day,precipitation,rain,weather_code,cloud_cover,wind_speed_10m"
@@ -2700,6 +2700,7 @@ async function getWeatherNow(){
   if(!res.ok)throw new Error("weather");
   const data=await res.json();
   state.weatherCache={at:Date.now(),data};
+  window.ROBOTITO_TRUTHFUL_UI?.updateWeather?.(data);
   return data;
 }
 async function handleWeatherAndDayQuestions(rawText,planned=null){
@@ -4198,6 +4199,7 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
   await window.ROBOTITO_MEMORY?.ready?.();
   if(ownerBeforeReady!==window.ROBOTITO_MEMORY?.owner?.())return;
   const owner=(window.ROBOTITO_MEMORY?.owner?.()||state.currentVoicePerson||state.currentPerson||"local");
+  if(!atomic)window.ROBOTITO_TRUTHFUL_UI?.recordQuestion?.();
   // A new explicit request interrupts any earlier fetch-and-present scene.
   if(!atomic)window.ROBOTITO_OBJECT_SCENE?.cancel?.();
   // P10/P11: explicit literal-response instructions are parsed conservatively

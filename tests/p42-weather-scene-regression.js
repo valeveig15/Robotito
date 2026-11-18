@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("node:assert/strict");
+const p=require("../weather-scene-policy.js");
+const sets={clear:[0],clouds:[1,2,3],fog:[45,48],drizzle:[51,53,55,56,57],rain:[61,63,65,66,67,80,81,82],snow:[71,73,75,77,85,86],storm:[95,96,99]};
+for(const [label,codes] of Object.entries(sets))for(const code of codes)assert.equal(p.classify(code),label);
+assert.equal(p.classify("garbage"),"unknown");
+assert.equal(p.classify(-1),"unknown");
+assert.equal(p.classify(100),"unknown");
+assert.deepEqual(p.view({weather_code:0,temperature_2m:22.7,is_day:1}),{kind:"clear",code:0,temperature:23,day:true,icon:"☀️"});
+assert.equal(p.view({weather_code:95,temperature_2m:10,is_day:0}).kind,"storm");
+assert.equal(p.view({weather_code:95,temperature_2m:NaN,is_day:0}),null);
+assert.equal(p.view({weather_code:999,temperature_2m:15,is_day:0}),null);
+assert.equal(p.view(null),null);
+console.log("P42: Open-Meteo code classification, invalid-data rejection, temperature, day/night passed");
