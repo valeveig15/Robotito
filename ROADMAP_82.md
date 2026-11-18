@@ -203,22 +203,22 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **57.** Editor gráfico universal y uso didáctico del color — POR AUDITAR
 - [ ] **58.** Tomar fotografías y leer el contenido en voz alta — POR AUDITAR
 - [ ] **59.** Fotografía y limpieza de pizarrón/libro vinculada al instante de clase — POR AUDITAR
-- [ ] **60.** Cronómetro, temporizador y progreso temporal visual — POR AUDITAR
-- [ ] **61.** Estimación adaptativa del tiempo de estudio por rendimiento real — POR AUDITAR
-- [ ] **62.** Ajustes manuales de tiempos previstos y escenarios de estudio — POR AUDITAR
-- [ ] **63.** Agenda de sesiones de estudio con avisos a la hora elegida — POR AUDITAR
-- [ ] **64.** Avisos escalonados antes de pruebas y entregas — POR AUDITAR
+- [ ] **60.** Cronómetro, temporizador y progreso temporal visual — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **61.** Estimación adaptativa del tiempo de estudio por rendimiento real — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **62.** Ajustes manuales de tiempos previstos y escenarios de estudio — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **63.** Agenda de sesiones de estudio con avisos a la hora elegida — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **64.** Avisos escalonados antes de pruebas y entregas — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **65.** Planificador nativo de materias, horarios y prioridades — POR AUDITAR
 - [ ] **66.** Lista de pendientes tachable con satisfacción de progreso — POR AUDITAR
-- [ ] **67.** Tarjetas de memoria editables y repaso organizado — POR AUDITAR
-- [ ] **68.** Modo concentración que silencia notificaciones de Robotito — POR AUDITAR
-- [ ] **69.** Gráficos semanales y seguimiento del tiempo por materia — POR AUDITAR
-- [ ] **70.** Metas de estudio y recordatorios tras tres horas sin avanzar — POR AUDITAR
+- [ ] **67.** Tarjetas de memoria editables y repaso organizado — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **68.** Modo concentración que silencia notificaciones de Robotito — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **69.** Gráficos semanales y seguimiento del tiempo por materia — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **70.** Metas de estudio y recordatorios tras tres horas sin avanzar — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **71.** Ejemplos adaptados a teoría y práctica — POR AUDITAR
-- [ ] **72.** Tipografías accesibles y ajustes de lectura — POR AUDITAR
-- [ ] **73.** Modo de lectura con inicio de palabras destacado — POR AUDITAR
-- [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — POR AUDITAR
-- [ ] **75.** Mapas mentales automáticos de apuntes extensos — POR AUDITAR
+- [ ] **72.** Tipografías accesibles y ajustes de lectura — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **73.** Modo de lectura con inicio de palabras destacado — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **75.** Mapas mentales automáticos de apuntes extensos — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **76.** Activación de Modo Clase muy visible y accesible — POR AUDITAR
 - [ ] **77.** Marcadores de colores durante clases grabadas — POR AUDITAR
 - [ ] **78.** Sincronización bidireccional entre audio y transcripción — POR AUDITAR

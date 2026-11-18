@@ -4099,6 +4099,7 @@ function renderTasks(){
   root.innerHTML=tasks.slice(0,30).map(t=>'<div class="task-row"><strong>'+escapeHtml(t.task)+'</strong><div class="task-meta">'+escapeHtml([t.subject,t.due,t.status].filter(Boolean).join(" · "))+'</div></div>').join("");
 }
 function taskReminderTick(){
+  if(window.ROBOTITO_STUDY_TOOLS?.focusActive)return;
   const elapsed=Date.now()-state.sessionStartedAt;
   if(elapsed<20*60*1000)return;
   if(Date.now()-state.lastTaskReminderAt<20*60*1000)return;
@@ -6136,6 +6137,7 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
 }
 
 function routinePromptTick(){
+  if(window.ROBOTITO_STUDY_TOOLS?.focusActive)return;
   if(!state.started||state.classMode||state.sleeping||document.hidden)return;
   const now=new Date(),h=now.getHours(),m=now.getMinutes();
   const day=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
