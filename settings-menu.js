@@ -41,6 +41,7 @@ function init(){
  if(!toggle||!panel||!close||!size)return;
  const setOpen=open=>{
    panel.hidden=!open;
+   document.querySelector(".topbar")?.classList.toggle("settings-open",open);
    toggle.setAttribute("aria-expanded",String(open));
    if(open)translate();
  };
