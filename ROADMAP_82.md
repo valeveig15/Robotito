@@ -222,9 +222,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **76.** Activación de Modo Clase muy visible y accesible — POR AUDITAR
 - [ ] **77.** Marcadores de colores durante clases grabadas — POR AUDITAR
 - [ ] **78.** Sincronización bidireccional entre audio y transcripción — POR AUDITAR
-- [ ] **79.** Minijuegos educativos interactivos basados en clases — POR AUDITAR
-- [ ] **80.** Progreso visual por integrantes en equipos y grupos de estudio — POR AUDITAR
-- [ ] **81.** Exámenes adaptativos por tema y carpeta de materia — POR AUDITAR
-- [ ] **82.** Trajes y ambientaciones para festividades — POR AUDITAR
+- [ ] **79.** Minijuegos educativos interactivos basados en clases — SOFTWARE PARCIAL (juegos creados exclusivamente a partir de pares de apuntes; prueba humana pendiente); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
+- [ ] **80.** Progreso visual por integrantes en equipos y grupos de estudio — SOFTWARE PARCIAL (progreso de equipos local y manual, sin sincronización multiusuario); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
+- [ ] **81.** Exámenes adaptativos por tema y carpeta de materia — SOFTWARE PARCIAL (preguntas con respuesta literal y repetición adaptativa; no corrección semántica); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
+- [ ] **82.** Trajes y ambientaciones para festividades — SOFTWARE PARCIAL (ambientaciones opcionales; faltan trajes específicos por avatar); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
 
 > Marcar un casillero solo al cerrar todas las obligaciones y pruebas documentadas de ese punto. Registrar los PR de los incrementos dentro de su sección y no cambiar un estado sin evidencia.
