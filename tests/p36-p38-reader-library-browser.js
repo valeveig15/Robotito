@@ -39,7 +39,21 @@ runBrowserTest("p36-p38-reader-library",async test=>{
  assert.match(await page.locator(".book-full-description").innerText(),/bosque remoto/);
  assert.equal(await page.locator(".book-description-controls button").count(),4);
  test.phase("reader-matrix");
- const simulated=await page.evaluate(()=>window.ROBOTITO_BOOK_POLICY.profiles(60));
+ const simulated=await page.evaluate(()=>{
+  const policies=window.ROBOTITO_BOOK_POLICY,users=policies.profiles(60);
+  const candidates=LOCAL_BOOK_CATALOG.map(book=>({...book,language:"es"}));
+  return users.map(user=>{
+    const prompt=[user.interest,user.secondInterest,"sin",user.avoid,user.length].join(" ");
+    const analysis=analyzeBookPrompt(prompt);
+    const scores=candidates.map(book=>scoreBookCandidate(book,analysis).score);
+    const ordered=[...scores].sort((x,y)=>y-x);
+    return {id:user.id,language:user.language,top:ordered[0],valid:Number.isFinite(ordered[0]),
+      exclusions:analysis.negative.length};
+  });
+ });
  assert.equal(simulated.length,60);
  assert.equal(new Set(simulated.map(p=>p.id)).size,60);
+ assert.equal(new Set(simulated.map(p=>p.language)).size,6);
+ assert.ok(simulated.every(x=>x.valid));
+ assert.ok(simulated.some(x=>x.exclusions>0));
 });
