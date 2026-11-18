@@ -70,6 +70,9 @@
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
   <script defer src="study-tools-policy.js?v=20261118-p60-p75"></script>
   <script defer src="study-tools-ui.js?v=20261118-p60-p75"></script>
+  <script defer src="private-metrics-policy.js?v=20261118-p45"></script>
+  <script defer src="private-metrics-ui.js?v=20261118-p45"></script>
+  <script defer src="private-capture-ui.js?v=20261118-p44"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -1055,6 +1058,33 @@
       </section>
 
       <section class="tabpage" id="tab-memory">
+        <div class="card private-tools-card">
+          <h2>📷 Fotos y capturas con permiso</h2>
+          <p class="muted">Solo cuando lo pedís, podés abrir la cámara o usar el selector de pantalla de tu navegador. No se suben fotos ni se guardan automáticamente.</p>
+          <div class="private-tools-actions">
+            <button id="privateCaptureCamera" type="button">Abrir cámara</button>
+            <button id="privateCaptureScreen" type="button">Elegir pantalla para capturar</button>
+            <button id="privateCaptureSnap" type="button">📸 Tomar foto</button>
+            <button id="privateCaptureCancel" type="button">Descartar / cerrar cámara</button>
+          </div>
+          <video id="privateCaptureVideo" autoplay muted playsinline hidden aria-label="Vista previa privada de la cámara"></video>
+          <img id="privateCaptureImage" hidden alt="Vista previa de la imagen capturada, pendiente de guardar o descartar" />
+          <button id="privateCaptureDownload" type="button" disabled>Guardar imagen PNG</button>
+          <p id="privateCaptureStatus" role="status" aria-live="polite"></p>
+        </div>
+        <div class="card private-tools-card">
+          <h2>📊 Estadísticas locales opcionales</h2>
+          <label class="check"><input id="privateMetricsConsent" type="checkbox" />
+            Acepto contar mis acciones por categoría y día en este navegador, sin guardar sus contenidos.</label>
+          <p id="privateMetricsScope" class="muted">Estadísticas desactivadas de forma predeterminada.</p>
+          <div id="privateMetricsTotals" aria-label="Contadores locales por categoría"></div>
+          <div class="private-tools-actions">
+            <button id="privateMetricsExport" type="button">Exportar mis contadores</button>
+            <button id="privateMetricsErase" type="button">Borrar mis contadores</button>
+          </div>
+          <p id="privateMetricsStatus" role="status" aria-live="polite"></p>
+          <p class="muted">Se conservan como máximo 30 días, sin envío remoto. Desactivar detiene el registro. Borrar elimina el historial de contadores de este perfil.</p>
+        </div>
         <div class="card memory-scope">
           <h2 data-ui-copy="Historial%20activo">Historial activo</h2>
           <p id="memoryOwner" role="status"></p>
