@@ -34,6 +34,7 @@ runBrowserTest("avatar-language-text-footer",async test=>{
  assert.equal(await page.locator("#languageMode").inputValue(),"pt");
  if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
   await page.locator("#quickLanguageSelect").selectOption("es");
+ await page.locator("#settingsClose").click();
  test.phase("night-scene-and-clickable-bottom-composer");
  for(const [width,height] of [[320,750],[390,844],[1280,900]]){
   await page.setViewportSize({width,height});
