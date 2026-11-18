@@ -50,6 +50,7 @@ runBrowserTest("p29-species-self",async test=>{
   assert.ok(result.length>24,lang+" food response");
   assert.ok(!result.includes("{food}"),lang+" no missing placeholders");
  }
+ await page.locator("#settingsClose").click();
  test.phase("mobile-scene-does-not-cover-input");
  await page.setViewportSize({width:360,height:750});
  await page.locator("#robotitoTextInput").scrollIntoViewIfNeeded();
