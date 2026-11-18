@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#fff8fc" />
   <title>Robotito 🐼</title>
-  <link rel="stylesheet" href="style.css?v=20261116-p28" />
+  <link rel="stylesheet" href="style.css?v=20261116-p28&p36-p38=1" />
   <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
@@ -66,7 +66,11 @@
   <script defer src="approved-avatar-bridge.js?v=20261116-p28"></script>
   <script defer src="species-personality.js?v=20261107-p05"></script>
   <script defer src="species-self-knowledge.js?v=20261116-p29"></script>
-  <script defer src="script.js?v=20261116-p07-p28-recovery"></script>
+  <script defer src="book-extras-policy.js?v=20261117-p36-p38"></script>
+  <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
+  <script defer src="reading-clubs-policy.js?v=20261118-p39-p40"></script>
+  <script defer src="reading-clubs-ui.js?v=20261118-p39-p40"></script>
+  <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
   <script defer src="robotito-vnext.js?v=20261107-p05"></script>
@@ -929,6 +933,31 @@
           </div>
           <p data-i18n="uiNoLibrary" id="libraryStats" class="mini-status">Biblioteca todavía no importada.</p>
         </div>
+        <div class="card" id="personalLibraryCard">
+          <h2>📚 Mi biblioteca y estanterías</h2>
+          <p class="muted">Organizá tus libros en estanterías decoradas. Podés cargarlos manualmente, buscar su ISBN o escanear el código de barras con permiso de cámara.</p>
+          <form id="shelfAddBook" class="shelf-form">
+            <label>Título <input id="shelfTitle" type="text" maxlength="300" required autocomplete="off" /></label>
+            <label>Autor <input id="shelfAuthor" type="text" maxlength="250" autocomplete="off" /></label>
+            <label>ISBN (opcional) <input id="shelfISBN" type="text" inputmode="text" maxlength="24" autocomplete="off" /></label>
+            <label>Estantería
+              <select id="shelfSelect">
+                <option value="to-read">Por leer</option>
+                <option value="currently-reading">Leyendo</option>
+                <option value="read">Leídos</option>
+              </select>
+            </label>
+            <div class="shelf-form-actions">
+              <button type="button" id="shelfLookupISBN">Buscar por ISBN</button>
+              <button type="button" id="shelfScan">📷 Escanear código</button>
+              <button type="button" id="shelfScanCancel">Cancelar escaneo</button>
+              <button type="submit" class="primary">Agregar libro</button>
+            </div>
+          </form>
+          <video id="bookScanPreview" autoplay muted playsinline hidden aria-label="Vista previa del código ISBN"></video>
+          <p id="shelfStatus" role="status" aria-live="polite"></p>
+          <div id="personalBookShelves" class="personal-book-shelves" aria-label="Estanterías personales"></div>
+        </div>
         <div class="card">
           <h2 data-i18n="uiReadingChoice">¿Qué querés leer?</h2>
           <p class="muted" data-i18n="uiBookDescriptionHelp">Describilo con tus palabras. Podés contarle el género, el tono, los temas, la extensión, la edad del lector, un libro parecido y también qué cosas querés evitar.</p>
@@ -943,6 +972,41 @@
           <p data-i18n="uiBooksHelp" class="muted book-no-account-note">Robotito te dará hasta tres opciones y explicará por qué podrían gustarte. Goodreads nunca es obligatorio.</p>
         </div>
         <div id="bookResults" class="book-results"></div>
+        <div class="card reading-circle-card">
+          <h2>📚 Clubes de lectura y valoraciones</h2>
+          <p class="muted">Planeá clubes de lectura locales, valorá los libros por aspectos y compartí voluntariamente un archivo con los planes. No hay chat ni sincronización en tiempo real.</p>
+          <form id="readingCircleForm" class="reading-circle-form">
+            <label>Nombre del club <input id="clubName" type="text" maxlength="300" required /></label>
+            <label>Libro <input id="clubBook" type="text" maxlength="300" required /></label>
+            <label>Próxima reunión <input id="clubMeeting" type="date" /></label>
+            <label>Notas <textarea id="clubNotes" rows="2" maxlength="300"></textarea></label>
+            <button type="submit" class="primary">Crear club local</button>
+          </form>
+          <div id="readingCirclesList"></div>
+          <div class="reading-circle-actions">
+            <button id="readingExportClubs" type="button">Exportar clubes</button>
+            <label class="file-label">Importar clubes desde archivo <input id="readingImportClubs" type="file" accept=".json,application/json" /></label>
+          </div>
+          <h3>Valorar un libro por aspectos</h3>
+          <form id="readingRatingForm" class="reading-rating-form">
+            <label>Libro <input id="readingRatingTitle" type="text" maxlength="300" required /></label>
+            <label>Trama <select id="rating-trama"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Personajes <select id="rating-personajes"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Mundo <select id="rating-mundo"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Escritura <select id="rating-escritura"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <label>Ritmo <select id="rating-ritmo"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></label>
+            <button type="submit">Guardar valoración</button>
+          </form>
+          <div id="readingRatingsList" aria-live="polite"></div>
+          <h3>🎲 ¿Qué libro leo ahora?</h3>
+          <div class="reading-circle-actions">
+            <button id="readingDrawBtn" type="button">Sortear entre mis pendientes</button>
+            <button id="readingJokeBtn" type="button">Broma del libro abandonado</button>
+          </div>
+          <p id="readingDrawResult" role="status"></p>
+          <p id="readingStatus" role="status" aria-live="polite"></p>
+        </div>
+
       </section>
 
       <section class="tabpage" id="tab-memory">

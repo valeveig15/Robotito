@@ -3340,3 +3340,52 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
  .robotito.sleep-entering .iris,.robotito.waking .iris{
  transition:none!important;animation:none!important}
 }
+
+
+/* P37: explicit full descriptions, controlled speech, and translation provenance */
+.book-description-controls{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:9px 0 4px}
+.book-description-controls details{flex:1 1 100%;max-width:100%;overflow-wrap:anywhere}
+.book-description-controls summary{cursor:pointer;font-size:12px;font-weight:800;padding:7px;border-radius:8px;background:#eff8f4}
+.book-full-description{white-space:pre-wrap;line-height:1.55!important;color:#42364e!important;font-size:13px!important}
+.book-description-controls button{min-height:38px;padding:7px 9px;font-size:12px;white-space:normal}
+.book-description-controls small{flex:1 1 100%;font-size:10px;color:var(--muted)}
+.book-translation{flex:1 1 100%;overflow-wrap:anywhere}
+/* P38: illustrated shelves and grounded physical books (not user-uploaded covers) */
+.shelf-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.shelf-form label{display:grid;gap:4px;font-size:12px;font-weight:750;min-width:0}
+.shelf-form label :is(input,select){width:100%;min-width:0;font-size:16px;min-height:43px}
+.shelf-form-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px}
+.shelf-form-actions button{min-height:44px;flex:1 1 135px}
+#bookScanPreview{width:100%;max-height:230px;object-fit:cover;border-radius:12px;margin-top:10px;background:#1c241e}
+#bookScanPreview[hidden]{display:none!important}
+#shelfStatus{min-height:20px;font-size:12px;color:#466b5d}
+.personal-book-shelves{display:grid;gap:14px;margin:10px 0}
+.personal-shelf{min-width:0;overflow:hidden;border-radius:14px;padding:12px 12px 0;position:relative;border:1px solid #d4e5dc;background:linear-gradient(155deg,#f9fff9,#e9f4eb)}
+.personal-shelf.shelf-blue{background:linear-gradient(155deg,#f9fcff,#e8f2fb);border-color:#d1e2f1}
+.personal-shelf.shelf-lavender{background:linear-gradient(155deg,#fff9ff,#f1e8fa);border-color:#e4d4ec}
+.personal-shelf h3{font-size:14px;margin:0 0 10px;color:#4a5d52}
+.shelf-books{display:flex;align-items:flex-end;gap:9px;min-height:95px;overflow-x:auto;padding:4px 6px 0;scrollbar-width:thin}
+.shelf-books>p{font-size:12px;color:#7c8177}
+.shelf-book-item{display:flex;flex:0 0 82px;align-items:center;flex-direction:column;min-width:0}
+.shelf-book{display:flex;align-items:center;justify-content:center;width:64px;height:92px;border-radius:4px 9px 5px 4px;box-shadow:inset -5px 0 rgba(33,43,50,.11),3px 5px 5px #0002;overflow:hidden;background:hsl(var(--book-hue,155) 33% 67%);border-left:6px solid #456b66}
+.shelf-book span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;line-height:1.1;font-weight:800;max-height:87px;overflow:hidden;word-break:break-word;color:#263a3c;text-overflow:ellipsis}
+.shelf-book-item select{width:82px;margin:7px 0 4px;padding:3px 1px;font-size:10px;min-height:28px;background:#fff9;border-radius:6px;border:1px solid #c7d5cb}
+.shelf-plank{height:13px;background:linear-gradient(180deg,#ae9174,#896c53);border-top:3px solid #ccb096;box-shadow:0 5px 9px #6b554733;margin:0 -12px}
+@media(max-width:460px){.shelf-form{grid-template-columns:1fr}.book-description-controls button{flex:1 1 130px}}
+@media(prefers-reduced-motion:reduce){.shelf-book{transition:none!important}}
+
+
+/* P39–P40: explicitly local reading circle and aspect rating controls */
+.reading-circle-form,.reading-rating-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.reading-circle-form label,.reading-rating-form label{display:grid;gap:4px;min-width:0;font-size:12px;font-weight:750}
+.reading-circle-form :is(input,textarea),.reading-rating-form :is(input,select){width:100%;min-width:0;min-height:43px;font-size:16px}
+.reading-circle-form button,.reading-rating-form button{min-height:44px;grid-column:1/-1}
+.reading-circle-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.reading-circle-actions :is(button,.file-label){flex:1 1 160px;min-height:44px}
+.reading-club{padding:12px;margin:10px 0;border:1px solid #d2e8df;border-radius:12px;background:#f6fffb}
+.reading-club p{margin:5px 0;overflow-wrap:anywhere}
+.reading-club button{min-height:38px}
+#readingRatingsList p{padding:8px;margin:5px 0;border-left:4px solid #7fbcac;background:#f7faf9;border-radius:6px}
+#readingDrawResult{font-weight:750;color:#466a5a}
+#readingStatus{min-height:18px;font-size:12px;color:#6d646c}
+@media(max-width:560px){.reading-circle-form,.reading-rating-form{grid-template-columns:1fr}}

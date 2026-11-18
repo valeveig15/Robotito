@@ -5881,6 +5881,7 @@ async function importGoodreads(file){
   state.library=rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]||""])));
   save(KEYS.goodreads,state.library);
   updateLibraryStats();
+  window.ROBOTITO_BOOK_EXTRAS?.renderShelves?.();
   toast("Biblioteca importada.");
 }
 
@@ -6130,6 +6131,7 @@ function showBookRecommendations(results,profile,prompt,localFallback=false){
     const cover=card.querySelector("img");
     if(cover)cover.dataset.bookTitle=book.title;
   });
+  window.ROBOTITO_BOOK_EXTRAS?.attachDescriptions?.(results);
   sayInLanguage(uiText("Encontré {count} opciones. La que más encaja es “{title}”.",{count:results.length,title:first.title},responseLanguage()),responseLanguage(),5200);
 }
 
@@ -6484,6 +6486,15 @@ async function init(){
   renderPeople();
   renderMemories();
   updateLibraryStats();
+  window.ROBOTITO_READING_UI?.init?.({getBooks:()=>state.library,owner:()=>window.ROBOTITO_MEMORY?.owner?.()});
+  window.ROBOTITO_BOOK_EXTRAS?.init?.({
+    getBooks:()=>state.library,
+    saveBooks:books=>{state.library=books;save(KEYS.goodreads,books);updateLibraryStats();},
+    owner:()=>window.ROBOTITO_MEMORY?.owner?.(),
+    language:()=>state.languageMode||"es",
+    speak:(text,language)=>speakResponse(text,language,{preview:true}),
+    stopSpeech:()=>stopSpeaking()
+  });
   $("#tasksSheetUrl").value=state.tasksSheetUrl;
   $("#tasksSheetGid").value=state.tasksSheetGid;
   renderTasks();
