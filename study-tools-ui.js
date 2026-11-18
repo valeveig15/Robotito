@@ -3,8 +3,8 @@
 "use strict";
 const P=root.ROBOTITO_STUDY_POLICY,S=root.ROBOTITO_STORE;
 const $=id=>document.getElementById(id);
-const initial=()=>({sessions:[],cards:[],focus:false,goalMinutes:120,typography:"system",fontSize:100,theme:"default",bionic:false,lineGuide:false,subjectEstimate:{},lastProgressAt:Date.now(),readingText:""});
-let model=initial(),owner="",generation=0,queue=Promise.resolve(),timer=null,tickId=null,shownCard=null,saveReadingTimeout=null;
+const initial=()=>({sessions:[],cards:[],agenda:[],focus:false,goalMinutes:120,typography:"system",fontSize:100,theme:"default",bionic:false,lineGuide:false,subjectEstimate:{},lastProgressAt:Date.now(),readingText:""});
+let model=initial(),owner="",generation=0,queue=Promise.resolve(),timer=null,tickId=null,shownCard=null,saveReadingTimeout=null,agendaTicker=null;
 const scope=who=>"memory-scope:"+encodeURIComponent(who)+":robotito.studyDesk.v1";
 const currentOwner=()=>root.ROBOTITO_MEMORY?.owner?.()||null;
 const isActive=()=>owner&&owner===currentOwner();
@@ -30,7 +30,8 @@ function load(){
   if(value&&typeof value==="object"){
    model={...initial(),...value,
     sessions:Array.isArray(value.sessions)?value.sessions.slice(-3000):[],
-    cards:Array.isArray(value.cards)?value.cards.slice(-400):[]};
+    cards:Array.isArray(value.cards)?value.cards.slice(-400):[],
+    agenda:Array.isArray(value.agenda)?value.agenda.slice(-150):[]};
   }
   if($("studyReadingText"))$("studyReadingText").value=String(model.readingText||"").slice(0,12000);
   render();
@@ -93,6 +94,31 @@ function drawWeek(){
  const details=$("studySubjectTotals");details.replaceChildren();
  for(const [subject,n] of Object.entries(subjects).sort((a,b)=>b[1]-a[1])){const p=document.createElement("p");p.textContent=subject+": "+n+" min";details.append(p);}
 }
+function renderAgenda(){
+ const host=$("studyAgendaList");if(!host)return;host.replaceChildren();
+ for(const entry of (model.agenda||[]).slice(0,30)){
+  const row=document.createElement("div");row.className="study-agenda-row";
+  const title=document.createElement("span");title.textContent=entry.subject+" · "+new Date(entry.at).toLocaleString()+" · "+entry.minutes+" min";
+  const remove=button("Cancelar",()=>{
+   if(!root.confirm("¿Cancelar esta sesión agendada?"))return;
+   void save({...model,agenda:model.agenda.filter(item=>item.id!==entry.id)}).catch(()=>toast("No se pudo cancelar."));
+  });
+  row.append(title,remove);host.append(row);
+ }
+ if(!(model.agenda||[]).length)host.textContent="No tenés sesiones programadas.";
+}
+function checkAgenda(){
+ if(!isActive()||document.hidden||model.focus)return;
+ const now=Date.now();
+ const upcoming=(model.agenda||[]).find(item=>item.at>=now-60000&&item.at-now<=60000&&item.notified<3)||
+  (model.agenda||[]).find(item=>item.at-now>0&&item.at-now<=15*60000&&item.notified<2)||
+  (model.agenda||[]).find(item=>item.at-now>15*60000&&item.at-now<=60*60000&&item.notified<1);
+ if(!upcoming)return;
+ const delta=upcoming.at-now,level=delta<=60000?3:delta<=15*60000?2:1;
+ const info=level===3?"Es hora de estudiar "+upcoming.subject+".":level===2?"Faltan menos de 15 minutos para "+upcoming.subject+".":"Falta menos de una hora para "+upcoming.subject+".";
+ void save({...model,agenda:model.agenda.map(item=>item.id===upcoming.id?{...item,notified:level}:item)})
+  .then(()=>toast(info)).catch(()=>{});
+}
 function renderCards(){
  const host=$("studyFlashcardList");if(!host)return;host.replaceChildren();
  const now=Date.now(),due=model.cards.filter(c=>!c.dueAt||c.dueAt<=now);
@@ -144,7 +170,7 @@ function render(){
  }
  if($("studyBionic"))$("studyBionic").checked=!!model.bionic;
  if($("studyLineGuide"))$("studyLineGuide").checked=!!model.lineGuide;
- timerDisplay();drawWeek();renderCards();renderReading();renderMap();
+ timerDisplay();drawWeek();renderCards();renderAgenda();renderReading();renderMap();
  const last=model.lastProgressAt||Date.now();
  const nudge=$("studyNoProgressStatus");
  if(nudge)nudge.textContent=Date.now()-last>=3*3600000?
@@ -188,6 +214,16 @@ function initialize(){
  $("studyReadingTheme")?.addEventListener("change",event=>setReadingPreference("theme",event.target.value));
  $("studyBionic")?.addEventListener("change",event=>setReadingPreference("bionic",event.target.checked));
  $("studyLineGuide")?.addEventListener("change",event=>setReadingPreference("lineGuide",event.target.checked));
+ $("studyAgendaForm")?.addEventListener("submit",event=>{
+  event.preventDefault();if(!isActive())return;
+  const subject=P.clean($("studyAgendaSubject").value,90),date=$("studyAgendaDate").value;
+  const at=new Date(date).getTime();let minutes;
+  try{minutes=P.durationMinutes($("studyAgendaMinutes").value);}catch(e){toast(e.message);return;}
+  if(!subject||!Number.isFinite(at)||at<Date.now()+10000||at>Date.now()+365*86400000){toast("Elegí una materia y una fecha futura válida (máximo un año).");return;}
+  if(model.agenda.length>=150){toast("Máximo 150 sesiones agendadas.");return;}
+  const agenda=[...model.agenda,{id:crypto.randomUUID(),subject,at,minutes,notified:0}].sort((a,b)=>a.at-b.at);
+  void save({...model,agenda}).then(()=>toast("Sesión agendada. Los avisos aparecen mientras Robotito esté abierto.")).catch(()=>toast("No se pudo guardar la sesión."));
+ });
  $("studyReadingText")?.addEventListener("input",()=>{
   model={...model,readingText:$("studyReadingText").value.slice(0,12000)};
   renderReading();renderMap();clearTimeout(saveReadingTimeout);
@@ -199,6 +235,7 @@ function initialize(){
   render();
  });
  root.addEventListener("pagehide",()=>{pauseTimer();stopTicker();});
+ agendaTicker=setInterval(checkAgenda,30000);
  root.addEventListener("robotito:memoryscopechange",load);
  root.addEventListener("robotito:memoryscopeready",load);
  load();
