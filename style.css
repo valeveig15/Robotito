@@ -3413,3 +3413,18 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-focus-mode .world-scene{transition:none}
 @media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
 @media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+/* P39–P40: explicitly local reading circle and aspect rating controls */
+.reading-circle-form,.reading-rating-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.reading-circle-form label,.reading-rating-form label{display:grid;gap:4px;min-width:0;font-size:12px;font-weight:750}
+.reading-circle-form :is(input,textarea),.reading-rating-form :is(input,select){width:100%;min-width:0;min-height:43px;font-size:16px}
+.reading-circle-form button,.reading-rating-form button{min-height:44px;grid-column:1/-1}
+.reading-circle-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.reading-circle-actions :is(button,.file-label){flex:1 1 160px;min-height:44px}
+.reading-club{padding:12px;margin:10px 0;border:1px solid #d2e8df;border-radius:12px;background:#f6fffb}
+.reading-club p{margin:5px 0;overflow-wrap:anywhere}
+.reading-club button{min-height:38px}
+#readingRatingsList p{padding:8px;margin:5px 0;border-left:4px solid #7fbcac;background:#f7faf9;border-radius:6px}
+#readingDrawResult{font-weight:750;color:#466a5a}
+#readingStatus{min-height:18px;font-size:12px;color:#6d646c}
+@media(max-width:560px){.reading-circle-form,.reading-rating-form{grid-template-columns:1fr}}
