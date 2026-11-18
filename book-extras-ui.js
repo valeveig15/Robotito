@@ -100,7 +100,7 @@ function attachDescriptions(results){
   stop.addEventListener("click",stopReading);
   const save=document.createElement("button");save.type="button";save.textContent="＋ "+t("save");
   save.addEventListener("click",()=>{if(addBook(book)){save.disabled=true;save.textContent=t("saved");}});
-  const attribution=document.createElement("small");attribution.textContent=t("source");
+  const attribution=document.createElement("small");attribution.textContent=results[index]?.owned?(lang()==="en"?"Source: your personal library":"Fuente: texto de tu biblioteca personal"):t("source");
   wrapper.append(details,translation,translateButton,play,stop,save,attribution);
   container.append(wrapper);
  });
