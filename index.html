@@ -70,6 +70,8 @@
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
   <script defer src="study-tools-policy.js?v=20261118-p60-p75"></script>
   <script defer src="study-tools-ui.js?v=20261118-p60-p75"></script>
+  <script defer src="class-markers-policy.js?v=20261118-p76-main"></script>
+  <script defer src="class-markers-ui.js?v=20261118-p76-main"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -152,6 +154,8 @@
     <div class="top-actions">
       <span id="clock" class="clock"></span>
       <button id="startBtn" class="primary" type="button" data-ui-copy=Despertar%20sentidos>Despertar sentidos</button>
+      <button id="classModeQuickAccess" class="class-mode-shortcut" type="button" aria-controls="tab-class">🎓 Modo Clase</button>
+      <span id="classModeIndicator" role="status" aria-live="polite" hidden></span>
       <button id="changeAvatarBtn" type="button" aria-haspopup="dialog" data-i18n="changeAvatarAction">Cambiar avatar</button>
       <label class="quick-language-label" for="quickLanguageSelect"><span data-i18n="quickLanguageAction">Idioma</span>
         <select id="quickLanguageSelect" aria-label="Cambiar idioma" data-i18n-aria-label="quickLanguageAction">
@@ -541,6 +545,22 @@
             <button id="stopClassBtn" type="button" data-i18n="uiStopClass">■ Terminar clase</button>
           </div>
 
+          <div class="class-marker-tools">
+            <h3>🏷️ Marcadores de la clase</h3>
+            <p class="muted">Marcá un momento de la clase o de una grabación que estés reproduciendo. Cada marcador guarda el tiempo aproximado y una nota solo en tu perfil.</p>
+            <div class="class-marker-form">
+              <label>Color
+                <select id="classMarkerColor">
+                  <option value="yellow">🟡 Amarillo</option><option value="green">🟢 Verde</option>
+                  <option value="blue">🔵 Azul</option><option value="pink">🩷 Rosa</option>
+                </select>
+              </label>
+              <label>Nota <input id="classMarkerNote" type="text" maxlength="240" placeholder="Ej. Fórmula importante" /></label>
+              <button id="classMarkerAdd" type="button">Marcar momento</button>
+            </div>
+            <p id="classMarkerStatus" class="mini-status" role="status"></p>
+            <div id="classMarkerList" aria-label="Marcadores de la clase"></div>
+          </div>
           <div class="speaker-override">
             <span class="muted" data-i18n="uiClassSpeakerHint">Robotito intenta reconocer la voz automáticamente. Si se equivoca, podés corregir quién habló en cada línea o marcar de antemano quién va a hablar.</span>
             <div class="speaker-training-actions">
