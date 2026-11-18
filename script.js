@@ -6477,6 +6477,9 @@ async function init(){
   await prepareLegacyMemoryIds().catch(e=>console.warn("Memory legacy IDs",e));
   await window.ROBOTITO_MEMORY?.init?.({state,resetIdentity:()=>{stopSenses();state.currentPerson=null;state.currentVoicePerson=null;},refresh:()=>{renderMemories();renderTasks();updateLibraryStats();renderClassTranscript();window.ROBOTITO_CLASS_ORGANIZER?.render?.();window.ROBOTITO_CLASS_ORGANIZER?.renderAcademicMaterials?.();window.ROBOTITO_CLASS_AUDIO?.render?.();}});
   bindUI();
+  window.ROBOTITO_CLASS_MARKERS?.init?.({
+    classInfo:()=>({active:state.classMode,sessionId:state.classSessionId,startedAt:state.classStartedAt})
+  });
   // Browser controls are not interactive until migrations and listener wiring finish.
   document.documentElement.dataset.robotitoUiReady="true";
   bindPandaReferenceViews();
