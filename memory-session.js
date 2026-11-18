@@ -16,7 +16,8 @@ function readDeviceOwner(){
 function setDeviceConsent(consent){
  if(consent){
   try{
-   const id=readDeviceOwner()||"device:"+crypto.randomUUID();
+   const stored=localStorage.getItem(DEVICE_ID);
+   const id=readDeviceOwner()||(/^device:[a-f0-9-]{36}$/i.test(stored||"")?stored:null)||"device:"+crypto.randomUUID();
    localStorage.setItem(DEVICE_ID,id);
    localStorage.setItem(DEVICE_CONSENT,"yes");
    deviceOwner=id;
