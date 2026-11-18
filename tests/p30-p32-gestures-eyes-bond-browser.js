@@ -31,7 +31,8 @@ runBrowserTest("p30-p32-gestures-eyes-bond",async test=>{
  });
  assert.equal(pet.mood,"happy");
  assert.ok(pet.score>=pet.prev,"Approved artwork click should pet exactly once");
- await page.locator("#changeAvatarBtn").click();
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
  await page.locator('#avatarChoices [data-avatar-id="cat"]').click();
  const generic=await page.evaluate(()=>{
   const before=state.moodRevision;
@@ -41,7 +42,8 @@ runBrowserTest("p30-p32-gestures-eyes-bond",async test=>{
  assert.equal(generic.mood,"happy");
  assert.equal(generic.after,1,"Nonreference avatar click should invoke one petting reaction");
  test.phase("blink-sleep-and-race-cancellation");
- await page.locator("#changeAvatarBtn").click();
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
  await page.locator('#avatarChoices [data-avatar-id="panda"]').click();
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR?.current?.id==="panda");
  const eye=await page.evaluate(async()=>{
