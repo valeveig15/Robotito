@@ -3413,3 +3413,39 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 .robotito-focus-mode .world-scene{transition:none}
 @media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
 @media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+/* P42 — local weather effect only after a verified Open-Meteo response */
+.weather-scene-badge{
+ position:absolute;right:12px;top:14px;z-index:18;pointer-events:none;
+ padding:7px 12px;max-width:45%;border-radius:999px;
+ background:rgba(245,253,250,.92);border:1px solid rgba(81,125,113,.2);
+ box-shadow:0 4px 16px rgba(35,54,59,.12);color:#28534b;
+ font-size:12px;font-weight:850;line-height:1.3;text-align:center;
+}
+.weather-scene-badge[hidden]{display:none!important}
+#world[class*="weather-"] .world-scene{transition:filter .35s ease}
+#world.weather-clouds .world-scene{filter:saturate(.89)}
+#world.weather-fog .world-scene{filter:saturate(.72) contrast(.92)}
+#world.weather-storm .world-scene{filter:brightness(.88) saturate(.75)}
+#world.weather-clear .world-scene{filter:saturate(1.06)}
+#world:is(.weather-drizzle,.weather-rain,.weather-snow,.weather-storm) .world-scene::after{
+ content:"";position:absolute;inset:0;z-index:12;pointer-events:none;opacity:.56;
+ background-repeat:repeat;background-size:120px 120px;
+}
+#world:is(.weather-drizzle,.weather-rain,.weather-storm) .world-scene::after{
+ background-image:repeating-linear-gradient(105deg,transparent 0 22px,rgba(147,202,223,.45) 23px 24px,transparent 25px 47px);
+ animation:weatherSceneRain .95s linear infinite;
+}
+#world.weather-drizzle .world-scene::after{opacity:.25;animation-duration:1.6s}
+#world.weather-snow .world-scene::after{
+ background-image:radial-gradient(circle,#fff 2px,transparent 3px),radial-gradient(circle,#e9f6ff 2px,transparent 4px);
+ background-position:0 0,47px 68px;background-size:93px 89px;animation:weatherSceneSnow 6s linear infinite;
+}
+@keyframes weatherSceneRain{to{background-position:-35px 120px}}
+@keyframes weatherSceneSnow{to{background-position:40px 120px,85px 165px}}
+@media(prefers-reduced-motion:reduce){
+ #world[class*="weather-"] .world-scene{transition:none}
+ #world:is(.weather-drizzle,.weather-rain,.weather-storm,.weather-snow) .world-scene::after{animation:none}
+}
+.honest-question-count{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:9px 12px;margin:10px 0;border-radius:10px;border:1px solid #c9ded6;background:#f2faf6;color:#426457;font-size:12px}
+.honest-question-count strong{font-size:15px}

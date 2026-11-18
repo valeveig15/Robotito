@@ -185,8 +185,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **39.** Clubes de lectura y valoraciones por aspectos — POR AUDITAR
 - [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — POR AUDITAR
 - [ ] **41.** Reproducción de música por tema, artista, banda o género — POR AUDITAR
-- [ ] **42.** Escenario de clima adaptado a las condiciones — POR AUDITAR
-- [ ] **43.** Panel de preguntas, feedback y contador honesto — POR AUDITAR
+- [ ] **42.** Escenario de clima adaptado a las condiciones — SOFTWARE PARCIAL (clima visual desde Open-Meteo tras solicitud; falta validación física); ver [P42-P43-STATUS.md](P42-P43-STATUS.md).
+- [ ] **43.** Panel de preguntas, feedback y contador honesto — SOFTWARE PARCIAL (contador local por pestaña y feedback ya existente; falta aceptación de idiomas y pantalla); ver [P42-P43-STATUS.md](P42-P43-STATUS.md).
 - [ ] **44.** Modo foto/captura de pantalla con reacción simpática — POR AUDITAR
 - [ ] **45.** Analítica y reportes con consentimiento explícito — POR AUDITAR
 - [ ] **46.** Integración final, rendimiento, privacidad y regresión — POR AUDITAR
