@@ -6490,7 +6490,9 @@ async function init(){
     getBooks:()=>state.library,
     saveBooks:books=>{state.library=books;save(KEYS.goodreads,books);updateLibraryStats();},
     owner:()=>window.ROBOTITO_MEMORY?.owner?.(),
-    language:()=>state.languageMode||"es"
+    language:()=>state.languageMode||"es",
+    speak:(text,language)=>speakResponse(text,language,{preview:true}),
+    stopSpeech:()=>stopSpeaking()
   });
   $("#tasksSheetUrl").value=state.tasksSheetUrl;
   $("#tasksSheetGid").value=state.tasksSheetGid;
