@@ -7,7 +7,7 @@
   const labels={
     es:"Vos",en:"You",pt:"Você",fr:"Vous",it:"Tu",de:"Du"
   };
-  let activeOwner="local",root=null;
+  let activeOwner="local",root=null,viewRevision=0;
   function ensureRoot(){root=root||document.getElementById("typedChatHistory");return root;}
   function record(owner){
     const key=String(owner||"local");
@@ -47,9 +47,28 @@
     target.replaceChildren(frag);
     if(wasBottom)target.scrollTop=target.scrollHeight;
   }
+  async function restore(owner,revision){
+    const key=ownerOf(owner),storage=window.ROBOTITO_STORE;
+    if(!storage?.queryRecords||storage.isEphemeral?.(key))return;
+    try{
+      const rows=await storage.queryRecords({type:"conversations",owner:key,limit:MAX_MESSAGES});
+      if(revision!==viewRevision||key!==activeOwner)return;
+      const fromStore=rows.filter(row=>(row.data?.role==="user"||row.data?.role==="assistant")&&typeof row.data.text==="string")
+        .sort((a,b)=>a.timestamp-b.timestamp||String(a.id).localeCompare(String(b.id)))
+        .map(row=>({role:row.data.role,text:row.data.text.slice(0,6000),at:row.timestamp}));
+      // Do not discard messages received while IndexedDB was loading.
+      const live=record(key);
+      const signatures=new Set(fromStore.map(row=>row.role+"\\u0000"+row.text));
+      for(const item of live)if(!signatures.has(item.role+"\\u0000"+item.text))fromStore.push(item);
+      messagesByOwner.set(key,fromStore.slice(-MAX_MESSAGES));
+      render();
+    }catch(error){console.warn("conversation restore",error);}
+  }
   function select(owner){
     activeOwner=ownerOf(owner);
+    const revision=++viewRevision;
     render();
+    void restore(activeOwner,revision);
   }
   function push(role,text,owner){
     const clean=String(text||"").trim();
@@ -57,7 +76,7 @@
     const key=ownerOf(owner),history=record(key);
     const last=history[history.length-1];
     if(role==="assistant"&&last?.role===role&&last.text===clean)return;
-    history.push({role,text:clean.slice(0,6000)});
+    history.push({role,text:clean.slice(0,6000),at:Date.now()});
     if(history.length>MAX_MESSAGES)history.splice(0,history.length-MAX_MESSAGES);
     if(key===activeOwner)render();
   }
@@ -80,8 +99,8 @@
     onTurn:(text,owner)=>push("user",text,owner),
     onReply:(text,owner)=>push("assistant",text,owner),
     onOwnerChange:select,
-    clear:()=>{messagesByOwner.delete(activeOwner);render();},
-    clearOwner:owner=>{messagesByOwner.delete(ownerOf(owner));if(ownerOf(owner)===activeOwner)render();},
+    clear:()=>{++viewRevision;messagesByOwner.delete(activeOwner);render();},
+    clearOwner:owner=>{if(ownerOf(owner)===activeOwner)++viewRevision;messagesByOwner.delete(ownerOf(owner));if(ownerOf(owner)===activeOwner)render();},
     get activeOwner(){return activeOwner;},
     get size(){return record(activeOwner).length;}
   };
