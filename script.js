@@ -909,7 +909,15 @@ function syncBatteryState({announce=true}={}){
   state.energy=level;
   state.batteryPreviousLevel=level;
 
-  const threshold=batteryAlertThreshold(previous,level);
+  let threshold=window.ROBOTITO_P33_P35.batteryThreshold(previous,level,state.batteryCharging);
+  try{
+    const last=sessionStorage.getItem("robotito.battery.alert-bucket.v1");
+    if(state.batteryCharging||level>50)sessionStorage.removeItem("robotito.battery.alert-bucket.v1");
+    else if(threshold){
+      if(previous===null&&last===String(threshold))threshold=null;
+      else sessionStorage.setItem("robotito.battery.alert-bucket.v1",String(threshold));
+    }
+  }catch(error){console.warn("battery alert state unavailable",error)}
   applyBatteryCriticalState();
   updateMeters();
   if(announce&&threshold)announceBatteryAlert(threshold);
@@ -5509,6 +5517,7 @@ async function enrollPerson(){
 }
 
 function checkBirthday(p){
+  if(window.ROBOTITO_BIRTHDAY){window.ROBOTITO_BIRTHDAY.check(p,{started:state.started,classMode:state.classMode});return;}
   if(!p.birthday)return;
   const now=new Date();
   const d=new Date(p.birthday+"T12:00:00");
@@ -5516,6 +5525,7 @@ function checkBirthday(p){
 }
 
 function birthdayParty(name){
+  if(window.ROBOTITO_BIRTHDAY){window.ROBOTITO_BIRTHDAY.celebrate(name);return;}
   uiSet($("#birthdayText"),"¡Feliz cumpleaños, {name}! 🎉",{name});
   $("#birthdayScene").classList.remove("hidden");
   setMood("happy","Robotito reconoció a alguien que cumple años.");
@@ -5648,6 +5658,7 @@ function hungerTick(){
 }
 
 function inactivityTick(){
+  document.body.classList.toggle("robotito-low-power",!!state.nightSleep);
   if(state.nightSleep){
     state.sleeping=true;
     robot.classList.add("sleeping");
@@ -5655,6 +5666,7 @@ function inactivityTick(){
     return;
   }
   const quietFor=(Date.now()-Math.max(state.lastSeenAt,state.lastHeardAt))/1000;
+  document.body.classList.toggle("robotito-low-power",quietFor>150&&!state.classMode);
 
   if(state.classMode){
     state.sleeping=false;
