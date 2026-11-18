@@ -182,8 +182,8 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **36.** Simulación de al menos 50 perfiles lectores — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **37.** Lectura y traducción de descripciones de libros — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
-- [ ] **39.** Clubes de lectura y valoraciones por aspectos — POR AUDITAR
-- [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — POR AUDITAR
+- [ ] **39.** Clubes de lectura y valoraciones por aspectos — SOFTWARE PARCIAL (clubes locales y exportación/importación consentida, valoraciones por cinco aspectos; falta colaboración real multiusuario y validación física); ver [P39-P40-STATUS.md](P39-P40-STATUS.md).
+- [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — SOFTWARE IMPLEMENTADO (sorteo justo entre pendientes y broma solicitada; falta aceptación física); ver [P39-P40-STATUS.md](P39-P40-STATUS.md).
 - [ ] **41.** Reproducción de música por tema, artista, banda o género — POR AUDITAR
 - [ ] **42.** Escenario de clima adaptado a las condiciones — POR AUDITAR
 - [ ] **43.** Panel de preguntas, feedback y contador honesto — POR AUDITAR
