@@ -29,7 +29,8 @@ runBrowserTest("p29-species-self",async test=>{
  await page.locator("#robotitoTextSend").click();
  await page.waitForFunction(()=>Array.from(document.querySelectorAll(".typed-chat-assistant")).some(n=>/insectos/i.test(n.textContent)),null,{timeout:12000});
  test.phase("avatar-change-swaps-knowledge-without-losing-conversation");
- await page.locator("#changeAvatarBtn").click();
+ if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
+  await page.locator("#changeAvatarBtn").click();
  await page.locator('#avatarChoices [data-avatar-id="panda"]').click();
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR?.current?.id==="panda");
  assert.equal(await page.evaluate(()=>window.ROBOTITO_SPECIES_FACTS.describe("¿Qué comes?",{
@@ -40,6 +41,7 @@ runBrowserTest("p29-species-self",async test=>{
  assert.equal(await page.locator('[data-action="highfive"]').count(),1);
  test.phase("six-language-self-answers");
  for(const lang of ["es","en","pt","fr","it","de"]){
+  if(await page.locator("#settingsPanel").isHidden())await page.locator("#settingsToggle").click();
   await page.locator("#quickLanguageSelect").selectOption(lang);
   const result=await page.evaluate(lang=>{
    const id=state.avatar,name=avatarName(avatarById(id),lang);
@@ -48,6 +50,7 @@ runBrowserTest("p29-species-self",async test=>{
   assert.ok(result.length>24,lang+" food response");
   assert.ok(!result.includes("{food}"),lang+" no missing placeholders");
  }
+ await page.locator("#settingsClose").click();
  test.phase("mobile-scene-does-not-cover-input");
  await page.setViewportSize({width:360,height:750});
  await page.locator("#robotitoTextInput").scrollIntoViewIfNeeded();
