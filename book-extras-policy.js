@@ -34,6 +34,7 @@ function profiles(count=60){
  if(!Number.isInteger(count)||count<50||count>1000)throw Error("At least 50 distinct simulated reader profiles required");
  return Array.from({length:count},(_,i)=>({
   id:"synthetic-reader-"+String(i+1).padStart(3,"0"),
+  hasGoodreads:i>=40, // exactly 40 of 60 do not require an imported Goodreads account
   interest:themes[i%themes.length],
   secondInterest:themes[(i*3+2)%themes.length],
   avoid:dislikes[(Math.floor(i/themes.length)+i)%dislikes.length],
@@ -61,7 +62,44 @@ function simulate(catalog,readers=profiles()){
    top:scored[0]?.book.title||null,score:scored[0]?.score??null};
  });
 }
-const api=Object.freeze({fold,isbn,uniqueKey,shelves,categorize,profiles,rank,simulate});
+
+/* P36: rules are applied BEFORE scoring, not merely a penalty that could
+   recommend a rejected book when the whole catalogue is unsuitable. */
+function selectRecommendations(catalog,{profile={},readTitles=[],ownedTitles=[],excludeRead=true,
+ onlyOwned=false,lastTitle="",requireEvidence="",limit=3,scoreCandidate=rank}={}){
+ if(!Array.isArray(catalog))throw new TypeError("Catalog must be an array");
+ if(!Number.isInteger(limit)||limit<1||limit>20)throw new RangeError("Invalid recommendation limit");
+ const known=new Set(),read=new Set([...readTitles].map(fold)),owned=new Set([...ownedTitles].map(fold));
+ const negatives=[...(profile.negative||[]),profile.avoid].filter(Boolean).map(fold).filter(Boolean);
+ const eligible=[];
+ for(const book of catalog){
+  if(!book||!String(book.title||book.Title||"").trim())continue;
+  const title=String(book.title||book.Title),key=uniqueKey(book),titleKey=fold(title);
+  if(known.has(key))continue;known.add(key);
+  if(excludeRead&&(read.has(titleKey)||read.has(key)))continue;
+  if(onlyOwned&&!(owned.has(titleKey)||owned.has(key)))continue;
+  const searchable=fold([title,(book.authors||[]).join(" "),(book.categories||[]).join(" "),book.description||""].join(" "));
+  if(negatives.some(word=>searchable.includes(word)))continue;
+  if(requireEvidence==="cover"&&!/^https:\/\//i.test(String(book.thumbnail||"")))continue;
+  if(requireEvidence==="rating"&&!(typeof book.averageRating==="number"&&Number.isFinite(book.averageRating)&&book.averageRating>=0&&book.averageRating<=5))continue;
+  if(requireEvidence==="reviews"&&!(Array.isArray(book.attributedReviews)&&book.attributedReviews.some(row=>row&&typeof row.author==="string"&&row.author.trim()&&typeof row.text==="string"&&row.text.trim())))continue;
+  if(requireEvidence==="author"&&!(book.authors||[]).length)continue;
+  if(requireEvidence==="saga"&&!String(book.series||"").trim())continue;
+  const raw=scoreCandidate(book,profile);
+  const score=typeof raw==="number"?raw:raw?.score;
+  if(!Number.isFinite(score))continue;
+  eligible.push({book,score,matched:Array.isArray(raw?.matched)?raw.matched:[],owned:onlyOwned});
+ }
+ eligible.sort((a,b)=>b.score-a.score||fold(a.book.title||a.book.Title).localeCompare(fold(b.book.title||b.book.Title)));
+ const prior=fold(lastTitle);
+ if(prior&&eligible.length>1){
+  const alternatives=eligible.filter(x=>fold(x.book.title||x.book.Title)!==prior);
+  if(alternatives.length)eligible.splice(0,eligible.length,...alternatives,...eligible.filter(x=>fold(x.book.title||x.book.Title)===prior));
+ }
+ return eligible.slice(0,limit);
+}
+
+const api=Object.freeze({fold,isbn,uniqueKey,shelves,categorize,profiles,rank,simulate,selectRecommendations});
 root.ROBOTITO_BOOK_POLICY=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
