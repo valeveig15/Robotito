@@ -43,4 +43,24 @@ assert.equal(map.topic,"Membrana celular");
 assert.equal(map.branches.length,3);
 assert.equal(map.branches[0].label,"Fosfolípidos");
 assert.equal(P.mindMap("").branches.length,0);
-console.log("P60/P61/P62/P67/P69/P70/P73/P75: 27 assertions passed");
+
+// P61: 2 exercises in 60 min + 1 in 120 min = 180/3 = 60 min per exercise.
+const work=[{subject:"Física",unitType:"exercise",difficulty:"normal",activeMinutes:60,units:2},
+ {subject:"Física",unitType:"exercise",difficulty:"normal",activeMinutes:120,units:1}];
+const estimate=P.estimateWorkload(work,{subject:"Física",remainingUnits:10,manualMinutesPerUnit:30});
+assert.equal(estimate.source,"observed");
+assert.equal(estimate.minutesPerUnit,60);
+assert.equal(estimate.estimatedMinutes,600);
+assert.equal(estimate.samples,2);
+assert.deepEqual(estimate.rangeMinutes,[300,1200]);
+assert.equal(P.estimateWorkload([...work,{subject:"Química",unitType:"exercise",activeMinutes:100,units:1}],{subject:"Física",remainingUnits:3}).estimatedMinutes,180);
+assert.equal(P.estimateWorkload([...work,{subject:"Física",unitType:"page",activeMinutes:1000,units:1}],{subject:"Física",remainingUnits:3}).estimatedMinutes,180);
+assert.equal(P.estimateWorkload([...work,{subject:"Física",unitType:"exercise",difficulty:"hard",activeMinutes:600,units:1}],{subject:"Física",remainingUnits:3}).estimatedMinutes,180);
+assert.equal(P.estimateWorkload([...work,{subject:"Física",unitType:"exercise",activeMinutes:10,units:0},{subject:"Física",unitType:"exercise",activeMinutes:1,units:1,atypical:true}],{subject:"Física",remainingUnits:3}).estimatedMinutes,180);
+assert.equal(P.estimateWorkload([...work,{subject:"Física",unitType:"exercise",minutes:70,pausedMinutes:20,units:1}],{subject:"Física",remainingUnits:4}).estimatedMinutes,230);
+assert.equal(P.estimateWorkload([],{subject:"Física",remainingUnits:4,manualMinutesPerUnit:25}).estimatedMinutes,100);
+assert.equal(P.estimateWorkload(work,{subject:"Física",remainingUnits:4,manualMinutesPerUnit:25,useManual:true}).estimatedMinutes,100);
+assert.equal(P.estimateWorkload([...work,{subject:"Física",unitType:"exercise",activeMinutes:30,units:1}],{subject:"Física",remainingUnits:4}).estimatedMinutes,210);
+assert.throws(()=>P.estimateWorkload(work,{subject:"Física",remainingUnits:0}),RangeError);
+
+console.log("P60-P75 and P61 aggregate productivity checks passed");

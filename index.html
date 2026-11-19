@@ -954,13 +954,18 @@
             <h3>Registrar una sesión terminada</h3>
             <div class="study-tool-grid">
               <label>Materia <input id="studySessionSubject" maxlength="90" placeholder="Física" /></label>
-              <label>Minutos reales <input id="studyMinutesDone" type="number" min="1" max="1440" value="25" /></label>
+              <label>Minutos totales <input id="studyMinutesDone" type="number" min="1" max="1440" value="25" /></label>
+              <label>Pausas (minutos) <input id="studyPausedMinutes" type="number" min="0" max="1439" value="0" /></label>
+              <label>Unidades completadas (0 si no corresponde) <input id="studyUnitsDone" type="number" min="0" max="10000" value="0" /></label>
+              <label>Tipo de unidad <select id="studyUnitKind"><option value="exercise">Ejercicios</option><option value="page">Páginas</option><option value="topic">Temas</option><option value="task">Tareas</option></select></label>
+              <label>Dificultad <select id="studyDifficulty"><option value="normal">Normal</option><option value="easy">Fácil</option><option value="hard">Difícil</option></select></label>
             </div>
             <button type="button" id="studyRecordSession">Guardar sesión</button>
             <h3>Estimar el próximo estudio</h3>
-            <p class="muted">Utiliza tu ajuste manual hasta tener tres sesiones reales por materia; después propone la mediana observada, no una duración inventada.</p>
+            <p class="muted">Calcula minutos activos totales divididos entre unidades completadas de la misma materia, tipo y dificultad. Las pausas no cuentan. Cuando no hay historial compatible, utiliza tu valor manual.</p>
             <div class="study-tool-actions">
-              <label>Minutos previstos <input id="studyEstimateManual" type="number" min="1" max="1440" value="30" /></label>
+              <label>Minutos manuales por unidad <input id="studyEstimateManual" type="number" min="1" max="1440" value="30" /></label>
+              <label>Unidades pendientes <input id="studyRemainingUnits" type="number" min="1" max="10000" value="5" /></label>
               <button type="button" id="studyEstimateBtn">Calcular estimación</button>
             </div>
             <p id="studyEstimateResult" role="status"></p>
