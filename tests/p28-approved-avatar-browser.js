@@ -117,9 +117,11 @@ runBrowserTest("p28-approved-avatars",async test=>{
     noseBottom:nose?.getBoundingClientRect().bottom,
     mouthTop:mouth?.getBoundingClientRect().top,
     stem:!!r.avatar.querySelector('path[d="M354 316v21"]'),
+    shadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#shadow")),
     fit:!!r.fitGroup?.getAttribute("transform")};
   });
   assert.ok(geometry.fit,"Original avatar must have a dedicated framing group");
+  assert.equal(geometry.shadowFollowsFeet,true,"Contact shadow must move with the feet");
   assert.ok(geometry.factor>0&&geometry.factor<=1,"Never enlarge an already large character");
   assert.ok(geometry.wrappers>=6&&geometry.stem,"All mouth moods and philtrum must be aligned");
   assert.ok(geometry.mouthTop>geometry.noseBottom,
