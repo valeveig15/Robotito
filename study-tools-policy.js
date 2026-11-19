@@ -40,6 +40,39 @@ function estimateMinutes(sessions,subject,fallback=30){
  const median=(sorted[Math.floor((sorted.length-1)/2)]+sorted[Math.floor(sorted.length/2)])/2;
  return {minutes:Math.round(clamp(median,1,MAX_MINUTES)),samples:selected.length,source:"observed"};
 }
+
+/* P61: estimate from the total ACTIVE time divided by completed work units.
+   Never average per-session averages, mix subjects/unit types/difficulty, or count pauses. */
+const WORK_UNITS=Object.freeze(["exercise","page","topic","task"]);
+function estimateWorkload(sessions,{subject="",unitType="exercise",difficulty="normal",remainingUnits=1,manualMinutesPerUnit=30,useManual=false}={}){
+ const subjectKey=clean(subject,90).toLocaleLowerCase("es");
+ if(!WORK_UNITS.includes(unitType))throw new RangeError("Invalid work unit");
+ if(!["easy","normal","hard"].includes(difficulty))throw new RangeError("Invalid difficulty");
+ const remaining=Number(remainingUnits),manual=Number(manualMinutesPerUnit);
+ if(!Number.isInteger(remaining)||remaining<1||remaining>10000)throw new RangeError("Invalid remaining unit count");
+ if(!Number.isFinite(manual)||manual<=0||manual>MAX_MINUTES)throw new RangeError("Invalid manual rate");
+ const eligible=[];
+ for(const row of (Array.isArray(sessions)?sessions:[]).slice(-3000)){
+  if(clean(row?.subject,90).toLocaleLowerCase("es")!==subjectKey ||
+     row?.unitType!==unitType || (row?.difficulty||"normal")!==difficulty ||
+     row?.atypical===true || row?.excluded===true)continue;
+  const units=Number(row.units),active=Number(row.activeMinutes??(Number(row.minutes)-Number(row.pausedMinutes||0)));
+  if(!Number.isInteger(units)||units<1||units>10000 || !Number.isFinite(active)||active<=0||active>MAX_MINUTES)continue;
+  eligible.push({units,active});
+ }
+ const units=eligible.reduce((sum,x)=>sum+x.units,0);
+ const activeMinutes=eligible.reduce((sum,x)=>sum+x.active,0);
+ const observed=units>0&&useManual!==true;
+ const minutesPerUnit=observed?activeMinutes/units:manual;
+ const estimatedMinutes=Math.ceil(minutesPerUnit*remaining);
+ const rates=eligible.map(x=>x.active/x.units);
+ const rangeMinutes=observed&&rates.length>=2?
+  [Math.ceil(Math.min(...rates)*remaining),Math.ceil(Math.max(...rates)*remaining)]:null;
+ return {source:observed?"observed":"manual",samples:eligible.length,units,activeMinutes,
+  minutesPerUnit,remainingUnits:remaining,estimatedMinutes,rangeMinutes,
+  limitedData:eligible.length<3};
+}
+
 function makeFlashcard(front,back,subject=""){
  const question=clean(front,400),answer=clean(back,1200),topic=clean(subject,90);
  if(!question||!answer)throw Error("Front and back are required");
@@ -68,6 +101,6 @@ function mindMap(text,{maxBranches=8}={}){
  const branches=lines.slice(1).filter(x=>x!==topic).slice(0,maxBranches).map((label,i)=>({id:i+1,label}));
  return {topic,branches,sourceLines:lines.length};
 }
-root.ROBOTITO_STUDY_POLICY=Object.freeze({clean,durationMinutes,formatClock,timerState,weeklyMinutes,weekStart,estimateMinutes,makeFlashcard,gradeCard,readingSegments,mindMap});
+root.ROBOTITO_STUDY_POLICY=Object.freeze({clean,durationMinutes,formatClock,timerState,weeklyMinutes,weekStart,estimateMinutes,estimateWorkload,makeFlashcard,gradeCard,readingSegments,mindMap});
 if(typeof module!=="undefined"&&module.exports)module.exports=root.ROBOTITO_STUDY_POLICY;
 })(typeof window!=="undefined"?window:globalThis);
