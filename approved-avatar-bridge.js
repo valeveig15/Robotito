@@ -18,7 +18,7 @@ const ACTIONS={
  introduce:"saludar",idle:"saludar",surprise:"saltar",poke:"saltar"
 };
 let requested=0,current=null,root=null,observer=null,speechTimer=null,blinkTimer=null;
-let pendingSync=false;
+let pendingSync=false,fitObserver=null;
 const cached=new Map(),path=id=>"assets/approved-avatars/"+REFS[id]+".fragment.html";
 function getRobot(){return document.getElementById("robotito");}
 function getWorld(){return document.getElementById("world");}
@@ -44,6 +44,7 @@ function ensureHost(){
 function reset(){
  ++requested;
  observer?.disconnect();observer=null;
+ fitObserver?.disconnect();fitObserver=null;
  clearTimeout(speechTimer);clearTimeout(blinkTimer);
  speechTimer=null;blinkTimer=null;current=null;pendingSync=false;
  getWorld()?.classList.remove("approved-art-world");
@@ -113,6 +114,41 @@ function sync(){
   prop.textContent=oldProp.textContent;
  }else prop?.remove();
 }
+
+const SVG_NS="http://www.w3.org/2000/svg";
+const APPROVED_BASE={width:700,height:635,footY:581,centerX:350,bodyHeight:465};
+function fitApprovedAvatar(){
+ if(!current?.fitGroup||!current.stage)return;
+ const bounds=current.stage.getBoundingClientRect(),w=bounds.width,h=bounds.height;
+ if(!(w>0&&h>0))return;
+ // Keep the complete original world: shrink only the oversized avatar.
+ // Wide screens previously caused xMidYMid slice to crop its feet and head.
+ const slice=Math.max(w/APPROVED_BASE.width,h/APPROVED_BASE.height);
+ const target=Math.min(390,h*.76);
+ const factor=Math.min(1,Math.max(.2,target/(APPROVED_BASE.bodyHeight*slice)));
+ const visibleBottom=(h-APPROVED_BASE.height*slice)/2+APPROVED_BASE.footY*slice;
+ const offsetY=(h-Math.min(26,h*.05)-visibleBottom)/slice;
+ current.fitGroup.setAttribute("transform",
+  "translate(0 "+offsetY.toFixed(3)+") translate(350 581) scale("+
+  factor.toFixed(4)+") translate(-350 -581)");
+ current.host.dataset.avatarFit=factor.toFixed(3);
+}
+// Wrap rather than CSS-transform mouth elements: speaking animations still work.
+function repairApprovedFace(avatar){
+ const groups=[...avatar.querySelectorAll('[id^="mouth-"]')]
+  .filter(el=>el.tagName.toLowerCase()==="g");
+ for(const item of groups){
+  const wrapper=document.createElementNS(SVG_NS,"g");
+  wrapper.setAttribute("data-robotito-mouth-placement","");
+  wrapper.setAttribute("transform","translate(0 12)");
+  item.parentNode.insertBefore(wrapper,item);
+  wrapper.appendChild(item);
+ }
+ const philtrum=avatar.querySelector('path[d="M354 316v10"]');
+ if(philtrum)philtrum.setAttribute("d","M354 316v21");
+ return groups.length;
+}
+
 function scheduleSync(){
  if(pendingSync)return;
  pendingSync=true;
@@ -125,6 +161,7 @@ async function activate(id,{mood="calm",language="es"}={}){
  }
  const host=ensureHost();if(!host)return false;
  observer?.disconnect();observer=null;
+ fitObserver?.disconnect();fitObserver=null;
  host.style.display="";
  // Keep the current avatar visible during async loading.
  try{
@@ -149,7 +186,18 @@ async function activate(id,{mood="calm",language="es"}={}){
   stage.setAttribute("aria-hidden","true");
   const robot=getRobot();
   host.setAttribute("aria-label",robot?.getAttribute("aria-label")||"Robotito");
-  current={id,host,shadow,stage,avatar,mood,language};
+  const fitGroup=document.createElementNS(SVG_NS,"g");
+  fitGroup.setAttribute("data-robotito-full-body-fit","");
+  avatar.parentNode.insertBefore(fitGroup,avatar);
+  fitGroup.appendChild(avatar);
+  const mouthCount=repairApprovedFace(avatar);
+  if(mouthCount<6)throw new Error("Approved avatar mouth shapes missing: "+id);
+  current={id,host,shadow,stage,avatar,fitGroup,mood,language};
+  fitApprovedAvatar();
+  if(typeof ResizeObserver!=="undefined"){
+   fitObserver=new ResizeObserver(fitApprovedAvatar);
+   fitObserver.observe(host);
+  }
   robot?.setAttribute("aria-hidden","true");
   getWorld()?.classList.add("approved-art-world");
   observer=new MutationObserver(scheduleSync);
