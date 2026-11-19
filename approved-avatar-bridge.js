@@ -191,8 +191,10 @@ async function activate(id,{mood="calm",language="es"}={}){
   avatar.parentNode.insertBefore(fitGroup,avatar);
   // Keep the original ground/contact shadow under the resized feet,
   // while its own jumping/walking animation remains independent.
-  const shadowShape=stage.querySelector("#shadow");
-  if(shadowShape?.parentNode===avatar.parentNode)fitGroup.appendChild(shadowShape);
+  for(const id of ["shadow","side-shadow-track","ground-front-contacts"]){
+   const part=stage.querySelector("#"+id);
+   if(part?.parentNode===avatar.parentNode)fitGroup.appendChild(part);
+  }
   fitGroup.appendChild(avatar);
   const mouthCount=repairApprovedFace(avatar);
   if(mouthCount<6)throw new Error("Approved avatar mouth shapes missing: "+id);
