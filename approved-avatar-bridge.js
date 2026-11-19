@@ -125,7 +125,7 @@ function fitApprovedAvatar(){
  // Wide screens previously caused xMidYMid slice to crop its feet and head.
  const slice=Math.max(w/APPROVED_BASE.width,h/APPROVED_BASE.height);
  const target=Math.min(390,h*.76);
- const factor=Math.min(1,Math.max(.2,target/(APPROVED_BASE.bodyHeight*slice)));
+ const factor=Math.min(1,Math.max(.05,target/(APPROVED_BASE.bodyHeight*slice)));
  const visibleBottom=(h-APPROVED_BASE.height*slice)/2+APPROVED_BASE.footY*slice;
  const offsetY=(h-Math.min(26,h*.05)-visibleBottom)/slice;
  current.fitGroup.setAttribute("transform",
