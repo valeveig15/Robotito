@@ -6073,42 +6073,35 @@ async function recommendBook(promptOverride=null){
       say("No necesitás Goodreads. Desmarcá Solo de mi biblioteca y te recomiendo opciones nuevas.");
       return;
     }
-    const ranked=state.library
-      .filter(book=>!exclude||(book["Exclusive Shelf"]||"").toLowerCase()!=="read")
-      .map(book=>{
-        const normalized={
-          title:book["Title"],authors:[book["Author"]],categories:String(book["Bookshelves"]||"").split(","),
-          description:book["My Review"]||"",language:book.language||"und"
-        };
-        const result=scoreBookCandidate(normalized,profile);
-        return {book:normalized,...result,owned:true};
-      })
-      .sort((a,b)=>b.score-a.score)
-      .slice(0,3);
-    if(ranked.length){
-      if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
-    showBookRecommendations(ranked,profile,prompt);
-      return;
-    }
+    const available=state.library.map(book=>({
+       title:book["Title"],authors:[book["Author"]],categories:String(book["Bookshelves"]||"").split(","),
+       description:book["My Review"]||"",language:book.language||"und"
+    }));
+    const ranked=window.ROBOTITO_BOOK_POLICY.selectRecommendations(available,{
+      profile,readTitles:[...readTitles],excludeRead:exclude,lastTitle:load(KEYS.lastBook,{})?.title||"",
+      scoreCandidate:book=>scoreBookCandidate(book,profile)
+    }).map(item=>({...item,owned:true}));
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
+    if(ranked.length)showBookRecommendations(ranked,profile,prompt);
+    else $("#bookResults").textContent="No hay libros elegibles en tu biblioteca para esas preferencias. Podés cambiar los filtros.";
+    return;
   }
 
   try{
-    let candidates=await fetchBookCandidates(profile);
-    if(exclude&&readTitles.size)candidates=candidates.filter(book=>!readTitles.has(window.ROBOTITO_P33_P35.normalizedTitle(book.title)));
-    let ranked=candidates
-      .map(book=>({book,...scoreBookCandidate(book,profile),owned:false}))
-      .sort((a,b)=>b.score-a.score)
-      .slice(0,3);
-
+    const candidates=await fetchBookCandidates(profile);
+    const ranked=window.ROBOTITO_BOOK_POLICY.selectRecommendations(candidates,{
+      profile,readTitles:[...readTitles],excludeRead:exclude,lastTitle:load(KEYS.lastBook,{})?.title||"",
+      scoreCandidate:book=>scoreBookCandidate(book,profile)
+    });
     if(!ranked.length)throw new Error("sin resultados");
     if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     showBookRecommendations(ranked,profile,prompt);
   }catch(error){
-    const ranked=LOCAL_BOOK_CATALOG
-      .filter(book=>!exclude||!readTitles.has(window.ROBOTITO_P33_P35.normalizedTitle(book.title)))
-      .map(book=>({book:{...book,language:"es"},...scoreBookCandidate(book,profile),owned:false}))
-      .sort((a,b)=>b.score-a.score)
-      .slice(0,3);
+    const ranked=window.ROBOTITO_BOOK_POLICY.selectRecommendations(
+      LOCAL_BOOK_CATALOG.map(book=>({...book,language:"es"})),{
+        profile,readTitles:[...readTitles],excludeRead:exclude,lastTitle:load(KEYS.lastBook,{})?.title||"",
+        scoreCandidate:book=>scoreBookCandidate(book,profile)
+      });
     if(ranked.length){
       if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
       showBookRecommendations(ranked,profile,prompt,true);
