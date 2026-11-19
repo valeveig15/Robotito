@@ -2,7 +2,7 @@
 
 ## Implementación de software
 - **60. Cronómetro y temporizador:** pantalla HH:MM:SS, iniciar/reanudar, pausar, reiniciar y progreso; sin solicitar permisos. Al ocultar página se pausa para evitar atribuir tiempo no observado.
-- **61. Estimación adaptativa:** estima la duración de una sesión por materia únicamente con **3 o más sesiones registradas** y calcula su mediana (hasta 12 registros recientes). Antes utiliza el tiempo manual del usuario, indicando el origen.
+- **61. Estimación adaptativa (incremento del 19/11):** registra minutos activos, pausas, unidades terminadas, tipo y dificultad; calcula **minutos activos totales / unidades totales**, sin promediar promedios de sesión. Distingue materias, muestra cantidad de registros y rango descriptivo cuando hay al menos dos observaciones; sin historial compatible usa un valor manual. El ejemplo 180 min / 3 ejercicios = 60 min por ejercicio queda probado. Todavía falta conexión plena con prioridades, calendario y ajustes por subconjuntos; el punto no tiene cierre formal.
 - **62. Escenarios y ajustes manuales:** el usuario ingresa su propia duración prevista y puede comparar con la estimación histórica. No se finge un plan predictivo basado en IA.
 - **63. Agenda de estudio:** sesiones con materia, fecha y duración; próximas sesiones y cancelación, guardadas en el ámbito del perfil.
 - **64. Avisos escalonados:** al faltar 60 minutos, 15 minutos y al comenzar, mostrados **solo en la pestaña abierta y visible**, nunca se promete un aviso con el navegador cerrado. Se omiten durante concentración.

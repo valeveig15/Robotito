@@ -176,17 +176,17 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **30.** Gestos y acciones — EN PROGRESO (gestos directos por voz y clic/tacto, control único para las seis acciones, alta preservación de «Chocar los cinco», sin «Abrazar» como acción independiente; pendiente prueba táctil física; ver [P30-STATUS.md](P30-STATUS.md)).
 - [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — EN PROGRESO (cancelación de parpadeos y sueños obsoletos, transición de párpados, coherencia con cinco SVG y reducción de movimiento; falta comprobación física visual; ver [P31-STATUS.md](P31-STATUS.md)).
 - [ ] **32.** Emociones visuales coherentes y vínculo personal — EN PROGRESO (16 estados visuales diferenciados, seis idiomas de diálogo emocional, recuperación por revisión/identidad, vínculo por perfil; falta calibración con participantes y dispositivos reales; ver [P32-STATUS.md](P32-STATUS.md)).
-- [ ] **33.** Batería real, avisos e inactividad — POR AUDITAR
-- [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — POR AUDITAR
-- [ ] **35.** Libros sin Goodreads y metadatos verificables — POR AUDITAR
+- [ ] **33.** Batería real, avisos e inactividad — SOFTWARE PARCIAL (batería real con avisos e inactividad visual; pruebas físicas pendientes); ver [P33-P35-STATUS.md](P33-P35-STATUS.md).
+- [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — SOFTWARE PARCIAL (cumpleaños en franjas horarias, melodía y regalo; validación de sonido y UI pendiente); ver [P33-P35-STATUS.md](P33-P35-STATUS.md).
+- [ ] **35.** Libros sin Goodreads y metadatos verificables — SOFTWARE PARCIAL (metadatos verificables y recomendaciones sin Goodreads; cobertura editorial pendiente); ver [P33-P35-STATUS.md](P33-P35-STATUS.md).
 - [ ] **36.** Simulación de al menos 50 perfiles lectores — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **37.** Lectura y traducción de descripciones de libros — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
 - [ ] **39.** Clubes de lectura y valoraciones por aspectos — SOFTWARE PARCIAL (clubes locales, valoraciones y exportación/importación; falta sincronización compartida real); ver [P39-P40-STATUS.md](P39-P40-STATUS.md).
 - [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — SOFTWARE PARCIAL (sorteo entre pendientes y broma a solicitud; aceptación física pendiente); ver [P39-P40-STATUS.md](P39-P40-STATUS.md).
 - [ ] **41.** Reproducción de música por tema, artista, banda o género — POR AUDITAR
-- [ ] **42.** Escenario de clima adaptado a las condiciones — POR AUDITAR
-- [ ] **43.** Panel de preguntas, feedback y contador honesto — POR AUDITAR
+- [ ] **42.** Escenario de clima adaptado a las condiciones — SOFTWARE PARCIAL (clima visual desde Open-Meteo tras solicitud; falta validación física); ver [P42-P43-STATUS.md](P42-P43-STATUS.md).
+- [ ] **43.** Panel de preguntas, feedback y contador honesto — SOFTWARE PARCIAL (contador local por pestaña y feedback ya existente; falta aceptación de idiomas y pantalla); ver [P42-P43-STATUS.md](P42-P43-STATUS.md).
 - [ ] **44.** Modo foto/captura de pantalla con reacción simpática — POR AUDITAR
 - [ ] **45.** Analítica y reportes con consentimiento explícito — POR AUDITAR
 - [ ] **46.** Integración final, rendimiento, privacidad y regresión — POR AUDITAR
@@ -194,7 +194,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **48.** Personalidad musical: rock and roll de Uruguay y Argentina — POR AUDITAR
 - [ ] **49.** Acceso web confiable y aprendizaje verificable de información pública — POR AUDITAR
 - [ ] **50.** Noticias del día: país del usuario, mundo y deduplicación semántica — POR AUDITAR
-- [ ] **51.** Reloj visual exacto, hora hablada y cuenta regresiva hasta otra hora — POR AUDITAR
+- [ ] **51.** Reloj visual exacto, hora hablada y cuenta regresiva hasta otra hora — SOFTWARE PARCIAL (visual, voz por acción explícita y cuenta regresiva local; falta verificación física y sincronización de hora; ver [P51-STATUS.md](P51-STATUS.md)).
 - [ ] **52.** Pruebas, cuestionarios y exámenes a partir de material cargado — POR AUDITAR
 - [ ] **53.** Migración incremental de los cinco avatares HTML aprobados — POR AUDITAR
 - [ ] **54.** Apuntes y punteos editables por clase, con historial — POR AUDITAR
@@ -219,12 +219,12 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **73.** Modo de lectura con inicio de palabras destacado — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **75.** Mapas mentales automáticos de apuntes extensos — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
-- [ ] **76.** Activación de Modo Clase muy visible y accesible — POR AUDITAR
-- [ ] **77.** Marcadores de colores durante clases grabadas — POR AUDITAR
-- [ ] **78.** Sincronización bidireccional entre audio y transcripción — POR AUDITAR
-- [ ] **79.** Minijuegos educativos interactivos basados en clases — POR AUDITAR
-- [ ] **80.** Progreso visual por integrantes en equipos y grupos de estudio — POR AUDITAR
-- [ ] **81.** Exámenes adaptativos por tema y carpeta de materia — POR AUDITAR
-- [ ] **82.** Trajes y ambientaciones para festividades — POR AUDITAR
+- [ ] **76.** Activación de Modo Clase muy visible y accesible — SOFTWARE PARCIAL (indicador visible, entrada directa, faltan pruebas físicas de accesibilidad); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **77.** Marcadores de colores durante clases grabadas — SOFTWARE PARCIAL (marcadores de 4 colores con tiempo y notas locales; validación real pendiente); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **78.** Sincronización bidireccional entre audio y transcripción — PARCIAL (saltos a audio desde marcadores; falta alineación real audio-transcripción); ver [P76-P78-STATUS.md](P76-P78-STATUS.md).
+- [ ] **79.** Minijuegos educativos interactivos basados en clases — SOFTWARE PARCIAL (juegos creados exclusivamente a partir de pares de apuntes; prueba humana pendiente); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
+- [ ] **80.** Progreso visual por integrantes en equipos y grupos de estudio — SOFTWARE PARCIAL (progreso de equipos local y manual, sin sincronización multiusuario); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
+- [ ] **81.** Exámenes adaptativos por tema y carpeta de materia — SOFTWARE PARCIAL (preguntas con respuesta literal y repetición adaptativa; no corrección semántica); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
+- [ ] **82.** Trajes y ambientaciones para festividades — SOFTWARE PARCIAL (ambientaciones opcionales; faltan trajes específicos por avatar); ver [P79-P82-STATUS.md](P79-P82-STATUS.md).
 
 > Marcar un casillero solo al cerrar todas las obligaciones y pruebas documentadas de ese punto. Registrar los PR de los incrementos dentro de su sección y no cambiar un estado sin evidencia.
