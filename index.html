@@ -70,8 +70,18 @@
   <script defer src="book-extras-ui.js?v=20261117-p36-p38"></script>
   <script defer src="study-tools-policy.js?v=20261118-p60-p75"></script>
   <script defer src="study-tools-ui.js?v=20261118-p60-p75"></script>
+  <script defer src="learning-games-policy.js?v=20261118-p79-p82"></script>
+  <script defer src="learning-games-ui.js?v=20261118-p79-p82"></script>
   <script defer src="reading-clubs-policy.js?v=20261118-p39-p40-main"></script>
   <script defer src="reading-clubs-ui.js?v=20261118-p39-p40-main"></script>
+  <script defer src="weather-scene-policy.js?v=20261118-weather-main"></script>
+  <script defer src="weather-scene-ui.js?v=20261118-weather-main"></script>
+  <script defer src="class-markers-policy.js?v=20261118-p76-main"></script>
+  <script defer src="class-markers-ui.js?v=20261118-p76-main"></script>
+  <script defer src="p33-p35-policy.js?v=20261118-p33-main"></script>
+  <script defer src="p34-birthday.js?v=20261118-p34-main"></script>
+  <script defer src="clock-countdown-policy.js?v=20261118-p51"></script>
+  <script defer src="clock-countdown-ui.js?v=20261118-p51"></script>
   <script defer src="script.js?v=20261116-p07-p28-recovery&p36-p38=1"></script>
   <script defer src="typed-chat-ui.js?v=20261116-p07"></script>
   <script defer src="object-tracker.js?v=20261115-p23"></script>
@@ -108,6 +118,7 @@
   </div>
 </div>
 
+<div class="birthday-shortcut"><button id="birthdayManualBtn" type="button" aria-label="Celebrar cumpleaños con Robotito" title="Celebrar cumpleaños">🎂</button></div>
 <details class="question-help-panel">
   <summary>
     <span aria-hidden="true">💬</span>
@@ -133,6 +144,7 @@
       <li data-i18n="uiAskQ14">¿Qué explicó la profesora sobre este tema?</li>
       <li data-i18n="uiAskQ15">Explicame paso a paso el ejercicio 4 de Física.</li>
     </ul>
+    <div class="honest-question-count" role="status"><strong><span id="honestQuestionCount">0</span> preguntas</strong><span id="honestQuestionScope">Preguntas procesadas en esta pestaña, no globalmente.</span></div>
     <div class="question-help-contact">
       <strong data-i18n="uiHelpContactTitle">¿Falta alguna pregunta o función?</strong>
       <p data-i18n="uiHelpContactText">También podés avisarme si algo no funciona bien o contarme qué te gustaría que Robotito hiciera o tuviera.</p>
@@ -154,6 +166,8 @@
     <div class="top-actions">
       <span id="clock" class="clock"></span>
       <button id="startBtn" class="primary" type="button" data-ui-copy=Despertar%20sentidos>Despertar sentidos</button>
+      <button id="classModeQuickAccess" class="class-mode-shortcut" type="button" aria-controls="tab-class">🎓 Modo Clase</button>
+      <span id="classModeIndicator" role="status" aria-live="polite" hidden></span>
       <button id="changeAvatarBtn" type="button" aria-haspopup="dialog" data-i18n="changeAvatarAction">Cambiar avatar</button>
       <label class="quick-language-label" for="quickLanguageSelect"><span data-i18n="quickLanguageAction">Idioma</span>
         <select id="quickLanguageSelect" aria-label="Cambiar idioma" data-i18n-aria-label="quickLanguageAction">
@@ -192,6 +206,7 @@
       <div id="groundShadow" class="ground-shadow"></div>
 
       <div id="speechBubble" class="speech-bubble hidden" role="status"></div>
+      <div id="weatherSceneBadge" class="weather-scene-badge" role="status" aria-live="polite" hidden></div>
 
       <div id="robotito" class="robotito mood-calm" role="img" aria-label="Robotito, panda virtual">
         <div class="mood-aura"></div>
@@ -356,9 +371,14 @@
         </div>
       </div>
 
-      <div id="birthdayScene" class="birthday-scene hidden">
+      <div id="birthdayScene" class="birthday-scene hidden" role="dialog" aria-label="Celebración de cumpleaños" aria-modal="false">
         <div class="cake">🎂</div>
-        <div id="birthdayText" class="birthday-text"></div>
+        <div id="birthdayText" class="birthday-text" aria-live="polite"></div>
+        <button id="birthdayGift" type="button" class="birthday-present" hidden>🎁 Es para ti</button>
+        <div class="birthday-buttons">
+          <button id="birthdaySong" type="button">♫ Reproducir melodía</button>
+          <button id="birthdayClose" type="button" aria-label="Cerrar celebración">✕</button>
+        </div>
       </div>
 
       </div>
@@ -543,6 +563,22 @@
             <button id="stopClassBtn" type="button" data-i18n="uiStopClass">■ Terminar clase</button>
           </div>
 
+          <div class="class-marker-tools">
+            <h3>🏷️ Marcadores de la clase</h3>
+            <p class="muted">Marcá un momento de la clase o de una grabación que estés reproduciendo. Cada marcador guarda el tiempo aproximado y una nota solo en tu perfil.</p>
+            <div class="class-marker-form">
+              <label>Color
+                <select id="classMarkerColor">
+                  <option value="yellow">🟡 Amarillo</option><option value="green">🟢 Verde</option>
+                  <option value="blue">🔵 Azul</option><option value="pink">🩷 Rosa</option>
+                </select>
+              </label>
+              <label>Nota <input id="classMarkerNote" type="text" maxlength="240" placeholder="Ej. Fórmula importante" /></label>
+              <button id="classMarkerAdd" type="button">Marcar momento</button>
+            </div>
+            <p id="classMarkerStatus" class="mini-status" role="status"></p>
+            <div id="classMarkerList" aria-label="Marcadores de la clase"></div>
+          </div>
           <div class="speaker-override">
             <span class="muted" data-i18n="uiClassSpeakerHint">Robotito intenta reconocer la voz automáticamente. Si se equivoca, podés corregir quién habló en cada línea o marcar de antemano quién va a hablar.</span>
             <div class="speaker-training-actions">
@@ -758,6 +794,20 @@
       </section>
 
       <section class="tabpage" id="tab-temporal">
+        <div class="card clock-dashboard">
+          <h2>🕒 Hora y cuenta regresiva</h2>
+          <p class="muted">Reloj del dispositivo, actualizado mientras la pestaña está visible. No puede garantizar sincronización con una hora oficial.</p>
+          <time id="clockVisual" class="clock-visual" role="timer" aria-live="off">00:00:00</time>
+          <p id="clockDate" class="clock-date"></p>
+          <button id="clockSpeak" type="button">🔊 Decir la hora en voz alta</button>
+          <div class="clock-inputs">
+            <label>Hora de destino (próxima ocurrencia) <input id="clockTargetTime" type="time" value="18:00" /></label>
+            <button id="clockSetTarget" type="button">Iniciar cuenta regresiva</button>
+            <button id="clockClearTarget" type="button">Cancelar</button>
+          </div>
+          <output id="clockCountdownRemaining" class="clock-countdown">Sin cuenta regresiva activa</output>
+          <p id="clockStatus" role="status" aria-live="polite"></p>
+        </div>
         <div class="card">
           <h2 data-i18n="p10RulesTitle">Horarios y recordatorios guardados</h2>
           <p class="muted" data-i18n="p10RulesScope">Los pedidos que le decís a Robotito se cumplen directamente sin guardarlos. Acá podés guardar recordatorios para que aparezcan en tu lista, como alarmas. Solo funcionan mientras Robotito está abierto y visible.</p>
@@ -776,6 +826,57 @@
       </section>
 
       <section class="tabpage" id="tab-tasks">
+        <div class="card learning-desk" id="learningDesk">
+          <h2>🎓 Minijuegos, exámenes y equipo</h2>
+          <p class="muted">Convertí tus apuntes en preguntas sin inventar información. Todo queda en tu perfil local. Este módulo no ofrece chat compartido en tiempo real.</p>
+          <details open>
+            <summary>Crear un tema de estudio desde mis apuntes</summary>
+            <form id="learningMaterialForm" class="learning-editor">
+              <label>Materia <input id="learningSubject" maxlength="90" required placeholder="Biología" /></label>
+              <label>Tema <input id="learningTopic" maxlength="90" required placeholder="Membrana celular" /></label>
+              <label class="full">Pares pregunta–respuesta, uno por línea
+                <textarea id="learningSource" rows="6" maxlength="24000" required placeholder="ATP: Trifosfato de adenosina&#10;Difusión: Movimiento neto de partículas siguiendo un gradiente"></textarea>
+              </label>
+              <button type="submit">Crear ejercicios desde mi texto</button>
+            </form>
+            <p class="muted">Solo se interpretan las líneas con «Concepto: explicación» (también ::, => o —). El texto original permanece bajo tu control.</p>
+          </details>
+          <details open>
+            <summary>Repasar con preguntas y exámenes adaptativos</summary>
+            <div class="learning-editor">
+              <label>Tema <select id="learningDeck" aria-label="Tema de estudio"></select></label>
+              <label>Modalidad <select id="learningMode"><option value="game">Juego de opciones</option><option value="exam">Examen escrito</option></select></label>
+              <button id="learningDeleteDeck" type="button">Eliminar tema</button>
+            </div>
+            <div id="learningGame" class="learning-game" aria-live="polite"></div>
+            <p class="muted">La dificultad cambia según las respuestas recientes y se repiten errores. En examen escrito se compara la respuesta con el texto aportado: una explicación correcta redactada distinto podría necesitar revisión humana.</p>
+          </details>
+          <details>
+            <summary>Progreso de integrantes del grupo (registro local)</summary>
+            <p class="muted">Cada integrante informa sus minutos y tareas completadas; estos valores se ingresan manualmente. No se sincronizan con otros dispositivos ni verifican asistencia real.</p>
+            <form id="learningTeamForm" class="learning-editor">
+              <label>Integrante <input id="learningMemberName" maxlength="60" required /></label>
+              <label>Minutos estudiados <input id="learningMemberMinutes" type="number" min="0" max="100000" value="0" required /></label>
+              <label>Tareas completadas <input id="learningMemberTasks" type="number" min="0" max="10000" value="0" required /></label>
+              <button type="submit">Guardar progreso</button>
+            </form>
+            <div id="learningTeamSummary"></div>
+          </details>
+          <details>
+            <summary>Ambientaciones de Robotito para festividades</summary>
+            <label>Elegir ambiente
+              <select id="learningTheme">
+                <option value="normal">Original</option>
+                <option value="invierno">❄️ Invierno</option>
+                <option value="primavera">🌼 Primavera</option>
+                <option value="cumpleanos">🎂 Cumpleaños</option>
+                <option value="fiesta">🎉 Fiesta</option>
+              </select>
+            </label>
+            <p class="muted">Ambientaciones opcionales y reversibles. No cambian el funcionamiento del avatar ni el reconocimiento de gestos.</p>
+          </details>
+          <p id="learningStatus" role="status" aria-live="polite"></p>
+        </div>
         <div class="card" id="nativeStudyPlanner">
           <h2>Planificador de estudio de Robotito</h2>
           <p class="muted">Funciona directamente en este navegador, sin Google Sheets. La fecha de entrega es opcional: si vence y la tarea sigue pendiente, queda marcada como atrasada y superprioritaria hasta que la completes.</p>

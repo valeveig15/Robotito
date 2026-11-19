@@ -285,7 +285,7 @@
               objectUrls.push(url);
               const date=new Date(r.startedAt).toLocaleString(window.ROBOTITO_I18N.locale(state.languageMode),{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
               const filename=safeFilename(r.subject,r.startedAt,r.mimeType,r.topic);
-              return '<article class="class-recording" data-recording-id="'+String(r.id).replace(/"/g,"&quot;")+'">'+
+              return '<article class="class-recording" data-recording-id="'+String(r.id).replace(/"/g,"&quot;")+'" data-class-session="'+escapeHtml(String(r.sessionId||r.id))+'">'+
                 '<div class="class-recording-head">'+
                   '<div><strong>'+escapeHtml(topic)+'</strong><div class="muted"><span data-recording-date="'+Number(r.startedAt)+'">'+escapeHtml(date)+'</span> · '+escapeHtml(prettyDuration(r.durationMs))+' · '+escapeHtml(prettyBytes(r.size))+'</div></div>'+
                   '<span class="recording-saved" data-ui-copy=%E2%97%8F%20guardada>● guardada</span>'+
