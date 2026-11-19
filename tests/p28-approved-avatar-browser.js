@@ -118,10 +118,14 @@ runBrowserTest("p28-approved-avatars",async test=>{
     mouthTop:mouth?.getBoundingClientRect().top,
     stem:!!r.avatar.querySelector('path[d="M354 316v21"]'),
     shadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#shadow")),
+    contactsFollowFeet:r.fitGroup?.contains(r.stage.querySelector("#ground-front-contacts")),
+    sideShadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#side-shadow-track")),
     fit:!!r.fitGroup?.getAttribute("transform")};
   });
   assert.ok(geometry.fit,"Original avatar must have a dedicated framing group");
   assert.equal(geometry.shadowFollowsFeet,true,"Contact shadow must move with the feet");
+  assert.equal(geometry.contactsFollowFeet,true,"Front foot contacts must remain grounded");
+  assert.equal(geometry.sideShadowFollowsFeet,true,"Side-view contact shadow must be grounded");
   assert.ok(geometry.factor>0&&geometry.factor<=1,"Never enlarge an already large character");
   assert.ok(geometry.wrappers>=6&&geometry.stem,"All mouth moods and philtrum must be aligned");
   assert.ok(geometry.mouthTop>geometry.noseBottom,
