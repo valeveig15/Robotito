@@ -70,9 +70,17 @@ function pauseTimer(){
 function resetTimer(){stopTicker();timer=null;timerDisplay();}
 function recordSession(){
  if(!isActive())return;
- let minutes;try{minutes=P.durationMinutes($("studyMinutesDone").value);}catch(e){toast(e.message);return;}
+ let minutes,pausedMinutes,units;
+ try{
+  minutes=P.durationMinutes($("studyMinutesDone").value);
+  pausedMinutes=Number($("studyPausedMinutes").value);
+  units=Number($("studyUnitsDone").value);
+  if(!Number.isInteger(pausedMinutes)||pausedMinutes<0||pausedMinutes>=minutes)throw new RangeError("Las pausas deben ser menores a la duración total.");
+  if(!Number.isInteger(units)||units<0||units>10000)throw new RangeError("Ingresá una cantidad válida de unidades terminadas.");
+ }catch(e){toast(e.message);return;}
  const subject=P.clean($("studySessionSubject").value,90)||"Sin materia";
- const next={...model,sessions:[...model.sessions,{id:crypto.randomUUID(),subject,minutes,at:Date.now()}].slice(-3000),lastProgressAt:Date.now()};
+ const activeMinutes=minutes-pausedMinutes;
+ const next={...model,sessions:[...model.sessions,{id:crypto.randomUUID(),subject,minutes:activeMinutes,rawMinutes:minutes,activeMinutes,pausedMinutes,units,unitType:$("studyUnitKind").value,difficulty:$("studyDifficulty").value,at:Date.now()}].slice(-3000),lastProgressAt:Date.now()};
  void save(next).then(()=>toast("Sesión registrada en este perfil.")).catch(()=>toast("No se pudo guardar la sesión."));
 }
 function drawWeek(){
@@ -189,10 +197,19 @@ function initialize(){
  $("studyRecordSession")?.addEventListener("click",recordSession);
  $("studyEstimateBtn")?.addEventListener("click",()=>{
   const subject=P.clean($("studySessionSubject").value,90)||"Sin materia";
-  let fallback;try{fallback=P.durationMinutes($("studyEstimateManual").value);}catch(e){toast(e.message);return;}
-  const estimate=P.estimateMinutes(model.sessions,subject,fallback);
-  $("studyEstimateResult").textContent=estimate.minutes+" minutos estimados ("+
-   (estimate.source==="observed"?"mediana de "+estimate.samples+" sesiones reales":"ajuste manual; se necesitan 3 sesiones para estimar")+")";
+  let estimate;
+  try{estimate=P.estimateWorkload(model.sessions,{subject,unitType:$("studyUnitKind").value,
+   difficulty:$("studyDifficulty").value,remainingUnits:$("studyRemainingUnits").value,
+   manualMinutesPerUnit:$("studyEstimateManual").value});}
+  catch(e){toast(e.message);return;}
+  const rate=estimate.minutesPerUnit.toFixed(1);
+  const provenance=estimate.source==="observed"?
+   estimate.activeMinutes+" min activos / "+estimate.units+" unidades en "+estimate.samples+" sesiones":
+   "sin unidades registradas compatibles; cálculo manual";
+  const range=estimate.rangeMinutes?" · intervalo descriptivo "+estimate.rangeMinutes[0]+"–"+estimate.rangeMinutes[1]+" min":"";
+  $("studyEstimateResult").textContent=estimate.estimatedMinutes+" minutos para "+
+   estimate.remainingUnits+" unidades ("+rate+" min/unidad; "+provenance+
+   (estimate.limitedData?"; historial limitado":"")+range+").";
  });
  $("studyGoalMinutes")?.addEventListener("change",event=>{
   try{const value=P.durationMinutes(event.target.value);void save({...model,goalMinutes:value});}
