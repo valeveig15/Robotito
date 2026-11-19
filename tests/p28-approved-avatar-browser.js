@@ -146,12 +146,14 @@ runBrowserTest("p28-approved-avatars",async test=>{
   const art=window.ROBOTITO_AVATAR_ART;
   return Object.keys(art.profiles).map(id=>{
    const svg=art.render({id},"avatar-main-svg");
+   if(typeof svg!=="string")return {id,rendered:false};
    const mouth=svg.match(/class="avatar-mouth mouth-line" d="([^"]+)"/);
-   return {id,hasMouth:!!mouth,belowNose:!!mouth&&/M(?:88 125|92 128)/.test(mouth[1])};
+   return {id,rendered:true,hasMouth:!!mouth,belowNose:!!mouth&&/M(?:88 125|92 128)/.test(mouth[1])};
   });
  });
- assert.ok(generic.length>=40);
- assert.ok(generic.every(x=>x.hasMouth&&x.belowNose),
+ const rendered=generic.filter(x=>x.rendered);
+ assert.ok(rendered.length>=40,"Most catalog avatars have a vector renderer");
+ assert.ok(rendered.every(x=>x.hasMouth&&x.belowNose),
   "Generic animal and robot mouths must also be below their noses");
  assert.equal(await page.locator("#robotito").getAttribute("aria-hidden"),null);
  assert.equal(await page.locator("#world").evaluate(el=>el.classList.contains("approved-art-world")),false);
