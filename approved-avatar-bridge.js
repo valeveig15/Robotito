@@ -189,6 +189,10 @@ async function activate(id,{mood="calm",language="es"}={}){
   const fitGroup=document.createElementNS(SVG_NS,"g");
   fitGroup.setAttribute("data-robotito-full-body-fit","");
   avatar.parentNode.insertBefore(fitGroup,avatar);
+  // Keep the original ground/contact shadow under the resized feet,
+  // while its own jumping/walking animation remains independent.
+  const shadowShape=stage.querySelector("#shadow");
+  if(shadowShape?.parentNode===avatar.parentNode)fitGroup.appendChild(shadowShape);
   fitGroup.appendChild(avatar);
   const mouthCount=repairApprovedFace(avatar);
   if(mouthCount<6)throw new Error("Approved avatar mouth shapes missing: "+id);
