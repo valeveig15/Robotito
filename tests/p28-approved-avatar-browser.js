@@ -103,6 +103,33 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.role,"img");
   assert.ok(meta.geometry>250);
   assert.equal(meta.sourceView,"0 0 700 635");
+  test.phase("whole-body-framing-and-mouth-below-nose",APPROVED.indexOf(id),{avatar:id});
+  const geometry=await page.evaluate(()=>{
+   const r=window.ROBOTITO_APPROVED_AVATAR.current;
+   const scene=document.querySelector(".world-scene").getBoundingClientRect();
+   const body=r.avatar.getBoundingClientRect();
+   const nose=r.avatar.querySelector('path[d^="m332 295"],path[d^="M337 296"]');
+   const mouth=r.avatar.querySelector("#mouth-neutral");
+   return {scene:{top:scene.top,bottom:scene.bottom,height:scene.height},
+    body:{top:body.top,bottom:body.bottom,height:body.height},
+    factor:Number(r.host.dataset.avatarFit),
+    wrappers:r.avatar.querySelectorAll("[data-robotito-mouth-placement]").length,
+    noseBottom:nose?.getBoundingClientRect().bottom,
+    mouthTop:mouth?.getBoundingClientRect().top,
+    stem:!!r.avatar.querySelector('path[d="M354 316v21"]'),
+    fit:!!r.fitGroup?.getAttribute("transform")};
+  });
+  assert.ok(geometry.fit,"Original avatar must have a dedicated framing group");
+  assert.ok(geometry.factor>0&&geometry.factor<=1,"Never enlarge an already large character");
+  assert.ok(geometry.wrappers>=6&&geometry.stem,"All mouth moods and philtrum must be aligned");
+  assert.ok(geometry.mouthTop>geometry.noseBottom,
+   "The mouth line must sit below the nose of "+id);
+  assert.ok(geometry.body.top>=geometry.scene.top-4,
+   "Head cropped in "+id+": "+JSON.stringify(geometry));
+  assert.ok(geometry.body.bottom<=geometry.scene.bottom+4,
+   "Feet cropped in "+id+": "+JSON.stringify(geometry));
+  assert.ok(geometry.body.height<=geometry.scene.height*.92,
+   "The avatar should not fill the entire scene height");
   test.phase("approved-avatar-moods-and-actions",APPROVED.indexOf(id),{avatar:id});
   await expectTransition({mood:"avergonzado"},()=>page.evaluate(()=>setMood("embarrassed")));
   await expectTransition({mood:"feliz"},()=>page.evaluate(()=>setMood("happy")));
@@ -115,6 +142,17 @@ runBrowserTest("p28-approved-avatars",async test=>{
  }
  test.phase("non-reference-avatar-keeps-previous-renderer");
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current===null);
+ const generic=await page.evaluate(()=>{
+  const art=window.ROBOTITO_AVATAR_ART;
+  return Object.keys(art.profiles).map(id=>{
+   const svg=art.render({id},"avatar-main-svg");
+   const mouth=svg.match(/class="avatar-mouth mouth-line" d="([^"]+)"/);
+   return {id,hasMouth:!!mouth,belowNose:!!mouth&&/M(?:88 125|92 128)/.test(mouth[1])};
+  });
+ });
+ assert.ok(generic.length>=40);
+ assert.ok(generic.every(x=>x.hasMouth&&x.belowNose),
+  "Generic animal and robot mouths must also be below their noses");
  assert.equal(await page.locator("#robotito").getAttribute("aria-hidden"),null);
  assert.equal(await page.locator("#world").evaluate(el=>el.classList.contains("approved-art-world")),false);
  test.phase("layout-after-viewport-and-language-switch");
@@ -131,6 +169,15 @@ runBrowserTest("p28-approved-avatars",async test=>{
    return {stage:stage.bottom,hostWidth:host.width,formTop:form.top,hit:document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id};
   });
   assert.ok(box.hostWidth>220);
+  const responsive=await page.evaluate(()=>{
+    const r=window.ROBOTITO_APPROVED_AVATAR.current;
+    return {scene:document.querySelector(".world-scene").getBoundingClientRect(),
+      body:r.avatar.getBoundingClientRect(),
+      factor:Number(r.host.dataset.avatarFit)};
+  });
+  assert.ok(responsive.body.top>=responsive.scene.top-4);
+  assert.ok(responsive.body.bottom<=responsive.scene.bottom+4);
+  assert.ok(responsive.factor>0&&responsive.factor<=1);
   assert.ok(box.formTop>=box.stage-2,"Approved art must remain behind chat");
   await page.locator("#robotitoTextInput").scrollIntoViewIfNeeded();
   await page.locator("#robotitoTextInput").click();
