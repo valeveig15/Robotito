@@ -173,17 +173,17 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **27.** Selección de avatar al inicio y catálogo de especies — EN PROGRESO (50 avatares, seis idiomas, selección inicial, restauración persistente y recuperación de preferencias legadas; pruebas de navegador; pendiente validación física y lectores de pantalla; ver P27-STATUS.md)
 - [ ] **28.** Integración visual de los cinco avatares nuevos como referencia prioritaria — EN PROGRESO (cinco SVG/escenarios exactos de las últimas referencias aprobadas, puente de emociones/acciones/voz e integración al Robotito principal; falta revisión visual comparativa y móviles físicos; ver P28-STATUS.md)
 - [ ] **29.** Especie, alimentación, camaleón y preguntas sobre sí mismo — EN PROGRESO (50 fichas de alimentación por categoría, respuestas del avatar seleccionado en seis idiomas, camaleón con cambio de color según ánimo y prueba de no interceptar biología general; falta validación en móviles físicos y revisión editorial de cada especie; ver [P29-STATUS.md](P29-STATUS.md)).
-- [ ] **30.** Gestos, acciones y eliminación de abrazar/chocar los cinco — POR AUDITAR
-- [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — POR AUDITAR
-- [ ] **32.** Emociones visuales coherentes y vínculo personal — POR AUDITAR
+- [ ] **30.** Gestos y acciones — EN PROGRESO (gestos directos por voz y clic/tacto, control único para las seis acciones, alta preservación de «Chocar los cinco», sin «Abrazar» como acción independiente; pendiente prueba táctil física; ver [P30-STATUS.md](P30-STATUS.md)).
+- [ ] **31.** Ojos, parpadeo, despertar y transición al sueño — EN PROGRESO (cancelación de parpadeos y sueños obsoletos, transición de párpados, coherencia con cinco SVG y reducción de movimiento; falta comprobación física visual; ver [P31-STATUS.md](P31-STATUS.md)).
+- [ ] **32.** Emociones visuales coherentes y vínculo personal — EN PROGRESO (16 estados visuales diferenciados, seis idiomas de diálogo emocional, recuperación por revisión/identidad, vínculo por perfil; falta calibración con participantes y dispositivos reales; ver [P32-STATUS.md](P32-STATUS.md)).
 - [ ] **33.** Batería real, avisos e inactividad — POR AUDITAR
 - [ ] **34.** Cumpleaños con tres franjas, música, torta y regalo — POR AUDITAR
 - [ ] **35.** Libros sin Goodreads y metadatos verificables — POR AUDITAR
-- [ ] **36.** Simulación de al menos 50 perfiles lectores — POR AUDITAR
-- [ ] **37.** Lectura y traducción de descripciones de libros — POR AUDITAR
-- [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — POR AUDITAR
-- [ ] **39.** Clubes de lectura y valoraciones por aspectos — POR AUDITAR
-- [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — POR AUDITAR
+- [ ] **36.** Simulación de al menos 50 perfiles lectores — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
+- [ ] **37.** Lectura y traducción de descripciones de libros — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
+- [ ] **38.** Biblioteca personal con estanterías decoradas y escaneo — EN PROGRESO (implementación de software y tests añadidos; pendiente CI confirmado y validación física/humana; ver [P36-P38-STATUS.md](P36-P38-STATUS.md)).
+- [ ] **39.** Clubes de lectura y valoraciones por aspectos — SOFTWARE PARCIAL (clubes locales, valoraciones y exportación/importación; falta sincronización compartida real); ver [P39-P40-STATUS.md](P39-P40-STATUS.md).
+- [ ] **40.** Sorteo de próxima lectura y broma de «libro abandonado» — SOFTWARE PARCIAL (sorteo entre pendientes y broma a solicitud; aceptación física pendiente); ver [P39-P40-STATUS.md](P39-P40-STATUS.md).
 - [ ] **41.** Reproducción de música por tema, artista, banda o género — POR AUDITAR
 - [ ] **42.** Escenario de clima adaptado a las condiciones — POR AUDITAR
 - [ ] **43.** Panel de preguntas, feedback y contador honesto — POR AUDITAR
@@ -203,22 +203,22 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **57.** Editor gráfico universal y uso didáctico del color — POR AUDITAR
 - [ ] **58.** Tomar fotografías y leer el contenido en voz alta — POR AUDITAR
 - [ ] **59.** Fotografía y limpieza de pizarrón/libro vinculada al instante de clase — POR AUDITAR
-- [ ] **60.** Cronómetro, temporizador y progreso temporal visual — POR AUDITAR
-- [ ] **61.** Estimación adaptativa del tiempo de estudio por rendimiento real — POR AUDITAR
-- [ ] **62.** Ajustes manuales de tiempos previstos y escenarios de estudio — POR AUDITAR
-- [ ] **63.** Agenda de sesiones de estudio con avisos a la hora elegida — POR AUDITAR
-- [ ] **64.** Avisos escalonados antes de pruebas y entregas — POR AUDITAR
+- [ ] **60.** Cronómetro, temporizador y progreso temporal visual — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **61.** Estimación adaptativa del tiempo de estudio por rendimiento real — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **62.** Ajustes manuales de tiempos previstos y escenarios de estudio — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **63.** Agenda de sesiones de estudio con avisos a la hora elegida — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **64.** Avisos escalonados antes de pruebas y entregas — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **65.** Planificador nativo de materias, horarios y prioridades — POR AUDITAR
 - [ ] **66.** Lista de pendientes tachable con satisfacción de progreso — POR AUDITAR
-- [ ] **67.** Tarjetas de memoria editables y repaso organizado — POR AUDITAR
-- [ ] **68.** Modo concentración que silencia notificaciones de Robotito — POR AUDITAR
-- [ ] **69.** Gráficos semanales y seguimiento del tiempo por materia — POR AUDITAR
-- [ ] **70.** Metas de estudio y recordatorios tras tres horas sin avanzar — POR AUDITAR
+- [ ] **67.** Tarjetas de memoria editables y repaso organizado — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **68.** Modo concentración que silencia notificaciones de Robotito — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **69.** Gráficos semanales y seguimiento del tiempo por materia — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **70.** Metas de estudio y recordatorios tras tres horas sin avanzar — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **71.** Ejemplos adaptados a teoría y práctica — POR AUDITAR
-- [ ] **72.** Tipografías accesibles y ajustes de lectura — POR AUDITAR
-- [ ] **73.** Modo de lectura con inicio de palabras destacado — POR AUDITAR
-- [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — POR AUDITAR
-- [ ] **75.** Mapas mentales automáticos de apuntes extensos — POR AUDITAR
+- [ ] **72.** Tipografías accesibles y ajustes de lectura — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **73.** Modo de lectura con inicio de palabras destacado — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **74.** Temas de fondo suaves, modo oscuro y guía de lectura por línea — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
+- [ ] **75.** Mapas mentales automáticos de apuntes extensos — SOFTWARE IMPLEMENTADO PARCIALMENTE (ver [P60-P75-STATUS.md](P60-P75-STATUS.md); CI/aceptación física, idiomas y límites documentados).
 - [ ] **76.** Activación de Modo Clase muy visible y accesible — POR AUDITAR
 - [ ] **77.** Marcadores de colores durante clases grabadas — POR AUDITAR
 - [ ] **78.** Sincronización bidireccional entre audio y transcripción — POR AUDITAR

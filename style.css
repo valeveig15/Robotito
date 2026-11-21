@@ -3312,3 +3312,119 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 @media(prefers-reduced-motion:reduce){
  .robotito.avatar-chameleon.chameleon-color-demo .animal-avatar-emoji{animation:none!important}
 }
+
+
+/* P30–P32: touch feedback, non-overlapping blink and emotion transitions. */
+.robotito:not(.sleeping){cursor:pointer;touch-action:manipulation}
+#approvedAvatarHost{touch-action:manipulation}
+.robotito.sleep-entering .lid-svg,
+.robotito.sleep-entering .lid{transition:transform .6s ease-out}
+.robotito.sleep-entering .eye-white-svg,.robotito.sleep-entering .iris{
+ transition:opacity .55s ease-out}
+.robotito.waking .lid-svg,.robotito.waking .lid{
+ transition:transform .55s cubic-bezier(.18,.75,.25,1)}
+.robotito.waking .eye-white-svg,.robotito.waking .iris{
+ transition:opacity .48s ease-in}
+.robotito.mood-embarrassed .cheek-left,
+.robotito.mood-embarrassed .cheek-right,
+.robotito.mood-embarrassed .cheek{
+ opacity:.86;filter:saturate(1.13)}
+.robotito.mood-angry .brow-left{transform:rotate(16deg) translateY(2px)}
+.robotito.mood-angry .brow-right{transform:rotate(-16deg) translateY(2px)}
+.robotito.mood-confused .brow-left{transform:rotate(-12deg) translateY(-4px)}
+.robotito.mood-confused .brow-right{transform:rotate(10deg) translateY(2px)}
+@media(prefers-reduced-motion:reduce){
+ .robotito.sleep-entering .lid-svg,.robotito.sleep-entering .lid,
+ .robotito.waking .lid-svg,.robotito.waking .lid,
+ .robotito.sleep-entering .eye-white-svg,.robotito.waking .eye-white-svg,
+ .robotito.sleep-entering .iris,.robotito.waking .iris{
+ transition:none!important;animation:none!important}
+}
+
+
+/* P37: explicit full descriptions, controlled speech, and translation provenance */
+.book-description-controls{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:9px 0 4px}
+.book-description-controls details{flex:1 1 100%;max-width:100%;overflow-wrap:anywhere}
+.book-description-controls summary{cursor:pointer;font-size:12px;font-weight:800;padding:7px;border-radius:8px;background:#eff8f4}
+.book-full-description{white-space:pre-wrap;line-height:1.55!important;color:#42364e!important;font-size:13px!important}
+.book-description-controls button{min-height:38px;padding:7px 9px;font-size:12px;white-space:normal}
+.book-description-controls small{flex:1 1 100%;font-size:10px;color:var(--muted)}
+.book-translation{flex:1 1 100%;overflow-wrap:anywhere}
+/* P38: illustrated shelves and grounded physical books (not user-uploaded covers) */
+.shelf-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.shelf-form label{display:grid;gap:4px;font-size:12px;font-weight:750;min-width:0}
+.shelf-form label :is(input,select){width:100%;min-width:0;font-size:16px;min-height:43px}
+.shelf-form-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px}
+.shelf-form-actions button{min-height:44px;flex:1 1 135px}
+#bookScanPreview{width:100%;max-height:230px;object-fit:cover;border-radius:12px;margin-top:10px;background:#1c241e}
+#bookScanPreview[hidden]{display:none!important}
+#shelfStatus{min-height:20px;font-size:12px;color:#466b5d}
+.personal-book-shelves{display:grid;gap:14px;margin:10px 0}
+.personal-shelf{min-width:0;overflow:hidden;border-radius:14px;padding:12px 12px 0;position:relative;border:1px solid #d4e5dc;background:linear-gradient(155deg,#f9fff9,#e9f4eb)}
+.personal-shelf.shelf-blue{background:linear-gradient(155deg,#f9fcff,#e8f2fb);border-color:#d1e2f1}
+.personal-shelf.shelf-lavender{background:linear-gradient(155deg,#fff9ff,#f1e8fa);border-color:#e4d4ec}
+.personal-shelf h3{font-size:14px;margin:0 0 10px;color:#4a5d52}
+.shelf-books{display:flex;align-items:flex-end;gap:9px;min-height:95px;overflow-x:auto;padding:4px 6px 0;scrollbar-width:thin}
+.shelf-books>p{font-size:12px;color:#7c8177}
+.shelf-book-item{display:flex;flex:0 0 82px;align-items:center;flex-direction:column;min-width:0}
+.shelf-book{display:flex;align-items:center;justify-content:center;width:64px;height:92px;border-radius:4px 9px 5px 4px;box-shadow:inset -5px 0 rgba(33,43,50,.11),3px 5px 5px #0002;overflow:hidden;background:hsl(var(--book-hue,155) 33% 67%);border-left:6px solid #456b66}
+.shelf-book span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;line-height:1.1;font-weight:800;max-height:87px;overflow:hidden;word-break:break-word;color:#263a3c;text-overflow:ellipsis}
+.shelf-book-item select{width:82px;margin:7px 0 4px;padding:3px 1px;font-size:10px;min-height:28px;background:#fff9;border-radius:6px;border:1px solid #c7d5cb}
+.shelf-plank{height:13px;background:linear-gradient(180deg,#ae9174,#896c53);border-top:3px solid #ccb096;box-shadow:0 5px 9px #6b554733;margin:0 -12px}
+@media(max-width:460px){.shelf-form{grid-template-columns:1fr}.book-description-controls button{flex:1 1 130px}}
+@media(prefers-reduced-motion:reduce){.shelf-book{transition:none!important}}
+
+
+/* P60–P75: local, owner-scoped study tools */
+.study-desk details{padding:12px 0;border-bottom:1px solid var(--line)}
+.study-desk details>summary{cursor:pointer;font-weight:850;padding:8px 3px;min-height:44px}
+.study-desk h3{font-size:15px;margin:15px 0 8px}
+.study-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}
+.study-tool-grid label{display:grid;gap:5px;font-size:12px;min-width:0;font-weight:700}
+.study-tool-grid :is(input,select,textarea){width:100%;min-width:0;min-height:42px;line-height:1.4;font-size:16px}
+.study-tool-grid button{min-height:44px;align-self:end}
+.study-tool-grid .check{display:flex;align-items:center}
+.study-tool-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.study-tool-actions button{flex:1 1 100px;min-height:44px}
+.study-tool-actions label{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.study-tool-actions input{width:94px;min-height:42px;font-size:16px}
+.study-timer-display{font-size:clamp(27px,4vw,42px);font-weight:850;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.065em;padding:12px 0;color:#355c5c}
+.study-desk progress{display:block;width:100%;height:14px;accent-color:#5aa797}
+.study-week-chart{display:flex;align-items:flex-end;justify-content:space-between;gap:4px;min-height:140px;border-bottom:2px solid #b1d1c5;padding:12px 0 8px}
+.study-day{display:flex;align-items:center;justify-content:flex-end;flex-direction:column;gap:6px;flex:1;min-width:0;height:120px}
+.study-day-bar{width:min(31px,80%);min-height:2px;background:linear-gradient(180deg,#79bfa9,#478c88);border-radius:8px 8px 0 0}
+.study-day span{text-align:center;font-size:9px;line-height:1.2;color:var(--muted)}
+.study-flashcards{padding:12px;margin-top:9px;border-radius:12px;border:1px solid #c6e0d6;background:#f6fffa}
+.study-card-front{font-weight:850;font-size:17px;overflow-wrap:anywhere}
+.study-card-back{white-space:pre-wrap;color:#3b5f56;overflow-wrap:anywhere}
+.study-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.study-card-actions button{flex:1 1 115px}
+.study-reading-preview{margin:14px 0;padding:15px;border-radius:12px;border:1px solid #c9ddd4;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere;min-height:85px;max-height:45vh;overflow:auto;font-family:inherit;background:#fffdfa;color:#354842;tab-size:4}
+.study-reading-preview[data-theme="mint"]{background:#e9f7ef;color:#2c4f47}
+.study-reading-preview[data-theme="blue"]{background:#eaf3fc;color:#314c68}
+.study-reading-preview[data-theme="dark"]{background:#192b34;color:#f3f7fa}
+.study-reading-preview.reading-font-readable{font-family:Verdana,Tahoma,sans-serif;letter-spacing:.032em;word-spacing:.12em}
+.study-reading-preview.reading-line-guide{background-image:repeating-linear-gradient(180deg,transparent 0,transparent 1.84em,rgba(94,150,144,.22) 1.85em,transparent 1.92em)}
+.study-mind-map{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;padding:12px;border:1px solid #d1e2d8;background:#f7faf8;border-radius:12px}
+.mind-map-center{flex-basis:100%;text-align:center;background:#bce0d5;padding:10px;border-radius:10px;overflow-wrap:anywhere}
+.mind-map-branch{padding:9px 12px;background:#f4e9fa;border:1px solid #dac7e8;border-radius:10px;flex:1 1 150px;overflow-wrap:anywhere}
+.study-mind-map small{flex-basis:100%;color:#65766e}
+#studyDeskStatus{font-size:12px;min-height:19px;color:#457162}
+.robotito-focus-mode .world-scene{transition:none}
+@media(max-width:540px){.study-tool-grid{grid-template-columns:1fr}.study-day span{font-size:8px}.study-desk details{padding:9px 0}}
+@media(prefers-reduced-motion:reduce){.study-desk *{animation:none!important;transition:none!important}}
+
+/* P39–P40: explicitly local reading circle and aspect rating controls */
+.reading-circle-form,.reading-rating-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.reading-circle-form label,.reading-rating-form label{display:grid;gap:4px;min-width:0;font-size:12px;font-weight:750}
+.reading-circle-form :is(input,textarea),.reading-rating-form :is(input,select){width:100%;min-width:0;min-height:43px;font-size:16px}
+.reading-circle-form button,.reading-rating-form button{min-height:44px;grid-column:1/-1}
+.reading-circle-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.reading-circle-actions :is(button,.file-label){flex:1 1 160px;min-height:44px}
+.reading-club{padding:12px;margin:10px 0;border:1px solid #d2e8df;border-radius:12px;background:#f6fffb}
+.reading-club p{margin:5px 0;overflow-wrap:anywhere}
+.reading-club button{min-height:38px}
+#readingRatingsList p{padding:8px;margin:5px 0;border-left:4px solid #7fbcac;background:#f7faf9;border-radius:6px}
+#readingDrawResult{font-weight:750;color:#466a5a}
+#readingStatus{min-height:18px;font-size:12px;color:#6d646c}
+@media(max-width:560px){.reading-circle-form,.reading-rating-form{grid-template-columns:1fr}}

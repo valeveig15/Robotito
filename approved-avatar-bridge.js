@@ -165,6 +165,10 @@ async function activate(id,{mood="calm",language="es"}={}){
 function setMood(mood){
  if(!current)return;
  if(MOODS[mood])current.mood=mood;
+ if(mood==="sleepy"){
+   clearTimeout(blinkTimer);blinkTimer=null;
+   current.avatar.classList.remove("blink");
+ }
  scheduleSync();
 }
 function setLanguage(lang){
@@ -181,12 +185,17 @@ function speak(active=true){
  if(active)speechTimer=setTimeout(()=>avatar.classList.remove("speaking"),3500);
 }
 function blink(){
- if(!current||document.hidden)return;
- current.avatar.classList.add("blink");
+ if(!current||document.hidden||getRobot()?.classList.contains("sleeping")||
+    current.mood==="sleepy")return false;
+ const avatar=current.avatar;
  clearTimeout(blinkTimer);
- blinkTimer=setTimeout(()=>current?.avatar.classList.remove("blink"),140);
+ avatar.classList.remove("blink");
+ // Do not clear a new avatar's blink when an earlier timer completes.
+ avatar.classList.add("blink");
+ blinkTimer=setTimeout(()=>{avatar.classList.remove("blink");blinkTimer=null;},140);
+ return true;
 }
-document.addEventListener("visibilitychange",()=>{if(document.hidden){speak(false);clearTimeout(blinkTimer);current?.avatar.classList.remove("blink");}});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){speak(false);clearTimeout(blinkTimer);blinkTimer=null;current?.avatar.classList.remove("blink");}});
 window.addEventListener("pagehide",reset);
 window.ROBOTITO_APPROVED_AVATAR={
  ids:Object.keys(REFS),source:REFS,activate,setMood,setLanguage,speak,blink,reset,
