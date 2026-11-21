@@ -3522,3 +3522,6 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
   .robotito.avatar-custom .avatar-character .avatar-hunger-cloud,
   .robotito.avatar-custom .avatar-character .avatar-speaking-mouth{animation:none!important}
 }
+
+/* Expression icons now live next to each character's face, not in a second floating badge. */
+.robotito.avatar-custom .animal-avatar-mood{display:none!important}
