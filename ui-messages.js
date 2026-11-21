@@ -3,6 +3,18 @@
 (function(root){
 "use strict";
 const rows=`
+Si se cumple «{condition}», decir: {text}|When “{condition}” holds, say: {text}|Quando “{condition}” ocorrer, dizer: {text}|Si « {condition} » se réalise, dire : {text}|Se si verifica “{condition}”, dire: {text}|Wenn „{condition}“ gilt, sagen: {text}
+Palmas detectadas|Claps detected|Palmas detectadas|Applaudissements détectés|Applausi rilevati|Klatschen erkannt
+Música detectada|Music detected|Música detectada|Musique détectée|Musica rilevata|Musik erkannt
+Una persona visible|One person visible|Uma pessoa visível|Une personne visible|Una persona visibile|Eine Person sichtbar
+Ninguna persona visible|No person visible|Nenhuma pessoa visível|Aucune personne visible|Nessuna persona visibile|Keine Person sichtbar
+Activar regla|Enable rule|Ativar regra|Activer la règle|Attiva regola|Regel aktivieren
+Pausar regla|Pause rule|Pausar regra|Suspendre la règle|Sospendi regola|Regel pausieren
+Pausada|Paused|Pausada|Suspendue|Sospesa|Pausiert
+Activa|Active|Ativa|Active|Attiva|Aktiv
+No hay reglas en este historial.|There are no rules in this history.|Não há regras neste histórico.|Cet historique ne contient aucune règle.|Non ci sono regole in questa cronologia.|In diesem Verlauf gibt es keine Regeln.
+Regla actualizada.|Rule updated.|Regra atualizada.|Règle mise à jour.|Regola aggiornata.|Regel aktualisiert.
+No encontré esa regla. Pedime la lista de reglas para ver sus números.|I could not find that rule. Ask for the rule list to see its numbers.|Não encontrei essa regra. Peça a lista de regras para ver os números.|Règle introuvable. Demande la liste des règles pour voir leurs numéros.|Regola non trovata. Chiedi l’elenco delle regole per vedere i numeri.|Regel nicht gefunden. Frage nach der Regelliste, um die Nummern zu sehen.
 Terminá la clase y mantené esta página visible para reproducir una grabación.|Finish the class and keep this page visible to play a recording.|Termine a aula e mantenha esta página visível para reproduzir uma gravação.|Termine le cours et garde cette page visible pour lire un enregistrement.|Termina la lezione e tieni questa pagina visibile per riprodurre una registrazione.|Beende den Unterricht und halte diese Seite sichtbar, um eine Aufnahme abzuspielen.
 No encontré una grabación guardada para esa fecha y materia.|I found no saved recording for that date and subject.|Não encontrei uma gravação salva para essa data e matéria.|Je n’ai trouvé aucun enregistrement pour cette date et cette matière.|Non ho trovato registrazioni per questa data e materia.|Keine gespeicherte Aufnahme für dieses Datum und Fach gefunden.
 Encontré varias grabaciones. Indicá la materia o el tema, o elegí una en Clase.|I found several recordings. Specify the subject or topic, or choose one in Class.|Encontrei várias gravações. Indique a matéria ou o tema, ou escolha uma em Aula.|J’ai trouvé plusieurs enregistrements. Précise la matière ou le sujet, ou choisis-en un dans Cours.|Ho trovato più registrazioni. Indica la materia o l’argomento, oppure scegline una in Lezione.|Mehrere Aufnahmen gefunden. Nenne Fach oder Thema, oder wähle eine unter Unterricht.

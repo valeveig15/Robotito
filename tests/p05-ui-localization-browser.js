@@ -77,7 +77,7 @@ runBrowserTest("p05-ui-localization",async test=>{
    de:["Erinnerung:","3-mal wiederholen:","Wenn ich","Jeden Tag"]};
   for(const [lang,prefixes] of Object.entries(reminderPrefixes)){
    await page.evaluate(lang=>setLanguageMode(lang),lang);
-   const descriptions=await page.locator("#temporalRuleList .memory-row > span").allTextContents();
+   const descriptions=await page.locator("#temporalRuleList .rule-description").allTextContents();
    assert.equal(descriptions.length,4);
    descriptions.forEach((text,index)=>{
     assert.ok(text.startsWith(prefixes[index]),lang+" localized reminder: "+text);

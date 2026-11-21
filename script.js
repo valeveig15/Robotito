@@ -1084,6 +1084,7 @@ function clearCaptureIdentity(){
   resetEyes();
 }
 function stopSenses(reason="captureStopped"){
+  if(typeof window!=="undefined")window.ROBOTITO_TEMPORAL_RULES?.resetEvidence?.();
   state.started=false;
   state.captureEpoch=(state.captureEpoch||0)+1;
   state.captureRevision=(state.captureRevision||0)+1;
@@ -1589,6 +1590,7 @@ function setupAudio(stream){
           reactionTrial?.observeEvent(event.kind,{suppressed});
           return;
         }
+        if(reaction.kind==="clap")void window.ROBOTITO_TEMPORAL_RULES?.receive?.({kind:"audio:clap",verified:true,permission:true,at:now,epoch:state.captureEpoch});
         if(reaction.action==="clap"){
           robot.classList.add("clapping");
           reactionTrial?.observeEvent(event.kind,{action:"clap"});
@@ -1685,6 +1687,7 @@ function setupAudio(stream){
           document.hidden||!microphoneGate?.isLive()
       });
       robot.classList.toggle("dancing",dance);
+      if(dance)void window.ROBOTITO_TEMPORAL_RULES?.receive?.({kind:"audio:music",verified:true,permission:true,at:Date.now(),epoch:state.captureEpoch});
       reactionTrial?.observeDance(robot.classList.contains("dancing"));
       prevSpectrum=freq.slice();
     };
@@ -4467,6 +4470,10 @@ async function detectLoop(){
     state.lastFaceInferenceMs=elapsed;
     if(elapsed<0||elapsed>2500||!Array.isArray(dets)){revoke();return;}
     state.lastDetections=dets;
+    if(typeof window!=="undefined"){
+      if(dets.length<=1)void window.ROBOTITO_TEMPORAL_RULES?.receive?.({kind:dets.length?"vision:person":"vision:empty",verified:true,permission:true,at:Date.now(),epoch:state.captureEpoch});
+      else window.ROBOTITO_TEMPORAL_RULES?.resetEvidence?.();
+    }
     if(dets.length===1){
       state.lastSeenAt=Date.now();
       uiSet($("#seenLabel"),"1 persona");
@@ -6483,7 +6490,10 @@ async function init(){
   setInterval(taskReminderTick,30000);
   window.ROBOTITO_TEMPORAL_RULES?.attach?.({
     say:text=>{if(!document.hidden&&!state.classMode)say(text);},
-    owner:activeMemoryOwner
+    owner:activeMemoryOwner,
+    canRun:()=>!state.classMode&&!state.sleeping&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.classAudioPlaybackActive&&!state.enrollmentActive,
+    canObserve:event=>state.started&&!state.captureSuspended&&event?.epoch===state.captureEpoch&&
+      Boolean(state.stream?.getTracks?.().some(track=>track.kind===(event.kind.startsWith("audio:")?"audio":"video")&&track.readyState==="live"))
   });
   setInterval(routinePromptTick,60000);
   setTimeout(routinePromptTick,12000);
