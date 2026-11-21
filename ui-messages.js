@@ -3,6 +3,10 @@
 (function(root){
 "use strict";
 const rows=`
+Recordar: {text}|Remind: {text}|Lembrar: {text}|Rappel : {text}|Promemoria: {text}|Erinnerung: {text}
+Repetir {count} veces: {text}|Repeat {count} times: {text}|Repetir {count} vezes: {text}|Répéter {count} fois : {text}|Ripeti {count} volte: {text}|{count}-mal wiederholen: {text}
+Si digo “{trigger}”, decir: {text}|If I say “{trigger}”, say: {text}|Se eu disser “{trigger}”, dizer: {text}|Si je dis « {trigger} », dire : {text}|Se dico “{trigger}”, dire: {text}|Wenn ich „{trigger}“ sage, sagen: {text}
+Todos los días {time}: {text}|Every day {time}: {text}|Todos os dias {time}: {text}|Tous les jours {time} : {text}|Ogni giorno {time}: {text}|Jeden Tag {time}: {text}
 Los datos anteriores se recuperaron. Recargá para reintentar la aplicación de sus preferencias.|Previous data recovered. Reload to retry applying its preferences.|Dados anteriores recuperados. Recarregue para reaplicar as preferências.|Données précédentes récupérées. Recharge pour réappliquer leurs préférences.|Dati precedenti recuperati. Ricarica per riapplicare le preferenze.|Vorherige Daten wiederhergestellt. Zum erneuten Anwenden der Einstellungen neu laden.
 Formato de la copia|Backup format|Formato da cópia|Format de la copie|Formato del backup|Sicherungsformat
 Completo: archivos grandes y preferencias|Complete: large files and preferences|Completo: arquivos grandes e preferências|Complet : fichiers volumineux et préférences|Completo: file grandi e preferenze|Vollständig: große Dateien und Einstellungen

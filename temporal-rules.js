@@ -176,15 +176,16 @@ function attach({say=()=>{},owner=()=> "local"}={}){
   const box=$("temporalRuleInput"),raw=box?.value?.trim();if(!raw)return;
   const result=await execute((current,owner,emit)=>current.speech(raw,{owner,emit,persist:true}));
   const status=$("temporalRuleStatus");
-  if(status)status.textContent=result.created?label("p10RulesSavedOK","Instrucción guardada para este perfil."):
-   result.error?label("p10RulesInvalid","No pude guardar esa orden."):
-   label("p10RulesInvalid","Usá uno de los formatos de ejemplo.");
+  if(status){
+   const key=result.created?"p10RulesSavedOK":"p10RulesInvalid";
+   status.setAttribute("data-i18n",key);status.textContent=label(key,"No pude guardar esa orden.");
+  }
   if(result.created)box.value="";render();
  };
  $("temporalRuleAdd")?.addEventListener("click",submit);
  $("temporalRuleInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();submit();}});
  const status=$("temporalRuleStatus");
- if(status)status.textContent=label("p10RulesScope","Las órdenes se ejecutan solo mientras Robotito está abierto y visible.");
+ if(status){status.setAttribute("data-i18n","p10RulesScope");status.textContent=label("p10RulesScope","Las órdenes se ejecutan solo mientras Robotito está abierto y visible.");}
  void refresh();
  timer=root.setInterval?.(()=>{if(!root.document.hidden&&(engine?.list(context.owner()).length||sessionRules.get(context.owner())?.length))
   void execute((current,owner,emit)=>current.tick({owner,visible:true,emit}));},1000);
@@ -205,12 +206,12 @@ function render(){
  for(const row of engine.list(context.owner())){
   const item=root.document.createElement("div");item.className="memory-row";
   const description=root.document.createElement("span");
-  description.textContent=row.kind==="phrase"?"Si digo “"+row.trigger+"”, decir: "+row.text:
-   row.kind==="daily"?"Todos los días "+row.time+": "+row.text:
-   row.kind==="repeat"?"Repetir "+row.remaining+" veces: "+row.text:
-   "Recordar: "+row.text;
+  const template=row.kind==="phrase"?"Si digo “{trigger}”, decir: {text}":
+   row.kind==="daily"?"Todos los días {time}: {text}":
+   row.kind==="repeat"?"Repetir {count} veces: {text}":"Recordar: {text}";
+  root.ROBOTITO_I18N.bindText(description,template,{text:row.text,trigger:row.trigger,time:row.time,count:row.remaining});
   const button=root.document.createElement("button");button.type="button";
-  button.className="ghost danger";button.textContent=label("p10RulesCancel","Cancelar");
+  button.className="ghost danger";button.setAttribute("data-i18n","p10RulesCancel");button.textContent=label("p10RulesCancel","Cancelar");
   button.addEventListener("click",()=>execute((current,owner)=>current.cancel(row.id,owner)));
   item.append(description,button);list.appendChild(item);
  }
@@ -228,7 +229,7 @@ async function handle(raw,options={}){
   if(root.confirm?.(label("p10RulesCancelAll","¿Cancelar todas las órdenes y reglas de este perfil?"))){
    const cleared=await execute((current,owner)=>current.clear(owner));if(!cleared?.error)context.say(label("p10RulesCancelled","Órdenes y reglas de este perfil canceladas."));
   }
- }else if(result.error)context.say("No pude guardar esa orden: "+result.error);
+ }else if(result.error)context.say(label("p10RulesInvalid","No pude guardar esa orden."));
  return result;
 }
 root.ROBOTITO_TEMPORAL_RULES={createEngine,parseInstruction,attach,handle,refresh};
