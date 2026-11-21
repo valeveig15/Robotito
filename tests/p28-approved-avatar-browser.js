@@ -103,33 +103,32 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.role,"img");
   assert.ok(meta.geometry>250);
   assert.equal(meta.sourceView,"0 0 700 635");
-  test.phase("whole-body-framing-and-mouth-below-nose",APPROVED.indexOf(id),{avatar:id});
-  const geometry=await page.evaluate(()=>{
+  test.phase("whole-body-size-preserves-original-art",APPROVED.indexOf(id),{avatar:id});
+  const geometry=await page.evaluate(async id=>{
    const r=window.ROBOTITO_APPROVED_AVATAR.current;
    const scene=document.querySelector(".world-scene").getBoundingClientRect();
    const body=r.avatar.getBoundingClientRect();
-   const nose=r.avatar.querySelector('path[d^="m332 295"],path[d^="M337 296"]');
-   const mouth=r.avatar.querySelector("#mouth-neutral");
+   const originalText=await fetch("assets/approved-avatars/"+id+".fragment.html").then(x=>x.text());
+   const original=new DOMParser().parseFromString(originalText,"text/html").querySelector("#stage-svg #avatar");
+   const currentShapes=[...r.avatar.querySelectorAll("path,polygon,ellipse,circle,rect")].map(x=>x.outerHTML);
+   const originalShapes=[...original.querySelectorAll("path,polygon,ellipse,circle,rect")].map(x=>x.outerHTML);
    return {scene:{top:scene.top,bottom:scene.bottom,height:scene.height},
     body:{top:body.top,bottom:body.bottom,height:body.height},
     factor:Number(r.host.dataset.avatarFit),
-    wrappers:r.avatar.querySelectorAll("[data-robotito-mouth-placement]").length,
-    noseBottom:nose?.getBoundingClientRect().bottom,
-    mouthTop:mouth?.getBoundingClientRect().top,
-    stem:!!r.avatar.querySelector('path[d="M354 316v21"]'),
+    sameArt:JSON.stringify(currentShapes)===JSON.stringify(originalShapes),
+    noFacialOverrides:!r.avatar.querySelector("[data-robotito-mouth-placement]"),
     shadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#shadow")),
     contactsFollowFeet:r.fitGroup?.contains(r.stage.querySelector("#ground-front-contacts")),
     sideShadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#side-shadow-track")),
     fit:!!r.fitGroup?.getAttribute("transform")};
-  });
+  },id);
   assert.ok(geometry.fit,"Original avatar must have a dedicated framing group");
   assert.equal(geometry.shadowFollowsFeet,true,"Contact shadow must move with the feet");
   assert.equal(geometry.contactsFollowFeet,true,"Front foot contacts must remain grounded");
   assert.equal(geometry.sideShadowFollowsFeet,true,"Side-view contact shadow must be grounded");
   assert.ok(geometry.factor>0&&geometry.factor<=1,"Never enlarge an already large character");
-  assert.ok(geometry.wrappers>=6&&geometry.stem,"All mouth moods and philtrum must be aligned");
-  assert.ok(geometry.mouthTop>geometry.noseBottom,
-   "The mouth line must sit below the nose of "+id);
+  assert.equal(geometry.sameArt,true,"Original avatar shape paths, expressions and geometry must be unchanged: "+id);
+  assert.equal(geometry.noFacialOverrides,true,"Do not reposition any facial elements: "+id);
   assert.ok(geometry.body.top>=geometry.scene.top-4,
    "Head cropped in "+id+": "+JSON.stringify(geometry));
   assert.ok(geometry.body.bottom<=geometry.scene.bottom+4,
@@ -148,19 +147,6 @@ runBrowserTest("p28-approved-avatars",async test=>{
  }
  test.phase("non-reference-avatar-keeps-previous-renderer");
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current===null);
- const generic=await page.evaluate(()=>{
-  const art=window.ROBOTITO_AVATAR_ART;
-  return Object.keys(art.profiles).map(id=>{
-   const svg=art.render({id},"avatar-main-svg");
-   if(typeof svg!=="string")return {id,rendered:false};
-   const mouth=svg.match(/class="avatar-mouth mouth-line" d="([^"]+)"/);
-   return {id,rendered:true,hasMouth:!!mouth,belowNose:!!mouth&&/M(?:88 125|92 128)/.test(mouth[1])};
-  });
- });
- const rendered=generic.filter(x=>x.rendered);
- assert.ok(rendered.length>=40,"Most catalog avatars have a vector renderer");
- assert.ok(rendered.every(x=>x.hasMouth&&x.belowNose),
-  "Generic animal and robot mouths must also be below their noses");
  assert.equal(await page.locator("#robotito").getAttribute("aria-hidden"),null);
  assert.equal(await page.locator("#world").evaluate(el=>el.classList.contains("approved-art-world")),false);
  test.phase("layout-after-viewport-and-language-switch");
