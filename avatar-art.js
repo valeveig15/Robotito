@@ -258,15 +258,61 @@
     return {count:Object.keys(profiles).length,missing:missing};
   }
 
+  // Anatomy and emotions are drawn as part of ONE continuous vector character.
+  // No pasted-on polygonal head/body: those produced double faces and cut-out seams.
   function polishedRender(avatar,extraClass){
-    const svg=render(avatar,extraClass);
+    let svg=render(avatar,extraClass);
     if(!svg)return svg;
-    const p=profiles[avatar&&avatar.id]||profiles.panda;
-    const bodyFacets='<g class="avatar-facets avatar-body-facets" pointer-events="none"><path d="M66 145 109 125 95 178 61 187Z" fill="#fff"/><path d="m109 125 47 25-28 31-33-3Z" fill="'+p.accent+'"/><path d="m61 187 34-9 15 57-43-23Z" fill="'+p.belly+'"/><path d="m128 181 28-31 7 58-53 27Z" fill="'+p.accent+'"/></g>';
-    const headFacets='<g class="avatar-facets avatar-head-facets" pointer-events="none"><path d="m51 64 37-35 18 48-50 17Z" fill="#fff"/><path d="m88 29 31-5-13 53Z" fill="'+p.belly+'"/><path d="m119 24 48 39-32 18-29-4Z" fill="'+p.accent+'"/><path d="m56 94 50-17 4 61-42-17Z" fill="'+p.body+'"/><path d="m106 77 29 4 28 39-53 18Z" fill="'+p.belly+'"/></g>';
-    return svg
-      .replace('<path class="avatar-fur-shine" d="M75 148q-12 38 2 69"/>',bodyFacets+'<path class="avatar-fur-shine" d="M75 148q-12 38 2 69"/>')
-      .replace('<path class="avatar-fur-shine avatar-head-shine" d="M60 62q22-35 59-37"/>',headFacets+'<path class="avatar-fur-shine avatar-head-shine" d="M60 62q22-35 59-37"/>');
+    const id=avatar&&avatar.id||"panda",p=profiles[id]||profiles.panda;
+    const special=["cat","red-panda","iguana"].includes(id);
+    if(special){
+      const existingTail=tailMarkup(p);
+      const tail=id==="cat"
+        ? '<g class="avatar-tail avatar-tail-long"><path d="M156 190C181 183 200 193 197 213c-2 14-27 18-22 32 6 15 25 8 26-3" fill="none" stroke="'+p.accent+'" stroke-width="19" stroke-linecap="round"/><path d="M156 190C182 184 199 194 197 213c-1 10-23 17-22 26" fill="none" stroke="'+p.body+'" stroke-width="13" stroke-linecap="round"/></g>'
+        : id==="iguana"
+        ? '<g class="avatar-tail avatar-tail-long"><path d="M150 185Q191 186 215 214Q203 225 180 216Q161 209 150 202Z" fill="'+p.body+'" stroke="'+p.accent+'" stroke-width="2.8" stroke-linejoin="round"/><path d="m177 205 8-14 8 18 7-9 5 13" fill="none" stroke="'+p.accent+'" stroke-width="3" stroke-linejoin="round"/></g>'
+        : '<g class="avatar-tail avatar-tail-bushy"><path d="M154 180Q178 151 201 171Q223 191 207 214Q190 233 166 211Q180 203 171 193Z" fill="'+p.body+'" stroke="'+p.accent+'" stroke-width="3.5" stroke-linejoin="round"/><path d="M181 167q13 14 8 43M201 178q11 17-1 35" fill="none" stroke="'+p.belly+'" stroke-width="8" stroke-linecap="round" opacity=".92"/></g>';
+      svg=svg.replace(existingTail,tail);
+      const armColor=id==="red-panda"?p.accent:p.body;
+      const arms='<g class="avatar-arm avatar-arm-left arm arm-left"><path d="M78 145Q57 146 49 168L43 197Q43 218 60 221Q76 217 76 199L87 167Z" fill="'+armColor+'" stroke="'+p.accent+'" stroke-opacity=".35" stroke-width="2"/><path d="M48 205q13 8 24-3" fill="none" stroke="'+p.belly+'" stroke-width="3" opacity=".4"/><ellipse class="avatar-paw-pad" cx="52" cy="212" rx="5" ry="4"/><ellipse class="avatar-paw-pad" cx="63" cy="214" rx="5" ry="4"/><ellipse class="avatar-paw-pad" cx="70" cy="207" rx="4" ry="3.5"/></g>'+
+        '<g class="avatar-arm avatar-arm-right arm arm-right"><path d="M142 145Q163 146 171 168L177 197Q177 218 160 221Q144 217 144 199L133 167Z" fill="'+armColor+'" stroke="'+p.accent+'" stroke-opacity=".35" stroke-width="2"/><path d="M172 205q-13 8-24-3" fill="none" stroke="'+p.belly+'" stroke-width="3" opacity=".4"/><ellipse class="avatar-paw-pad" cx="168" cy="212" rx="5" ry="4"/><ellipse class="avatar-paw-pad" cx="157" cy="214" rx="5" ry="4"/><ellipse class="avatar-paw-pad" cx="150" cy="207" rx="4" ry="3.5"/></g>';
+      svg=svg.replace(/<g class="avatar-arm avatar-arm-left arm arm-left">.*?<\/g><g class="avatar-arm avatar-arm-right arm arm-right">.*?<\/g>/,arms);
+      const legColor=id==="red-panda"?p.accent:p.body;
+      const legs='<g class="avatar-leg avatar-leg-left leg leg-left"><path d="M79 199Q65 214 66 238Q65 251 81 251Q101 251 103 234L104 212Z" fill="'+legColor+'" stroke="'+p.accent+'" stroke-opacity=".3" stroke-width="2"/><path d="M65 240q17-9 34 0l8 9q-26 12-48 0Z" fill="'+legColor+'"/><ellipse class="avatar-paw-pad" cx="72" cy="248" rx="5" ry="3"/><ellipse class="avatar-paw-pad" cx="84" cy="249" rx="5" ry="3"/><ellipse class="avatar-paw-pad" cx="96" cy="247" rx="5" ry="3"/></g>'+
+        '<g class="avatar-leg avatar-leg-right leg leg-right"><path d="M141 199Q155 214 154 238Q155 251 139 251Q119 251 117 234L116 212Z" fill="'+legColor+'" stroke="'+p.accent+'" stroke-opacity=".3" stroke-width="2"/><path d="M155 240q-17-9-34 0l-8 9q26 12 48 0Z" fill="'+legColor+'"/><ellipse class="avatar-paw-pad" cx="148" cy="248" rx="5" ry="3"/><ellipse class="avatar-paw-pad" cx="136" cy="249" rx="5" ry="3"/><ellipse class="avatar-paw-pad" cx="124" cy="247" rx="5" ry="3"/></g>';
+      svg=svg.replace(/<g class="avatar-leg avatar-leg-left leg leg-left">.*?<\/g><g class="avatar-leg avatar-leg-right leg leg-right">.*?<\/g>/,legs);
+      const bodyRx=id==="cat"?47:id==="iguana"?52:56;
+      svg=svg.replace(/(class="avatar-body plush-body" cx="110" cy="174" rx=")\d+/, '$1'+bodyRx);
+      if(id==="cat"){
+        svg=svg.replace(/(class="avatar-belly plush-belly" cx="110" cy="181" rx=")\d+/, '$1'+'29');
+      }
+      const bodyDetail=id==="red-panda"
+        ? '<path class="avatar-species-chest" d="M84 143Q96 156 110 150Q124 156 136 143Q145 179 129 202Q121 215 110 221Q99 215 91 202Q75 179 84 143Z" fill="'+p.belly+'" opacity=".88"/><path d="M97 151q13 16 26 0" fill="none" stroke="#fff0df" stroke-width="3" opacity=".75"/>'
+        : id==="iguana"
+        ? '<path class="avatar-species-chest" d="M93 145Q110 155 127 145Q137 190 122 218Q110 225 98 218Q83 190 93 145Z" fill="'+p.belly+'" opacity=".8"/><path d="M105 171q5 5 10 0M103 190q7 5 14 0M105 208q5 3 10 0" fill="none" stroke="'+p.accent+'" stroke-width="2" opacity=".18"/>'
+        : '<path class="avatar-species-chest" d="M94 153q16 9 32 0Q138 184 125 214q-15 11-30 0Q82 184 94 153Z" fill="'+p.belly+'" opacity=".78"/>';
+      svg=svg.replace('<ellipse class="avatar-belly-glow"',bodyDetail+'<ellipse class="avatar-belly-glow"');
+    }
+    // Single reptile mouth below the nostrils; remove the mismatched second line.
+    if(id==="iguana"){
+      svg=svg.replace(/<path class="avatar-mouth mouth-line" d="M92 116q8 10 18 0 10 10 18 0"[^>]*\/>/,
+        '<path class="avatar-mouth mouth-line" d="M92 123Q110 133 128 123" fill="none" stroke="'+p.accent+'" stroke-width="3" stroke-linecap="round"/>');
+    }
+    const eyelids='<g class="avatar-upper-eyelids" fill="'+p.body+'" stroke="'+p.accent+'" stroke-opacity=".18" stroke-width="1"><path d="M63 77Q61 54 82 55Q103 54 101 77Q83 69 63 77Z"/><path d="M119 77Q117 54 138 55Q159 54 157 77Q139 69 119 77Z"/></g>';
+    const eyes='<g class="avatar-expression-eyes" pointer-events="none"><g class="avatar-love-eyes" fill="#ee7897" font-family="system-ui,sans-serif" font-size="24" text-anchor="middle" font-weight="900"><text x="84" y="91">♥</text><text x="136" y="91">♥</text></g><g class="avatar-excited-eyes" fill="#f4c453" font-family="system-ui,sans-serif" font-size="25" text-anchor="middle" font-weight="900"><text x="84" y="92">★</text><text x="136" y="92">★</text></g></g>';
+    const closed='<g class="avatar-closed-eyes" fill="none" stroke="'+p.accent+'" stroke-width="4.2" stroke-linecap="round"><path d="M66 82Q83 95 100 82"/><path d="M120 82Q137 95 154 82"/></g>';
+    const tears='<g class="avatar-tears" fill="#7cd4e5" stroke="#33879d" stroke-width="1.5"><path class="avatar-tear-left" d="M64 101Q55 114 57 126Q64 136 71 126Q73 115 64 101Z"/><path class="avatar-tear-right" d="M156 101Q147 114 149 126Q156 136 163 126Q165 115 156 101Z"/></g>';
+    const symbols='<g class="avatar-emotion-symbols" pointer-events="none"><path class="avatar-anger-mark" d="M166 25l8 6 10-5-2 11 7 8-11 1-4 11-7-8-11 2 4-12-6-8Z" fill="#ef5e6f" stroke="#a83346" stroke-width="2.2" stroke-linejoin="round"/><path class="avatar-sweat-mark" d="M175 57Q186 72 183 80Q174 89 167 80Q166 72 175 57Z" fill="#83d5e4" stroke="#276d86" stroke-width="2.4"/><text class="avatar-question-mark" x="164" y="38" font-size="31" font-family="system-ui,sans-serif" font-weight="900" fill="'+p.belly+'" stroke="'+p.accent+'" stroke-width="3.3" paint-order="stroke">?</text></g>';
+    const food=id==="iguana"
+       ? '<path d="M179 33q14-18 23-9-1 21-23 19-5-5 0-10Z" fill="#58af51" stroke="#347444" stroke-width="1.7"/><path d="M179 42q10-10 20-14" fill="none" stroke="#d4f3a2" stroke-width="2"/>'
+       : id==="cat"
+       ? '<path d="M176 35q13-12 25 0-12 13-25 0Z" fill="#82c8d6" stroke="#376e91" stroke-width="1.8"/><path d="m201 35 7-7v14Z" fill="#68a7be" stroke="#376e91" stroke-width="1.5"/><circle cx="182" cy="34" r="1.5" fill="#2b4052"/>'
+       : '<path d="M186 25q11 2 12 12 0 11-12 13-12-2-12-13 1-10 12-12Z" fill="#ee797f" stroke="#b64e5e" stroke-width="1.8"/><path d="M186 26q3-8 8-8" fill="none" stroke="#4b8c4c" stroke-width="3" stroke-linecap="round"/><path d="M181 29q5-4 8 0" fill="none" stroke="#ffc7bc" stroke-width="1.7"/>';
+    const hunger='<g class="avatar-hunger-cloud" pointer-events="none"><circle cx="188" cy="37" r="26" fill="#fffef5" stroke="'+p.accent+'" stroke-width="2.8" stroke-opacity=".65"/><circle cx="154" cy="69" r="4" fill="#fffef5" stroke="'+p.accent+'" stroke-width="1.5"/><circle cx="164" cy="59" r="6" fill="#fffef5" stroke="'+p.accent+'" stroke-width="1.6"/>'+food+'</g>';
+    const speaking='<g class="avatar-speaking-mouth" pointer-events="none"><ellipse cx="110" cy="124" rx="15" ry="10" fill="'+p.accent+'"/><path d="M101 127q9-7 18 0" fill="none" stroke="#ef95b1" stroke-width="4" stroke-linecap="round"/></g>';
+    svg=svg.replace(/(<path class="avatar-tongue tongue-svg"[^>]*\/>)/,
+      '$1'+eyelids+eyes+closed+tears+symbols+hunger+speaking);
+    return svg;
   }
 
   window.ROBOTITO_AVATAR_ART={profiles:profiles,customIds:Object.keys(profiles).filter(id=>id!=="panda"),profile:id=>profiles[id]||profiles.panda,render:polishedRender,audit:audit};
