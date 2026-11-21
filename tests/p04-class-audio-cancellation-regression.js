@@ -15,11 +15,11 @@ function fixture(){
   start(){this.state="recording";}stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
  }
  const runtime=new Function("state","window","document","navigator","MediaStream","MediaRecorder","crypto",
-  "pickMimeType","render","setLiveStatus","putChunk","chunksFor","saveRecording","clearChunks",
+  "pickMimeType","render","setLiveStatus","putChunk","chunksFor","saveRecording","clearChunks","endPlayback",
   "let active=null,captureRequest=0;\n"+source.slice(from,to)+"\nreturn {start,stop};")(
-  state,{MediaRecorder:Recorder},{hidden:false},{storage:{persist:()=>new Promise(resolve=>permissions.push(resolve))}},
+  state,{MediaRecorder:Recorder},{hidden:false,querySelectorAll:()=>[]},{storage:{persist:()=>new Promise(resolve=>permissions.push(resolve))}},
   class{constructor(tracks){this.getTracks=()=>tracks;}},Recorder,{randomUUID:()=>"test-class"},()=>"audio/webm",
-  async()=>{},()=>{},async()=>{},()=>new Promise(resolve=>storage.push(resolve)),async()=>{},async()=>{});
+  async()=>{},()=>{},async()=>{},()=>new Promise(resolve=>storage.push(resolve)),async()=>{},async()=>{},()=>{});
  return {runtime,state,clones,permissions,storage};
 }
 (async()=>{

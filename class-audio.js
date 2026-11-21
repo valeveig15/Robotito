@@ -9,6 +9,7 @@
   let captureRequest=0;
   let objectUrls=[];
   let renderVersion=0;
+  let playbackEpoch=null;
   const temporaryChunks=new Map();
 
   function openDb(){
@@ -43,8 +44,9 @@
       tx.onabort=()=>reject(tx.error||new Error("Operación cancelada"));
     });
   }
-  async function putChunk(sessionId,seq,blob){
-    if(window.ROBOTITO_STORE?.isEphemeral?.(active?.owner)){
+  async function putChunk(sessionId,seq,blob,owner){
+    if(!owner)throw new Error("Recording owner required");
+    if(window.ROBOTITO_STORE?.isEphemeral?.(owner)){
       const rows=temporaryChunks.get(sessionId)||[];rows.push({sessionId,seq,blob});temporaryChunks.set(sessionId,rows);return;
     }
     const db=await openDb();
@@ -136,32 +138,41 @@
     return record;
   }
   async function listRecordings(){
+    const owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
     const legacy=await listLegacyRecordings().catch(()=>[]);
     const store=window.ROBOTITO_STORE;
     if(!store?.queryRecords)return legacy;
     let modern=[];
     try{
-      const rows=await store.queryRecords({type:"audios",owner:window.ROBOTITO_MEMORY?.owner?.()||"local",limit:5000});
+      const rows=await store.queryRecords({type:"audios",owner,limit:5000});
       modern=await Promise.all(rows.filter(x=>x.source==="class-recorder"||x.source==="class-audio-migration").map(async x=>{
         const blob=await store.getBlob(x.blobId);
-        return {...x.data,blob,subject:x.subject||x.data?.subject,topic:x.topic||x.data?.topic};
+        return {...x.data,owner:x.owner,version:x.version,blob,subject:x.subject||x.data?.subject,topic:x.topic||x.data?.topic};
       }));
     }catch(e){console.warn("Class audio read",e);}
+    if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))return [];
     const ids=new Set(modern.map(x=>x.id));
     return modern.concat(window.ROBOTITO_MEMORY?.active?[]:legacy.filter(x=>!ids.has(x.id))).sort((a,b)=>b.startedAt-a.startedAt);
   }
-  async function removeRecording(id){
-    await window.ROBOTITO_STORE?.deleteRecord?.(memoryId(id));
-    await removeLegacyRecording(id);
+  async function removeRecording(id,{owner=window.ROBOTITO_MEMORY?.owner?.()||"local",expectedVersion}={}){
+    const store=window.ROBOTITO_STORE,saved=await store?.getRecord?.(memoryId(id));
+    if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))throw new Error("History changed");
+    if(saved)return store.editRecord(memoryId(id),{owner,expectedVersion:expectedVersion??saved.version,remove:true});
+    if(window.ROBOTITO_MEMORY?.active)throw new Error("Recording not found in this history");
+    return removeLegacyRecording(id);
   }
   async function updateMetadata(id,patch={}){
+    const owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
     const store=window.ROBOTITO_STORE;
     const saved=await store?.getRecord?.(memoryId(id));
+    if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))throw new Error("History changed");
     if(saved){
-      const data={...saved.data,...patch,id};
-      await store.putRecord({...saved,subject:data.subject||"",topic:data.topic||"",data});
+      const allowed=Object.fromEntries(Object.entries(patch).filter(([key])=>["subject","topic","startedAt","transcriptFrom","transcriptTo"].includes(key)));
+      const data={...saved.data,...allowed,id};
+      await store.editRecord(saved.id,{owner,expectedVersion:saved.version,subject:data.subject||"",topic:data.topic||"",data});
       return {...data,blob:await store.getBlob(saved.blobId)};
     }
+    if(window.ROBOTITO_MEMORY?.active)throw new Error("Recording not found in this history");
     return updateLegacyMetadata(id,patch);
   }
   async function migrateAudio(){
@@ -230,13 +241,24 @@
     }catch{return 0;}
   }
   function revokeUrls(){
+    document.querySelectorAll("#classRecordingsList audio").forEach(player=>{player.pause();player.removeAttribute("src");player.load();});
     objectUrls.forEach(u=>URL.revokeObjectURL(u));
     objectUrls=[];
+    endPlayback();
+  }
+  function endPlayback(){
+    if(playbackEpoch===null)return;
+    const epoch=playbackEpoch;playbackEpoch=null;state.classAudioPlaybackActive=false;
+    if(epoch===state.captureEpoch&&state.started&&!document.hidden&&!state.captureSuspended&&!state.enrollmentActive&&!state.speaking&&!state.speechBlocked&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive){
+      window.RobotitoLocalASR?.pause?.(false);
+      if(typeof restartRecognitionAfterSpeech==="function")restartRecognitionAfterSpeech();
+    }
   }
   async function render(){
     const root=document.querySelector("#classRecordingsList");
     if(!root)return;
     const version=++renderVersion;
+    const owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
     let rows=[];
     try{rows=await listRecordings();}
     catch(e){
@@ -245,7 +267,7 @@
       return;
     }
     const extra=await storageText();
-    if(version!==renderVersion)return;
+    if(version!==renderVersion||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))return;
     revokeUrls();
     const stat=document.querySelector("#classRecordingStatus");
     if(stat){
@@ -305,13 +327,29 @@
     root.querySelectorAll(".delete-class-recording").forEach(btn=>btn.addEventListener("click",async()=>{
       const id=btn.dataset.id;
       if(!confirm(uiText("¿Querés borrar esta grabación de clase de este dispositivo?")))return;
-      await removeRecording(id);
+      try{await removeRecording(id,{owner,expectedVersion:rows.find(row=>row.id===id)?.version});}
+      catch{setLiveStatus("No se guardó el cambio: la memoria cambió en otra pestaña. Recargá y revisá los datos.");}
       await render();
       window.ROBOTITO_CLASS_ORGANIZER?.render?.();
     }));
+    root.querySelectorAll("audio").forEach(player=>{
+      player.addEventListener("play",()=>{
+        if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local")||state.classMode||document.hidden||state.enrollmentActive||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive){player.pause();return;}
+        root.querySelectorAll("audio").forEach(other=>{if(other!==player)other.pause();});
+        if(typeof stopSpeaking==="function")stopSpeaking();
+        playbackEpoch=state.captureEpoch;state.classAudioPlaybackActive=true;
+        window.RobotitoLocalASR?.pause?.(true);
+        if(typeof discardRecognition==="function")discardRecognition();
+      });
+      for(const event of ["pause","ended","error"])player.addEventListener(event,()=>{
+        if(![...root.querySelectorAll("audio")].some(item=>!item.paused&&!item.ended))endPlayback();
+      });
+    });
   }
   async function start(subject,topic="",sessionId=null){
     if(active)return {ok:false,reason:"already-recording"};
+    document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());
+    endPlayback();
     if(!window.MediaRecorder)return {ok:false,reason:"unsupported"};
     // When the user explicitly shares a video tab, record that audio instead of the microphone.
     const source=window.ROBOTITO_YOUTUBE_MATERIAL?.captureStream||state.stream;
@@ -320,9 +358,10 @@
     const tracks=source?.getAudioTracks?.().filter(t=>t.readyState==="live")||[];
     if(!tracks.length)return {ok:false,reason:"no-audio-track"};
     const request=++captureRequest;
+    const owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
 
     try{await navigator.storage?.persist?.();}catch{}
-    if(request!==captureRequest)return {ok:false,reason:"capture-canceled"};
+    if(request!==captureRequest||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))return {ok:false,reason:"capture-canceled"};
     if(sharedCapture&&(source!==state.stream||state.captureEpoch!==epoch||state.captureRevision!==revision||
        !state.started||document.hidden||state.captureSuspended))return {ok:false,reason:"capture-canceled"};
     if(tracks.some(track=>track.readyState!=="live"))return {ok:false,reason:"no-audio-track"};
@@ -340,7 +379,7 @@
 
     const session={
       id,
-      owner:window.ROBOTITO_MEMORY?.owner?.()||"local",
+      owner,
       sessionId:sessionId||id,
       subject:subject||"Clase",
       topic:topic||"",
@@ -351,9 +390,9 @@
     active=session;
 
     recorder.ondataavailable=e=>{
-      if(!e.data||!e.data.size)return;
+      if(session.finalized||!e.data||!e.data.size)return;
       const seq=session.seq++;
-      const write=putChunk(id,seq,e.data).catch(err=>console.warn("class audio chunk",err));
+      const write=putChunk(id,seq,e.data,session.owner).catch(err=>console.warn("class audio chunk",err));
       session.pending.push(write);
     };
     recorder.onerror=e=>{
@@ -389,6 +428,7 @@
       await new Promise(r=>setTimeout(r,80));
       await Promise.allSettled(session.pending);
 
+      session.finalized=true;
       const rows=await chunksFor(session.id);
       if(!rows.length)throw new Error("La grabación quedó vacía.");
       const blob=new Blob(rows.map(x=>x.blob),{type:session.mimeType||rows[0].blob?.type||"audio/webm"});
@@ -418,6 +458,7 @@
       setLiveStatus("no pude guardar el audio",false);
       return null;
     }finally{
+      session.finalized=true;
       session.audioStream.getTracks().forEach(t=>{try{t.stop();}catch{}});
       active=null;
       await render();
@@ -432,6 +473,13 @@
   }
 
   window.ROBOTITO_CLASS_AUDIO={start,stop,isBusy:()=>Boolean(active),render,refreshLocale,isRecording,listRecordings,removeRecording,updateMetadata,migrateAudio};
+
+  window.addEventListener("robotito:memoryscopechange",()=>{
+    ++captureRequest;++renderVersion;revokeUrls();
+    for(const id of ["classRecordingsList","classRecordingStatus","classRecordingLive"])document.getElementById(id)?.replaceChildren();
+    if(active&&!active.stopped)void stop();
+  });
+  document.addEventListener("visibilitychange",()=>{if(document.hidden){document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());endPlayback();}});
 
   document.addEventListener("DOMContentLoaded",()=>{
     void migrateAudio().finally(()=>render());

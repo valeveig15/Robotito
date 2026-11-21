@@ -519,15 +519,16 @@ async function clearRecordsByType(type,{owner}={}){
  }
  return total;
 }
-async function editRecord(id,{owner,expectedVersion,data,remove=false}={}){
+async function editRecord(id,{owner,expectedVersion,data,subject,topic,remove=false}={}){
  if(!owner||!Number.isInteger(expectedVersion))throw Error("Owner and record version required");
+ for(const value of [subject,topic])if(value!==undefined&&(typeof value!=="string"||value.length>500))throw Error("Invalid record metadata");
  if(!isEphemeral(owner)&&(await getRecord(id))?.type==="memories"){
   const result=await changeOwnedMemory({id,owner,expectedVersion,text:data?.text,remove});return result.record;
  }
  const change=row=>{
   if(!row||row.owner!==owner)throw Error("Record does not belong to this owner");
   if(row.version!==expectedVersion)throw Error("Memory changed in another tab; reload before editing");
-  return {...row,data:structuredClone(data),version:row.version+1,updatedAt:Date.now()};
+  return {...row,data:structuredClone(data),...(subject===undefined?{}:{subject}),...(topic===undefined?{}:{topic}),version:row.version+1,updatedAt:Date.now()};
  };
  if(isEphemeral(owner)){
   const next=change(ephemeralRecords.get(String(id)));

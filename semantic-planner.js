@@ -179,6 +179,11 @@ function repeatPayload(text){
  const match=stripAddress(text).match(/^(?:repite\s+despu[eé]s\s+de\s+m[ií]|repet[ií]\s+despu[eé]s\s+de\s+m[ií]|repeat\s+after\s+me|repita\s+depois\s+de\s+mim|r[eé]p[eè]te\s+apr[eè]s\s+moi|ripeti\s+dopo\s+di\s+me|wiederhole\s+nach\s+mir)\s*[:,-]?\s*([\s\S]*)$/i);
  return match?match[1].trim():null;
 }
+function playbackRequest(text){
+ const q=fold(stripAddress(text));
+ return /^(?:(?:puedes|podes|podrias|can you|could you|pode|podes|peux-tu|puoi|kannst du)\s+)?(?:reproduci(?:r)?|reproduce|pon(?:e|eme)?|play|reproduza|reproduzir|joue|ecouter|fais ecouter|riproduci|ascolta|spiele?|abspielen)\b/.test(q)&&
+  /\b(?:clase|class|lecture|aula|cours|lezione|unterricht|grabacion|recording|gravacao|enregistrement|registrazione|aufnahme)\b/.test(q);
+}
 // Only negation of an addressed directive blocks execution. Negated phrases
 // in quoted speech, explanations and academic content remain data.
 function negativeDirective(input){
@@ -189,6 +194,7 @@ function negativeDirective(input){
  // German negative imperative has a trailing 'nicht' rather than a leading
  // negator. Require an imperative verb family so quoted occurrences are inert.
  const verb=semanticTokens(q)[0]||"";
+ if(/^spiel/.test(verb)&&/\b(?:nicht|keine?)\b/.test(q))return true;
  if(/\bnicht\s*[.!?]*$/.test(q)
    &&["erkl","zeig","offn","oeffn","such","mach","schreib","nenn","sag","zeichn","lies","les","erinner"].some(stem=>verb.startsWith(stem))
    && !/\b(?:wort|begriff|ausdruck|bedeutung|von)\s+nicht\b/.test(q))return true;
@@ -379,6 +385,8 @@ function inferFrame(text,{context,language,now},inSequence=false){
  if(solveReference){features.speechAct="request";features.directed=true;}
  const followUp=followUpModifier(directedText);
  const recall=root.ROBOTITO_MEMORY_RETRIEVAL?.intent?.(unquoted(directedText));
+ const playback=playbackRequest(directedText);
+ if(playback&&!features.reportedUtterance&&!features.mentionQuestion){features.speechAct="request";features.directed=true;}
  if(recall?.directed&&!features.reportedUtterance&&!features.mentionQuestion){features.speechAct="request";features.directed=true;}
  const roles=features.roles;
  let {intent,source,confidence}=fallback;
@@ -393,7 +401,8 @@ function inferFrame(text,{context,language,now},inSequence=false){
  if(reported){
   intent="conversation";source="none";confidence=.82;
  }else if(features.speechAct!=="statement"){
-  if(has("QUESTION")&&!/\b(?:que es|what is)\b/.test(q)){intent="quiz";source="conversation";confidence=.83;}
+  if(playback&&!excludesClass){intent="class-playback";source="classes";confidence=.9;}
+  else if(has("QUESTION")&&!/\b(?:que es|what is)\b/.test(q)){intent="quiz";source="conversation";confidence=.83;}
   else if(explicitExercise){intent="exercise";source="materials";confidence=.87;}
   else if(explicitClass){intent="class-question";source="classes";confidence=.9;}
   else if(has("COMPARE")&&/\b(?:entre|between|tra|fra|zwischen)\b/.test(q)){intent="comparison";source="general";confidence=.85;}
@@ -451,7 +460,7 @@ function inferFrame(text,{context,language,now},inSequence=false){
   (features.speechAct!=="statement"&&/^(?:y\s+)?(?:el otro|la otra|the other)$/i.test(bareReference)&&!(previous?.entities?.alternatives?.length>=2));
  const shouldRespond=features.speechAct!=="statement"||features.vocative||features.implicit;
  const mayReadClass=!excludesClass&&shouldExecute&&!needsClarification&&(source==="classes"||source==="materials")
-  &&(explicitClass||explicitExercise||knownExercise||((isReferenceOnly(q)||numberRepair)&&previous?.source===source&&previous?.mayReadClass!==false));
+  &&(playback||explicitClass||explicitExercise||knownExercise||((isReferenceOnly(q)||numberRepair)&&previous?.source===source&&previous?.mayReadClass!==false));
  if(followUp||deicticRequest&&previous?.entities?.topic){
   const modifier=followUp||{kind:"detailed"};
   const hasAntecedent=Boolean(previous&&previous.intent!=="conversation");
