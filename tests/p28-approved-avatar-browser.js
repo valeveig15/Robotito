@@ -103,6 +103,38 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.role,"img");
   assert.ok(meta.geometry>250);
   assert.equal(meta.sourceView,"0 0 700 635");
+  test.phase("whole-body-size-preserves-original-art",APPROVED.indexOf(id),{avatar:id});
+  const geometry=await page.evaluate(async id=>{
+   const r=window.ROBOTITO_APPROVED_AVATAR.current;
+   const scene=document.querySelector(".world-scene").getBoundingClientRect();
+   const body=r.avatar.getBoundingClientRect();
+   const originalText=await fetch("assets/approved-avatars/"+id+".fragment.html").then(x=>x.text());
+   const original=new DOMParser().parseFromString(originalText,"text/html").querySelector("#stage-svg #avatar");
+   const currentShapes=[...r.avatar.querySelectorAll("path,polygon,ellipse,circle,rect")].map(x=>x.outerHTML);
+   const originalShapes=[...original.querySelectorAll("path,polygon,ellipse,circle,rect")].map(x=>x.outerHTML);
+   return {scene:{top:scene.top,bottom:scene.bottom,height:scene.height},
+    body:{top:body.top,bottom:body.bottom,height:body.height},
+    factor:Number(r.host.dataset.avatarFit),
+    sameArt:JSON.stringify(currentShapes)===JSON.stringify(originalShapes),
+    noFacialOverrides:!r.avatar.querySelector("[data-robotito-mouth-placement]"),
+    shadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#shadow")),
+    contactsFollowFeet:r.fitGroup?.contains(r.stage.querySelector("#ground-front-contacts")),
+    sideShadowFollowsFeet:r.fitGroup?.contains(r.stage.querySelector("#side-shadow-track")),
+    fit:!!r.fitGroup?.getAttribute("transform")};
+  },id);
+  assert.ok(geometry.fit,"Original avatar must have a dedicated framing group");
+  assert.equal(geometry.shadowFollowsFeet,true,"Contact shadow must move with the feet");
+  assert.equal(geometry.contactsFollowFeet,true,"Front foot contacts must remain grounded");
+  assert.equal(geometry.sideShadowFollowsFeet,true,"Side-view contact shadow must be grounded");
+  assert.ok(geometry.factor>0&&geometry.factor<=1,"Never enlarge an already large character");
+  assert.equal(geometry.sameArt,true,"Original avatar shape paths, expressions and geometry must be unchanged: "+id);
+  assert.equal(geometry.noFacialOverrides,true,"Do not reposition any facial elements: "+id);
+  assert.ok(geometry.body.top>=geometry.scene.top-4,
+   "Head cropped in "+id+": "+JSON.stringify(geometry));
+  assert.ok(geometry.body.bottom<=geometry.scene.bottom+4,
+   "Feet cropped in "+id+": "+JSON.stringify(geometry));
+  assert.ok(geometry.body.height<=geometry.scene.height*.92,
+   "The avatar should not fill the entire scene height");
   test.phase("approved-avatar-moods-and-actions",APPROVED.indexOf(id),{avatar:id});
   await expectTransition({mood:"avergonzado"},()=>page.evaluate(()=>setMood("embarrassed")));
   await expectTransition({mood:"feliz"},()=>page.evaluate(()=>setMood("happy")));
@@ -131,6 +163,15 @@ runBrowserTest("p28-approved-avatars",async test=>{
    return {stage:stage.bottom,hostWidth:host.width,formTop:form.top,hit:document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id};
   });
   assert.ok(box.hostWidth>220);
+  const responsive=await page.evaluate(()=>{
+    const r=window.ROBOTITO_APPROVED_AVATAR.current;
+    return {scene:document.querySelector(".world-scene").getBoundingClientRect(),
+      body:r.avatar.getBoundingClientRect(),
+      factor:Number(r.host.dataset.avatarFit)};
+  });
+  assert.ok(responsive.body.top>=responsive.scene.top-4);
+  assert.ok(responsive.body.bottom<=responsive.scene.bottom+4);
+  assert.ok(responsive.factor>0&&responsive.factor<=1);
   assert.ok(box.formTop>=box.stage-2,"Approved art must remain behind chat");
   await page.locator("#robotitoTextInput").scrollIntoViewIfNeeded();
   await page.locator("#robotitoTextInput").click();
