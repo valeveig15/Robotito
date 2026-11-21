@@ -138,6 +138,44 @@ async function activate(id,{mood="calm",language="es"}={}){
 .stage{height:100%;width:100%;aspect-ratio:auto!important;border-radius:0!important;overflow:hidden!important}
 .stage #stage-svg{width:100%;height:100%;display:block;touch-action:manipulation}
 .stage .cornerlabel,.stage button{display:none!important}
+/* Shared emotion corrections for approved SVG designs. */
+#avatar[data-mood="dormido"] #eye-open,#avatar[data-mood="dormido"] #eye-pupils,
+#avatar[data-mood="dormido"] #heart-eyes,#avatar[data-mood="dormido"] #star-eyes{opacity:0!important;visibility:hidden!important;animation:none!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important;animation:none!important}
+#avatar[data-mood="dormido"] #approved-eyelids{display:none!important}
+#avatar[data-mood="cansado"] #eye-open,#avatar[data-mood="aburrido"] #eye-open{transform:none!important}
+#approved-eyelids{opacity:0;pointer-events:none;transform-box:fill-box;transform-origin:center}
+#avatar[data-mood="cansado"] #approved-eyelids{opacity:1;transform:translateY(9px)}
+#avatar[data-mood="aburrido"] #approved-eyelids{opacity:1;transform:translateY(3px)}
+#avatar[data-mood="triste"] #tears{opacity:1!important;visibility:visible!important}
+#avatar[data-mood="triste"] #tears path{
+  transform-box:fill-box;transform-origin:center;
+  animation:approvedTearFall 1.65s ease-in infinite!important;
+  stroke:#347f9d;stroke-width:1.5;paint-order:stroke;
+}
+#avatar[data-mood="triste"] #tears path:nth-child(2){animation-delay:-.8s!important}
+@keyframes approvedTearFall{
+  0%{opacity:0;transform:translateY(-6px) scale(1.4)}
+  18%,75%{opacity:1}
+  100%{opacity:0;transform:translateY(38px) scale(1.7)}
+}
+#avatar #anger-mark{transform-box:fill-box;transform-origin:center;transform:translate(-12px,11px) scale(.66)!important}
+#avatar[data-mood="enojado"] #anger-mark{animation:none!important;opacity:1!important}
+#avatar #sweat-mark path{stroke:#246e8a;stroke-width:3.2;stroke-linejoin:round;paint-order:stroke}
+#avatar #question-mark{transform-box:fill-box;transform-origin:center;transform:translate(-25px,17px)}
+#avatar[data-mood="confundido"] #question-mark{animation:none!important;opacity:1!important}
+#avatar[data-mood="curioso"] #brows-curious{
+  opacity:1!important;visibility:visible!important;transform:translateY(-7px);
+  filter:drop-shadow(0 1px 1px rgba(20,20,20,.1))
+}
+#avatar[data-mood="curioso"] #brows-curious path{stroke-width:6!important}
+#avatar.speaking:not([data-mood="triste"]):not([data-mood="enojado"]) #mouth-speak{display:inline!important;opacity:1!important;visibility:visible!important}
+#avatar.speaking #mouth-happy,#avatar.speaking #mouth-neutral,
+#avatar.speaking #mouth-o,#avatar.speaking #mouth-sad,#avatar.speaking #mouth-angry{opacity:0!important}
+#avatar[data-mood="enamorado"] #heart-eyes,#avatar[data-mood="emocionado"] #star-eyes{opacity:1!important}
+#avatar[data-mood="enamorado"] #eye-pupils,#avatar[data-mood="emocionado"] #eye-pupils{opacity:0!important}
+@media(prefers-reduced-motion:reduce){#avatar[data-mood="triste"] #tears path{animation:none!important}}
+
 .approved-object-prop{position:absolute;left:58%;top:48%;font-size:clamp(24px,5vw,51px);pointer-events:none;filter:drop-shadow(0 5px 5px rgba(40,30,40,.22))}
 @media(prefers-reduced-motion:reduce){
  #stage-svg #avatar,#stage-svg #front-view,#stage-svg #side-locomotion{animation:none!important;transition:none!important}
@@ -145,6 +183,24 @@ async function activate(id,{mood="calm",language="es"}={}){
 `;
   shadow.appendChild(overrides);
   const stage=shadow.querySelector("#stage-svg"),avatar=shadow.querySelector("#avatar");
+  // Do not crop feet, tails or lower body when the scene changes aspect ratio.
+  stage?.setAttribute("preserveAspectRatio","xMidYMid meet");
+  const openEyes=avatar?.querySelector("#eye-open");
+  if(openEyes&&!avatar.querySelector("#approved-eyelids")){
+    const ns="http://www.w3.org/2000/svg",lids=document.createElementNS(ns,"g");
+    lids.setAttribute("id","approved-eyelids");
+    const colors={panda:"#f8f8f7","brown-bear":"#8b5a3c","polar-bear":"#f4fbff",dog:"#c68a52",monkey:"#8c5a3c"};
+    lids.setAttribute("fill",colors[id]||"#e8d1b5");
+    lids.setAttribute("stroke","#59443f");lids.setAttribute("stroke-opacity",".12");
+    lids.setAttribute("stroke-width","1.8");
+    for(const d of ["M268 241Q268 213 292 211Q315 212 319 241Q293 230 268 241Z",
+                    "M389 239Q391 213 413 211Q437 213 439 239Q413 228 389 239Z"]){
+      const lid=document.createElementNS(ns,"path");
+      lid.setAttribute("d",d);lids.appendChild(lid);
+    }
+    openEyes.after(lids);
+  }
+
   if(!stage||!avatar)throw new Error("Invalid approved avatar "+id);
   stage.setAttribute("aria-hidden","true");
   const robot=getRobot();
