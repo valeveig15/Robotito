@@ -133,22 +133,6 @@ function fitApprovedAvatar(){
   factor.toFixed(4)+") translate(-350 -581)");
  current.host.dataset.avatarFit=factor.toFixed(3);
 }
-// Wrap rather than CSS-transform mouth elements: speaking animations still work.
-function repairApprovedFace(avatar){
- const groups=[...avatar.querySelectorAll('[id^="mouth-"]')]
-  .filter(el=>el.tagName.toLowerCase()==="g");
- for(const item of groups){
-  const wrapper=document.createElementNS(SVG_NS,"g");
-  wrapper.setAttribute("data-robotito-mouth-placement","");
-  wrapper.setAttribute("transform","translate(0 12)");
-  item.parentNode.insertBefore(wrapper,item);
-  wrapper.appendChild(item);
- }
- const philtrum=avatar.querySelector('path[d="M354 316v10"]');
- if(philtrum)philtrum.setAttribute("d","M354 316v21");
- return groups.length;
-}
-
 function scheduleSync(){
  if(pendingSync)return;
  pendingSync=true;
@@ -196,8 +180,6 @@ async function activate(id,{mood="calm",language="es"}={}){
    if(part?.parentNode===avatar.parentNode)fitGroup.appendChild(part);
   }
   fitGroup.appendChild(avatar);
-  const mouthCount=repairApprovedFace(avatar);
-  if(mouthCount<6)throw new Error("Approved avatar mouth shapes missing: "+id);
   current={id,host,shadow,stage,avatar,fitGroup,mood,language};
   fitApprovedAvatar();
   if(typeof ResizeObserver!=="undefined"){
