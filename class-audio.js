@@ -9,6 +9,7 @@
   let captureRequest=0;
   let objectUrls=[];
   let renderVersion=0;
+  let playbackEpoch=null;
   const temporaryChunks=new Map();
 
   function openDb(){
@@ -243,6 +244,15 @@
     document.querySelectorAll("#classRecordingsList audio").forEach(player=>{player.pause();player.removeAttribute("src");player.load();});
     objectUrls.forEach(u=>URL.revokeObjectURL(u));
     objectUrls=[];
+    endPlayback();
+  }
+  function endPlayback(){
+    if(playbackEpoch===null)return;
+    const epoch=playbackEpoch;playbackEpoch=null;state.classAudioPlaybackActive=false;
+    if(epoch===state.captureEpoch&&state.started&&!document.hidden&&!state.captureSuspended&&!state.enrollmentActive&&!state.speaking&&!state.speechBlocked&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive){
+      window.RobotitoLocalASR?.pause?.(false);
+      if(typeof restartRecognitionAfterSpeech==="function")restartRecognitionAfterSpeech();
+    }
   }
   async function render(){
     const root=document.querySelector("#classRecordingsList");
@@ -322,9 +332,24 @@
       await render();
       window.ROBOTITO_CLASS_ORGANIZER?.render?.();
     }));
+    root.querySelectorAll("audio").forEach(player=>{
+      player.addEventListener("play",()=>{
+        if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local")||state.classMode||document.hidden||state.enrollmentActive||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive){player.pause();return;}
+        root.querySelectorAll("audio").forEach(other=>{if(other!==player)other.pause();});
+        if(typeof stopSpeaking==="function")stopSpeaking();
+        playbackEpoch=state.captureEpoch;state.classAudioPlaybackActive=true;
+        window.RobotitoLocalASR?.pause?.(true);
+        if(typeof discardRecognition==="function")discardRecognition();
+      });
+      for(const event of ["pause","ended","error"])player.addEventListener(event,()=>{
+        if(![...root.querySelectorAll("audio")].some(item=>!item.paused&&!item.ended))endPlayback();
+      });
+    });
   }
   async function start(subject,topic="",sessionId=null){
     if(active)return {ok:false,reason:"already-recording"};
+    document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());
+    endPlayback();
     if(!window.MediaRecorder)return {ok:false,reason:"unsupported"};
     // When the user explicitly shares a video tab, record that audio instead of the microphone.
     const source=window.ROBOTITO_YOUTUBE_MATERIAL?.captureStream||state.stream;
@@ -454,6 +479,7 @@
     for(const id of ["classRecordingsList","classRecordingStatus","classRecordingLive"])document.getElementById(id)?.replaceChildren();
     if(active&&!active.stopped)void stop();
   });
+  document.addEventListener("visibilitychange",()=>{if(document.hidden){document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());endPlayback();}});
 
   document.addEventListener("DOMContentLoaded",()=>{
     void migrateAudio().finally(()=>render());

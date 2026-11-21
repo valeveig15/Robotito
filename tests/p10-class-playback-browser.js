@@ -1,0 +1,48 @@
+"use strict";
+const {runBrowserTest}=require("./browser-test-harness.js");
+runBrowserTest("p10-class-playback",async test=>{
+ const {page,baseURL}=test;await page.goto(baseURL,{waitUntil:"domcontentloaded"});
+ await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ test.phase("real-local-audio-and-command-routing");
+ const checks=await page.evaluate(async()=>{
+  let checks=0;const check=(ok,msg)=>{if(!ok)throw Error(msg);checks++;};
+  state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
+  const buffer=new ArrayBuffer(44+16000*2*2),v=new DataView(buffer),str=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  str(0,"RIFF");v.setUint32(4,buffer.byteLength-8,true);str(8,"WAVE");str(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);str(36,"data");v.setUint32(40,buffer.byteLength-44,true);
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const save=async(id,subject)=>ROBOTITO_STORE.putRecordWithBlob({id:"class-audio:"+id,type:"audios",owner:"Ada",source:"class-recorder",blobId:id,subject,
+   data:{id,subject,owner:"Ada",startedAt:yesterday.getTime(),durationMs:2000,size:buffer.byteLength,mimeType:"audio/wav"}},new Blob([buffer],{type:"audio/wav"}));
+  await save("waves","Physics");
+  await handleSpeech("Reproducí la clase de ayer",{channel:"typed"});
+  const first=document.querySelector('[data-recording-id="waves"] audio');
+  check(first&&!first.paused,"The normal dialogue path actually starts the existing local file");
+  check(state.classAudioPlaybackActive===true,"Own recorded speech suppresses recognition and sound reactions");
+  first.pause();await new Promise(r=>setTimeout(r,0));check(!state.classAudioPlaybackActive,"Pausing restores the input gate");
+  await save("cells","Biology");
+  const plan=ROBOTITO_SEMANTIC_PLANNER.plan("Reproducí la clase de ayer"),options={plan,owner:"Ada",language:"es"};
+  const many=await ROBOTITO_CLASS_PLAYBACK.handle("Reproducí la clase de ayer",options);
+  check(many.text.includes("varias")&&!many.playing,"Several files require a choice");
+  const none=await ROBOTITO_CLASS_PLAYBACK.handle("Reproducí la clase de Chemistry de ayer",options);
+  check(none.text.includes("No encontré"),"A missing subject does not play a different class");
+  let reads=0;const original=ROBOTITO_CLASS_AUDIO.listRecordings;
+  ROBOTITO_CLASS_AUDIO.listRecordings=async()=>{reads++;return original();};
+  await handleSpeech("No reproduzcas la clase de ayer",{channel:"typed"});
+  check(reads===0,"Negation never retrieves audio");
+  await handleSpeech("Repetí después de mí: reproducí la clase de ayer",{channel:"typed"});
+  check(reads===0,"Literal repetition never retrieves audio");
+  ROBOTITO_CLASS_AUDIO.listRecordings=original;
+  const play=HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play=()=>Promise.reject(new DOMException("Blocked","NotAllowedError"));
+  const blocked=await ROBOTITO_CLASS_PLAYBACK.handle("Play the Physics class from yesterday",{...options,language:"en"});
+  check(!blocked.playing&&blocked.text.includes("could not start"),"Autoplay denial is reported honestly in the selected language");
+  HTMLMediaElement.prototype.play=play;
+  state.classMode=true;
+  const silent=await ROBOTITO_CLASS_PLAYBACK.handle("Reproducí la clase de ayer",options);
+  check(!silent.playing&&silent.text.includes("Terminá"),"Class mode never plays over recording");state.classMode=false;
+  state.currentVoicePerson="Bea";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
+  const other=await ROBOTITO_CLASS_PLAYBACK.handle("Reproducí la clase de ayer",{...options,owner:"Bea"});
+  check(!other.playing&&other.text.includes("No encontré"),"Another person cannot play Ada's file");
+  return checks;
+ });
+ test.report.checks=checks;console.log("P10 real browser playback:",checks,"checks; generated WAV, no physical hardware");
+}).catch(e=>{console.error(e);process.exitCode=1;});
