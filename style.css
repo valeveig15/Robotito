@@ -3525,3 +3525,30 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 
 /* Expression icons now live next to each character's face, not in a second floating badge. */
 .robotito.avatar-custom .animal-avatar-mood{display:none!important}
+
+
+/* Species-specific outdoor and indoor habitats, without changing avatar artwork. */
+.world[data-habitat]:not(.approved-art-world) .world-scene{
+  background:var(--habitat-background,linear-gradient(180deg,#d3f0ec,#9bc6a8 65%,#639568));
+}
+.world[data-habitat="jungle"]{--habitat-background:linear-gradient(180deg,#a0d8ad,#cce8a8 42%,#709c61 70%,#375e40)}
+.world[data-habitat="forest"]{--habitat-background:linear-gradient(180deg,#b8dfd1,#dbedc5 40%,#87b28d 68%,#557a62)}
+.world[data-habitat="polar"]{--habitat-background:linear-gradient(180deg,#b1d6ec,#e9f6ff 52%,#dbecf3 72%,#accad5)}
+.world[data-habitat="wetland"]{--habitat-background:linear-gradient(180deg,#b0e2dc,#cbe9bf 47%,#80b69a 69%,#5b9697)}
+.world[data-habitat="savanna"]{--habitat-background:linear-gradient(180deg,#ffe0a7,#f8eab0 46%,#d6be70 69%,#a68d4b)}
+.world[data-habitat="meadow"]{--habitat-background:linear-gradient(180deg,#b8e2f8,#e8f6d3 49%,#9acb78 70%,#6ea056)}
+.world[data-habitat="desert"]{--habitat-background:linear-gradient(180deg,#f6d9af,#ffe9bd 45%,#e4b87d 68%,#b99068)}
+.world[data-habitat="ocean"]{--habitat-background:linear-gradient(180deg,#75c9e1,#79dce8 45%,#3495b8 70%,#206387)}
+.world[data-habitat="fantasy"]{--habitat-background:linear-gradient(180deg,#d8c7f5,#f0dff5 49%,#a9caac 69%,#7e9c91)}
+.world[data-habitat="home"]{--habitat-background:linear-gradient(180deg,#e7e7f4,#f9ebed 50%,#e6c9b6 72%,#c7a992)}
+.world[data-habitat="polar"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="desert"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="ocean"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="home"]:not(.approved-art-world) .bamboo{opacity:0!important}
+.world[data-habitat="jungle"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="forest"]:not(.approved-art-world) .bamboo{opacity:.88}
+.world[data-habitat="ocean"]:not(.approved-art-world) .world-scene::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 20% 32%,rgba(255,255,255,.25),transparent 27%),
+             radial-gradient(ellipse at 83% 66%,rgba(255,255,255,.13),transparent 18%);
+}
