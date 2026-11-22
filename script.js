@@ -2298,6 +2298,21 @@ function applyAvatar(id,{persist=true}={}){
   if(avatarWorld){
     avatarWorld.classList.toggle("panda-reference-world",avatar.id==="panda");
     avatarWorld.dataset.avatar=avatar.id;
+    // Distinct landscapes by species; the selected avatar's SVG stays unchanged.
+    const habitatGroups={
+      jungle:["iguana","chameleon","monkey","gorilla","panther","tiger","peacock","sloth"],
+      forest:["panda","red-panda","brown-bear","koala","squirrel","rabbit","fox","wolf","deer","owl","skunk","raccoon","hedgehog","beaver"],
+      polar:["polar-bear","penguin"],
+      wetland:["frog","turtle","crocodile","flamingo","swan","hippopotamus","otter"],
+      savanna:["lion","zebra","giraffe","elephant","kangaroo"],
+      meadow:["horse","cow","sheep","goat","pig"],
+      desert:["armadillo"],
+      ocean:["dolphin"],
+      fantasy:["dinosaur","unicorn"],
+      home:["dog","cat","hamster","mouse","robot"]
+    };
+    avatarWorld.dataset.habitat=Object.entries(habitatGroups)
+      .find(([,species])=>species.includes(avatar.id))?.[0]||"forest";
   }
   setAvatarVisual($("#animalAvatarEmoji"),avatar,"avatar-main-svg");
   // No visible animal-species caption: the avatar art is its own presentation.
