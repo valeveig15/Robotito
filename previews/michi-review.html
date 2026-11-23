@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <meta content="#9cd8d5" name="theme-color"/>
-<title>Michi V17 · rediseño anatómico interactivo</title>
+<title>Michi V18 · correcciones de expresiones sin cambiar su diseño</title>
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -1031,13 +1031,37 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
  #avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {animation:none!important;transform:none!important}
 }
 
+
+/* MICHI V18 — corrections only. Keep exact V17 skull, nose, ears and palette. */
+#avatar #michi-tired-lids{opacity:0;pointer-events:none;transition:opacity .2s ease;transform-box:fill-box;transform-origin:center}
+#avatar[data-mood="cansado"] #michi-tired-lids{opacity:1;transform:translateY(5px)}
+#avatar[data-mood="aburrido"] #michi-tired-lids{opacity:1;transform:translateY(1px)}
+#avatar[data-mood="dormido"] #michi-tired-lids{opacity:0!important}
+#avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important;animation:none!important}
+#avatar[data-mood="dormido"] #eye-pupils{opacity:0!important;visibility:hidden!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
+#avatar[data-mood="curioso"] #brows-curious{opacity:1!important;visibility:visible!important;filter:drop-shadow(0px 1px 1px #7d5d3460)}
+#avatar[data-mood="triste"] #tears{opacity:1!important;visibility:visible!important}
+#avatar[data-mood="triste"] #tears path{transform-box:fill-box;transform-origin:center;animation:michiTearDropV18 1.7s ease-in infinite!important}
+#avatar[data-mood="triste"] #tears path:nth-child(2){animation-delay:-.8s!important}
+@keyframes michiTearDropV18{0%{opacity:1;transform:translateY(0)}76%{opacity:1;transform:translateY(26px)}100%{opacity:0;transform:translateY(57px)}}
+#avatar[data-mood="enojado"] #anger-mark{animation:none!important;opacity:1!important;visibility:visible!important;transform:none!important}
+#avatar #sweat-mark path{stroke:#27768a!important;stroke-width:3.3px!important;paint-order:stroke}
+#avatar[data-mood="confundido"] #question-mark{opacity:1!important;transform:translate(-12px,15px)!important;animation:none!important}
+#avatar[data-mood="enamorado"] #eye-open > path:nth-of-type(3),
+#avatar[data-mood="emocionado"] #eye-open > path:nth-of-type(3){opacity:0!important}
+#avatar[data-mood="enamorado"] #eye-pupils,
+#avatar[data-mood="emocionado"] #eye-pupils{opacity:0!important}
+#avatar[data-mood="avergonzado"] #blush{opacity:.48!important}
+#avatar[data-mood="avergonzado"] #shy-profile-blush{opacity:.48!important}
+@media(prefers-reduced-motion:reduce){#avatar[data-mood="triste"] #tears path{animation:none!important;opacity:1!important}}
 </style>
 <!-- Michi V14: la unión entre boca y nariz se pinta detrás de la nariz; nunca pasa sobre ella. -->
 <meta name="grounding-update" content="Apoyo de patas y sombras alineados; Michi V15"/>
 </head>
 <body>
 <main>
-<div class="top"><div><h1>Michi V17 · rediseño anatómico</h1><p>Un gatito naranja inspirado en el emoji de Google: orejas completas, ojos felinos expresivos, cola expresiva y patas proporcionadas.</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
+<div class="top"><div><h1>Michi V18 · expresiones corregidas</h1><p>Un gatito naranja inspirado en el emoji de Google: orejas completas, ojos felinos expresivos, cola expresiva y patas proporcionadas.</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
 <div class="layout"><section aria-label="Escenario del personaje" class="stage-shell">
 <div class="stage"><span class="cornerlabel">🌳 Jardín de Michi</span><button class="tiny" id="reset" type="button">↺ Reiniciar</button>
 <svg xmlns="http://www.w3.org/2000/svg" aria-label="Michi, gato naranja low-poly de pie, con ojos felinos expresivos y cola fina, en su jardín." data-view="frente" id="stage-svg" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 700 635">
@@ -1112,7 +1136,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 </g></g>
 <!-- Cuerpo ancho, bajo y redondeado, sin ropa ni rasgos humanos. -->
 <g id="torso">
-<g id="michi-slim-chest" transform="translate(350 0) scale(.90 1) translate(-350 0)"><path d="M295 333 336 313 383 313 428 335 456 401 451 470 423 515 383 543 319 540 269 507 244 457 253 393Z" fill="#bd7227"/>
+<g id="michi-slim-chest" transform="translate(350 0) scale(.86 1) translate(-350 0)"><path d="M295 333 336 313 383 313 428 335 456 401 451 470 423 515 383 543 319 540 269 507 244 457 253 393Z" fill="#bd7227"/>
 <path d="M295 333 336 313 337 401 253 393Z" fill="#ffd375"/>
 <path d="M336 313 383 313 428 335 374 403 337 401Z" fill="#eeb450"/>
 <path d="M428 335 456 401 451 470 374 403Z" fill="#9c5d22"/>
@@ -1127,7 +1151,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <g fill="none" id="belly-rumble" opacity=".7" stroke="#a77348" stroke-linecap="round" stroke-width="3"><path d="M335 440q-7 8 0 15M378 440q7 8-1 15"/></g>
 </g></g>
 <!-- Brazos y manos son patas de oso, sin dedos humanos. -->
-<g class="limb" id="left-arm"><g id="dog-front-left-arm-size" transform="translate(122.6 40) scale(.56 .89)"><path d="m269 346-41-11-38 42-31 83 30 39 49-3 41-84Z" fill="#e2a039"/><path d="m228 335 41 11-22 88-57-57Z" fill="#f2c76a"/><path d="m190 377 57 57-26 48-62-22Z" fill="#f0b74d"/><g id="left-hand"><g id="left-hand-rest"><path d="m159 460 62 22 17 14-49 17-43-21Z" fill="#cc852d"/><path d="m159 460 62 22-32 31-43-21Z" fill="#f0b74d"/><g fill="#e59b6b" id="left-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z" fill="#df9666"/><circle cx="166" cy="478" fill="#df9666" r="4.6"/><circle cx="180" cy="474" fill="#df9666" r="4.8"/><circle cx="194" cy="479" fill="#df9666" r="4.2"/></g></g><g id="left-hand-palm">
+<g class="limb" id="left-arm"><g id="dog-front-left-arm-size" transform="translate(122.6 40) scale(.53 .89)"><path d="m269 346-41-11-38 42-31 83 30 39 49-3 41-84Z" fill="#e2a039"/><path d="m228 335 41 11-22 88-57-57Z" fill="#f2c76a"/><path d="m190 377 57 57-26 48-62-22Z" fill="#f0b74d"/><g id="left-hand"><g id="left-hand-rest"><path d="m159 460 62 22 17 14-49 17-43-21Z" fill="#cc852d"/><path d="m159 460 62 22-32 31-43-21Z" fill="#f0b74d"/><g fill="#e59b6b" id="left-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z" fill="#df9666"/><circle cx="166" cy="478" fill="#df9666" r="4.6"/><circle cx="180" cy="474" fill="#df9666" r="4.8"/><circle cx="194" cy="479" fill="#df9666" r="4.2"/></g></g><g id="left-hand-palm">
 <path d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z" fill="#9f672f"/>
 <path d="M213 476 L208 466 L195 462 L181 465 L190 488 L219 495 L223 486 Z" fill="#d79537"/>
 <path d="M181 465 L169 476 L164 493 L190 488 Z" fill="#d79537"/>
@@ -1139,7 +1163,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <path d="M173 479 L169 482 L168 489 L174 492 L178 489 L177 483Z"/>
 <path d="M208 493 L195 486 L180 492 L178 503 L190 511 L204 507 L212 500Z"/>
 </g></g></g></g></g>
-<g class="limb other" id="right-arm"><g id="dog-front-right-arm-size" transform="translate(190.7 40) scale(.56 .89)"><path d="m433 346 41-10 41 43 32 83-32 38-45-2-48-86Z" fill="#e2a039"/><path d="m474 336-41 10 19 88 63-55Z" fill="#f2c76a"/><path d="m515 379-63 55 33 48 62-20Z" fill="#f0b74d"/><g id="right-hand"><g id="right-hand-rest"><path d="m547 462-62 20-15 16 45 16 46-23Z" fill="#cc852d"/><path d="m547 462-62 20 30 32 46-23Z" fill="#f2c76a"/><g fill="#e59b6b" id="right-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z" fill="#df9666"/><circle cx="541" cy="480" fill="#df9666" r="4.5"/><circle cx="527" cy="475" fill="#df9666" r="4.7"/><circle cx="513" cy="477" fill="#df9666" r="4.2"/></g></g><g id="right-hand-palm">
+<g class="limb other" id="right-arm"><g id="dog-front-right-arm-size" transform="translate(190.7 40) scale(.53 .89)"><path d="m433 346 41-10 41 43 32 83-32 38-45-2-48-86Z" fill="#e2a039"/><path d="m474 336-41 10 19 88 63-55Z" fill="#f2c76a"/><path d="m515 379-63 55 33 48 62-20Z" fill="#f0b74d"/><g id="right-hand"><g id="right-hand-rest"><path d="m547 462-62 20-15 16 45 16 46-23Z" fill="#cc852d"/><path d="m547 462-62 20 30 32 46-23Z" fill="#f2c76a"/><g fill="#e59b6b" id="right-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z" fill="#df9666"/><circle cx="541" cy="480" fill="#df9666" r="4.5"/><circle cx="527" cy="475" fill="#df9666" r="4.7"/><circle cx="513" cy="477" fill="#df9666" r="4.2"/></g></g><g id="right-hand-palm">
 <path d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z" fill="#9f672f"/>
 <path d="M499 476 L504 466 L517 462 L531 465 L522 488 L493 495 L489 486 Z" fill="#d79537"/>
 <path d="M531 465 L543 476 L548 493 L522 488 Z" fill="#d79537"/>
@@ -1180,7 +1204,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <path fill="#bf7427" d="M254 222 Q278 205 317 222 Q317 226 315 231 Q284 225 259 235Z"/><path fill="#bf7427" d="M388 222 Q425 205 450 222 L446 235 Q418 225 390 231Z"/><path fill="#29201d" d="M257 235 Q281 219 317 236 Q313 259 288 259 Q269 258 257 235Z"/><path fill="#29201d" d="M389 236 Q423 219 448 235 Q437 258 416 259 Q395 259 389 236Z"/><path fill="#e6b853" d="M277 230 Q285 226 292 233 Q295 244 290 253 Q283 255 279 247Q276 239 277 230Z"/><path fill="#e6b853" d="M413 233 Q420 226 428 230 Q430 240 426 247 Q422 255 416 253 Q410 245 413 233Z"/><path fill="#201916" d="M283 233 Q285 230 287 233 Q290 240 286 250 Q282 249 282 242Z"/><path fill="#201916" d="M419 233 Q422 230 424 233 Q425 242 422 250 Q418 249 419 240Z"/></g>
 <g class="cat-eye-expression" id="cat-sad-eyes">
 <path fill="#211c1c" d="M258 236 Q258 212 279 206 Q300 201 312 221 Q321 243 308 260 Q298 271 282 269 Q258 266 258 236Z"/><path fill="#211c1c" d="M394 221 Q406 201 427 206 Q448 212 448 236 Q448 266 424 269 Q408 271 398 260 Q385 243 394 221Z"/><path fill="#fffaf0" opacity=".97" d="M270 220 Q280 211 293 217 Q295 225 285 230 Q275 232 270 226Z"/><path fill="#fffaf0" opacity=".97" d="M405 217 Q418 211 429 220 Q429 226 420 230 Q409 225 405 217Z"/><circle cx="298" cy="248" r="3.3" fill="#fff4df" opacity=".8"/><circle cx="409" cy="248" r="3.3" fill="#fff4df" opacity=".8"/></g>
-<g id="eye-closed"><path d="M265 232Q290 254 318 232 M393 232Q418 254 444 230" fill="none" stroke="#5c5761" stroke-linecap="round" stroke-width="6"/></g>
+<g id="eye-closed"><path d="M265 232Q290 254 318 232 M393 232Q418 254 444 230" fill="none" stroke="#905b29" stroke-linecap="round" stroke-width="6"/></g><g id="michi-tired-lids" aria-label="Párpados naranja para cansancio y aburrimiento"><path d="M261 235 Q262 207 286 205 Q309 202 317 232 Q291 227 261 235Z M389 235 Q391 207 415 205 Q438 202 446 232 Q416 227 389 235Z" fill="#ffbd55" stroke="#d1852b" stroke-width="2.1"/></g>
 <g id="brows-angry" aria-label="Cejas de enojo sobre los ojos, sin atravesarlos"><path d="M264 201 Q285 185 315 202" fill="none" stroke="#9e5a20" stroke-width="6.5" stroke-linecap="round"/><path d="M393 202 Q423 185 444 201" fill="none" stroke="#9e5a20" stroke-width="6.5" stroke-linecap="round"/></g>
 <g fill="#9e5a20" id="brows-sad"><path d="M268 207Q290 199 309 193 M398 195Q423 201 442 209" fill="none" stroke="#9e5a20" stroke-linecap="round" stroke-width="6"/></g>
 <g id="brows-curious"><path d="M264 197 Q287 182 312 195" fill="none" stroke="#98581f" stroke-width="5" stroke-linecap="round"/><path d="M393 195 Q418 182 445 197" fill="none" stroke="#98581f" stroke-width="5" stroke-linecap="round"/></g>
@@ -1209,11 +1233,11 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 </g>
 
 <g id="tongue"><path d="m342 347 25 0-7 15-8 4-8-8Z" fill="#e9969e"/></g>
-<g id="tears"><path d="m274 263-7 15 6 10 8-9Z M431 263l7 15-6 10-8-9Z" fill="#84c6d8"/></g>
+<g id="tears" aria-label="Lágrimas visibles que caen por ambos cachetes"><path class="michi-tear-left" d="M274 259 Q260 278 260 295 Q262 305 273 309 Q283 304 283 295 Q284 277 274 259Z" fill="#80d4e9" stroke="#337e98" stroke-width="2.4"/><path class="michi-tear-right" d="M430 259 Q417 278 417 295 Q418 305 429 309 Q440 304 441 295 Q441 278 430 259Z" fill="#80d4e9" stroke="#337e98" stroke-width="2.4"/></g>
 <g fill="#fff4d5" font-family="Trebuchet MS,sans-serif" font-weight="900" id="sleep-marks"><text font-size="34" x="480" y="128">Z</text><text font-size="23" x="514" y="105">z</text></g>
-<g id="anger-mark" aria-label="Símbolo rojo de enojo"><text x="451" y="221" font-family="Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, sans-serif" font-size="54">💢</text></g>
-<g id="sweat-mark"><path d="m488 215 10-27 12 25-9 12Z" fill="#89d4e5"/></g>
-<g id="question-mark" aria-label="Signo de confusión con contorno naranja"><text x="488" y="166" fill="#fff0cf" stroke="#9e5a20" stroke-width="5" stroke-linejoin="round" paint-order="stroke" font-family="Trebuchet MS,system-ui,sans-serif" font-size="75" font-weight="900">?</text></g>
+<g id="anger-mark" aria-label="Símbolo rojo pequeño y próximo a la cabeza"><path d="M478 178 L487 184 L498 178 L495 189 L503 195 L493 197 L489 207 L480 200 L470 203 L474 192 L466 186 L477 187 Z" fill="#e65866" stroke="#a93547" stroke-width="3" stroke-linejoin="round"/></g>
+<g id="sweat-mark"><path d="m488 215 10-27 12 25-9 12Z" fill="#89d4e5" stroke="#27768a" stroke-width="3.3" stroke-linejoin="round" paint-order="stroke"/></g>
+<g id="question-mark" aria-label="Signo de confusión con contorno naranja"><text x="488" y="166" fill="#fff0cf" stroke="#9e5a20" stroke-width="5" stroke-linejoin="round" paint-order="stroke" font-family="Trebuchet MS,system-ui,sans-serif" font-size="58" font-weight="900">?</text></g>
 <g aria-label="Bruno Gato piensa en un pescado poligonal" id="hunger-sign">
 <path d="M468 177Q449 161 458 125Q466 97 488 93Q510 75 536 82Q565 80 578 108Q592 129 580 152Q575 172 549 180Q522 185 505 180Q486 189 468 177Z" fill="#fffaf1" stroke="#7e8d80" stroke-width="3"/>
 <circle cx="461" cy="192" fill="#fffaf1" r="6" stroke="#7e8d80" stroke-width="2"/>
