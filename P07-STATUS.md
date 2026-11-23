@@ -2,6 +2,10 @@
 
 Revisión del 16/11/2026. **Implementación de software terminada en el alcance documentado; validación física pendiente.** La aceptación automatizada y la publicación deben corresponder al HEAD final del PR. No equivale a certificar dispositivos ni identificación biométrica.
 
+Actualización 23/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176): corregida la exposición transitoria de audios al cambiar de historial. Los reproductores se detienen y se retiran antes de esperar almacenamiento; editar/borrar exige propietario y revisión vigentes. `tests/p07-class-audio-privacy-browser.js` comprueba estos fallos y el borrado de bytes. La regresión general ahora exige que un historial actual no borre audios antiguos sin atribuir.
+
+Los fragmentos recuperables de P12 comparten almacenamiento, propietario, backup y borrado de P07. Las sesiones anónimas siguen en RAM; un perfil confirmado o visitante con consentimiento conserva sus fragmentos tras recarga. Ver [P12-STATUS.md](P12-STATUS.md) y [P01-P12-AUDIT.md](P01-P12-AUDIT.md).
+
 ## Funcionalidad integrada
 
 - IndexedDB v4 conserva registros tipados, archivos y migraciones compatibles. Se añade el tipo `relationships` sin romper los tipos anteriores.

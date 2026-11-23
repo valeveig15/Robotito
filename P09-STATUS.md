@@ -1,6 +1,6 @@
 # P09 — Memoria privada de visitantes sin registrar
 
-Estado: **software en revisión; validación humana y hardware pendiente**.
+Estado al 23/11/2026: **software integrado y revisado; validación humana y hardware pendiente**. Ver [P01-P12-AUDIT.md](P01-P12-AUDIT.md) para la nueva ejecución de regresiones y el alcance de aceptación.
 
 ## Comportamiento
 
@@ -28,4 +28,4 @@ Estado: **software en revisión; validación humana y hardware pendiente**.
 - No existen pruebas reales de reencuentros semanas después con personas, familiares parecidos, varias caras, iluminación adversa, Android/iPhone y escritorio. La CI simula rostros y permisos.
 - Las copias descargadas anteriormente no desaparecen automáticamente cuando se elimina la bóveda. El cifrado no protege datos una vez desbloqueados en la página.
 
-**Conclusión:** integración de software en progreso, sin declaración de cierre físico. Conservar Chocar los cinco y los pendientes anteriores.
+La integración de software no declara cierre físico. Se conservan Chocar los cinco y los pendientes anteriores.

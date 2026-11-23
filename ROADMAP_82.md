@@ -2,6 +2,10 @@
 
 Fuente: `Robotito_82_pedidos_completos-1.docx`, versión del 27/10/2026. Este registro es operativo, no reemplaza el documento de aceptación.
 
+## Revisión conjunta solicitada — 23/11/2026
+
+La creadora pidió posteriormente revisar y completar los puntos 1–12 uno por uno. Esa instrucción amplía el alcance de la secuencia histórica: se corrigieron los faltantes de software detectados sin declarar cerradas las condiciones físicas que siguen pendientes. El estado vigente de los doce puntos, evidencia y límites está en [P01-P12-AUDIT.md](P01-P12-AUDIT.md), [PR #176](https://github.com/valeveig15/Robotito/pull/176). Las notas fechadas más abajo conservan el contexto de cada revisión anterior.
+
 ## Condiciones obligatorias
 - Seguir orden 01 → 82. **No pasar al siguiente mientras el actual no esté completamente comprobado**; no confundir un incremento integrado con un pedido completo.
 - Para cada punto: inspeccionar lo existente, identificar faltantes, implementar incrementos en la aplicación principal, añadir pruebas positivas/negativas, verificar integración de módulos y datos, abrir PR y correr CI en el HEAD; fusionar solo en verde.
@@ -141,7 +145,7 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 
 ## Pedido 06 — revisión del 8/11/2026 por petición expresa
 
-[PR #117](https://github.com/valeveig15/Robotito/pull/117): retira el control visible de Gravedad/Tono, conserva el ajuste interno, completa prueba/parada/restablecimiento y preferencias de voces reales por idioma. Añade revisión local, recarga y borrado de muestras consentidas, controles de cancelación y aislamiento de reconocimiento/reacciones. La suite P06 se ejecuta en los tres motores de navegador. Véanse [P06-STATUS.md](P06-STATUS.md) para evidencia y [P06-VOICE-ACCEPTANCE.md](P06-VOICE-ACCEPTANCE.md) para diferencias audibles y hardware todavía sin verificar. No se marcan como resueltos los pendientes físicos anteriores ni se inicia P07.
+[PR #117](https://github.com/valeveig15/Robotito/pull/117): retira el control visible de Gravedad/Tono, conserva el ajuste interno, completa prueba/parada/restablecimiento y preferencias de voces reales por idioma. Añade revisión local, recarga y borrado de muestras consentidas, controles de cancelación y aislamiento de reconocimiento/reacciones. La suite P06 se ejecuta en los tres motores de navegador. Véanse [P06-STATUS.md](P06-STATUS.md) para evidencia y [P06-VOICE-ACCEPTANCE.md](P06-VOICE-ACCEPTANCE.md) para diferencias audibles y hardware todavía sin verificar. Los pendientes físicos se mantienen; P07 fue atendido después por pedido expreso, según su informe de estado y la revisión conjunta del 23/11.
 
 ## Los 82 puntos en orden
 - [x] **01.** Cerebro semántico y generalización de formulaciones — COMPLETADO según los criterios de aceptación comprobables; ver límites y evidencia anteriores
@@ -153,9 +157,9 @@ La orden posterior de la creadora prevalece sobre el texto antiguo del punto 30:
 - [ ] **07.** Memoria contextual, fechas y datos durables — SOFTWARE IMPLEMENTADO (fechas y búsqueda con fuentes, sesiones aisladas, vinculación consentida reversible, archivos grandes y restauración con deshacer; ver [P07-STATUS.md](P07-STATUS.md); pendiente aceptación física y de recursos en dispositivos reales)
 - [ ] **08.** Identificación rigurosa de personas registradas — EN PROGRESO (seguridad de rostros y voces, aislamiento frente a caras y hablantes distintos, borrado biométrico con consentimiento y regresiones; ver [P08-STATUS.md](P08-STATUS.md); pendiente evaluación física con personas parecidas, calibración y hardware real)
 - [ ] **09.** Memoria persistente y relación afectiva con visitantes aún no registrados — EN PROGRESO (bóveda cifrada con consentimiento, seguimiento efímero sin permiso, vínculos revisados y borrado; ver [P09-STATUS.md](P09-STATUS.md); falta validación biométrica con personas y hardware reales)
-- [ ] **10.** Órdenes temporales, reproducción y repetición — EN PROGRESO (recordatorios relativos, repeticiones finitas, panel y ejecución visible por perfil; ver [P10-STATUS.md](P10-STATUS.md); faltan horarios suspendidos/hardware y ejecución con pestaña cerrada)
-- [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — EN PROGRESO (reglas declarativas de respuesta por frase u hora, cancelables y limitadas al perfil; ver [P11-STATUS.md](P11-STATUS.md); pendientes otros eventos consentidos, concurrencia y validación física)
-- [ ] **12.** Modo Clase: audio completo, silencio y reproducción — POR AUDITAR
+- [ ] **10.** Órdenes temporales, reproducción y repetición — AUDITADO (reproducción real por fecha/materia, ambigüedad/archivos ausentes, recordatorios temporales y guardado explícito; ver [P10-STATUS.md](P10-STATUS.md); pendiente aceptación física, sin ejecución con pestaña cerrada)
+- [ ] **11.** Reglas personalizadas de tipo «si/cuando X, hacé Y» — AUDITADO (gestión, prioridad, ciclos, condiciones acotadas de audio/visión y ausencia, concurrencia entre pestañas y silencio de clase; ver [P11-STATUS.md](P11-STATUS.md); pendiente precisión física de sensores y variantes independientes)
+- [ ] **12.** Modo Clase: audio completo, silencio y reproducción — AUDITADO (fragmentos atómicos, recuperación tras recarga, archivos parciales honestos, aislamiento y fallos de captura/cuota; ver [P12-STATUS.md](P12-STATUS.md); pendiente grabación prolongada y hardware físico)
 - [ ] **13.** Diferenciación de hablantes y correcciones de transcripción — POR AUDITAR
 - [ ] **14.** Apuntes propios prioritarios y respuestas de clases justificadas — POR AUDITAR
 - [ ] **15.** Resúmenes por clase, tema y materia completa — EN PROGRESO (agregación de clases/temas/materias, extensiones, fuentes y tests en [PR #131](https://github.com/valeveig15/Robotito/pull/131); evaluación de fidelidad de síntesis y CI final pendientes; ver [P15-STATUS.md](P15-STATUS.md))
