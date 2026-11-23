@@ -1,9 +1,10 @@
 "use strict";
 const assert=require("node:assert/strict");
 const {runBrowserTest}=require("./browser-test-harness.js");
-const APPROVED=["panda","brown-bear","polar-bear","dog","monkey"];
+const APPROVED=["panda","brown-bear","polar-bear","dog","monkey","cat","red-panda"];
 const LANDSCAPES={panda:"environment","brown-bear":"pardo-grass-anchored",
- "polar-bear":"snow-particles",dog:"park-grounded-trunks",monkey:"jungle-branches"};
+ "polar-bear":"snow-particles",dog:"park-grounded-trunks",monkey:"jungle-branches",
+ cat:"environment","red-panda":"environment"};
 runBrowserTest("p28-approved-avatars",async test=>{
  const {page,baseURL}=test;
  // Observe before the interaction: short transitions can finish before a
@@ -27,7 +28,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
   const transition=await page.evaluate(()=>window.__p28Transition);
   assert.equal(transition.observed,true,"Missing approved-avatar transition: "+JSON.stringify(transition));
  };
- test.phase("load-five-exact-svg-references");
+ test.phase("load-seven-exact-svg-references");
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
  await page.locator('[data-start-language="es"]').click();
@@ -77,7 +78,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
    visible:window.ROBOTITO_APPROVED_AVATAR.current.avatar.dataset.mood};
  });
  assert.deepEqual(moodRace,{savedMood:"embarrassed",changedAvatar:false,currentRecovery:true,visible:"avergonzado"});
- test.phase("load-five-exact-svg-references");
+ test.phase("load-seven-exact-svg-references");
  for(const id of APPROVED){
   await page.waitForFunction(id=>window.ROBOTITO_APPROVED_AVATAR?.current?.id===id,id,{timeout:20000});
   const meta=await page.evaluate(({id,landscape})=>{
@@ -96,6 +97,8 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.id,id);
   assert.equal(meta.landscape,true,"Correct approved environment "+id);
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
+  if(id==="cat")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#michi-face-v17")),true,"Authentic orange Michi V18 instead of grey generic cat");
+  if(id==="red-panda")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#roji-head-refined")),true,"Authentic Roji reference, preserve original head");
   assert.ok(meta.polygons>150,"Not a simplified recolored stock avatar: "+id);
   assert.equal(meta.hasStyle,true);
   assert.equal(meta.noScripts,true,"Original standalone JS/buttons must never be reexecuted");
@@ -111,7 +114,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
   await page.locator("#changeAvatarBtn").click();
   const index=APPROVED.indexOf(id),next=APPROVED[index+1];
   if(next)await page.locator('#avatarChoices [data-avatar-id="'+next+'"]').click();
-  else await page.locator('#avatarChoices [data-avatar-id="cat"]').click();
+  else await page.locator('#avatarChoices [data-avatar-id="chameleon"]').click();
  }
  test.phase("non-reference-avatar-keeps-previous-renderer");
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current===null);
@@ -142,7 +145,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
  assert.equal(await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.classList.contains("speaking")),true);
  await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.speak(false));
  assert.deepEqual(test.report.pageErrors,[]);
- test.report.result={sourceAvatars:5,worlds:5,actions:["highfive","pet"],moods:["happy","embarrassed"],
+ test.report.result={sourceAvatars:7,worlds:7,actions:["highfive","pet"],moods:["happy","embarrassed"],
    sizes:[360,430,1280],lateActionCleanup:true,lateMoodRecovery:true,noSeparatedPages:true,physicalReview:false};
- console.log("P28 "+test.engineName+" exact user-approved avatar SVG worlds and app integration passed");
+ console.log("P28 "+test.engineName+" original user-authored avatar SVG worlds and app integration passed");
 }).catch(e=>{console.error(e);process.exitCode=1;});
