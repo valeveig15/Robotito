@@ -36,20 +36,20 @@ jobs:
             fs.mkdirSync('previews/captures',{recursive:true});
             const preview=path.resolve('previews/michi-review.html');
             await page.goto('file://'+preview);
-            await page.locator('#avatar svg.avatar-main-svg').waitFor();
-            await page.locator('.mood-button').first().waitFor();
-            const frame=page.locator('#canvasFrame');
-            if(await page.locator('#avatar svg.avatar-main-svg').count()!==1)throw new Error('Original Michi SVG not found');
-            await frame.screenshot({path:'previews/captures/michi-frente.png',animations:'disabled'});
-            await page.screenshot({path:'previews/captures/michi-pagina.png',fullPage:true,animations:'disabled'});
-            await page.getByRole('button',{name:/Triste/}).click();
-            await frame.screenshot({path:'previews/captures/michi-triste.png',animations:'disabled'});
-            await page.getByRole('button',{name:/Enamorado/}).click();
-            await frame.screenshot({path:'previews/captures/michi-enamorado.png',animations:'disabled'});
-            await page.getByRole('button',{name:/Dormido/}).click();
-            await frame.screenshot({path:'previews/captures/michi-dormido.png',animations:'disabled'});
-            await page.getByRole('button',{name:/Curioso/}).click();
-            await frame.screenshot({path:'previews/captures/michi-curioso.png',animations:'disabled'});
+            await page.locator('#stage-svg #avatar').waitFor();
+            await page.locator('[data-mood="triste"].btn').waitFor();
+            const frame=page.locator('.stage');
+            if(await page.locator('#stage-svg').count()!==1)throw new Error('Original Michi V17 SVG not found');
+            await frame.screenshot({path:'previews/captures/michi-v17-frente.png',animations:'disabled'});
+            await page.screenshot({path:'previews/captures/michi-v17-pagina.png',fullPage:true,animations:'disabled'});
+            await page.locator('button.btn[data-mood="triste"]').click();
+            await frame.screenshot({path:'previews/captures/michi-v17-triste.png',animations:'disabled'});
+            await page.locator('button.btn[data-mood="enamorado"]').click();
+            await frame.screenshot({path:'previews/captures/michi-v17-enamorado.png',animations:'disabled'});
+            await page.locator('button.btn[data-mood="dormido"]').click();
+            await frame.screenshot({path:'previews/captures/michi-v17-dormido.png',animations:'disabled'});
+            await page.locator('button.btn[data-mood="curioso"]').click();
+            await frame.screenshot({path:'previews/captures/michi-v17-curioso.png',animations:'disabled'});
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
           JS
@@ -59,10 +59,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add previews/captures/*.png
           if ! git diff --cached --quiet; then
-            git commit -m "Capture Michi HTML preview in real Chromium"
+            git commit -m "Capture authentic Michi V17 HTML in real Chromium"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-chromium-capture
+          name: michi-v17-chromium-capture
           path: previews/captures/*.png
