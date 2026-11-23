@@ -14,12 +14,17 @@ runBrowserTest("p07-class-audio-privacy",async test=>{
   await s.putRecordWithBlob({id:"class-audio:"+id,type:"audios",owner:"Ada",source:"class-recorder",blobId:id,
    subject:"Private Ada subject",data:{id,owner:"Ada",subject:"Private Ada subject",topic:"Secret",startedAt:Date.now(),size:4,mimeType:"audio/webm"}},new Blob(["test"],{type:"audio/webm"}));
   await a.render();check(document.getElementById("classRecordingsList").textContent.includes("Private Ada"),"Ada sees her recording");
-  const oldEstimate=navigator.storage.estimate.bind(navigator.storage);let release;
-  navigator.storage.estimate=()=>new Promise(resolve=>{release=resolve;});
+  const getBlob=s.getBlob;let release;
+  s.getBlob=async(blobId,...args)=>{
+   const blob=await getBlob(blobId,...args);
+   if(blobId!==id)return blob;
+   s.getBlob=getBlob;
+   return new Promise(resolve=>{release=()=>resolve(blob);});
+  };
   const pending=a.render();while(!release)await new Promise(resolve=>setTimeout(resolve,0));
   state.currentVoicePerson="Bea";state.lastVoiceConfirmedAt=Date.now();
   check(!document.getElementById("classRecordingsList").textContent.includes("Private Ada"),"Previous audio disappears synchronously while the new history loads");
-  navigator.storage.estimate=oldEstimate;release({});await pending;await ROBOTITO_MEMORY.ready();
+  release();await pending;await ROBOTITO_MEMORY.ready();
   check(await rejected(()=>a.updateMetadata(id,{subject:"Stolen"})),"Another owner cannot edit audio metadata");
   check(await rejected(()=>a.removeRecording(id)),"Another owner cannot delete audio");
   check((await s.getRecord("class-audio:"+id)).data.subject==="Private Ada subject","Rejected updates preserve data");
