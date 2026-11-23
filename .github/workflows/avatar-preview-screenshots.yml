@@ -1,0 +1,63 @@
+name: Avatar preview screenshots
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'previews/*.html'
+      - '.github/workflows/avatar-preview-screenshots.yml'
+permissions:
+  contents: write
+jobs:
+  capture:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install Playwright and Chromium
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+      - name: Capture actual SVG in browser
+        run: |
+          node <<'JS'
+          const {chromium}=require('playwright');
+          const path=require('path');
+          const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1200,height:1100},deviceScaleFactor:1});
+            fs.mkdirSync('previews/captures',{recursive:true});
+            const preview=path.resolve('previews/pandi-review.html');
+            await page.goto('file://'+preview);
+            await page.locator('#avatar').waitFor();
+            await page.locator('.mood-button').first().waitFor();
+            const svg=page.locator('svg#stage-svg');
+            if(await svg.count()!==1)throw new Error('Original Pandi SVG not found');
+            await svg.screenshot({path:'previews/captures/pandi-frente.png',animations:'disabled'});
+            await page.screenshot({path:'previews/captures/pandi-pagina.png',fullPage:true,animations:'disabled'});
+            await page.getByRole('button',{name:/Triste/}).click();
+            await page.waitForTimeout(120);
+            await svg.screenshot({path:'previews/captures/pandi-triste.png',animations:'disabled'});
+            await browser.close();
+          })().catch(err=>{console.error(err);process.exit(1)});
+          JS
+      - name: Save screenshots in same review branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add previews/captures/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Capture Pandi HTML preview in real Chromium"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pandi-chromium-capture
+          path: previews/captures/*.png
