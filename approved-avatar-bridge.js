@@ -5,7 +5,8 @@
 "use strict";
 const REFS=Object.freeze({
  "panda":"panda","brown-bear":"brown-bear","polar-bear":"polar-bear",
- "dog":"dog","monkey":"monkey"
+ "dog":"dog","monkey":"monkey",
+ "cat":"cat","red-panda":"red-panda"
 });
 const MOODS={
  calm:"tranquilo",happy:"feliz",sad:"triste",angry:"enojado",scared:"asustado",
@@ -186,10 +187,10 @@ async function activate(id,{mood="calm",language="es"}={}){
   // Do not crop feet, tails or lower body when the scene changes aspect ratio.
   stage?.setAttribute("preserveAspectRatio","xMidYMid meet");
   const openEyes=avatar?.querySelector("#eye-open");
-  if(openEyes&&!avatar.querySelector("#approved-eyelids")){
+  if(openEyes&&!avatar.querySelector("#approved-eyelids")&&!avatar.querySelector("#michi-tired-lids")){
     const ns="http://www.w3.org/2000/svg",lids=document.createElementNS(ns,"g");
     lids.setAttribute("id","approved-eyelids");
-    const colors={panda:"#f8f8f7","brown-bear":"#8b5a3c","polar-bear":"#f4fbff",dog:"#c68a52",monkey:"#8c5a3c"};
+    const colors={panda:"#f8f8f7","brown-bear":"#8b5a3c","polar-bear":"#f4fbff",dog:"#c68a52",monkey:"#8c5a3c",cat:"#ffbd55","red-panda":"#bd642f"};
     lids.setAttribute("fill",colors[id]||"#e8d1b5");
     lids.setAttribute("stroke","#59443f");lids.setAttribute("stroke-opacity",".12");
     lids.setAttribute("stroke-width","1.8");
