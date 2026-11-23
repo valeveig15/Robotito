@@ -47,8 +47,9 @@ jobs:
                 await frame.screenshot({path:'previews/captures/'+name+'-'+state+'.png',animations:'disabled'});
               }
             }
-            await capture('michi-v20','michi-review.html',['triste','enamorado','dormido','enojado']);
-            await capture('roji-v24','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('michi-v21','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
+            await capture('roji-v25','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('bobi-v21','bobi-review.html',['triste','enamorado','dormido','curioso']);
             await capture('igui-v10','igui-review.html',['triste','enamorado','dormido','asustado']);
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
@@ -59,12 +60,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add previews/captures/*.png
           if ! git diff --cached --quiet; then
-            git commit -m "Capture Michi V19 Roji V2.3 and Igui V10 in Chromium"
+            git commit -m "Capture Michi V21 Roji V2.5 Bobi V21 and Igui V10 in Chromium"
             git fetch origin "${{ github.event.pull_request.head.ref }}"
             git rebase "origin/${{ github.event.pull_request.head.ref }}"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v20-roji-v24-igui-v10-chromium-capture
+          name: michi-v21-roji-v25-bobi-v21-igui-v10-capture
           path: previews/captures/*.png
