@@ -3,6 +3,13 @@ const assert=require("node:assert/strict"),{runBrowserTest}=require("./browser-t
 runBrowserTest("p12-class-capture",async test=>{
  const {page,baseURL,context}=test;let checks=0;
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ // Firefox/WebKit require an actual user activation before starting Web Audio.
+ // Use the application's tab control rather than disabling autoplay policies.
+ const activate=async()=>{
+  await page.evaluate(()=>{document.getElementById("languageGate").style.display="none";});
+  await page.locator('[data-tab="class"]').click();
+ };
+ await activate();
  test.phase("actual-media-recorder-offline");
  await page.evaluate(async()=>{
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
@@ -11,9 +18,11 @@ runBrowserTest("p12-class-capture",async test=>{
   oscillator.connect(destination);oscillator.start();state.stream=destination.stream;
   state.started=true;state.captureEpoch=1;state.captureRevision=1;state.captureSuspended=false;
  });
+ test.phase("offline-recording-start");
  await context.setOffline(true);
  assert.equal(await page.evaluate(async()=>(await ROBOTITO_CLASS_AUDIO.start("Physics","Waves","actual-session")).ok),true);checks++;
  await page.waitForTimeout(1800);
+ test.phase("finish-offline-recording");
  const recorded=await page.evaluate(async()=>{
   const row=await ROBOTITO_CLASS_AUDIO.stop();
   return {complete:row?.complete,bytes:row?.size,owner:row?.owner,session:row?.sessionId,
@@ -22,7 +31,9 @@ runBrowserTest("p12-class-capture",async test=>{
  assert.ok(recorded.bytes>100);checks++;
  assert.deepEqual({...recorded,bytes:0},{complete:true,bytes:0,owner:"Ada",session:"actual-session",live:true,pending:0});checks++;
  await context.setOffline(false);
+ test.phase("reload-and-replay");
  await page.reload();await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
+ await activate();
  const replay=await page.evaluate(async()=>{
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();await ROBOTITO_CLASS_AUDIO.render();
   const player=document.querySelector("#classRecordingsList audio");await player.play();const played=!player.paused;player.pause();return played;
