@@ -6,11 +6,11 @@
   const RECORDINGS="recordings";
   const CHUNKS="chunks";
   let active=null;
+  let recovering=0;
   let captureRequest=0;
   let objectUrls=[];
   let renderVersion=0;
   let playbackEpoch=null;
-  const temporaryChunks=new Map();
 
   function openDb(){
     return new Promise((resolve,reject)=>{
@@ -44,32 +44,7 @@
       tx.onabort=()=>reject(tx.error||new Error("Operación cancelada"));
     });
   }
-  async function putChunk(sessionId,seq,blob,owner){
-    if(!owner)throw new Error("Recording owner required");
-    if(window.ROBOTITO_STORE?.isEphemeral?.(owner)){
-      const rows=temporaryChunks.get(sessionId)||[];rows.push({sessionId,seq,blob});temporaryChunks.set(sessionId,rows);return;
-    }
-    const db=await openDb();
-    const tx=db.transaction(CHUNKS,"readwrite");
-    tx.objectStore(CHUNKS).put({
-      key:sessionId+":"+String(seq).padStart(8,"0"),
-      sessionId,seq,blob
-    });
-    await transactionDone(tx);
-    db.close();
-  }
-  async function chunksFor(sessionId){
-    if(temporaryChunks.has(sessionId))return temporaryChunks.get(sessionId).slice().sort((a,b)=>a.seq-b.seq);
-    const db=await openDb();
-    const tx=db.transaction(CHUNKS,"readonly");
-    const idx=tx.objectStore(CHUNKS).index("sessionId");
-    const rows=await requestResult(idx.getAll(IDBKeyRange.only(sessionId)));
-    await transactionDone(tx).catch(()=>{});
-    db.close();
-    return rows.sort((a,b)=>a.seq-b.seq);
-  }
   async function clearChunks(sessionId){
-    if(temporaryChunks.has(sessionId)){temporaryChunks.delete(sessionId);return;}
     const db=await openDb();
     const tx=db.transaction(CHUNKS,"readwrite");
     const idx=tx.objectStore(CHUNKS).index("sessionId");
@@ -144,7 +119,7 @@
     if(!store?.queryRecords)return legacy;
     let modern=[];
     try{
-      const rows=await store.queryRecords({type:"audios",owner,limit:5000});
+      const rows=await store.queryRecords({type:"audios",owner,limit:Infinity});
       modern=await Promise.all(rows.filter(x=>x.source==="class-recorder"||x.source==="class-audio-migration").map(async x=>{
         const blob=await store.getBlob(x.blobId);
         return {...x.data,owner:x.owner,version:x.version,blob,subject:x.subject||x.data?.subject,topic:x.topic||x.data?.topic};
@@ -189,6 +164,26 @@
         if(verified&&blob?.size===record.blob?.size)await removeLegacyRecording(record.id);
       }catch(error){console.warn("Audio legacy migration preserved",record.id,error);}
     }
+    // Older versions stored loose fragments without an owner or a manifest.
+    // Preserve them as unassigned legacy material, never as a current visitor's
+    // class and never with a fabricated original date or completion claim.
+    try{
+      const db=await openDb(),tx=db.transaction(CHUNKS,"readonly");
+      const parts=await requestResult(tx.objectStore(CHUNKS).getAll());db.close();
+      const groups=new Map();
+      for(const part of parts){if(!groups.has(part.sessionId))groups.set(part.sessionId,[]);groups.get(part.sessionId).push(part);}
+      for(const [sessionId,chunks] of groups){
+        if(!sessionId||chunks.some(part=>!(part.blob instanceof Blob)))continue;
+        chunks.sort((a,b)=>a.seq-b.seq);
+        const size=chunks.reduce((sum,part)=>sum+part.blob.size,0);
+        if(size>window.ROBOTITO_CLASS_JOURNAL.maxBytes)continue;
+        const id="class-audio-orphan:"+sessionId,blob=new Blob(chunks.map(part=>part.blob),{type:chunks[0].blob.type||"audio/webm"});
+        if(!(await store.getRecord(id)))await store.putRecordWithBlob({id,type:"audios",owner:"legacy:unassigned",source:"class-audio-orphan",blobId:id,
+          data:{id,originalDateUnknown:true,complete:false,recoveredAt:Date.now(),size,chunkCount:chunks.length}},blob,{type:"class-audio"});
+        const verified=await store.getRecord(id),file=await store.getBlob(id);
+        if(verified?.owner==="legacy:unassigned"&&file?.size===size)await clearChunks(sessionId);
+      }
+    }catch(error){console.warn("Legacy audio fragments preserved",error);}
   }
   function pickMimeType(){
     if(!window.MediaRecorder)return "";
@@ -259,16 +254,38 @@
     if(!root)return;
     const version=++renderVersion;
     const owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
-    let rows=[];
-    try{rows=await listRecordings();}
+    let drafts=[],rows=[];
+    try{drafts=await window.ROBOTITO_CLASS_JOURNAL?.list?.(owner)||[];rows=await listRecordings();}
     catch(e){
       if(version!==renderVersion)return;
+      revokeUrls();
       root.innerHTML='<p class="muted" data-ui-copy=No%20pude%20abrir%20las%20grabaciones%20guardadas%20en%20este%20navegador.>No pude abrir las grabaciones guardadas en este navegador.</p>';
       return;
     }
     const extra=await storageText();
     if(version!==renderVersion||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))return;
     revokeUrls();
+    const recovery=document.getElementById("classRecordingRecovery");
+    if(recovery){
+      recovery.replaceChildren();
+      for(const draft of drafts.filter(row=>row.id!==active?.id)){
+        const line=document.createElement("div"),label=document.createElement("span"),recover=document.createElement("button"),discard=document.createElement("button");
+        line.className="memory-row";
+        uiSet(label,"Grabación interrumpida: {subject} · {size}",{subject:draft.subject,size:prettyBytes(draft.committedBytes)});
+        uiSet(recover,"Recuperar audio parcial");uiSet(discard,"Descartar fragmentos");
+        recover.type=discard.type="button";recover.disabled=draft.leaseUntil>Date.now();discard.disabled=recover.disabled;
+        if(recover.disabled){uiSet(label,"Hay una grabación activa en otra pestaña. Volvé a revisar en unos segundos.");
+          const refresh=document.createElement("button");refresh.type="button";uiSet(refresh,"Actualizar");refresh.onclick=()=>void render();line.append(refresh);}
+        recover.onclick=async()=>{
+          try{await recoverRecording(draft.id,{owner});}catch{setLiveStatus("No pude finalizar el audio. Revisá las grabaciones interrumpidas.");}await render();
+        };
+        discard.onclick=async()=>{
+          if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local")||!confirm(uiText("¿Querés descartar estos fragmentos de audio?")))return;
+          try{await window.ROBOTITO_CLASS_JOURNAL.discard(draft.id,owner);}catch{setLiveStatus("No pude finalizar el audio. Revisá las grabaciones interrumpidas.");}await render();
+        };
+        line.append(label,recover,discard);recovery.append(line);
+      }
+    }
     const stat=document.querySelector("#classRecordingStatus");
     if(stat){
       stat.removeAttribute("data-i18n");
@@ -303,18 +320,18 @@
           '<div class="recording-topic">'+
             '<h4>'+escapeHtml(topic)+'</h4>'+
             recs.map(r=>{
-              const url=URL.createObjectURL(r.blob);
-              objectUrls.push(url);
+              const url=r.blob instanceof Blob&&r.blob.size?URL.createObjectURL(r.blob):null;
+              if(url)objectUrls.push(url);
               const date=new Date(r.startedAt).toLocaleString(window.ROBOTITO_I18N.locale(state.languageMode),{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
               const filename=safeFilename(r.subject,r.startedAt,r.mimeType,r.topic);
               return '<article class="class-recording" data-recording-id="'+String(r.id).replace(/"/g,"&quot;")+'">'+
                 '<div class="class-recording-head">'+
                   '<div><strong>'+escapeHtml(topic)+'</strong><div class="muted"><span data-recording-date="'+Number(r.startedAt)+'">'+escapeHtml(date)+'</span> · '+escapeHtml(prettyDuration(r.durationMs))+' · '+escapeHtml(prettyBytes(r.size))+'</div></div>'+
-                  '<span class="recording-saved" data-ui-copy=%E2%97%8F%20guardada>● guardada</span>'+
+                  '<span class="recording-saved" data-ui-copy="'+encodeURIComponent(r.complete===false?"● parcial recuperada":"● guardada")+'">'+escapeHtml(uiText(r.complete===false?"● parcial recuperada":"● guardada"))+'</span>'+
                 '</div>'+
-                '<audio controls preload="metadata" src="'+url+'"></audio>'+
+                (url?'<audio controls preload="metadata" src="'+url+'"></audio>':'<p>'+escapeHtml(uiText("El registro existe, pero falta el archivo de audio."))+'</p>')+
                 '<div class="class-recording-actions">'+
-                  '<a class="button-link" href="'+url+'" download="'+escapeHtml(filename)+'" data-ui-copy=Guardar%20archivo>Guardar archivo</a>'+
+                  (url?'<a class="button-link" href="'+url+'" download="'+escapeHtml(filename)+'" data-ui-copy=Guardar%20archivo>Guardar archivo</a>':'')+
                   '<button type="button" class="ghost delete-class-recording" data-id="'+escapeHtml(r.id)+'" data-ui-copy=Borrar>Borrar</button>'+
                 '</div>'+
               '</article>';
@@ -348,123 +365,105 @@
   }
   async function start(subject,topic="",sessionId=null){
     if(active)return {ok:false,reason:"already-recording"};
-    document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());
-    endPlayback();
-    if(!window.MediaRecorder)return {ok:false,reason:"unsupported"};
-    // When the user explicitly shares a video tab, record that audio instead of the microphone.
+    document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());endPlayback();
+    if(!window.MediaRecorder||!window.ROBOTITO_CLASS_JOURNAL)return {ok:false,reason:"unsupported"};
     const source=window.ROBOTITO_YOUTUBE_MATERIAL?.captureStream||state.stream;
-    const sharedCapture=source===state.stream;
-    const epoch=state.captureEpoch,revision=state.captureRevision;
+    const sharedCapture=source===state.stream,epoch=state.captureEpoch,revision=state.captureRevision;
     const tracks=source?.getAudioTracks?.().filter(t=>t.readyState==="live")||[];
     if(!tracks.length)return {ok:false,reason:"no-audio-track"};
-    const request=++captureRequest;
-    const owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
-
+    const request=++captureRequest,owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
     try{await navigator.storage?.persist?.();}catch{}
-    if(request!==captureRequest||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))return {ok:false,reason:"capture-canceled"};
-    if(sharedCapture&&(source!==state.stream||state.captureEpoch!==epoch||state.captureRevision!==revision||
-       !state.started||document.hidden||state.captureSuspended))return {ok:false,reason:"capture-canceled"};
+    const canceled=()=>request!==captureRequest||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local")||
+      sharedCapture&&(source!==state.stream||state.captureEpoch!==epoch||state.captureRevision!==revision||!state.started||document.hidden||state.captureSuspended);
+    if(canceled())return {ok:false,reason:"capture-canceled"};
     if(tracks.some(track=>track.readyState!=="live"))return {ok:false,reason:"no-audio-track"};
-
-    const id=crypto.randomUUID?.()||("class-audio-"+Date.now()+"-"+Math.random().toString(16).slice(2));
-    const startedAt=Date.now();
-    const audioStream=new MediaStream(tracks.map(t=>t.clone?t.clone():t));
-    const mimeType=pickMimeType();
-    let recorder;
+    const id=crypto.randomUUID(),writerToken=crypto.randomUUID(),startedAt=Date.now();
+    // Never stop the shared microphone when releasing the recorder's clones.
+    let audioStream,recorder;
     try{
-      recorder=mimeType?new MediaRecorder(audioStream,{mimeType,audioBitsPerSecond:96000}):new MediaRecorder(audioStream);
-    }catch{
-      recorder=new MediaRecorder(audioStream);
-    }
-
-    const session={
-      id,
-      owner,
-      sessionId:sessionId||id,
-      subject:subject||"Clase",
-      topic:topic||"",
-      startedAt,recorder,audioStream,
-      mimeType:recorder.mimeType||mimeType||"audio/webm",
-      seq:0,pending:[],stopped:false,stopResolve:null,stopReject:null
-    };
+      audioStream=new MediaStream(tracks.map(track=>track.clone()));
+      const mimeType=pickMimeType();
+      try{recorder=mimeType?new MediaRecorder(audioStream,{mimeType,audioBitsPerSecond:96000}):new MediaRecorder(audioStream);}
+      catch{recorder=new MediaRecorder(audioStream);}
+    }catch(error){audioStream?.getTracks().forEach(track=>track.stop());return {ok:false,reason:"recorder-start-failed"};}
+    const metadata={id,owner,writerToken,sessionId:sessionId||id,subject:subject||"Clase",topic:topic||"",startedAt,mimeType:recorder.mimeType||"audio/webm"};
+    const session={...metadata,recorder,audioStream,seq:0,pending:Promise.resolve(),pendingBytes:0,stopped:false,finalized:false,error:null};
     active=session;
-
-    recorder.ondataavailable=e=>{
-      if(session.finalized||!e.data||!e.data.size)return;
-      const seq=session.seq++;
-      const write=putChunk(id,seq,e.data,session.owner).catch(err=>console.warn("class audio chunk",err));
-      session.pending.push(write);
+    let done;session.done=new Promise(resolve=>{done=resolve;});
+    recorder.onstop=()=>{done();if(!session.stopped){session.error||=new Error("Recording interrupted");void stop();}};
+    recorder.onerror=event=>{session.error=event.error||new Error("Recorder failed");void stop();};
+    recorder.ondataavailable=event=>{
+      if(session.finalized||session.error||!event.data?.size)return;
+      const blob=event.data,at=Date.now();
+      if(session.pendingBytes+blob.size>8*1024*1024){session.error=new Error("Recording storage cannot keep up");void stop();return;}
+      const seq=session.seq++;session.pendingBytes+=blob.size;
+      session.pending=session.pending.then(async()=>{
+        if(session.error)return;
+        await window.ROBOTITO_CLASS_JOURNAL.append(id,owner,writerToken,seq,blob,at);
+      }).catch(error=>{session.error=error;void stop();}).finally(()=>{session.pendingBytes-=blob.size;});
     };
-    recorder.onerror=e=>{
-      console.warn("class audio recorder",e.error||e);
-      setLiveStatus("problema al grabar audio",false);
-    };
-    recorder.start(1500);
-    setLiveStatus("● grabando audio de la clase",true);
-    await render();
-    return {ok:true,id};
+    session.onTrackEnded=()=>{session.error||=new Error("Audio track interrupted");void stop();};
+    for(const track of tracks)for(const event of ["ended","mute"])track.addEventListener?.(event,session.onTrackEnded);
+    session.sourceTracks=tracks;
+    session.ready=window.ROBOTITO_CLASS_JOURNAL.begin(metadata);
+    try{
+      await session.ready;
+      if(canceled()||session.stopped){await stop();return {ok:false,reason:"capture-canceled"};}
+      recorder.start(1500);
+      session.heartbeat=setInterval(()=>{
+        session.heartbeatJob=window.ROBOTITO_CLASS_JOURNAL.touch(id,owner,writerToken).catch(error=>{session.error=error;void stop();});
+      },5000);
+      setLiveStatus("● grabando audio de la clase",true);await render();return {ok:true,id};
+    }catch(error){session.error=error;await stop();return {ok:false,reason:"recorder-start-failed"};}
   }
   async function stop(){
     ++captureRequest;
-    const session=active;
-    if(!session)return null;
-    if(session.stopped)return null;
-    session.stopped=true;
-
-    const stopped=new Promise((resolve,reject)=>{
-      const timeout=setTimeout(()=>resolve(),8000);
-      session.recorder.onstop=()=>{clearTimeout(timeout);resolve();};
-      session.recorder.onerror=e=>{clearTimeout(timeout);reject(e.error||e);};
-    });
-
-    try{
-      if(session.recorder.state!=="inactive")session.recorder.stop();
-      // Cloned microphone tracks must close before IndexedDB or recorder
-      // completion can block. Saving already recorded bytes needs no mic.
-      session.audioStream.getTracks().forEach(t=>{try{t.stop();}catch{}});
-      await stopped;
-      await Promise.allSettled(session.pending);
-      // Give the final dataavailable write a brief chance to register.
-      await new Promise(r=>setTimeout(r,80));
-      await Promise.allSettled(session.pending);
-
-      session.finalized=true;
-      const rows=await chunksFor(session.id);
-      if(!rows.length)throw new Error("La grabación quedó vacía.");
-      const blob=new Blob(rows.map(x=>x.blob),{type:session.mimeType||rows[0].blob?.type||"audio/webm"});
-      const endedAt=Date.now();
-      const record={
-        id:session.id,
-        owner:session.owner,
-        sessionId:session.sessionId,
-        subject:session.subject,
-        topic:session.topic||"",
-        startedAt:session.startedAt,
-        endedAt,
-        durationMs:endedAt-session.startedAt,
-        mimeType:blob.type||session.mimeType,
-        size:blob.size,
-        blob,
-        transcriptFrom:session.startedAt,
-        transcriptTo:endedAt,
-        createdAt:Date.now()
-      };
-      await saveRecording(record);
-      await clearChunks(session.id);
-      setLiveStatus("audio guardado",false);
-      return record;
-    }catch(e){
-      console.warn("class audio stop",e);
-      setLiveStatus("no pude guardar el audio",false);
-      return null;
-    }finally{
-      session.finalized=true;
-      session.audioStream.getTracks().forEach(t=>{try{t.stop();}catch{}});
-      active=null;
-      await render();
-    }
+    const session=active;if(!session)return null;
+    if(session.stopPromise)return session.stopPromise;
+    session.stopped=true;session.endedAt=Date.now();clearInterval(session.heartbeat);
+    const wasActive=session.recorder.state!=="inactive";
+    try{if(wasActive)session.recorder.stop();}catch(error){session.error=error;}
+    // Release hardware synchronously, even when IndexedDB is slow or full.
+    session.audioStream.getTracks().forEach(track=>{try{track.stop();}catch{}});
+    for(const track of session.sourceTracks||[])for(const event of ["ended","mute"])track.removeEventListener?.(event,session.onTrackEnded);
+    session.stopPromise=(async()=>{
+      let timeout;
+      try{
+        await session.ready;
+        if(wasActive)await Promise.race([session.done,new Promise(resolve=>{timeout=setTimeout(()=>{session.error||=new Error("Recorder stop timed out");resolve();},8000);})]);
+        clearTimeout(timeout);session.finalized=true;
+        await session.pending;await session.heartbeatJob;
+        const journal=window.ROBOTITO_CLASS_JOURNAL;
+        const pending=(await journal.list(session.owner)).find(row=>row.id===session.id);
+        if(!pending)throw new Error("Recording was removed from memory");
+        if(!pending.chunkCount){await journal.discard(session.id,session.owner,session.writerToken);throw new Error("Empty recording");}
+        await journal.seal(session.id,session.owner,session.writerToken,{complete:!session.error,endedAt:session.endedAt,reason:session.error?.message});
+        const record=await journal.finish(session.id,session.owner,session.writerToken);
+        if(session.owner===(window.ROBOTITO_MEMORY?.owner?.()||"local"))setLiveStatus(record.complete?"audio guardado":"Audio parcial guardado. La grabación se interrumpió.");
+        return record;
+      }catch(error){
+        console.warn("class audio stop",error);
+        if(session.owner===(window.ROBOTITO_MEMORY?.owner?.()||"local"))setLiveStatus("No pude finalizar el audio. Revisá las grabaciones interrumpidas.");
+        return null;
+      }finally{
+        clearTimeout(timeout);session.finalized=true;
+        if(active===session)active=null;
+        await render();
+      }
+    })();return session.stopPromise;
   }
   function isRecording(){return !!active&&active.recorder?.state==="recording";}
+  async function recoverRecording(id,{owner=window.ROBOTITO_MEMORY?.owner?.()||"local"}={}){
+    if(active?.id===id||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))throw Error("Recording history changed or still active");
+    recovering++;
+    try{
+      const journal=window.ROBOTITO_CLASS_JOURNAL,token=await journal.claim(id,owner);
+      if(owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local"))throw Error("Recording history changed");
+      const result=await journal.finish(id,owner,token);
+      if(owner===(window.ROBOTITO_MEMORY?.owner?.()||"local"))setLiveStatus("Audio parcial guardado. La grabación se interrumpió.");
+      return result;
+    }finally{recovering--;}
+  }
   function refreshLocale(){
     for(const node of document.querySelectorAll("[data-recording-date]")){
       node.textContent=new Date(Number(node.dataset.recordingDate)).toLocaleString(
@@ -472,11 +471,11 @@
     }
   }
 
-  window.ROBOTITO_CLASS_AUDIO={start,stop,isBusy:()=>Boolean(active),render,refreshLocale,isRecording,listRecordings,removeRecording,updateMetadata,migrateAudio};
+  window.ROBOTITO_CLASS_AUDIO={start,stop,isBusy:()=>Boolean(active||recovering),render,refreshLocale,isRecording,listRecordings,listPending:()=>window.ROBOTITO_CLASS_JOURNAL.list(window.ROBOTITO_MEMORY?.owner?.()||"local"),removeRecording,updateMetadata,migrateAudio,recoverRecording};
 
   window.addEventListener("robotito:memoryscopechange",()=>{
     ++captureRequest;++renderVersion;revokeUrls();
-    for(const id of ["classRecordingsList","classRecordingStatus","classRecordingLive"])document.getElementById(id)?.replaceChildren();
+    for(const id of ["classRecordingsList","classRecordingStatus","classRecordingLive","classRecordingRecovery"])document.getElementById(id)?.replaceChildren();
     if(active&&!active.stopped)void stop();
   });
   document.addEventListener("visibilitychange",()=>{if(document.hidden){document.querySelectorAll("#classRecordingsList audio").forEach(player=>player.pause());endPlayback();}});
@@ -485,9 +484,7 @@
     void migrateAudio().finally(()=>render());
     render();
     window.addEventListener("pagehide",()=>{
-      if(active?.recorder?.state==="recording"){
-        try{active.recorder.requestData();}catch{}
-      }
+      if(active){active.error||=new Error("Page closed during recording");void stop();}
     });
   });
 })();

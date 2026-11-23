@@ -3,6 +3,15 @@
 (function(root){
 "use strict";
 const rows=`
+No pude iniciar el audio. Revisá el micrófono y el espacio disponible.|Audio recording could not start. Check the microphone and available storage.|Não foi possível iniciar o áudio. Confira o microfone e o espaço disponível.|Impossible de démarrer l’audio. Vérifie le microphone et l’espace disponible.|Impossibile avviare l’audio. Controlla microfono e spazio disponibile.|Audioaufnahme konnte nicht starten. Prüfe Mikrofon und freien Speicher.
+Audio parcial guardado. La grabación se interrumpió.|Partial audio saved. Recording was interrupted.|Áudio parcial salvo. A gravação foi interrompida.|Audio partiel enregistré. L’enregistrement a été interrompu.|Audio parziale salvato. La registrazione è stata interrotta.|Teilaufnahme gespeichert. Die Aufnahme wurde unterbrochen.
+No pude finalizar el audio. Revisá las grabaciones interrumpidas.|Audio could not be finalized. Check interrupted recordings.|Não foi possível finalizar o áudio. Confira as gravações interrompidas.|Impossible de finaliser l’audio. Vérifie les enregistrements interrompus.|Impossibile completare l’audio. Controlla le registrazioni interrotte.|Audio konnte nicht fertiggestellt werden. Prüfe unterbrochene Aufnahmen.
+Grabación interrumpida: {subject} · {size}|Interrupted recording: {subject} · {size}|Gravação interrompida: {subject} · {size}|Enregistrement interrompu : {subject} · {size}|Registrazione interrotta: {subject} · {size}|Unterbrochene Aufnahme: {subject} · {size}
+Recuperar audio parcial|Recover partial audio|Recuperar áudio parcial|Récupérer l’audio partiel|Recupera audio parziale|Teilaufnahme wiederherstellen
+Descartar fragmentos|Discard fragments|Descartar fragmentos|Supprimer les fragments|Elimina frammenti|Fragmente verwerfen
+Hay una grabación activa en otra pestaña. Volvé a revisar en unos segundos.|A recording is active in another tab. Check again in a few seconds.|Há uma gravação ativa em outra aba. Confira novamente em alguns segundos.|Un enregistrement est actif dans un autre onglet. Réessaie dans quelques secondes.|Una registrazione è attiva in un’altra scheda. Riprova tra pochi secondi.|In einem anderen Tab läuft eine Aufnahme. Prüfe es in einigen Sekunden erneut.
+¿Querés descartar estos fragmentos de audio?|Discard these audio fragments?|Descartar estes fragmentos de áudio?|Supprimer ces fragments audio ?|Eliminare questi frammenti audio?|Diese Audiofragmente verwerfen?
+● parcial recuperada|● recovered partial audio|● áudio parcial recuperado|● audio partiel récupéré|● audio parziale recuperato|● Teilaufnahme wiederhergestellt
 Si se cumple «{condition}», decir: {text}|When “{condition}” holds, say: {text}|Quando “{condition}” ocorrer, dizer: {text}|Si « {condition} » se réalise, dire : {text}|Se si verifica “{condition}”, dire: {text}|Wenn „{condition}“ gilt, sagen: {text}
 Palmas detectadas|Claps detected|Palmas detectadas|Applaudissements détectés|Applausi rilevati|Klatschen erkannt
 Música detectada|Music detected|Música detectada|Musique détectée|Musica rilevata|Musik erkannt

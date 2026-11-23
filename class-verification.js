@@ -322,6 +322,7 @@ Respondé únicamente JSON válido:
   async function startClassMode(){
     if(!state.started){toast("Primero despertá los sentidos.");return;}
     if(state.classMode)return;
+    const memoryOwner=window.ROBOTITO_MEMORY?.owner?.();
 
     // Enter Class Mode in absolute silence. If Robotito was speaking, stop it
     // before recording and immediately give the microphone back to listening.
@@ -357,7 +358,9 @@ Respondé únicamente JSON válido:
     $("#speakerPill")?.classList.remove("hidden");
     setMood("focused","Robotito está concentrado escuchando la clase.");
 
-    const audio=await window.ROBOTITO_CLASS_AUDIO?.start?.(state.classSubject,state.classTopic,state.classSessionId);
+    const sessionId=state.classSessionId;
+    const audio=await window.ROBOTITO_CLASS_AUDIO?.start?.(state.classSubject,state.classTopic,sessionId);
+    if(!state.classMode||state.classSessionId!==sessionId||memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     if(audio?.ok){
       toast("Modo clase activado: transcripción y audio en marcha.");
     }else{
@@ -366,7 +369,7 @@ Respondé únicamente JSON válido:
         ?"El navegador no permite grabar audio, pero la transcripción sigue funcionando."
         :reason==="no-audio-track"
           ?"No encontré una pista de micrófono para grabar, pero la transcripción sigue funcionando."
-          :"Modo clase activado. La transcripción está funcionando.";
+          :"No pude iniciar el audio. Revisá el micrófono y el espacio disponible.";
       toast(msg);
     }
   }
@@ -380,9 +383,11 @@ Respondé únicamente JSON válido:
     $("#speakerPill")?.classList.add("hidden");
     setMood("proud","Robotito terminó de escuchar la clase y está guardando el audio.");
 
-    const recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
+    let recording=await window.ROBOTITO_CLASS_AUDIO?.stop?.();
     uiSet($("#classBadge"),"apagado");
 
+    if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
+    if(!recording)recording=(await window.ROBOTITO_CLASS_AUDIO?.listRecordings?.()||[]).find(row=>row.sessionId===state.classSessionId)||null;
     if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
     const summary=await window.ROBOTITO_CLASS_ORGANIZER?.generateAndSaveClassSummary?.(endedAt,recording);
     if(memoryOwner!==window.ROBOTITO_MEMORY?.owner?.())return;
@@ -390,7 +395,9 @@ Respondé únicamente JSON válido:
     state.classSessionId=null;
     window.ROBOTITO_CLASS_ORGANIZER?.render?.();
 
-    if(recording){
+    if(recording?.complete===false){
+      say("Audio parcial guardado. La grabación se interrumpió.");
+    }else if(recording){
       say(summary
         ?"Listo. Guardé el audio completo y también preparé el resumen de la clase."
         :"Listo. Guardé el audio completo de la clase.");

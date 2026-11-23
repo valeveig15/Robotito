@@ -14,12 +14,15 @@ function fixture(){
   constructor(){this.state="inactive";this.mimeType="audio/webm";}
   start(){this.state="recording";}stop(){this.state="inactive";queueMicrotask(()=>this.onstop?.());}
  }
+ let metadata;
+ const journal={begin:async value=>{metadata=value;},list:async()=>[{id:"test-class",chunkCount:1}],seal:async()=>{},
+  finish:()=>new Promise(resolve=>storage.push(()=>resolve({...metadata,blob:new Blob(["test"])}))),touch:async()=>{}};
  const runtime=new Function("state","window","document","navigator","MediaStream","MediaRecorder","crypto",
-  "pickMimeType","render","setLiveStatus","putChunk","chunksFor","saveRecording","clearChunks","endPlayback",
+  "pickMimeType","render","setLiveStatus","endPlayback",
   "let active=null,captureRequest=0;\n"+source.slice(from,to)+"\nreturn {start,stop};")(
-  state,{MediaRecorder:Recorder},{hidden:false,querySelectorAll:()=>[]},{storage:{persist:()=>new Promise(resolve=>permissions.push(resolve))}},
+  state,{MediaRecorder:Recorder,ROBOTITO_CLASS_JOURNAL:journal},{hidden:false,querySelectorAll:()=>[]},{storage:{persist:()=>new Promise(resolve=>permissions.push(resolve))}},
   class{constructor(tracks){this.getTracks=()=>tracks;}},Recorder,{randomUUID:()=>"test-class"},()=>"audio/webm",
-  async()=>{},()=>{},async()=>{},()=>new Promise(resolve=>storage.push(resolve)),async()=>{},async()=>{},()=>{});
+  async()=>{},()=>{},()=>{});
  return {runtime,state,clones,permissions,storage};
 }
 (async()=>{
@@ -32,9 +35,9 @@ function fixture(){
  const saving=active.runtime.stop();
  eq(active.clones.every(t=>t.readyState==="ended"),true,"Microphone clones stop synchronously before storage finishes");
  await cycle();
- // The recorder has stopped; the existing 80 ms chunk flush is allowed to finish.
+ // The recorder has stopped; assembly may wait on storage without retaining a microphone.
  while(!active.storage.length)await new Promise(resolve=>setTimeout(resolve,10));
- active.storage[0]([{blob:new Blob(["test"],{type:"audio/webm"})}]);
+ active.storage[0]();
  const saved=await saving;
  eq(saved.subject,"Physics","Recorded bytes remain saveable after closing the microphone");
  console.log("P04 class-audio cancellation:",checks,"checks");

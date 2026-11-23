@@ -45,7 +45,7 @@
   <script defer src="intent-engine.js?v=20261030-p01-context"></script>
   <script defer src="robotito-store.js?v=20261117-audit12"></script>
   <script defer src="memory-state.js?v=20261115-p07"></script>
-  <script defer src="memory-session.js?v=20261115-p07"></script>
+  <script defer src="memory-session.js?v=20261121-audit12"></script>
   <script defer src="memory-module-store.js?v=20261115-p07"></script>
   <script defer src="visitor-memory.js?v=20261114-p09-private"></script>
   <script defer src="p07-backup-crypto.js?v=20261115-p07"></script>
@@ -55,12 +55,13 @@
   <script defer src="web-knowledge.js?v=20261007-intent1"></script>
   <script defer src="country-knowledge.js?v=20261115-p21"></script>
   <script defer src="speech-fallback.js?v=20261105-p04-capture"></script>
-  <script defer src="class-audio.js?v=20261117-audit12"></script>
+  <script defer src="class-audio-journal.js?v=20261121-audit12"></script>
+  <script defer src="class-audio.js?v=20261121-audit12"></script>
   <script defer src="class-playback.js?v=20261117-audit12"></script>
   <script defer src="class-organizer.js?v=20261115-p07"></script>
   <script defer src="class-summary-aggregate.js?v=20261115-p15"></script>
   <script defer src="class-exercises.js?v=20261107-p05"></script>
-  <script defer src="class-verification.js?v=20261115-p07"></script>
+  <script defer src="class-verification.js?v=20261121-audit12"></script>
   <script defer src="emotional-dialogue.js"></script>
   <script defer src="layout-resizer.js"></script>
   <script defer src="avatar-art.js?v=20261007-avatar-family2"></script>
@@ -630,6 +631,7 @@
             <span id="classRecordingLive" class="recording-live" data-ui-copy=sin%20grabar>sin grabar</span>
           </div>
           <p data-i18n="uiClassEmptyAudio" id="classRecordingStatus" class="muted">Todavía no hay grabaciones guardadas en este dispositivo.</p>
+          <div id="classRecordingRecovery" aria-live="polite"></div>
           <div id="classRecordingsList" class="class-recordings-list">
             <p data-i18n="uiClassFinishHint" class="muted">Cuando termines una clase, el audio aparecerá acá.</p>
           </div>
