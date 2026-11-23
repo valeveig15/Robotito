@@ -47,8 +47,8 @@ jobs:
                 await frame.screenshot({path:'previews/captures/'+name+'-'+state+'.png',animations:'disabled'});
               }
             }
-            await capture('michi-v19','michi-review.html',['triste','enamorado','dormido','enojado']);
-            await capture('roji-v23','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('michi-v20','michi-review.html',['triste','enamorado','dormido','enojado']);
+            await capture('roji-v24','roji-review.html',['triste','enamorado','dormido','confundido']);
             await capture('igui-v10','igui-review.html',['triste','enamorado','dormido','asustado']);
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
@@ -66,5 +66,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v19-roji-v23-igui-v10-chromium-capture
+          name: michi-v20-roji-v24-igui-v10-chromium-capture
           path: previews/captures/*.png
