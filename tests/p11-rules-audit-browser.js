@@ -50,5 +50,24 @@ runBrowserTest("p11-rules-audit",async test=>{
  await Promise.all([page,other].map(p=>p.evaluate(()=>handleSpeech("clave compartida",{channel:"typed"}))));
  const results=await Promise.all([page,other].map(p=>p.evaluate(()=>auditSaid.filter(text=>text==="una sola respuesta").length)));
  eq(results.reduce((a,b)=>a+b,0),1,"Atomic revision plus cooldown prevents two tabs from saying the same saved rule");
- await other.close();test.report.checks=checks;console.log("P11 browser audit:",checks,"checks; synthetic capture signals only");
+ await other.close();
+ test.phase("delayed-rule-list-owner-change");
+ await ready(page);
+ const leaked=await page.evaluate(async()=>{
+  const service=ROBOTITO_TEMPORAL_RULES.attach();
+  await service.run(e=>e.create({kind:"phrase",trigger:"dato privado",text:"mensaje privado de Ada"},"Ada"));
+  await ROBOTITO_TEMPORAL_RULES.refresh();
+  const run=service.run;let release,captured;
+  const waiting=new Promise(resolve=>{captured=resolve;}),gate=new Promise(resolve=>{release=resolve;});
+  service.run=async action=>{
+   service.run=run;
+   const result=await run(action);state.classMode=true;captured();await gate;return result;
+  };
+  const pending=handleSpeech("Mostrame mis reglas",{channel:"typed"});await waiting;
+  state.currentVoicePerson="Bea";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
+  state.classMode=false;auditSaid=[];release();await pending;
+  return auditSaid.some(text=>text.includes("mensaje privado de Ada"));
+ });
+ eq(leaked,false,"A delayed list must not speak the previous owner's private rule responses");
+ test.report.checks=checks;console.log("P11 browser audit:",checks,"checks; synthetic capture signals only");
 }).catch(e=>{console.error(e);process.exitCode=1;});

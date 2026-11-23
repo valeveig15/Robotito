@@ -327,10 +327,14 @@ function render(){
 }
 async function handle(raw,options={}){
  if(!service)return {handled:false};
+ const requestOwner=context.owner();
  // No private read for unrelated speech when there are no active phrase rules.
  const probe=createEngine({storage:{getItem:()=>"[]",setItem:()=>{}}}).speech(raw,{owner:context.owner(),emit:()=>{}});
  if(!probe.handled&&![...(engine?.list(context.owner())||[]),...(sessionRules.get(context.owner())||[])].some(row=>row.kind==="phrase"))return {handled:false};
  const result=await execute((current,owner,emit)=>current.speech(raw,{owner,visible:!root.document.hidden,emit}));
+ // A list contains private response text, so discard delayed management
+ // results as well as emitted actions when the active history has changed.
+ if(requestOwner!==context.owner())return {handled:true,stale:true};
  if(result.handled&&result.created)context.say(result.temporary?
   label("p10RulesTransientVoice","Entendido. Te aviso mientras Robotito esté abierto y visible; no lo guardé en Horarios."):
   label("p10RulesStoredVoice","Recordatorio guardado en Horarios mientras esta página esté abierta y visible."));

@@ -21,7 +21,7 @@ Estas reglas **no habilitan** reacciones humanas de tos/risa/llanto/estornudo si
 
 - `tests/p10-p11-temporal-rules-regression.js`: reglas históricas, perfiles, caducidad, recarga y límites.
 - `tests/p11-rules-audit-regression.js`: 52 comprobaciones de idiomas, gestión, prioridad, ciclos, permiso, antigüedad, continuidad y combinaciones.
-- `tests/p11-rules-audit-browser.js`: seis escenarios con múltiples aserciones; cinco avisos durante Modo Clase, edición transitoria, adaptador con pistas simuladas y entrega única entre pestañas.
+- `tests/p11-rules-audit-browser.js`: siete comprobaciones principales; cinco avisos durante Modo Clase, edición transitoria, adaptador con pistas simuladas, entrega única entre pestañas y cambio de persona durante una lista demorada. Este último caso reprodujo una divulgación de respuestas privadas; ahora la respuesta se descarta al cambiar de historial.
 - `npm run test:p10-p11:browser` integra esos recorridos; la matriz de CI los ejecuta en Chromium, Firefox y WebKit.
 
 Pendientes: precisión de sensores con participantes/hardware reales, variantes lingüísticas independientes y cambios de hora/DST. No hay ejecución con pestaña cerrada ni coordinación entre dispositivos. Compartir el perfil del navegador no es autenticación fuerte; las reglas ordinarias no se cifran en reposo. No se garantiza entrega ante cierre abrupto entre guardar el estado y emitir voz. «Chocar los cinco» se conserva.
