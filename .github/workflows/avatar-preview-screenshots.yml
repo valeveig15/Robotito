@@ -58,7 +58,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add previews/captures/*.png
           if ! git diff --cached --quiet; then
-            git commit -m "Capture authentic Michi V17 HTML in real Chromium"
+            git commit -m "Capture authentic Michi V18 and Roji V2.2 in Chromium"
+            git fetch origin "${{ github.event.pull_request.head.ref }}"
+            git rebase "origin/${{ github.event.pull_request.head.ref }}"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
       - uses: actions/upload-artifact@v4
