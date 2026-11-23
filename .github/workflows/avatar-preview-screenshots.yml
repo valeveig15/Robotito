@@ -39,7 +39,7 @@ jobs:
               await page.locator('#stage-svg #avatar').waitFor();
               await page.locator('button.btn[data-mood="triste"]').waitFor();
               const frame=page.locator('.stage');
-              if(await page.locator('#stage-svg #avatar').count()!==1)throw new Error('Original SVG not found: '+name);
+              if(await page.locator('#stage-svg #avatar').count()!==1)throw new Error('Missing true SVG: '+name);
               await frame.screenshot({path:'previews/captures/'+name+'-frente.png',animations:'disabled'});
               await page.screenshot({path:'previews/captures/'+name+'-pagina.png',fullPage:true,animations:'disabled'});
               for(const state of states){
@@ -47,8 +47,9 @@ jobs:
                 await frame.screenshot({path:'previews/captures/'+name+'-'+state+'.png',animations:'disabled'});
               }
             }
-            await capture('michi-v18','michi-review.html',['triste','enamorado','dormido','curioso','cansado','enojado','confundido']);
-            await capture('roji-v22','roji-review.html',['triste','enamorado','dormido','curioso']);
+            await capture('michi-v19','michi-review.html',['triste','enamorado','dormido','enojado']);
+            await capture('roji-v23','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('igui-v10','igui-review.html',['triste','enamorado','dormido','asustado']);
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
           JS
@@ -58,12 +59,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add previews/captures/*.png
           if ! git diff --cached --quiet; then
-            git commit -m "Capture authentic Michi V18 and Roji V2.2 in Chromium"
+            git commit -m "Capture Michi V19 Roji V2.3 and Igui V10 in Chromium"
             git fetch origin "${{ github.event.pull_request.head.ref }}"
             git rebase "origin/${{ github.event.pull_request.head.ref }}"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v18-roji-v22-chromium-capture
+          name: michi-v19-roji-v23-igui-v10-chromium-capture
           path: previews/captures/*.png
