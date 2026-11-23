@@ -1,4 +1,4 @@
-<!-- Authentic user-authored Roji V2.2 reference. No scripts: bridge mounts SVG and styles within a shadow root. -->
+<!-- Authentic user-authored Roji V2.3, CSS and SVG only, no scripts. -->
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -751,6 +751,12 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
  #avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {animation:none!important;transform:none!important}
 }
 
+
+/* Roji V2.3: identifiable red-panda facial mask and striped bushy tail.
+   Original head contour, ears, muzzle, eye coordinates are unchanged. */
+#avatar #panda-eye-patches{opacity:1;pointer-events:none}
+#avatar #roji-cream-bib{pointer-events:none}
+#avatar #roji-front-tail,#avatar #roji-side-tail{transform-box:fill-box;transform-origin:left center}
 </style>
 <div class="stage"><svg aria-label="Roji, panda rojo low-poly animado, en un bosque de bambú" data-view="frente" id="stage-svg" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 700 635" xmlns="http://www.w3.org/2000/svg">
 <defs><clippath clippathunits="userSpaceOnUse" id="mouth-safe-area"><path d="M321 321 Q352 315 388 321 L391 352 Q371 368 353 365 Q328 366 319 350Z"></path></clippath></defs>
@@ -808,13 +814,14 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <g aria-label="Contacto de las patas con el suelo" id="ground-front-contacts"><ellipse class="contact-left" cx="283.0" cy="580.3" rx="38.0" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-left" cx="283.0" cy="580.2" rx="27.7" ry="2.1" fill="#40653a" opacity=".36"/><ellipse class="contact-right" cx="425.0" cy="580.3" rx="38.0" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-right" cx="425.0" cy="580.2" rx="27.7" ry="2.1" fill="#40653a" opacity=".36"/></g>
 <g data-mood="feliz" id="avatar">
  La cola es muy corta, como corresponde a un panda rojo. 
-<g id="tail"><g aria-label="Cola larga y anillada de panda rojo" id="roji-front-tail">
-<path d="M456 449 C478 444 487 411 515 406 C547 398 577 426 587 412 C600 397 598 383 585 370" fill="none" stroke="#9a482c" stroke-linecap="round" stroke-width="55"></path>
-<path d="M468 444 Q482 433 491 420" fill="none" stroke="#e4a562" stroke-width="51"></path>
-<path d="M510 408 Q524 402 536 406" fill="none" stroke="#e8b675" stroke-width="53"></path>
-<path d="M553 413 Q571 426 581 418" fill="none" stroke="#e6ad69" stroke-width="53"></path>
-<path d="M594 401 Q598 388 585 370" fill="none" stroke="#d8894d" stroke-linecap="round" stroke-width="50"></path>
-<path d="M467 443 482 432 491 427 487 445Z" fill="#f0c889" opacity=".42"></path>
+<g id="tail"><g aria-label="Cola de panda rojo larga, tupida y con anillos" id="roji-front-tail">
+ <path d="M455 450 C485 431 509 414 548 426 C582 438 604 462 620 436" stroke="#733625" stroke-width="63" fill="none" stroke-linecap="round"/>
+ <path d="M458 450 C487 431 509 414 548 426 C582 438 604 462 620 436" stroke="#cf793f" stroke-width="56" fill="none" stroke-linecap="round"/>
+ <path d="M483 436 C489 432 496 428 504 424" stroke="#f6c68c" stroke-width="55" fill="none" stroke-linecap="butt"/>
+ <path d="M520 422 C528 421 536 423 544 425" stroke="#8c3b29" stroke-width="57" fill="none"/>
+ <path d="M555 428 C564 432 572 437 578 442" stroke="#f4c18a" stroke-width="56" fill="none"/>
+ <path d="M589 449 C598 453 608 455 612 447" stroke="#843729" stroke-width="57" fill="none"/>
+ <path d="M616 438 L623 430" stroke="#f5ce97" stroke-width="48" stroke-linecap="round"/>
 </g></g>
 <g id="front-view">
 <!-- Patas traseras: pies completos, apoyados en el suelo, siempre bípedo. -->
@@ -865,11 +872,16 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <path d="M353 437 429 415 430 483 364 524Z" fill="#B64C2C" opacity=".35"/>
 <path d="M276 413 353 437 364 524 Q313 516 282 482Z" fill="#E87E3A" opacity=".38"/>
 
+<g id="roji-cream-bib" pointer-events="none">
+ <path d="M319 354 Q336 359 353 356 Q372 360 386 356 L397 378 Q387 394 372 400 L364 418 L352 407 L339 420 L330 398 Q316 391 310 373Z" fill="#ffe4b7" opacity=".96"/>
+ <path d="M313 363 Q331 369 347 361L350 398Q323 390 313 363Z" fill="#fff2d5" opacity=".77"/>
+ <path d="M348 418 Q365 431 383 418Q397 452 382 475Q357 497 333 472Q319 451 331 421Z" fill="#d98653" opacity=".32"/>
+</g>
 <g fill="none" id="belly-rumble" opacity=".75" stroke="#a6a9a4" stroke-linecap="round" stroke-width="4"><path d="M317 439q-14 11 0 22m72-26q15 12-1 23M350 452q-8 10 0 20"></path></g>
 </g>
 <!-- Brazos y manos son patas de oso, sin dedos humanos. -->
-<g class="limb" id="left-arm"><g transform="translate(45 0) scale(.83 1)" aria-label="proporciones estilizadas"><path d="m269 346-41-11-38 42-31 83 30 39 49-3 41-84Z" fill="#30282a"></path><path d="m228 335 41 11-22 88-57-57Z" fill="#49312c"></path><path d="m190 377 57 57-26 48-62-22Z" fill="#5c3a32"></path><g id="left-hand"><g id="left-hand-rest"><path d="m159 460 62 22 17 14-49 17-43-21Z" fill="#211e20"></path><path d="m159 460 62 22-32 31-43-21Z" fill="#3c2926"></path><g fill="#697073" id="left-paw-pad"><path d="M177 487Q188 478 202 491Q208 500 200 505Q185 509 177 500Z"></path><circle cx="166" cy="478" r="4.6"></circle><circle cx="180" cy="474" r="4.8"></circle><circle cx="194" cy="479" r="4.2"></circle></g></g><g id="left-hand-palm">
-<path d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z" fill="#5c3a32"></path>
+<g class="limb" id="left-arm"><g transform="translate(45 0) scale(.83 1)" aria-label="proporciones estilizadas"><path d="m269 346-41-11-38 42-31 83 30 39 49-3 41-84Z" fill="#6d3b31"></path><path d="m228 335 41 11-22 88-57-57Z" fill="#854a38"></path><path d="m190 377 57 57-26 48-62-22Z" fill="#9a5740"></path><g id="left-hand"><g id="left-hand-rest"><path d="m159 460 62 22 17 14-49 17-43-21Z" fill="#211e20"></path><path d="m159 460 62 22-32 31-43-21Z" fill="#3c2926"></path><g fill="#697073" id="left-paw-pad"><path d="M177 487Q188 478 202 491Q208 500 200 505Q185 509 177 500Z"></path><circle cx="166" cy="478" r="4.6"></circle><circle cx="180" cy="474" r="4.8"></circle><circle cx="194" cy="479" r="4.2"></circle></g></g><g id="left-hand-palm">
+<path d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z" fill="#9a5740"></path>
 <path d="M213 476 L208 466 L195 462 L181 465 L190 488 L219 495 L223 486 Z" fill="#211e20"></path>
 <path d="M181 465 L169 476 L164 493 L190 488 Z" fill="#3c2926"></path>
 <path d="M219 495 L190 488 L164 493 L173 507 L191 516 L211 511 Z" fill="#704533"></path>
@@ -880,8 +892,8 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <path d="M173 479 L169 482 L168 489 L174 492 L178 489 L177 483Z"></path>
 <path d="M208 493 L195 486 L180 492 L178 503 L190 511 L204 507 L212 500Z"></path>
 </g></g></g></g>
-<g class="limb other" id="right-arm"><g transform="translate(74 0) scale(.83 1)" aria-label="proporciones estilizadas"><path d="m433 346 41-10 41 43 32 83-32 38-45-2-48-86Z" fill="#30282a"></path><path d="m474 336-41 10 19 88 63-55Z" fill="#49312c"></path><path d="m515 379-63 55 33 48 62-20Z" fill="#5c3a32"></path><g id="right-hand"><g id="right-hand-rest"><path d="m547 462-62 20-15 16 45 16 46-23Z" fill="#211e20"></path><path d="m547 462-62 20 30 32 46-23Z" fill="#3c2926"></path><g fill="#697073" id="right-paw-pad"><path d="M505 489Q515 476 530 488Q537 502 525 507Q510 509 505 498Z"></path><circle cx="541" cy="480" r="4.5"></circle><circle cx="527" cy="475" r="4.7"></circle><circle cx="513" cy="477" r="4.2"></circle></g></g><g id="right-hand-palm">
-<path d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z" fill="#5c3a32"></path>
+<g class="limb other" id="right-arm"><g transform="translate(74 0) scale(.83 1)" aria-label="proporciones estilizadas"><path d="m433 346 41-10 41 43 32 83-32 38-45-2-48-86Z" fill="#6d3b31"></path><path d="m474 336-41 10 19 88 63-55Z" fill="#854a38"></path><path d="m515 379-63 55 33 48 62-20Z" fill="#9a5740"></path><g id="right-hand"><g id="right-hand-rest"><path d="m547 462-62 20-15 16 45 16 46-23Z" fill="#211e20"></path><path d="m547 462-62 20 30 32 46-23Z" fill="#3c2926"></path><g fill="#697073" id="right-paw-pad"><path d="M505 489Q515 476 530 488Q537 502 525 507Q510 509 505 498Z"></path><circle cx="541" cy="480" r="4.5"></circle><circle cx="527" cy="475" r="4.7"></circle><circle cx="513" cy="477" r="4.2"></circle></g></g><g id="right-hand-palm">
+<path d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z" fill="#9a5740"></path>
 <path d="M499 476 L504 466 L517 462 L531 465 L522 488 L493 495 L489 486 Z" fill="#211e20"></path>
 <path d="M531 465 L543 476 L548 493 L522 488 Z" fill="#3c2926"></path>
 <path d="M493 495 L522 488 L548 493 L539 507 L521 516 L501 511 Z" fill="#704533"></path>
@@ -924,7 +936,15 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <path d="M217 292 265 301 300 333 Q264 337 227 316Z M482 291 437 303 411 337 Q448 333 477 317Z" fill="#E5B18A" opacity=".32"/>
 <path d="M308 291 Q328 277 351 287 Q382 274 401 290 Q425 303 408 333 Q389 353 350 351 Q307 352 291 327 Q292 303 308 291Z" fill="#FFF4E1"/>
 <path d="M303 313 Q321 294 350 301 L350 349 Q314 347 296 330Z" fill="#FFFBEF" opacity=".48"/>
-<g id="roji-forehead-mark"></g><g id="panda-eye-patches"></g>
+<g id="roji-forehead-mark" pointer-events="none">
+ <path d="M262 204Q288 186 321 203M383 202Q416 187 443 206" fill="none" stroke="#fff8e9" stroke-width="7.5" stroke-linecap="round" opacity=".82"/>
+</g>
+<g id="panda-eye-patches" aria-label="Máscara oscura característica de panda rojo" pointer-events="none">
+ <path d="M258 223Q264 205 285 201L316 213Q327 233 321 257Q312 275 292 277Q273 272 261 256Z" fill="#703528" opacity=".92"/>
+ <path d="M384 216Q395 202 420 201Q442 207 449 231L443 259Q432 279 410 276Q390 266 384 247Z" fill="#703528" opacity=".92"/>
+ <path d="M262 253Q268 266 280 274Q294 287 306 281Q290 291 275 281Z" fill="#fff1d5" opacity=".9"/>
+ <path d="M443 252Q437 267 426 277Q411 286 398 280Q414 291 429 281Z" fill="#fff1d5" opacity=".9"/>
+</g>
 
 <g id="eye-open"><path d="m273 243 5-17 14-10 18 6 9 18-6 20-20 6-16-10Z" fill="#101519" stroke="#525b60" stroke-width="2"></path><path d="m391 239 10-19 20-6 14 11 4 19-11 19-21 3-15-12Z" fill="#101519" stroke="#525b60" stroke-width="2"></path>
 <g id="eye-pupils"><path d="m282 232 10-7 10 7-2 11-13 1Z" fill="#fff9e7"></path><path d="m400 228 11-7 11 8-3 12-12 0Z" fill="#fff9e7"></path><path d="m309 252 4-3 4 4-3 4-5 0Z" fill="#fff5e5"></path><path d="m427 248 4-4 4 4-2 5-5 0Z" fill="#fff5e5"></path></g>
@@ -993,12 +1013,13 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <!-- Cola corta pero proporcionada: un muñón redondo facetado que
         sobresale detrás de la cadera, sin parecer la cola de un mono. -->
 <g aria-label="Cola corta de oso" id="side-tail"><g aria-label="Cola esponjosa con anillos" id="roji-side-tail">
-<path d="M445 449 C471 447 479 424 505 416 C532 405 565 426 589 414 C605 406 611 391 602 377" fill="none" stroke="#994728" stroke-linecap="round" stroke-width="52"></path>
-<path d="M463 440 Q476 433 482 427" fill="none" stroke="#e6aa6a" stroke-width="50"></path>
-<path d="M499 417 Q511 411 522 412" fill="none" stroke="#eab77c" stroke-width="51"></path>
-<path d="M543 414 Q558 422 569 421" fill="none" stroke="#e3a567" stroke-width="51"></path>
-<path d="M590 414 Q606 405 607 393" fill="none" stroke="#e3a567" stroke-width="50"></path>
-<path d="M606 385 602 377" fill="none" stroke="#c76d3d" stroke-linecap="round" stroke-width="47"></path>
+ <path d="M444 448 C470 436 496 418 534 427 C574 435 606 461 622 427" stroke="#763725" stroke-width="62" fill="none" stroke-linecap="round"/>
+ <path d="M445 448 C470 436 496 418 534 427 C574 435 606 461 622 427" stroke="#cf7d46" stroke-width="55" fill="none" stroke-linecap="round"/>
+ <path d="M471 436 Q487 426 497 424" stroke="#f4c18a" stroke-width="55" fill="none"/>
+ <path d="M518 422 Q529 422 540 429" stroke="#833a2c" stroke-width="56" fill="none"/>
+ <path d="M554 431 Q565 437 579 445" stroke="#f4c18a" stroke-width="55" fill="none"/>
+ <path d="M589 451 Q602 456 610 444" stroke="#843729" stroke-width="56" fill="none"/>
+ <path d="M617 434 L621 426" stroke="#f3c38b" stroke-width="46" stroke-linecap="round"/>
 </g></g>
 <!-- Brazo lejano queda tapado parcialmente por el cuerpo. -->
 <g id="side-far-arm"><g transform="translate(-46 0)">
