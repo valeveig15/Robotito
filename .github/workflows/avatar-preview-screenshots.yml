@@ -20,10 +20,14 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Install Playwright and Chromium
+      - name: Prepare Chromium without redundant browser download
         run: |
           npm ci --ignore-scripts
-          npx playwright install --with-deps chromium
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "Using preinstalled Google Chrome"
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Capture actual SVG in browser
         run: |
           node <<'JS'
@@ -31,7 +35,7 @@ jobs:
           const path=require('path');
           const fs=require('fs');
           (async()=>{
-            const browser=await chromium.launch({headless:true});
+            const browser=await chromium.launch({headless:true,channel:fs.existsSync('/usr/bin/google-chrome')?'chrome':undefined});
             const page=await browser.newPage({viewport:{width:1200,height:1100},deviceScaleFactor:1});
             fs.mkdirSync('previews/captures',{recursive:true});
             async function capture(name,file,states){
