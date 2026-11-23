@@ -34,22 +34,21 @@ jobs:
             const browser=await chromium.launch({headless:true});
             const page=await browser.newPage({viewport:{width:1200,height:1100},deviceScaleFactor:1});
             fs.mkdirSync('previews/captures',{recursive:true});
-            const preview=path.resolve('previews/michi-review.html');
-            await page.goto('file://'+preview);
-            await page.locator('#stage-svg #avatar').waitFor();
-            await page.locator('[data-mood="triste"].btn').waitFor();
-            const frame=page.locator('.stage');
-            if(await page.locator('#stage-svg').count()!==1)throw new Error('Original Michi V17 SVG not found');
-            await frame.screenshot({path:'previews/captures/michi-v17-frente.png',animations:'disabled'});
-            await page.screenshot({path:'previews/captures/michi-v17-pagina.png',fullPage:true,animations:'disabled'});
-            await page.locator('button.btn[data-mood="triste"]').click();
-            await frame.screenshot({path:'previews/captures/michi-v17-triste.png',animations:'disabled'});
-            await page.locator('button.btn[data-mood="enamorado"]').click();
-            await frame.screenshot({path:'previews/captures/michi-v17-enamorado.png',animations:'disabled'});
-            await page.locator('button.btn[data-mood="dormido"]').click();
-            await frame.screenshot({path:'previews/captures/michi-v17-dormido.png',animations:'disabled'});
-            await page.locator('button.btn[data-mood="curioso"]').click();
-            await frame.screenshot({path:'previews/captures/michi-v17-curioso.png',animations:'disabled'});
+            async function capture(name,file,states){
+              await page.goto('file://'+path.resolve('previews/'+file));
+              await page.locator('#stage-svg #avatar').waitFor();
+              await page.locator('button.btn[data-mood="triste"]').waitFor();
+              const frame=page.locator('.stage');
+              if(await page.locator('#stage-svg #avatar').count()!==1)throw new Error('Original SVG not found: '+name);
+              await frame.screenshot({path:'previews/captures/'+name+'-frente.png',animations:'disabled'});
+              await page.screenshot({path:'previews/captures/'+name+'-pagina.png',fullPage:true,animations:'disabled'});
+              for(const state of states){
+                await page.locator('button.btn[data-mood="'+state+'"]').click();
+                await frame.screenshot({path:'previews/captures/'+name+'-'+state+'.png',animations:'disabled'});
+              }
+            }
+            await capture('michi-v18','michi-review.html',['triste','enamorado','dormido','curioso','cansado','enojado','confundido']);
+            await capture('roji-v22','roji-review.html',['triste','enamorado','dormido','curioso']);
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
           JS
@@ -64,5 +63,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v17-chromium-capture
+          name: michi-v18-roji-v22-chromium-capture
           path: previews/captures/*.png
