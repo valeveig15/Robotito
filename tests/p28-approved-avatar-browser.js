@@ -1,10 +1,10 @@
 "use strict";
 const assert=require("node:assert/strict");
 const {runBrowserTest}=require("./browser-test-harness.js");
-const APPROVED=["panda","brown-bear","polar-bear","dog","monkey","cat","red-panda"];
+const APPROVED=["panda","brown-bear","polar-bear","dog","monkey","cat","red-panda","iguana"];
 const LANDSCAPES={panda:"environment","brown-bear":"pardo-grass-anchored",
  "polar-bear":"snow-particles",dog:"park-grounded-trunks",monkey:"jungle-branches",
- cat:"environment","red-panda":"environment"};
+ cat:"environment","red-panda":"environment",iguana:"environment"};
 runBrowserTest("p28-approved-avatars",async test=>{
  const {page,baseURL}=test;
  // Observe before the interaction: short transitions can finish before a
@@ -97,8 +97,9 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.id,id);
   assert.equal(meta.landscape,true,"Correct approved environment "+id);
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
-  if(id==="cat")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#michi-face-v17")),true,"Authentic orange Michi V18 instead of grey generic cat");
+  if(id==="cat")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#michi-face-v17")),true,"Authentic orange Michi instead of grey generic cat");
   if(id==="red-panda")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#roji-head-refined")),true,"Authentic Roji reference, preserve original head");
+  if(id==="iguana")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#head")),true,"Authentic Igui V10 profile");
   assert.ok(meta.polygons>150,"Not a simplified recolored stock avatar: "+id);
   assert.equal(meta.hasStyle,true);
   assert.equal(meta.noScripts,true,"Original standalone JS/buttons must never be reexecuted");
@@ -145,7 +146,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
  assert.equal(await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.classList.contains("speaking")),true);
  await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.speak(false));
  assert.deepEqual(test.report.pageErrors,[]);
- test.report.result={sourceAvatars:7,worlds:7,actions:["highfive","pet"],moods:["happy","embarrassed"],
+ test.report.result={sourceAvatars:8,worlds:8,actions:["highfive","pet"],moods:["happy","embarrassed"],
    sizes:[360,430,1280],lateActionCleanup:true,lateMoodRecovery:true,noSeparatedPages:true,physicalReview:false};
  console.log("P28 "+test.engineName+" original user-authored avatar SVG worlds and app integration passed");
 }).catch(e=>{console.error(e);process.exitCode=1;});
