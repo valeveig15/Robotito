@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#9cd8d5">
-<title>Bobi V21 · rediseño anatómico interactivo</title>
+<title>Bobi V22 · proporciones caninas y cuerpo conectado</title>
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -933,13 +933,19 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  #avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {animation:none!important;transform:none!important}
 }
 
+
+/* Bobi V22: keep face geometry, reduce human-like tube arms, keep feet on ground. */
+#bobi-neck-bridge{pointer-events:none}
+#avatar #tail{transform-origin:453px 440px}
+#avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
 </style>
 <!-- Bobi V18: la unión entre boca y nariz se pinta detrás de la nariz; nunca pasa sobre ella. -->
 <meta name="grounding-update" content="Apoyo de patas y sombras alineados; Bobi V19"/>
 </head>
 <body>
 <main>
- <div class="top"><div><h1>Bobi V21 · rediseño anatómico</h1><p>Bruno Perrito: perrito dorado de pie en un parque renovado, ahora con cola que acompaña los cabeceos al dormirse y brazos apenas más finos, con árboles rectos, huesito centrado y huellitas visibles solo al levantar la pata; mantiene emociones, movimientos y voz</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
+ <div class="top"><div><h1>Bobi V22 · anatomía perruna mejorada</h1><p>Bruno Perrito: perrito dorado de pie en un parque renovado, ahora con cola que acompaña los cabeceos al dormirse y brazos apenas más finos, con árboles rectos, huesito centrado y huellitas visibles solo al levantar la pata; mantiene emociones, movimientos y voz</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
  <div class="layout"><section class="stage-shell" aria-label="Escenario del personaje">
  <div class="stage"><span class="cornerlabel">🌳 Parque de Bobi</span><button class="tiny" id="reset" type="button">↺ Reiniciar</button>
  <svg xmlns="http://www.w3.org/2000/svg" id="stage-svg" data-view="frente" viewBox="0 0 700 635" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Bobi V15: perro tierno low-poly erguido sobre dos patas, cabeza proporcionada, panza estilizada, brazos más pequeños, orejas caídas, cola alegre y hocico canino. Interactivo.">
@@ -1032,9 +1038,10 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <g id="ground-front-contacts" aria-label="Contacto de las patas con el suelo"><ellipse class="contact-left" cx="290.5" cy="578.3" rx="26.7" ry="3.6" fill="#355942" opacity=".55"/><ellipse class="contact-left" cx="290.5" cy="578.2" rx="19.5" ry="2.1" fill="#355942" opacity=".36"/><ellipse class="contact-right" cx="410.5" cy="578.3" rx="26.7" ry="3.6" fill="#355942" opacity=".55"/><ellipse class="contact-right" cx="410.5" cy="578.2" rx="19.5" ry="2.1" fill="#355942" opacity=".36"/></g>
 <g id="avatar" data-mood="feliz">
 <!-- Cola larga y articulada con movimiento según el estado emocional. -->
-<g id="tail"><path fill="#a97042" d="m448 419 42-16 36-10 33-27 10 20-7 32-29 30-38 20-40-9Z"/>
-<path fill="#e9b779" d="m490 403 36-10 33-27 10 20-34 24-42 17Z"/>
-<path fill="#ca9053" d="m493 427 42-17 34-24-7 32-29 30-38 20Z"/>
+<g id="tail" aria-label="Cola canina flexible que sale de la cadera">
+<path d="M446 435 Q479 432 510 412 Q542 388 552 362 Q565 365 568 383 Q565 421 535 446 Q500 471 453 464Z" fill="#af7346"/>
+<path d="M453 434 Q481 433 511 413 Q540 389 552 362 Q557 382 543 402 Q514 434 462 450Z" fill="#e9b97e"/>
+<path d="M462 450 Q510 437 543 402 Q567 377 552 362 Q565 365 568 383 Q565 421 535 446 Q500 471 453 464Z" fill="#ce9459"/>
 </g>
 <g id="front-view">
 <!-- Patas traseras: pies completos, apoyados en el suelo, siempre bípedo. -->
@@ -1071,7 +1078,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  </g><g id="belly-rumble" fill="none" stroke="#a77348" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M335 440q-7 8 0 15M378 440q7 8-1 15"/></g>
 </g>
 <!-- Brazos y manos son patas de oso, sin dedos humanos. -->
-<g id="left-arm" class="limb"><g transform="translate(60.1 40) scale(.79 .89)" id="dog-front-left-arm-size"><path fill="#bf874f" d="m269 346-41-11-38 42-31 83 30 39 49-3 41-84Z"/><path fill="#f3c68b" d="m228 335 41 11-22 88-57-57Z"/><path fill="#ddac70" d="m190 377 57 57-26 48-62-22Z"/><g id="left-hand"><g id="left-hand-rest"><path fill="#a86d3f" d="m159 460 62 22 17 14-49 17-43-21Z"/><path fill="#ddac70" d="m159 460 62 22-32 31-43-21Z"/><g id="left-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z"/><circle cx="166" cy="478" r="4.6"/><circle cx="180" cy="474" r="4.8"/><circle cx="194" cy="479" r="4.2"/></g></g><g id="left-hand-palm">
+<g id="left-arm" class="limb"><g transform="translate(91 55) scale(.65 .86)" id="dog-front-left-arm-size"><path fill="#c08752" d="M269 345 Q244 336 229 342 Q207 354 190 382 L165 462 Q158 483 178 493 Q198 501 218 487 L245 415 Q262 379 269 345Z"/><path fill="#f3c68b" d="M229 342 Q245 336 269 345 L246 414 Q224 393 190 382Z"/><path fill="#ddac70" d="M190 382 Q224 394 246 414 L218 487 Q198 501 178 493 L165 462Z"/><g id="left-hand"><g id="left-hand-rest"><path fill="#bd8050" d="M167 461 Q186 447 210 459 Q231 474 230 490 Q225 509 202 518 Q179 519 160 500 Q150 482 167 461Z"/><path fill="#eabc7d" d="M168 461 Q188 451 207 459 Q219 470 221 484 Q200 482 177 498 Q158 486 168 461Z"/><path d="M171 500Q181 509 189 510 M191 505Q201 515 209 512 M209 503Q218 510 223 503" stroke="#986034" stroke-width="3.7" fill="none" stroke-linecap="round"/><g id="left-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z"/><circle cx="166" cy="478" r="4.6"/><circle cx="180" cy="474" r="4.8"/><circle cx="194" cy="479" r="4.2"/></g></g><g id="left-hand-palm">
 <path fill="#5d3d2c" d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z"/>
 <path fill="#76503b" d="M213 476 L208 466 L195 462 L181 465 L190 488 L219 495 L223 486 Z"/>
 <path fill="#76503b" d="M181 465 L169 476 L164 493 L190 488 Z"/>
@@ -1083,7 +1090,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <path d="M173 479 L169 482 L168 489 L174 492 L178 489 L177 483Z"/>
  <path d="M208 493 L195 486 L180 492 L178 503 L190 511 L204 507 L212 500Z"/>
 </g></g></g></g></g>
-<g id="right-arm" class="limb other"><g transform="translate(91 40) scale(.79 .89)" id="dog-front-right-arm-size"><path fill="#bf874f" d="m433 346 41-10 41 43 32 83-32 38-45-2-48-86Z"/><path fill="#f3c68b" d="m474 336-41 10 19 88 63-55Z"/><path fill="#ddac70" d="m515 379-63 55 33 48 62-20Z"/><g id="right-hand"><g id="right-hand-rest"><path fill="#a86d3f" d="m547 462-62 20-15 16 45 16 46-23Z"/><path fill="#f3c68b" d="m547 462-62 20 30 32 46-23Z"/><g id="right-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z"/><circle cx="541" cy="480" r="4.5"/><circle cx="527" cy="475" r="4.7"/><circle cx="513" cy="477" r="4.2"/></g></g><g id="right-hand-palm">
+<g id="right-arm" class="limb other"><g transform="translate(151 55) scale(.65 .86)" id="dog-front-right-arm-size"><path fill="#c08752" d="M433 345 Q457 336 474 342 Q495 354 511 382 L537 462 Q543 483 523 493 Q504 501 484 487 L457 415 Q440 379 433 345Z"/><path fill="#f3c68b" d="M474 342 Q457 336 433 345 L456 414 Q477 393 511 382Z"/><path fill="#ddac70" d="M511 382 Q477 394 456 414 L484 487 Q504 501 523 493 L537 462Z"/><g id="right-hand"><g id="right-hand-rest"><path fill="#bd8050" d="M540 461 Q520 447 497 459 Q476 474 477 490 Q481 509 504 518 Q527 519 547 500 Q556 482 540 461Z"/><path fill="#eabc7d" d="M539 461 Q520 451 500 459 Q487 470 486 484 Q507 482 529 498 Q549 486 539 461Z"/><path d="M536 500Q526 509 518 510 M516 505Q506 515 498 512 M497 503Q489 510 483 503" stroke="#986034" stroke-width="3.7" fill="none" stroke-linecap="round"/><g id="right-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z"/><circle cx="541" cy="480" r="4.5"/><circle cx="527" cy="475" r="4.7"/><circle cx="513" cy="477" r="4.2"/></g></g><g id="right-hand-palm">
 <path fill="#5d3d2c" d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z"/>
 <path fill="#76503b" d="M499 476 L504 466 L517 462 L531 465 L522 488 L493 495 L489 486 Z"/>
 <path fill="#76503b" d="M531 465 L543 476 L548 493 L522 488 Z"/>
@@ -1095,6 +1102,8 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <path d="M539 479 L543 482 L544 489 L538 492 L534 489 L535 483Z"/>
  <path d="M504 493 L517 486 L532 492 L534 503 L522 511 L508 507 L500 500Z"/>
 </g></g></g></g></g>
+<!-- Cuello unido al torso, detrás del rostro original de Bobi. -->
+<g id="bobi-neck-bridge" aria-label="Unión natural de cabeza y pecho"><path d="M304 326 Q322 314 350 314 Q379 313 400 326 L408 376 Q382 391 352 392 Q323 390 298 376Z" fill="#e1ab74"/><path d="M318 338 Q354 350 391 337 L381 377 Q355 388 326 377Z" fill="#ffe5b5"/></g>
 <!-- Cabeza facetada casi circular; orejas pequeñas, redondas y altas. -->
 <g id="head">
 <g transform="translate(75 65) scale(.79)" id="dog-face-proportions"><g id="ear-left">
