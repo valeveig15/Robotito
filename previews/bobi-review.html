@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#9cd8d5">
-<title>Bobi V22 · proporciones caninas y cuerpo conectado</title>
+<title>Bobi V23 · proporciones caninas y cuerpo conectado</title>
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -934,7 +934,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 }
 
 
-/* Bobi V22: keep face geometry, reduce human-like tube arms, keep feet on ground. */
+/* Bobi V23: keep face geometry, reduce human-like tube arms, keep feet on ground. */
 #bobi-neck-bridge{pointer-events:none}
 #avatar #tail{transform-origin:453px 440px}
 #avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
@@ -945,7 +945,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 </head>
 <body>
 <main>
- <div class="top"><div><h1>Bobi V22 · anatomía perruna mejorada</h1><p>Bruno Perrito: perrito dorado de pie en un parque renovado, ahora con cola que acompaña los cabeceos al dormirse y brazos apenas más finos, con árboles rectos, huesito centrado y huellitas visibles solo al levantar la pata; mantiene emociones, movimientos y voz</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
+ <div class="top"><div><h1>Bobi V23 · anatomía perruna mejorada</h1><p>Bruno Perrito: perrito dorado de pie en un parque renovado, ahora con cola que acompaña los cabeceos al dormirse y brazos apenas más finos, con árboles rectos, huesito centrado y huellitas visibles solo al levantar la pata; mantiene emociones, movimientos y voz</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
  <div class="layout"><section class="stage-shell" aria-label="Escenario del personaje">
  <div class="stage"><span class="cornerlabel">🌳 Parque de Bobi</span><button class="tiny" id="reset" type="button">↺ Reiniciar</button>
  <svg xmlns="http://www.w3.org/2000/svg" id="stage-svg" data-view="frente" viewBox="0 0 700 635" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Bobi V15: perro tierno low-poly erguido sobre dos patas, cabeza proporcionada, panza estilizada, brazos más pequeños, orejas caídas, cola alegre y hocico canino. Interactivo.">
@@ -1058,6 +1058,8 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 <g id="right-foot"><path fill="#b77c47" d="M429 547 382 548 366 558 366 576 440 577 455 562Z"/><path fill="#e8b179" d="M429 547 382 548 370 558 451 561Z"/><path d="M437 563v10M415 563v11M392 563v10" fill="none" stroke="#69402f" stroke-width="3.7" stroke-linecap="round"/></g>
 </g>
 <!-- Cuerpo ancho, bajo y redondeado, sin ropa ni rasgos humanos. -->
+<!-- Cuello unido al torso, detrás del rostro original de Bobi. -->
+<g id="bobi-neck-bridge" aria-label="Unión natural de cabeza y pecho"><path d="M304 326 Q322 314 350 314 Q379 313 400 326 L408 376 Q382 391 352 392 Q323 390 298 376Z" fill="#e1ab74"/><path d="M318 338 Q354 350 391 337 L381 377 Q355 388 326 377Z" fill="#ffe5b5"/></g>
 <g id="torso">
 <path fill="#ba814c" d="M295 333 336 313 383 313 428 335 456 401 451 470 423 515 383 543 319 540 269 507 244 457 253 393Z"/>
 <path fill="#f2be81" d="M295 333 336 313 337 401 253 393Z"/>
@@ -1102,8 +1104,6 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <path d="M539 479 L543 482 L544 489 L538 492 L534 489 L535 483Z"/>
  <path d="M504 493 L517 486 L532 492 L534 503 L522 511 L508 507 L500 500Z"/>
 </g></g></g></g></g>
-<!-- Cuello unido al torso, detrás del rostro original de Bobi. -->
-<g id="bobi-neck-bridge" aria-label="Unión natural de cabeza y pecho"><path d="M304 326 Q322 314 350 314 Q379 313 400 326 L408 376 Q382 391 352 392 Q323 390 298 376Z" fill="#e1ab74"/><path d="M318 338 Q354 350 391 337 L381 377 Q355 388 326 377Z" fill="#ffe5b5"/></g>
 <!-- Cabeza facetada casi circular; orejas pequeñas, redondas y altas. -->
 <g id="head">
 <g transform="translate(75 65) scale(.79)" id="dog-face-proportions"><g id="ear-left">
