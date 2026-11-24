@@ -41,16 +41,29 @@ assert.ok(cat.includes("C181 183 200 193"),"Michi S-tail anatomy");
 const redPanda=art.render({id:"red-panda"},"avatar-main-svg");
 assert.ok(redPanda.includes("avatar-species-chest"),"Roji has species-specific torso");
 assert.ok(redPanda.includes("avatar-tail-bushy"),"Roji retains striped panda tail");
-const dog=fs.readFileSync(path.join(root,"assets/approved-avatars/dog.fragment.html"),"utf8");
-assert.ok(dog.includes('id="bobi-neck-bridge"'),"Bobi neck connects with torso");
-assert.ok(!dog.includes('M264 563v10M286 563v11'),"Bobi toes are shapes, not sketch lines");
-assert.equal(count(dog,/id="bobi-single-muzzle"/g),1,"Bobi has one cream muzzle, not a second face");
-assert.equal(count(dog,/id="bobi-left-toes"/g),1,"Bobi left toes are rounded shapes");
-assert.equal(count(dog,/id="bobi-right-toes"/g),1,"Bobi right toes are rounded shapes");
+// Latest original files from the user, with complete emotion textures.
+for(const [version,slug,marker] of [
+  ["Bobi V35","bobi","bb-soft-head"],
+  ["Michi V31","michi","mc-soft-head"],
+  ["Roji V3.6","roji","rj-soft-head"],
+  ["Igui V24","igui","ig-soft-head"]
+]){
+  const html=fs.readFileSync(path.join(root,"previews",slug+"-review.html"),"utf8");
+  assert.ok(html.includes(version),"latest submitted design: "+version);
+  assert.ok(html.includes('id="'+marker+'"'),"original species features: "+version);
+  assert.ok(html.includes('id="reference-face-idle"'),"user-approved reference face: "+version);
+  assert.ok(html.includes('id="reference-fidelity-layer-v15"'),"all original texture styles: "+version);
+  assert.equal(html.split("data:image/webp;base64,").length-1,46,"45 mood faces + initial face: "+version);
+  assert.equal(count(html,/id="head"/g),1,"one head only: "+version);
+}
 const bridge=fs.readFileSync(path.join(root,"approved-avatar-bridge.js"),"utf8");
 assert.ok(bridge.includes('setAttribute("preserveAspectRatio","xMidYMid meet")'),"show whole approved avatar");
 assert.ok(bridge.includes("approvedTearFall"),"approved tears fall");
 assert.ok(bridge.includes("approved-eyelids"),"approved tired/bored lids");
+assert.ok(bridge.includes('doc.querySelectorAll("style")'),"keep all authentic texture CSS layers");
+assert.ok(bridge.includes("parseFaceAtlas(doc)"),"parse all 15 facial moods without executing original scripts");
+assert.ok(bridge.includes("animateMichiTail("),"Michi original S-tail animation preserved");
+assert.ok(bridge.includes('previews/"+LATEST[id]+"-review.html'),"load latest approved HTML sources");
 const css=fs.readFileSync(path.join(root,"style.css"),"utf8");
 assert.ok(css.includes('.world[data-avatar="iguana"]'),"Igui jungle habitat");
 assert.ok(css.includes("customSpeakMouth"),"talking mouth animates");
