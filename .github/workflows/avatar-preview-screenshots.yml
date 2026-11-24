@@ -44,10 +44,10 @@ jobs:
               await page.locator('button.btn[data-mood="triste"]').waitFor();
               const frame=page.locator('.stage');
               const required={
-                'michi-v23':['#michi-single-pink-nose','#michi-whiskers','#michi-cat-throat'],
-                'roji-v28':['#panda-eye-patches','#roji-cream-bib','#roji-front-tail'],
-                'bobi-v24':['#bobi-neck-bridge','#bobi-single-muzzle','#bobi-left-toes','#bobi-right-toes','#tail','#head'],
-                'igui-v12':['#igui-attached-dewlap','#igui-tail-spines','#eye-open']
+                'michi-v24':['#michi-single-pink-nose','#michi-whiskers','#michi-cat-throat'],
+                'roji-v29':['#panda-eye-patches','#roji-cream-bib','#roji-front-tail','#roji-front-tail-mask-v29'],
+                'bobi-v25':['#bobi-neck-bridge','#bobi-single-muzzle','#bobi-left-toes','#bobi-right-toes','#tail','#head'],
+                'igui-v13':['#igui-attached-dewlap','#igui-tail-spines','#igui-cheek-scales','#eye-open']
               };
               for(const sel of required[name]||[]){
                 if(await page.locator('#stage-svg '+sel).count()!==1)throw new Error('Missing identity feature '+name+': '+sel);
@@ -64,10 +64,10 @@ jobs:
               await frame.screenshot({path:'previews/captures/'+name+'-perfil.png',animations:'disabled'});
               await stage.evaluate(node=>node.dataset.view='frente');
             }
-            await capture('michi-v23','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
-            await capture('roji-v28','roji-review.html',['triste','enamorado','dormido','confundido']);
-            await capture('bobi-v24','bobi-review.html',['triste','enamorado','dormido','curioso']);
-            await capture('igui-v12','igui-review.html',['triste','enamorado','dormido','asustado']);
+            await capture('michi-v24','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
+            await capture('roji-v29','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('bobi-v25','bobi-review.html',['triste','enamorado','dormido','curioso']);
+            await capture('igui-v13','igui-review.html',['triste','enamorado','dormido','asustado']);
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
           JS
@@ -84,5 +84,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v23-roji-v28-bobi-v24-igui-v12-capture
+          name: michi-v24-roji-v29-bobi-v25-igui-v13-capture
           path: previews/captures/*.png
