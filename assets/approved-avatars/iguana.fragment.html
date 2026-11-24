@@ -1,4 +1,4 @@
-<!-- Authentic Igui V10 reference, CSS+SVG without standalone scripts. -->
+<!-- Igui V11: authentic editable user avatar in Robotito. Only SVG/CSS; no standalone JavaScript. -->
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -757,6 +757,11 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
  #avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {animation:none!important;transform:none!important}
 }
 
+
+/* Igui V11: claws attached to hands, back spines grow from tail, throat joins body. */
+#avatar #igui-attached-dewlap,#avatar #igui-tail-spines{pointer-events:none}
+#avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
 </style>
 <div class="stage"><svg aria-label="Igui: iguana alegre verde lima, cabeza redondeada, cuerpo esbelto y cola flexible" data-view="frente" id="stage-svg" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 700 635" xmlns="http://www.w3.org/2000/svg">
 <defs><clippath clippathunits="userSpaceOnUse" id="mouth-safe-area"><path d="M321 321 Q352 315 388 321 L391 352 Q371 368 353 365 Q328 366 319 350Z"></path></clippath></defs>
@@ -819,13 +824,16 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <g aria-label="Apoyos laterales" id="ground-side-contacts"><ellipse class="contact-left" cx="346.0" cy="581.3" rx="24.6" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-left" cx="346.0" cy="581.2" rx="18.0" ry="2.1" fill="#40653a" opacity=".36"/><ellipse class="contact-right" cx="390.0" cy="577.3" rx="20.4" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-right" cx="390.0" cy="577.2" rx="14.9" ry="2.1" fill="#40653a" opacity=".36"/></g></g>
 <g aria-label="Contacto de las patas con el suelo" id="ground-front-contacts"><ellipse class="contact-left" cx="289.6" cy="582.0" rx="24.1" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-left" cx="289.6" cy="581.9" rx="17.6" ry="2.1" fill="#40653a" opacity=".36"/><ellipse class="contact-right" cx="400.0" cy="582.0" rx="24.7" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-right" cx="400.0" cy="581.9" rx="18.0" ry="2.1" fill="#40653a" opacity=".36"/></g>
 <g data-mood="feliz" id="avatar">
- La cola es muy corta, como corresponde a un iguana. 
+ <!-- Cola larga, flexible y progresivamente fina, propia de una iguana. --> 
 <g id="tail">
 <g aria-label="Cola reptiliana larga de grosor decreciente" id="igui-front-tail">
 <path d="M416 447 C461 432 488 418 519 417 C564 416 595 443 631 454 C657 463 679 460 698 472 C668 464 652 466 623 459 C580 450 559 434 520 435 C490 435 466 459 426 472Z" fill="#3c8651"></path>
 <path d="M423 448 C461 436 490 421 519 424 C559 420 593 446 627 453 C656 464 679 462 697 472 C665 465 643 464 626 459 C582 445 555 428 517 432 C485 435 458 451 426 460Z" fill="#87c86d"></path>
 <path d="M461 434 478 430 470 449 452 454Z M521 422 545 427 534 437 516 434Z M582 432 598 443 589 449 574 440Z M645 459 656 463 651 466 640 463Z" fill="#619a58"></path>
 <path d="M470 435 480 431 M527 426 539 429 M596 443 607 449 M656 464 667 467" stroke="#a3a55e" stroke-linecap="round" stroke-width="3"></path>
+<g id="igui-tail-spines" aria-label="Pequeñas crestas unidas a la cola" fill="#4d9c54" stroke="#397c49" stroke-width="1.2" stroke-linejoin="round">
+<path d="M471 435 L483 416 L489 430Z M504 422 L518 402 L528 422Z M540 427 L553 412 L560 435Z M578 437 L589 426 L595 445Z M612 452 L622 441 L628 457Z"/>
+</g>
 </g></g>
 <g id="front-view"><g class="limb" id="left-leg"><g id="left-leg-anatomy-v2" transform="translate(51 -8) scale(.83 1.015)">
 <g id="left-foot">
@@ -863,7 +871,12 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <path d="M243 342 272 347 254 409 226 413 218 367Z" fill="#76bd64"></path>
 <path d="M226 413 254 409 241 471 218 482 193 467Z" fill="#4c9e56"></path>
 <g id="left-hand">
-<g id="left-hand-rest"><path d="M184 443 201 439 226 449 234 463 223 486 204 492 186 479Z" fill="#73b965"></path><path d="M184 443 201 439 211 464 186 479Z" fill="#a0d47b"></path></g>
+<g id="left-hand-rest" aria-label="Mano de iguana con dedos cortos">
+<path d="M184 443 Q202 436 222 448 Q235 455 234 468 Q225 490 205 492 Q185 484 181 470Z" fill="#73b965"/>
+<path d="M183 453 Q202 442 217 450 L216 466 185 477Z" fill="#a0d47b"/>
+<path d="M197 482 Q192 493 187 498 L197 499 207 488Z M209 483 Q208 495 205 500 L216 498 220 486Z M221 478 Q226 489 225 494 L235 487 228 471Z" fill="#6caf60" stroke="#4f9957" stroke-width="1.4"/>
+<path d="M191 499 L198 500 M207 500 L216 498 M226 494 L235 487" stroke="#d5ec9d" stroke-width="2.2" stroke-linecap="round"/>
+</g>
 <g id="left-hand-palm" aria-label="Mano escamosa con dedos, sin almohadillas"><path d="M182 440 205 437 232 451 235 472 217 488 195 483 179 461Z" fill="#96cf75"></path><path d="M187 451 199 450 212 458 M202 442 216 449 225 457 M188 469 202 465 220 473" fill="none" stroke="#4b9455" stroke-width="2.7" stroke-linecap="round"></path><path d="M196 479 208 484 226 472" fill="none" stroke="#60aa63" stroke-width="2"></path></g>
 </g>
 </g></g>
@@ -872,10 +885,20 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 <path d="M426 348 456 340 487 373 470 411 444 407Z" fill="#7ac16a"></path>
 <path d="M470 411 487 373 515 439 507 469 480 483 458 465Z" fill="#4da059"></path>
 <g id="right-hand">
-<g id="right-hand-rest"><path d="M486 443 511 438 528 454 526 478 506 490 480 478 475 459Z" fill="#74ba65"></path><path d="M486 443 511 438 506 466 480 478Z" fill="#9ed37b"></path></g>
+<g id="right-hand-rest" aria-label="Mano de iguana con dedos cortos">
+<path d="M486 443 Q507 436 525 449 Q535 463 526 478 Q510 493 491 486 Q473 477 475 460Z" fill="#74ba65"/>
+<path d="M487 448 Q507 440 518 451 L511 466 482 478Z" fill="#9ed37b"/>
+<path d="M490 482 Q480 491 478 496 L489 498 500 487Z M502 485 Q495 495 495 502 L506 499 514 487Z M516 482 Q514 492 517 497 L528 493 527 476Z" fill="#6caf60" stroke="#4f9957" stroke-width="1.4"/>
+<path d="M479 496 L490 498 M496 502 L506 499 M517 497 L528 493" stroke="#d5ec9d" stroke-width="2.2" stroke-linecap="round"/>
+</g>
 <g id="right-hand-palm" aria-label="Mano escamosa con dedos, sin almohadillas"><path d="M480 447 505 438 526 450 531 470 515 489 491 482 475 465Z" fill="#9ad079"></path><path d="M481 458 495 454 506 460 M495 447 509 450 519 458 M490 471 505 467 520 475" fill="none" stroke="#4b9455" stroke-width="2.7" stroke-linecap="round"></path><path d="M492 479 507 483 520 474" fill="none" stroke="#60aa63" stroke-width="2"></path></g>
 </g>
 </g></g>
+<!-- Gola suave unida al pecho; no dibujar un segundo cuello ni una segunda cara. -->
+<g id="igui-attached-dewlap" pointer-events="none">
+<path d="M313 342 Q350 350 390 342 L384 381 Q363 402 348 395 Q328 397 316 376Z" fill="#91d46f" stroke="#579b55" stroke-width="2"/>
+<path d="M328 354 Q350 361 377 351 L367 383 Q351 388 334 377Z" fill="#c5e98a" opacity=".75"/>
+</g>
 <!-- Cresta flotante del hombro retirada; las pequeñas escamas quedan sobre la cabeza. --><g id="head"><g id="head-anatomy-v2" transform="translate(43 30) scale(.88 .9)">
 <!-- Cresta dorsal de iguana, suave, no agresiva -->
 <g id="ear-left"><path d="M297 153 303 130 317 148 330 118 342 150Z" fill="#61B43D"/><path d="M305 147 330 118 328 150Z" fill="#B5E870"/></g>
