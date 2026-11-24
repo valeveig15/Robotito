@@ -76,6 +76,99 @@ function syncFace(){
  const uri=atlas[mood][variant];
  if(uri&&face.getAttribute("href")!==uri)face.setAttribute("href",uri);
 }
+/* Michi V8: punta de cola de radio fijo 9.2; onda en S más pronunciada.
+   Los primeros puntos permanecen fijados a la cadera: no se separa del cuerpo. */
+function animateMichiTail(avatar,stage,token){
+ const tails=['tail','side-tail'].map(id=>stage.querySelector('#'+id));
+ if(!avatar||tails.some(t=>!t))return;
+ const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+ const moods={
+   feliz:[56,.73,0],emocionado:[63,.97,-7],enamorado:[49,.68,-3],
+   tranquilo:[39,.59,0],triste:[10,.36,63],dormido:[2,.22,73],
+   asustado:[17,1.14,43],enojado:[27,.95,10],curioso:[45,.70,0],
+   confundido:[27,.60,5],aburrido:[12,.39,47],cansado:[9,.32,58],
+   hambriento:[29,.72,4],sorprendido:[41,.98,0],avergonzado:[20,.51,23]
+ };
+ const N=22;
+ function centerline(phase, amplitude, droop, side){
+   // Cada tramo tiene LA MISMA longitud geométrica en todos los fotogramas.
+   // Las curvas cambian de orientación, no de longitud: evita el efecto goma.
+   const x0=side?414:446, y0=side?444:449;
+   const pts=[[x0,y0]];
+   const segment=9.6;            // 22 tramos: 211.2 unidades SVG constantes.
+   const movement=Math.min(.62, amplitude/100); // vaivén moderado, menos que V8
+   const lowered=droop/73;
+   for(let i=1;i<=N;i++){
+     const u=(i-.5)/N;
+     // Al salir del cuerpo la orientación varía muy poco; la punta es más flexible.
+     const base=1.05-1.22*u;
+     const sCurve=.27*Math.sin(2*Math.PI*u-.3)*u;
+     const lateral=movement*(.52*Math.sin(phase-.75)*u + .57*Math.sin(2*Math.PI*u-phase)*u*u);
+     const relaxed=1.70*lowered*(.65+.35*u);
+     const angle=base+sCurve+lateral+relaxed;
+     const prev=pts[pts.length-1];
+     pts.push([prev[0]+segment*Math.sin(angle),prev[1]-segment*Math.cos(angle)]);
+   }
+   return pts;
+ }
+ function band(pts,start,end,widthStart,widthEnd,rounded){
+   const left=[],right=[];
+   for(let i=start;i<=end;i++){
+     const a=pts[Math.max(0,i-1)],b=pts[Math.min(N,i+1)];
+     const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1;
+     const nx=-dy/len,ny=dx/len;
+     const w=widthStart+(widthEnd-widthStart)*(i/N);
+     left.push([pts[i][0]+nx*w,pts[i][1]+ny*w]);
+     right.push([pts[i][0]-nx*w,pts[i][1]-ny*w]);
+   }
+   const fmt=p=>p[0].toFixed(2)+' '+p[1].toFixed(2);
+   // Convertimos puntos poligonales en curvas cúbicas suaves (Catmull-Rom).
+   function curveLine(arr){
+     let d='';
+     for(let i=0;i<arr.length-1;i++){
+       const p0=arr[Math.max(0,i-1)],p1=arr[i],
+             p2=arr[i+1],p3=arr[Math.min(arr.length-1,i+2)];
+       const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6];
+       const c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+       d+=' C'+fmt(c1)+' '+fmt(c2)+' '+fmt(p2);
+     }
+     return d;
+   }
+   let d='M'+fmt(left[0])+curveLine(left);
+   if(rounded && end===N){
+     const last=pts[N],prev=pts[N-1],tx=last[0]-prev[0],ty=last[1]-prev[1];
+     const len=Math.hypot(tx,ty)||1;
+     const w=widthStart+(widthEnd-widthStart)*(end/N);
+     d+=' Q'+fmt([last[0]+tx/len*w*1.18,last[1]+ty/len*w*1.18])+' '+fmt(right[right.length-1]);
+   }else d+=' L'+fmt(right[right.length-1]);
+   d+=curveLine([...right].reverse());
+   return d+' Z';
+ }
+ let start=null,last=0;
+ function draw(timestamp){
+   if(token!==requested||current?.avatar!==avatar)return;
+   if(start===null)start=timestamp;
+   const elapsed=reduce?.matches?0:(timestamp-start)/1000;
+   const mood=avatar.getAttribute('data-mood')||'feliz';
+   const [amp,freq,droop]=moods[mood]||moods.feliz;
+   const action=avatar.getAttribute('class')||'';
+   const multiplier=action.includes('action-bailar')?1.48:action.includes('action-caminar')?1.25:1;
+   const phase=elapsed*freq*multiplier;
+   const amount=amp*(action.includes('action-bailar')?1.08:1);
+   tails.forEach((g,n)=>{
+     const paths=g.querySelectorAll('path');
+     if(paths.length<3)return;
+     const pts=centerline(phase,amount,droop,!!n);
+     paths[0].setAttribute('d',band(pts,0,N,13.5,9.2,true));
+     paths[1].setAttribute('d',band(pts,1,N-3,4.4,2.3,false));
+     paths[2].setAttribute('d',band(pts,N-4,N,9.2,9.2,true));
+     const cap=g.querySelector('.michi-tail-round-cap');
+     if(cap){cap.setAttribute('cx',pts[N][0].toFixed(2));cap.setAttribute('cy',pts[N][1].toFixed(2));}
+   });
+   requestAnimationFrame(draw);
+ }
+ requestAnimationFrame(draw);
+}
 async function fetchMarkup(id){
  if(cached.has(id))return cached.get(id);
  const promise=fetch(path(id),{credentials:"same-origin",cache:"force-cache"}).then(r=>{
@@ -238,6 +331,7 @@ async function activate(id,{mood="calm",language="es"}={}){
   observer=new MutationObserver(scheduleSync);
   if(robot)observer.observe(robot,{attributes:true,attributeFilter:["class","data-avatar","data-species-action","style"],childList:true});
   sync();
+  if(id==="cat")animateMichiTail(avatar,stage,token);
   return true;
  }catch(error){
   console.warn("Approved avatar unavailable; using safe existing rendering",error);
