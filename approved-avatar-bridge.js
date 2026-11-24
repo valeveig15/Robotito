@@ -302,6 +302,19 @@ async function activate(id,{mood="calm",language="es"}={}){
 }
 `;
   shadow.appendChild(overrides);
+  if(asset.atlas){
+    // The user's texture already paints the exact approved eyes, cheeks, nose
+    // and mouth for every emotion. Never layer the generic SVG face over it.
+    const faceGuard=document.createElement("style");
+    faceGuard.textContent=String.raw`
+#avatar #head > #reference-face-idle{opacity:1!important;visibility:visible!important}
+#avatar #head > :is(#eye-open,#eye-closed,#blush,#brows-angry,#brows-curious,#brows-sad,
+ #mouth-happy,#mouth-neutral,#mouth-sad,#mouth-angry,#mouth-o,#mouth-speak,
+ #tears,#tongue,#heart-eyes,#star-eyes,#sweat-mark,#sleep-marks,#approved-eyelids){
+ opacity:0!important;visibility:hidden!important
+}`;
+    shadow.appendChild(faceGuard);
+  }
   const stage=shadow.querySelector("#stage-svg"),avatar=shadow.querySelector("#avatar");
   // Do not crop feet, tails or lower body when the scene changes aspect ratio.
   stage?.setAttribute("preserveAspectRatio","xMidYMid meet");
