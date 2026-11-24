@@ -70,4 +70,4 @@ runBrowserTest("p12-class-recovery",async test=>{
   return 3;
  });
  test.report.checks=checks;console.log("P12 interrupted recording, quota, reload, privacy and atomic recovery:",checks,"checks");
-}).catch(e=>{console.error(e);process.exitCode=1;});
+},{persistentProfile:true}).catch(e=>{console.error(e);process.exitCode=1;});

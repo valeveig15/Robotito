@@ -27,7 +27,7 @@ async function startServer(){
 async function runBrowserTest(suite,run,{
   engineName=process.env.ROBOTITO_BROWSER_ENGINE||"chromium",seed=process.env.ROBOTITO_TEST_SEED||"17",
   directory=process.env.ROBOTITO_TEST_ARTIFACT_DIR||path.join(root,"test-results"),
-  viewport={width:1280,height:900},timeoutMs=180000
+  viewport={width:1280,height:900},timeoutMs=180000,persistentProfile=false
 }={}){
   if(!/^[a-z0-9-]+$/.test(suite))throw Error("Invalid browser suite name");
   if(!["chromium","firefox","webkit"].includes(engineName))throw Error("Unsupported browser engine: "+engineName);
@@ -70,8 +70,16 @@ async function runBrowserTest(suite,run,{
   try{
     await Promise.race([(async()=>{
     server=await startServer();test.baseURL=server.url;
-    browser=await engines[engineName].launch({headless:true});report.browserVersion=browser.version();
-    context=await browser.newContext({viewport,permissions:[],acceptDownloads:true});
+    if(persistentProfile){
+      // Empty userDataDir creates a disposable regular profile, never the user's.
+      // Legacy Blob/File IndexedDB fixtures need regular storage in WebKit.
+      context=await engines[engineName].launchPersistentContext("",{headless:true,viewport,permissions:[],acceptDownloads:true});
+      browser=context.browser();
+    }else{
+      browser=await engines[engineName].launch({headless:true});
+      context=await browser.newContext({viewport,permissions:[],acceptDownloads:true});
+    }
+    report.browserVersion=browser.version();report.persistentProfile=persistentProfile;
     context.setDefaultTimeout(15000);context.setDefaultNavigationTimeout(30000);
     await context.route("**/*",route=>{
       const url=new URL(route.request().url());
@@ -102,7 +110,7 @@ async function runBrowserTest(suite,run,{
         if(trace)report.artifacts.trace=path.basename(trace);
       }catch(e){report.traceError=String(e.message);}
     }
-    try{await browser?.close();}catch(e){error=error||e;report.status="failed";report.cleanupError=String(e);}
+    try{await context?.close();await browser?.close();}catch(e){error=error||e;report.status="failed";report.cleanupError=String(e);}
     await server?.close();
     clearTimeout(forcedExit);persist();
   }
