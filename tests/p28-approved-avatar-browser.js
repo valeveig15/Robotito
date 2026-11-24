@@ -117,7 +117,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
     const atlas=await page.evaluate(()=>{
       const art=window.ROBOTITO_APPROVED_AVATAR.current;
       return {moods:Object.keys(art.atlas||{}).length,
-       visible:(art.shadow.querySelector("#head #reference-face-idle image")?.getAttribute("href")||"").slice(0,22)};
+       visible:(art.shadow.querySelector("#head #reference-face-idle image")?.getAttribute("href")||"").slice(0,23)};
     });
     assert.equal(atlas.moods,15,"Exactly 15 textured emotions: "+id);
     assert.equal(atlas.visible,"data:image/webp;base64,","Image must be the user's original face atlas: "+id);
