@@ -1,4 +1,4 @@
-<!-- Original editable Michi V21 avatar source, inert SVG+CSS, no external scripts. -->
+<!-- Michi V22: authentic editable user avatar in Robotito. Only SVG/CSS; no standalone JavaScript. -->
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -1052,6 +1052,11 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 /* Michi V19: accurate feline muzzle, tapered limbs and chest, original head silhouette preserved. */
 #avatar #michi-feline-muzzle-details,#avatar #michi-cat-throat{pointer-events:none}
 #avatar #ear-left,#avatar #ear-right{transform-box:fill-box;transform-origin:center bottom}
+
+/* V22: one cat nose, shorter natural whiskers, paws remain attached to the arms. */
+#michi-whiskers,#michi-single-pink-nose{pointer-events:none}
+#avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
 </style>
 <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" aria-label="Michi, gato naranja low-poly de pie, con ojos felinos expresivos y cola fina, en su jardín." data-view="frente" id="stage-svg" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 700 635">
 <defs><clippath clippathunits="userSpaceOnUse" id="mouth-safe-area"><path d="M321 321 Q352 315 388 321 L391 352 Q371 368 353 365 Q328 366 319 350Z"/></clippath></defs>
@@ -1148,7 +1153,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <g fill="none" id="belly-rumble" opacity=".7" stroke="#a77348" stroke-linecap="round" stroke-width="3"><path d="M335 440q-7 8 0 15M378 440q7 8-1 15"/></g>
 </g></g>
 <!-- Brazos y manos son patas de oso, sin dedos humanos. -->
-<g class="limb" id="left-arm"><g id="dog-front-left-arm-size" transform="translate(136 65) scale(.47 .82)"><path d="M269 347 Q242 333 226 340 Q207 356 196 384 L175 456 Q171 474 187 489 Q207 494 225 483 Q241 450 246 418 L267 380Z" fill="#eba63e"/><path d="M226 340 Q246 333 269 347 L248 415 Q226 394 196 384Z" fill="#f8ca66"/><path d="M196 384 Q228 390 247 416 L226 479 Q206 490 187 489 L175 456Z" fill="#f4b44c"/><path d="M205 406 Q220 410 230 418 M194 439 Q210 443 220 448" fill="none" stroke="#d4892c" stroke-width="5" stroke-linecap="round" opacity=".58"/><g id="left-hand"><g id="left-hand-rest"><path d="m159 460 62 22 17 14-49 17-43-21Z" fill="#cc852d"/><path d="m159 460 62 22-32 31-43-21Z" fill="#f0b74d"/><g fill="#e59b6b" id="left-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z" fill="#df9666"/><circle cx="166" cy="478" fill="#df9666" r="4.6"/><circle cx="180" cy="474" fill="#df9666" r="4.8"/><circle cx="194" cy="479" fill="#df9666" r="4.2"/></g></g><g id="left-hand-palm">
+<g class="limb" id="left-arm"><g id="dog-front-left-arm-size" transform="translate(136 65) scale(.47 .82)"><path d="M269 347 Q242 333 226 340 Q207 356 196 384 L175 456 Q171 474 187 489 Q207 494 225 483 Q241 450 246 418 L267 380Z" fill="#eba63e"/><path d="M226 340 Q246 333 269 347 L248 415 Q226 394 196 384Z" fill="#f8ca66"/><path d="M196 384 Q228 390 247 416 L226 479 Q206 490 187 489 L175 456Z" fill="#f4b44c"/><path d="M205 406 Q220 410 230 418 M194 439 Q210 443 220 448" fill="none" stroke="#d4892c" stroke-width="5" stroke-linecap="round" opacity=".58"/><g id="left-hand"><g id="left-hand-rest"><path d="M164 461 Q183 446 206 457 Q229 469 230 490 Q225 511 200 518 Q178 520 158 499 Q147 482 164 461Z" fill="#d88b31"/><path d="M164 462 Q186 449 204 458 Q220 468 220 480 Q198 484 176 499 Q157 491 164 462Z" fill="#f6c369"/><path d="M169 494 Q176 505 185 509 M187 500 Q194 511 202 511 M207 496 Q213 505 220 502" fill="none" stroke="#b8792c" stroke-width="3.6" stroke-linecap="round"/><g fill="#e59b6b" id="left-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z" fill="#df9666"/><circle cx="166" cy="478" fill="#df9666" r="4.6"/><circle cx="180" cy="474" fill="#df9666" r="4.8"/><circle cx="194" cy="479" fill="#df9666" r="4.2"/></g></g><g id="left-hand-palm">
 <path d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z" fill="#9f672f"/>
 <path d="M213 476 L208 466 L195 462 L181 465 L190 488 L219 495 L223 486 Z" fill="#d79537"/>
 <path d="M181 465 L169 476 L164 493 L190 488 Z" fill="#d79537"/>
@@ -1160,7 +1165,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <path d="M173 479 L169 482 L168 489 L174 492 L178 489 L177 483Z"/>
 <path d="M208 493 L195 486 L180 492 L178 503 L190 511 L204 507 L212 500Z"/>
 </g></g></g></g></g>
-<g class="limb other" id="right-arm"><g id="dog-front-right-arm-size" transform="translate(217 65) scale(.47 .82)"><path d="M433 347 Q458 333 475 340 Q494 356 504 384 L525 456 Q529 474 513 489 Q492 494 475 483 Q459 450 454 418 L433 380Z" fill="#eba63e"/><path d="M475 340 Q455 333 433 347 L455 415 Q477 394 504 384Z" fill="#f8ca66"/><path d="M504 384 Q473 390 455 416 L475 479 Q493 490 513 489 L525 456Z" fill="#f4b44c"/><path d="M495 406 Q480 410 469 418 M506 439 Q491 443 480 448" fill="none" stroke="#d4892c" stroke-width="5" stroke-linecap="round" opacity=".58"/><g id="right-hand"><g id="right-hand-rest"><path d="m547 462-62 20-15 16 45 16 46-23Z" fill="#cc852d"/><path d="m547 462-62 20 30 32 46-23Z" fill="#f2c76a"/><g fill="#e59b6b" id="right-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z" fill="#df9666"/><circle cx="541" cy="480" fill="#df9666" r="4.5"/><circle cx="527" cy="475" fill="#df9666" r="4.7"/><circle cx="513" cy="477" fill="#df9666" r="4.2"/></g></g><g id="right-hand-palm">
+<g class="limb other" id="right-arm"><g id="dog-front-right-arm-size" transform="translate(217 65) scale(.47 .82)"><path d="M433 347 Q458 333 475 340 Q494 356 504 384 L525 456 Q529 474 513 489 Q492 494 475 483 Q459 450 454 418 L433 380Z" fill="#eba63e"/><path d="M475 340 Q455 333 433 347 L455 415 Q477 394 504 384Z" fill="#f8ca66"/><path d="M504 384 Q473 390 455 416 L475 479 Q493 490 513 489 L525 456Z" fill="#f4b44c"/><path d="M495 406 Q480 410 469 418 M506 439 Q491 443 480 448" fill="none" stroke="#d4892c" stroke-width="5" stroke-linecap="round" opacity=".58"/><g id="right-hand"><g id="right-hand-rest"><path d="M544 461 Q523 446 501 457 Q478 469 476 490 Q481 511 506 518 Q529 520 550 499 Q560 482 544 461Z" fill="#d88b31"/><path d="M543 462 Q523 449 505 458 Q487 468 486 480 Q510 484 531 499 Q548 491 543 462Z" fill="#f6c369"/><path d="M538 494 Q531 505 522 509 M520 500 Q513 511 505 511 M500 496 Q493 505 486 502" fill="none" stroke="#b8792c" stroke-width="3.6" stroke-linecap="round"/><g fill="#e59b6b" id="right-paw-pad" stroke="#c78358" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z" fill="#df9666"/><circle cx="541" cy="480" fill="#df9666" r="4.5"/><circle cx="527" cy="475" fill="#df9666" r="4.7"/><circle cx="513" cy="477" fill="#df9666" r="4.2"/></g></g><g id="right-hand-palm">
 <path d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z" fill="#9f672f"/>
 <path d="M499 476 L504 466 L517 462 L531 465 L522 488 L493 495 L489 486 Z" fill="#d79537"/>
 <path d="M531 465 L543 476 L548 493 L522 488 Z" fill="#d79537"/>
@@ -1207,8 +1212,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <g id="brows-curious"><path d="M264 197 Q287 182 312 195" fill="none" stroke="#98581f" stroke-width="5" stroke-linecap="round"/><path d="M393 195 Q418 182 445 197" fill="none" stroke="#98581f" stroke-width="5" stroke-linecap="round"/></g>
 <g id="blush" pointer-events="none"><path d="M253 282 275 277 292 291 278 306 253 300Z M421 290 438 277 461 284 464 300 437 307Z" fill="#df878f" opacity=".72"/><path d="m261 283 19-2 7 10-19 7Z m172-1 17 4 7 10-20 2Z" fill="#ffd3cf" opacity=".28"/></g>
 <!-- Cat-specific pink triangular nose and whiskers. -->
-<path d="M334 300 374 300 355 316Z" fill="#b96e61"/><path d="M355 309v20" stroke="#6b5860" stroke-linecap="round" stroke-width="3.5"/>
-<path d="M338 302 357 302 354 310Z" fill="#b96e61"/>
+<path id="michi-single-pink-nose" d="M338 303 Q353 297 370 303 Q357 319 354 318 Q350 318 338 303Z" fill="#c77f78" stroke="#9e615e" stroke-width="1.4"/><path d="M354 317v12" stroke="#78585a" stroke-linecap="round" stroke-width="3.1"/>
 <g id="michi-feline-muzzle-details" pointer-events="none">
  <g fill="#a56d3a" opacity=".67">
   <ellipse cx="319" cy="313" rx="2.3" ry="1.65"/><ellipse cx="312" cy="322" rx="1.9" ry="1.5"/><ellipse cx="324" cy="327" rx="1.8" ry="1.45"/>
@@ -1218,7 +1222,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
  <path d="M255 290 l-24-5 16 14 -15 8 27 1 M451 289 l24-5 -16 14 16 8 -28 1" fill="#fff0cb" stroke="#dfa140" stroke-width="1.6" stroke-linejoin="round" opacity=".92"/>
 </g>
 
-<g fill="none" stroke="#7e654b" stroke-linecap="round" stroke-width="3.8"><path d="M290 308 235 296 M289 319 226 322 M295 331 242 344 M418 308 471 295 M420 319 483 321 M415 331 470 343"/></g>
+<g id="michi-whiskers" fill="none" stroke="#876e58" stroke-linecap="round" stroke-width="3.1"><path d="M286 307 Q267 301 251 300 M288 319 Q266 318 249 320 M293 331 Q273 338 260 339 M419 307 Q438 301 454 300 M420 319 Q442 318 459 320 M414 331 Q433 338 446 339"/></g>
 <g id="mouth-happy"><path d="M355 328Q344 343 329 331 M355 328Q366 343 381 331" fill="none" stroke="#66565f" stroke-linecap="round" stroke-width="4.2"/></g>
 <g id="mouth-neutral"><path d="m340 336 30 0" fill="none" stroke="#66565f" stroke-linecap="round" stroke-width="4.2"/></g>
 <g id="mouth-sad"><path d="M339 347Q354 332 371 347" fill="none" stroke="#66565f" stroke-linecap="round" stroke-width="4"/></g>
