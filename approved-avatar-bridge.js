@@ -1,5 +1,5 @@
 // P28 — integrates the user's latest approved SVG worlds *inside* Robotito.
-// The uploaded HTML is distilled to inert SVG+CSS, mounted into a scoped shadow root.
+// The latest full user-authored HTML is parsed as inert SVG+all CSS, mounted into a scoped shadow root.
 // Speech, permissions, memory, interaction and actions stay in the existing app.
 (()=>{
 "use strict";
@@ -20,7 +20,9 @@ const ACTIONS={
 };
 let requested=0,current=null,root=null,observer=null,speechTimer=null,blinkTimer=null;
 let pendingSync=false;
-const cached=new Map(),path=id=>"assets/approved-avatars/"+REFS[id]+".fragment.html";
+const LATEST=Object.freeze({dog:"bobi",cat:"michi","red-panda":"roji",iguana:"igui"});
+const cached=new Map();
+const path=id=>LATEST[id]?"previews/"+LATEST[id]+"-review.html":"assets/approved-avatars/"+REFS[id]+".fragment.html";
 function getRobot(){return document.getElementById("robotito");}
 function getWorld(){return document.getElementById("world");}
 function ensureHost(){
@@ -54,6 +56,26 @@ function reset(){
  oldHost?.shadowRoot?.replaceChildren();
  if(oldHost){oldHost.replaceChildren();oldHost.style.display="none";}
 }
+// Parse only strict 15-state WebP face data. Never execute scripts from uploaded HTML.
+function parseFaceAtlas(doc){
+ const script=[...doc.querySelectorAll("script")].find(s=>s.textContent.includes("const atlas = {feliz:"));
+ if(!script)return null;
+ const atlas=Object.create(null);
+ const matcher=/([a-z]+):\\{normal:"(data:image\\/webp;base64,[A-Za-z0-9+/=]+)",speak:"(data:image\\/webp;base64,[A-Za-z0-9+/=]+)",blink:"(data:image\\/webp;base64,[A-Za-z0-9+/=]+)"\\}/g;
+ for(const hit of script.textContent.matchAll(matcher))atlas[hit[1]]={normal:hit[2],speak:hit[3],blink:hit[4]};
+ if(Object.keys(atlas).length!==15)throw new Error("Incomplete face texture atlas");
+ return atlas;
+}
+function syncFace(){
+ if(!current?.atlas)return;
+ const {avatar,shadow,atlas}=current;
+ const face=shadow.querySelector("#head #reference-face-idle image");
+ if(!face)return;
+ const mood=Object.prototype.hasOwnProperty.call(atlas,avatar.dataset.mood)?avatar.dataset.mood:"feliz";
+ const variant=avatar.classList.contains("speaking")?"speak":avatar.classList.contains("blink")?"blink":"normal";
+ const uri=atlas[mood][variant];
+ if(uri&&face.getAttribute("href")!==uri)face.setAttribute("href",uri);
+}
 async function fetchMarkup(id){
  if(cached.has(id))return cached.get(id);
  const promise=fetch(path(id),{credentials:"same-origin",cache:"force-cache"}).then(r=>{
@@ -61,14 +83,16 @@ async function fetchMarkup(id){
    return r.text();
  }).then(html=>{
    const doc=new DOMParser().parseFromString(html,"text/html");
-   const style=doc.querySelector("style"),svg=doc.querySelector("svg#stage-svg");
-   if(!style||!svg||!svg.querySelector("#avatar")||!svg.querySelector("#environment"))
+   const styles=[...doc.querySelectorAll("style")],svg=doc.querySelector("svg#stage-svg");
+   if(!styles.length||!svg||!svg.querySelector("#avatar")||!svg.querySelector("#environment"))
      throw new Error("Approved avatar incomplete "+id);
-   // Original scripts/buttons are neither imported nor executed.
+   // Last CSS layers position textured eyes/mouth and emotion overlays.
+   // Original scripts/buttons are deliberately never executed.
    const safe=document.createElement("template");
-   safe.innerHTML="<style>"+style.textContent+"</style><div class='stage'>"+svg.outerHTML+"</div>";
+   safe.innerHTML=styles.map(style=>"<style>"+style.textContent+"</style>").join("")
+     +"<div class='stage'>"+svg.outerHTML+"</div>";
    if(safe.content.querySelector("script"))throw new Error("Executable asset rejected");
-   return safe.content;
+   return {content:safe.content,atlas:parseFaceAtlas(doc)};
  });
  cached.set(id,promise);
  try{return await promise;}catch(error){cached.delete(id);throw error;}
@@ -113,6 +137,7 @@ function sync(){
   if(!prop){prop=document.createElement("span");prop.className="approved-object-prop";prop.setAttribute("aria-hidden","true");current.shadow.appendChild(prop);}
   prop.textContent=oldProp.textContent;
  }else prop?.remove();
+ syncFace();
 }
 function scheduleSync(){
  if(pendingSync)return;
@@ -129,7 +154,8 @@ async function activate(id,{mood="calm",language="es"}={}){
  host.style.display="";
  // Keep the current avatar visible during async loading.
  try{
-  const content=(await fetchMarkup(id)).cloneNode(true);
+  const asset=await fetchMarkup(id);
+  const content=asset.content.cloneNode(true);
   if(token!==requested)return false;
   const shadow=host.shadowRoot||host.attachShadow({mode:"open"});
   shadow.replaceChildren(content);
@@ -206,7 +232,7 @@ async function activate(id,{mood="calm",language="es"}={}){
   stage.setAttribute("aria-hidden","true");
   const robot=getRobot();
   host.setAttribute("aria-label",robot?.getAttribute("aria-label")||"Robotito");
-  current={id,host,shadow,stage,avatar,mood,language};
+  current={id,host,shadow,stage,avatar,mood,language,atlas:asset.atlas};
   robot?.setAttribute("aria-hidden","true");
   getWorld()?.classList.add("approved-art-world");
   observer=new MutationObserver(scheduleSync);
@@ -238,8 +264,8 @@ function speak(active=true){
  if(!current)return;
  clearTimeout(speechTimer);
  const {avatar}=current;
- avatar.classList.toggle("speaking",!!active);
- if(active)speechTimer=setTimeout(()=>avatar.classList.remove("speaking"),3500);
+ avatar.classList.toggle("speaking",!!active);syncFace();
+ if(active)speechTimer=setTimeout(()=>{avatar.classList.remove("speaking");syncFace();},3500);
 }
 function blink(){
  if(!current||document.hidden||getRobot()?.classList.contains("sleeping")||
@@ -248,8 +274,8 @@ function blink(){
  clearTimeout(blinkTimer);
  avatar.classList.remove("blink");
  // Do not clear a new avatar's blink when an earlier timer completes.
- avatar.classList.add("blink");
- blinkTimer=setTimeout(()=>{avatar.classList.remove("blink");blinkTimer=null;},140);
+ avatar.classList.add("blink");syncFace();
+ blinkTimer=setTimeout(()=>{avatar.classList.remove("blink");blinkTimer=null;syncFace();},140);
  return true;
 }
 document.addEventListener("visibilitychange",()=>{if(document.hidden){speak(false);clearTimeout(blinkTimer);blinkTimer=null;current?.avatar.classList.remove("blink");}});
