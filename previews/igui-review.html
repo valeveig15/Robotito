@@ -7,7 +7,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <meta content="#f6f4e9" name="theme-color"/>
-<title>Igui V12 · anatomía reptiliana y cresta integrada</title>
+<title>Igui V13 · anatomía reptiliana y cresta integrada</title>
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -767,7 +767,7 @@ body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee
 }
 
 
-/* Igui V12: claws attached to hands, back spines grow from tail, throat joins body. */
+/* Igui V13: claws attached to hands, back spines grow from tail, throat joins body. */
 #avatar #igui-attached-dewlap,#avatar #igui-tail-spines{pointer-events:none}
 #avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
 #avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
@@ -917,7 +917,7 @@ body{background:#b4d9c6!important;background-image:linear-gradient(180deg,#d8edd
 <g data-mood="feliz" id="avatar">
  <!-- Cola larga, flexible y progresivamente fina, propia de una iguana. --> 
 <g id="tail">
-<g aria-label="Cola reptiliana larga de grosor decreciente" id="igui-front-tail">
+<g aria-label="Cola reptiliana larga de grosor decreciente" id="igui-front-tail" transform="translate(70 0) scale(.84 1)">
 <path d="M416 447 C461 432 488 418 519 417 C564 416 595 443 631 454 C657 463 679 460 698 472 C668 464 652 466 623 459 C580 450 559 434 520 435 C490 435 466 459 426 472Z" fill="#3c8651"></path>
 <path d="M423 448 C461 436 490 421 519 424 C559 420 593 446 627 453 C656 464 679 462 697 472 C665 465 643 464 626 459 C582 445 555 428 517 432 C485 435 458 451 426 460Z" fill="#87c86d"></path>
 <path d="M461 434 478 430 470 449 452 454Z M521 422 545 427 534 437 516 434Z M582 432 598 443 589 449 574 440Z M645 459 656 463 651 466 640 463Z" fill="#619a58"></path>
@@ -1006,6 +1006,10 @@ body{background:#b4d9c6!important;background-image:linear-gradient(180deg,#d8edd
 <path d="M247 294 Q266 280 282 300 L285 315 259 318Z M418 299 Q435 282 453 301 L446 318 419 318Z" fill="#D7F795" opacity=".5"/>
 <path d="M276 191 Q302 174 327 186 M375 183 Q399 173 424 192" fill="none" stroke="#73B94B" stroke-linecap="round" stroke-width="5" opacity=".45"/>
 
+<g id="igui-cheek-scales" aria-label="Escamas faciales suaves y simétricas" pointer-events="none">
+<path d="M259 290 l12 -6 11 9 -12 9Z M420 293 l11 -9 12 6 -11 12Z" fill="#92d968" opacity=".56"/>
+<path d="M282 305 l8 -4 7 7 -8 7Z M402 308 l7 -7 8 4 -7 10Z" fill="#b7e788" opacity=".53"/>
+</g>
 <g id="eye-open">
 <ellipse cx="290" cy="239" rx="33" ry="36" fill="#2C633F"/>
 <ellipse cx="410" cy="239" rx="33" ry="36" fill="#2C633F"/>
