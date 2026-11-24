@@ -97,9 +97,22 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.id,id);
   assert.equal(meta.landscape,true,"Correct approved environment "+id);
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
-  if(id==="cat")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#michi-face-v17")),true,"Authentic orange Michi instead of grey generic cat");
-  if(id==="red-panda")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#roji-head-refined")),true,"Authentic Roji reference, preserve original head");
-  if(id==="iguana")assert.equal(await page.evaluate(()=>!!window.ROBOTITO_APPROVED_AVATAR.current.stage.querySelector("#head")),true,"Authentic Igui V10 profile");
+  // Stable markers from the user's own animal SVGs, not the generic species renderer.
+  const identityChecks={
+    dog:["#bobi-head-v21","#bobi-neck-bridge","#tail"],
+    cat:["#michi-face-v17","#michi-single-pink-nose","#michi-whiskers"],
+    "red-panda":["#roji-head-refined","#panda-eye-patches","#roji-cream-bib","#roji-front-tail"],
+    iguana:["#head-anatomy-v2","#igui-attached-dewlap","#igui-tail-spines"]
+  };
+  if(identityChecks[id]){
+    const identity=await page.evaluate(selectors=>{
+      const svg=window.ROBOTITO_APPROVED_AVATAR.current.stage;
+      return {found:selectors.map(selector=>svg.querySelectorAll(selector).length),
+       heads:svg.querySelectorAll('#head').length};
+    },identityChecks[id]);
+    assert.ok(identity.found.every(n=>n===1),"Distinct user-approved animal features: "+id+" "+JSON.stringify(identity));
+    assert.equal(identity.heads,1,"Never render a second underlying face: "+id);
+  }
   assert.ok(meta.polygons>150,"Not a simplified recolored stock avatar: "+id);
   assert.equal(meta.hasStyle,true);
   assert.equal(meta.noScripts,true,"Original standalone JS/buttons must never be reexecuted");
