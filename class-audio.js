@@ -372,7 +372,10 @@
     const tracks=source?.getAudioTracks?.().filter(t=>t.readyState==="live")||[];
     if(!tracks.length)return {ok:false,reason:"no-audio-track"};
     const request=++captureRequest,owner=window.ROBOTITO_MEMORY?.owner?.()||"local";
-    try{await navigator.storage?.persist?.();}catch{}
+    // Firefox may leave this optional permission pending until the user
+    // answers a browser prompt. Best-effort storage is enough to start;
+    // recording and cancellation must not wait for persistent-storage consent.
+    try{Promise.resolve(navigator.storage?.persist?.()).catch(()=>{});}catch{}
     const canceled=()=>request!==captureRequest||owner!==(window.ROBOTITO_MEMORY?.owner?.()||"local")||
       sharedCapture&&(source!==state.stream||state.captureEpoch!==epoch||state.captureRevision!==revision||!state.started||document.hidden||state.captureSuspended);
     if(canceled())return {ok:false,reason:"capture-canceled"};
