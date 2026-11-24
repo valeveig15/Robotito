@@ -61,7 +61,7 @@ function parseFaceAtlas(doc){
  const script=[...doc.querySelectorAll("script")].find(s=>s.textContent.includes("const atlas = {feliz:"));
  if(!script)return null;
  const atlas=Object.create(null);
- const matcher=/([a-z]+):\\{normal:"(data:image\\/webp;base64,[A-Za-z0-9+/=]+)",speak:"(data:image\\/webp;base64,[A-Za-z0-9+/=]+)",blink:"(data:image\\/webp;base64,[A-Za-z0-9+/=]+)"\\}/g;
+ const matcher=/([a-z]+):[{]normal:"(data:image\/webp;base64,[A-Za-z0-9+/=]+)",speak:"(data:image\/webp;base64,[A-Za-z0-9+/=]+)",blink:"(data:image\/webp;base64,[A-Za-z0-9+/=]+)"[}]/g;
  for(const hit of script.textContent.matchAll(matcher))atlas[hit[1]]={normal:hit[2],speak:hit[3],blink:hit[4]};
  if(Object.keys(atlas).length!==15)throw new Error("Incomplete face texture atlas");
  return atlas;
