@@ -99,7 +99,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
   // Stable markers from the user's own animal SVGs, not the generic species renderer.
   const identityChecks={
-    dog:["#bobi-head-v21","#bobi-neck-bridge","#tail"],
+    dog:["#bobi-head-v21","#bobi-neck-bridge","#bobi-single-muzzle","#bobi-left-toes","#bobi-right-toes","#tail"],
     cat:["#michi-face-v17","#michi-single-pink-nose","#michi-whiskers"],
     "red-panda":["#roji-head-refined","#panda-eye-patches","#roji-cream-bib","#roji-front-tail"],
     iguana:["#head-anatomy-v2","#igui-attached-dewlap","#igui-tail-spines"]
