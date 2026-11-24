@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <meta content="#9cd8d5" name="theme-color"/>
-<title>Michi V23 · fidelidad felina y carita original</title>
+<title>Michi V24 · fidelidad felina y carita original</title>
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -1070,7 +1070,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 </head>
 <body>
 <main>
-<div class="top"><div><h1>Michi V23 · proporciones felinas y expresiones</h1><p>Un gatito naranja inspirado en el emoji de Google: orejas completas, ojos felinos expresivos, cola expresiva y patas proporcionadas.</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
+<div class="top"><div><h1>Michi V24 · proporciones felinas y expresiones</h1><p>Un gatito naranja inspirado en el emoji de Google: orejas completas, ojos felinos expresivos, cola expresiva y patas proporcionadas.</p></div><div class="pill"><span class="dot"></span> ANIMACIÓN ACTIVA</div></div>
 <div class="layout"><section aria-label="Escenario del personaje" class="stage-shell">
 <div class="stage"><span class="cornerlabel">🌳 Jardín de Michi</span><button class="tiny" id="reset" type="button">↺ Reiniciar</button>
 <svg xmlns="http://www.w3.org/2000/svg" aria-label="Michi, gato naranja low-poly de pie, con ojos felinos expresivos y cola fina, en su jardín." data-view="frente" id="stage-svg" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 700 635">
@@ -1128,7 +1128,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <g data-mood="feliz" id="avatar">
 <!-- Cola larga y articulada con movimiento según el estado emocional. -->
 <g aria-label="Cola fina de gato, atada a la cadera y móvil según emoción" id="tail">
-<path class="michi-tail-main" fill="#c7832c" stroke-linejoin="round"/><path class="michi-tail-glow" fill="#edb653" opacity=".7"/><path class="michi-tail-tip" fill="#a96c28" opacity=".85"/><circle class="michi-tail-round-cap" r="9.2" fill="#a96c28" opacity=".85"/></g>
+<path class="michi-tail-main" fill="#c7832c" stroke-linejoin="round"/><path class="michi-tail-glow" fill="#edb653" opacity=".7"/><path class="michi-tail-tip" fill="#a96c28" opacity=".85"/><path class="michi-tail-band" fill="#b37b32" opacity=".58"/><path class="michi-tail-band" fill="#b37b32" opacity=".58"/><path class="michi-tail-band" fill="#b37b32" opacity=".58"/><circle class="michi-tail-round-cap" r="9.2" fill="#a96c28" opacity=".85"/></g>
 <g id="front-view">
 <!-- Patas traseras: pies completos, apoyados en el suelo, siempre bípedo. -->
 <g class="limb" id="left-leg">
@@ -1291,7 +1291,7 @@ body{background-image:linear-gradient(165deg,rgba(183,221,203,.92),rgba(98,157,1
 <g id="side-shape">
 <!-- Cola perruna larga y facetada, articulada desde la cadera. -->
 <g aria-label="Cola lateral felina fina y curva" id="side-tail">
-<path class="michi-tail-main" fill="#c7832c" stroke-linejoin="round"/><path class="michi-tail-glow" fill="#edb653" opacity=".7"/><path class="michi-tail-tip" fill="#a96c28" opacity=".85"/><circle class="michi-tail-round-cap" r="9.2" fill="#a96c28" opacity=".85"/></g>
+<path class="michi-tail-main" fill="#c7832c" stroke-linejoin="round"/><path class="michi-tail-glow" fill="#edb653" opacity=".7"/><path class="michi-tail-tip" fill="#a96c28" opacity=".85"/><path class="michi-tail-band" fill="#b37b32" opacity=".58"/><path class="michi-tail-band" fill="#b37b32" opacity=".58"/><path class="michi-tail-band" fill="#b37b32" opacity=".58"/><circle class="michi-tail-round-cap" r="9.2" fill="#a96c28" opacity=".85"/></g>
 <!-- Brazo lejano queda tapado parcialmente por el cuerpo. -->
 <g id="side-far-arm"><g id="dog-side-far-foreleg-size" transform="translate(134 40) scale(.60 .88)"><g transform="translate(-46 0)">
 <path d="M423 354 441 354 453 373 460 421 453 464 434 477 416 465 407 410Z" fill="#cc852d"/>
@@ -1636,6 +1636,12 @@ stage.addEventListener('click',e=>{if(e.target.closest('#environment'))return;ac
      paths[0].setAttribute('d',band(pts,0,N,13.5,9.2,true));
      paths[1].setAttribute('d',band(pts,1,N-3,4.4,2.3,false));
      paths[2].setAttribute('d',band(pts,N-4,N,9.2,9.2,true));
+     // Atigrado suave: las marcas siguen el movimiento real de la cola,
+     // sin convertirse en piezas fijas o separarse de la cadera.
+     g.querySelectorAll('.michi-tail-band').forEach((stripe,i)=>{
+       const at=[5,11,17][i];
+       stripe.setAttribute('d',band(pts,at,at+2,13.3,12.3,false));
+     });
      const cap=g.querySelector('.michi-tail-round-cap');
      if(cap){cap.setAttribute('cx',pts[N][0].toFixed(2));cap.setAttribute('cy',pts[N][1].toFixed(2));}
    });
