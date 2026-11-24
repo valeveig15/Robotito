@@ -1,4 +1,4 @@
-<!-- Approved user reference: Bobi_V17_expresiones_corregidas.html. SVG + native styling only; interactions come from Robotito's main engine. -->
+<!-- Bobi V22: authentic editable user avatar in Robotito. Only SVG/CSS; no standalone JavaScript. -->
 <style>
 :root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
@@ -907,6 +907,32 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 /* VERSIÓN NUEVA · La tristeza no dibuja cejas en mamíferos. */
 #avatar[data-mood="triste"] #brows-sad {opacity:0!important;visibility:hidden!important}
 
+
+/* APOYO REALISTA V1: pies plantados; la respiración y la cabeza mantienen vida,
+   pero el cuerpo ya no sube y baja como si flotara durante el reposo. */
+#avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {
+  animation:grounded-still-v1 4.2s ease-in-out infinite!important;
+  transform-origin:350px 578px!important;
+}
+@keyframes grounded-still-v1 {
+  0%,100% {transform:rotate(-.18deg)}
+  50% {transform:rotate(.18deg)}
+}
+#ground-front-contacts ellipse, #ground-side-contacts ellipse {filter:blur(.45px)}
+#shadow, #side-shadow {filter:blur(2.0px)}
+/* El salto conserva sombra sobre el piso y borra el contacto durante el vuelo. */
+#stage-svg.shadow-jumping #ground-front-contacts,
+#stage-svg.shadow-jumping #ground-side-contacts {animation:contact-lift .75s ease-in-out 3 both}
+@media(prefers-reduced-motion:reduce) {
+ #avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {animation:none!important;transform:none!important}
+}
+
+
+/* Bobi V22: keep face geometry, reduce human-like tube arms, keep feet on ground. */
+#bobi-neck-bridge{pointer-events:none}
+#avatar #tail{transform-origin:453px 440px}
+#avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
 </style>
 <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" id="stage-svg" data-view="frente" viewBox="0 0 700 635" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Bobi V15: perro tierno low-poly erguido sobre dos patas, cabeza proporcionada, panza estilizada, brazos más pequeños, orejas caídas, cola alegre y hocico canino. Interactivo.">
 <defs><clipPath id="mouth-safe-area" clipPathUnits="userSpaceOnUse"><path d="M321 321 Q352 315 388 321 L391 352 Q371 368 353 365 Q328 366 319 350Z"/></clipPath></defs>
@@ -963,8 +989,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 <path fill="#7cb57c" d="m121 482 47-24 40 12 17 21-50 11Z m513 457 39-18 27 21v26l-46-8Z"/>
 <g opacity=".96">
 <path stroke="#4c8757" stroke-width="3" d="M111 548v-23M575 544v-23M176 521v-18M631 564v-20"/>
-<g fill="#fff9d9"><path d="m111 518 4 7-4 7-4-7Z"/><path d="m575 514 6 8-6 9-6-9Z"/><path d="m176 498 4 6-4 7-4-7Z"/><path d="m631 539 5 7-5 8-5-8Z"/></g>
-<g fill="#f6a5a8"><circle cx="108" cy="525" r="4"/><circle cx="114" cy="525" r="4"/><circle cx="575" cy="525" r="5"/><circle cx="176" cy="504" r="4"/><circle cx="631" cy="545" r="4"/></g>
+<g fill="#fff9d9"><path d="m111 518 4 7-4 7-4-7Z"/><path d="m575 514 6 8-6 9-6-9Z"/><path d="m176 498 4 6-4 7-4-7Z"/><path d="m631 539 5 7-5 8-5-8Z"/></g><g fill="#f6a5a8"><circle cx="108" cy="525" r="4"/><circle cx="114" cy="525" r="4"/><circle cx="575" cy="525" r="5"/><circle cx="176" cy="504" r="4"/><circle cx="631" cy="545" r="4"/></g>
 </g>
 <!-- Pequeños detalles de césped -->
 <path fill="#458657" d="m28 490 12-24 12 17 16-19 5 30Zm187 25 10-22 12 14 13-16 3 26Zm355-23 10-20 11 14 13-14 6 23Z"/>
@@ -985,22 +1010,24 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <path d="M611 519L603 500 619 510 627 486 638 510 651 489 657 512 674 500 682 520Z" fill="#357e57"/>
  <path d="M625 520L627 486 638 510 632 522Z M650 520L651 489 657 512Z" fill="#84bb80"/>
 </g>
-<!-- Pastos del parque: cada mata termina en el suelo, con pequeña base. --><g id="dog-grounded-grass">
+<!-- Pastos del parque: cada mata termina en el suelo, con pequeña base. -->
+<g id="dog-grounded-grass">
  <path d="M120 542Q148 536 179 543L165 549H133Z M500 545Q525 537 559 545L544 552H514Z M192 590Q213 585 242 590L230 595H202Z" fill="#3f805b" opacity=".32"/>
  <path d="M130 544L124 525 140 536 145 516 154 538 171 527 165 548Z M506 547L500 527 515 536 522 515 534 538 550 529 549 548Z M203 591L198 573 211 581 218 563 226 584 239 574 235 592Z" fill="#418b64"/>
  <path d="M143 546L145 516 154 538 151 548Z M520 548L522 515 534 538 529 548Z M214 592L218 563 226 584 220 593Z" fill="#88c38c"/>
 </g>
 
 </g>
- <ellipse id="shadow" cx="352" cy="577" rx="78" ry="10" fill="#426c52" opacity=".32"/>
- <g id="side-shadow-track"><ellipse id="side-shadow" cx="353" cy="573" rx="65" ry="9" fill="#426c52" opacity=".31"/>
-<g id="ground-side-contacts" aria-label="Apoyos laterales"><ellipse class="contact-left" cx="336" cy="573" rx="30" ry="5" fill="#355942" opacity=".46"/><ellipse class="contact-right" cx="387" cy="573" rx="30" ry="5" fill="#355942" opacity=".5"/></g></g>
- <g id="ground-front-contacts" aria-label="Contacto de las patas con el suelo"><ellipse class="contact-left" cx="290" cy="578" rx="37" ry="5.5" fill="#355942" opacity=".53"/><ellipse class="contact-right" cx="407" cy="578" rx="37" ry="5.5" fill="#355942" opacity=".53"/></g>
+ <ellipse id="shadow" cx="350.5" cy="579.4" rx="73.1" ry="8.0" fill="#426c52" opacity=".32"/>
+ <g id="side-shadow-track"><ellipse id="side-shadow" cx="357.0" cy="575.4" rx="53.2" ry="6.8" fill="#426c52" opacity=".31"/>
+<g id="ground-side-contacts" aria-label="Apoyos laterales"><ellipse class="contact-left" cx="321.5" cy="577.3" rx="27.3" ry="3.6" fill="#355942" opacity=".55"/><ellipse class="contact-left" cx="321.5" cy="577.2" rx="19.9" ry="2.1" fill="#355942" opacity=".36"/><ellipse class="contact-right" cx="392.5" cy="571.3" rx="21.3" ry="3.6" fill="#355942" opacity=".55"/><ellipse class="contact-right" cx="392.5" cy="571.2" rx="15.5" ry="2.1" fill="#355942" opacity=".36"/></g></g>
+ <g id="ground-front-contacts" aria-label="Contacto de las patas con el suelo"><ellipse class="contact-left" cx="290.5" cy="578.3" rx="26.7" ry="3.6" fill="#355942" opacity=".55"/><ellipse class="contact-left" cx="290.5" cy="578.2" rx="19.5" ry="2.1" fill="#355942" opacity=".36"/><ellipse class="contact-right" cx="410.5" cy="578.3" rx="26.7" ry="3.6" fill="#355942" opacity=".55"/><ellipse class="contact-right" cx="410.5" cy="578.2" rx="19.5" ry="2.1" fill="#355942" opacity=".36"/></g>
 <g id="avatar" data-mood="feliz">
 <!-- Cola larga y articulada con movimiento según el estado emocional. -->
-<g id="tail"><path fill="#a97042" d="m448 419 42-16 36-10 33-27 10 20-7 32-29 30-38 20-40-9Z"/>
-<path fill="#e9b779" d="m490 403 36-10 33-27 10 20-34 24-42 17Z"/>
-<path fill="#ca9053" d="m493 427 42-17 34-24-7 32-29 30-38 20Z"/>
+<g id="tail" aria-label="Cola canina flexible que sale de la cadera">
+<path d="M446 435 Q479 432 510 412 Q542 388 552 362 Q565 365 568 383 Q565 421 535 446 Q500 471 453 464Z" fill="#af7346"/>
+<path d="M453 434 Q481 433 511 413 Q540 389 552 362 Q557 382 543 402 Q514 434 462 450Z" fill="#e9b97e"/>
+<path d="M462 450 Q510 437 543 402 Q567 377 552 362 Q565 365 568 383 Q565 421 535 446 Q500 471 453 464Z" fill="#ce9459"/>
 </g>
 <g id="front-view">
 <!-- Patas traseras: pies completos, apoyados en el suelo, siempre bípedo. -->
@@ -1008,35 +1035,36 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 <path fill="#b77b49" d="M283 480 322 486 342 516 338 546 319 564 277 565 254 543 258 516Z"/>
 <path fill="#eac087" d="M283 480 322 486 328 524 258 516Z"/>
 <path fill="#ca8c50" d="M258 516 328 524 338 546 319 564 277 565 254 543Z"/>
-<g id="left-foot"><path fill="#b77c47" d="M272 547 319 548 335 558 335 576 261 577 246 562Z"/><path fill="#e8b179" d="M272 547 319 548 331 558 250 561Z"/><g fill="#805036" opacity=".85"><ellipse cx="265" cy="567" rx="4.8" ry="3.8"/><ellipse cx="287" cy="567" rx="5.2" ry="4"/><ellipse cx="309" cy="567" rx="4.8" ry="3.8"/></g></g>
+<g id="left-foot"><path fill="#b77c47" d="M272 547 319 548 335 558 335 576 261 577 246 562Z"/><path fill="#e8b179" d="M272 547 319 548 331 558 250 561Z"/><path d="M264 563v10M286 563v11M309 563v10" fill="none" stroke="#69402f" stroke-width="3.7" stroke-linecap="round"/></g>
 </g>
 <g id="right-leg" class="limb other">
 <path fill="#b77b49" d="M418 480 379 486 359 516 363 546 382 564 424 565 447 543 443 516Z"/>
 <path fill="#eac087" d="M418 480 379 486 373 524 443 516Z"/>
 <path fill="#ca8c50" d="M443 516 373 524 363 546 382 564 424 565 447 543Z"/>
-<g id="right-foot"><path fill="#b77c47" d="M429 547 382 548 366 558 366 576 440 577 455 562Z"/><path fill="#e8b179" d="M429 547 382 548 370 558 451 561Z"/><g fill="#805036" opacity=".85"><ellipse cx="436" cy="567" rx="4.8" ry="3.8"/><ellipse cx="414" cy="567" rx="5.2" ry="4"/><ellipse cx="392" cy="567" rx="4.8" ry="3.8"/></g></g>
+<g id="right-foot"><path fill="#b77c47" d="M429 547 382 548 366 558 366 576 440 577 455 562Z"/><path fill="#e8b179" d="M429 547 382 548 370 558 451 561Z"/><path d="M437 563v10M415 563v11M392 563v10" fill="none" stroke="#69402f" stroke-width="3.7" stroke-linecap="round"/></g>
 </g>
 <!-- Cuerpo ancho, bajo y redondeado, sin ropa ni rasgos humanos. -->
 <g id="torso">
-<path fill="#bf874f" d="M295 333Q323 306 354 312Q396 307 427 335Q454 367 456 410Q463 477 423 515Q398 542 362 544Q304 546 269 507Q240 474 244 419Q244 366 295 333Z"/>
+<path fill="#ba814c" d="M295 333 336 313 383 313 428 335 456 401 451 470 423 515 383 543 319 540 269 507 244 457 253 393Z"/>
 <path fill="#f2be81" d="M295 333 336 313 337 401 253 393Z"/>
 <path fill="#e4ad71" d="M336 313 383 313 428 335 374 403 337 401Z"/>
 <path fill="#a96c40" d="M428 335 456 401 451 470 374 403Z"/>
 <path fill="#d99d61" d="M253 393 337 401 319 540 269 507 244 457Z"/>
 <path fill="#c28c56" d="M337 401 374 403 451 470 423 515 383 543 319 540Z"/>
-<!-- Continuidad anatómica: cuello y hombros orgánicos debajo de la cabeza intacta. -->
-<path id="bobi-neck-bridge" fill="#bf874f" d="M288 347Q301 320 326 307Q351 293 377 307Q404 319 419 347Q407 377 354 382Q307 378 288 347Z"/>
-<path fill="#e8b078" d="M310 333Q349 316 396 335Q373 354 351 354Q327 353 310 333Z" opacity=".6"/>
 <!-- Pechera de perro, cuello visible y pancita estrecha -->
 <path fill="#ffe7b5" d="M315 347 384 346 416 395 424 454 394 508 352 522 306 502 281 451 288 392Z"/>
 <path fill="#fff0c9" d="M315 347 352 359 349 426 288 392Z"/>
 <path fill="#ffe5aa" d="M352 359 384 346 416 395 349 426Z"/>
 <path fill="#f3ce98" d="M288 392 349 426 352 522 306 502 281 451Z"/>
 <path fill="#efbe87" d="M349 426 416 395 424 454 394 508 352 522Z"/>
-<g id="belly-rumble" fill="none" stroke="#a77348" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M335 440q-7 8 0 15M378 440q7 8-1 15"/></g>
+<g id="bobi-red-collar" aria-label="Collar rojo de Bobi">
+ <path d="M293 359 Q349 385 407 358 L418 380 Q354 405 289 380Z" fill="#AE3032" stroke="#8B252B" stroke-width="2"/>
+ <path d="M302 369 Q350 392 408 370" fill="none" stroke="#ED6560" stroke-width="5" opacity=".84"/>
+ <circle cx="353" cy="393" r="8" fill="#EEC05D" stroke="#996B33" stroke-width="2"/>
+ </g><g id="belly-rumble" fill="none" stroke="#a77348" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M335 440q-7 8 0 15M378 440q7 8-1 15"/></g>
 </g>
 <!-- Brazos y manos son patas de oso, sin dedos humanos. -->
-<g id="left-arm" class="limb"><g transform="translate(60.1 40) scale(.79 .89)" id="dog-front-left-arm-size"><path fill="#bf874f" d="m269 346-41-11-38 42-31 83 30 39 49-3 41-84Z"/><path fill="#f3c68b" d="m228 335 41 11-22 88-57-57Z"/><path fill="#ddac70" d="m190 377 57 57-26 48-62-22Z"/><g id="left-hand"><g id="left-hand-rest"><path fill="#a86d3f" d="m159 460 62 22 17 14-49 17-43-21Z"/><path fill="#ddac70" d="m159 460 62 22-32 31-43-21Z"/><g id="left-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z"/><circle cx="166" cy="478" r="4.6"/><circle cx="180" cy="474" r="4.8"/><circle cx="194" cy="479" r="4.2"/></g></g><g id="left-hand-palm">
+<g id="left-arm" class="limb"><g transform="translate(91 55) scale(.65 .86)" id="dog-front-left-arm-size"><path fill="#c08752" d="M269 345 Q244 336 229 342 Q207 354 190 382 L165 462 Q158 483 178 493 Q198 501 218 487 L245 415 Q262 379 269 345Z"/><path fill="#f3c68b" d="M229 342 Q245 336 269 345 L246 414 Q224 393 190 382Z"/><path fill="#ddac70" d="M190 382 Q224 394 246 414 L218 487 Q198 501 178 493 L165 462Z"/><g id="left-hand"><g id="left-hand-rest"><path fill="#bd8050" d="M167 461 Q186 447 210 459 Q231 474 230 490 Q225 509 202 518 Q179 519 160 500 Q150 482 167 461Z"/><path fill="#eabc7d" d="M168 461 Q188 451 207 459 Q219 470 221 484 Q200 482 177 498 Q158 486 168 461Z"/><path d="M171 500Q181 509 189 510 M191 505Q201 515 209 512 M209 503Q218 510 223 503" stroke="#986034" stroke-width="3.7" fill="none" stroke-linecap="round"/><g id="left-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M174 489Q187 476 203 489Q212 498 202 509Q185 512 174 501Z"/><circle cx="166" cy="478" r="4.6"/><circle cx="180" cy="474" r="4.8"/><circle cx="194" cy="479" r="4.2"/></g></g><g id="left-hand-palm">
 <path fill="#5d3d2c" d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z"/>
 <path fill="#76503b" d="M213 476 L208 466 L195 462 L181 465 L190 488 L219 495 L223 486 Z"/>
 <path fill="#76503b" d="M181 465 L169 476 L164 493 L190 488 Z"/>
@@ -1048,7 +1076,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <path d="M173 479 L169 482 L168 489 L174 492 L178 489 L177 483Z"/>
  <path d="M208 493 L195 486 L180 492 L178 503 L190 511 L204 507 L212 500Z"/>
 </g></g></g></g></g>
-<g id="right-arm" class="limb other"><g transform="translate(91 40) scale(.79 .89)" id="dog-front-right-arm-size"><path fill="#bf874f" d="m433 346 41-10 41 43 32 83-32 38-45-2-48-86Z"/><path fill="#f3c68b" d="m474 336-41 10 19 88 63-55Z"/><path fill="#ddac70" d="m515 379-63 55 33 48 62-20Z"/><g id="right-hand"><g id="right-hand-rest"><path fill="#a86d3f" d="m547 462-62 20-15 16 45 16 46-23Z"/><path fill="#f3c68b" d="m547 462-62 20 30 32 46-23Z"/><g id="right-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z"/><circle cx="541" cy="480" r="4.5"/><circle cx="527" cy="475" r="4.7"/><circle cx="513" cy="477" r="4.2"/></g></g><g id="right-hand-palm">
+<g id="right-arm" class="limb other"><g transform="translate(151 55) scale(.65 .86)" id="dog-front-right-arm-size"><path fill="#c08752" d="M433 345 Q457 336 474 342 Q495 354 511 382 L537 462 Q543 483 523 493 Q504 501 484 487 L457 415 Q440 379 433 345Z"/><path fill="#f3c68b" d="M474 342 Q457 336 433 345 L456 414 Q477 393 511 382Z"/><path fill="#ddac70" d="M511 382 Q477 394 456 414 L484 487 Q504 501 523 493 L537 462Z"/><g id="right-hand"><g id="right-hand-rest"><path fill="#bd8050" d="M540 461 Q520 447 497 459 Q476 474 477 490 Q481 509 504 518 Q527 519 547 500 Q556 482 540 461Z"/><path fill="#eabc7d" d="M539 461 Q520 451 500 459 Q487 470 486 484 Q507 482 529 498 Q549 486 539 461Z"/><path d="M536 500Q526 509 518 510 M516 505Q506 515 498 512 M497 503Q489 510 483 503" stroke="#986034" stroke-width="3.7" fill="none" stroke-linecap="round"/><g id="right-paw-pad" fill="#67402e" stroke="#593526" stroke-width=".7"><path d="M503 488Q517 475 531 488Q540 501 529 509Q511 512 503 500Z"/><circle cx="541" cy="480" r="4.5"/><circle cx="527" cy="475" r="4.7"/><circle cx="513" cy="477" r="4.2"/></g></g><g id="right-hand-palm">
 <path fill="#5d3d2c" d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z"/>
 <path fill="#76503b" d="M499 476 L504 466 L517 462 L531 465 L522 488 L493 495 L489 486 Z"/>
 <path fill="#76503b" d="M531 465 L543 476 L548 493 L522 488 Z"/>
@@ -1060,43 +1088,34 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
  <path d="M539 479 L543 482 L544 489 L538 492 L534 489 L535 483Z"/>
  <path d="M504 493 L517 486 L532 492 L534 503 L522 511 L508 507 L500 500Z"/>
 </g></g></g></g></g>
+<!-- Cuello unido al torso, detrás del rostro original de Bobi. -->
+<g id="bobi-neck-bridge" aria-label="Unión natural de cabeza y pecho"><path d="M304 326 Q322 314 350 314 Q379 313 400 326 L408 376 Q382 391 352 392 Q323 390 298 376Z" fill="#e1ab74"/><path d="M318 338 Q354 350 391 337 L381 377 Q355 388 326 377Z" fill="#ffe5b5"/></g>
 <!-- Cabeza facetada casi circular; orejas pequeñas, redondas y altas. -->
 <g id="head">
-<g transform="translate(56 46) scale(.84)" id="dog-face-proportions"><g id="ear-left"><path fill="#a4693e" d="M225 133 195 127 168 147 151 192 157 240 177 285 202 296 220 271 233 212 251 160Z"/>
-<path fill="#c68a52" d="M225 133 195 127 168 147 151 192 186 207 215 193 251 160Z"/>
-<path fill="#865236" d="M151 192 157 240 177 285 202 296 211 249 186 207Z"/>
-<path fill="#e0a36a" d="M195 127 225 133 251 160 215 193 186 207Z"/>
-<path fill="#9a593b" d="M177 238 186 260 196 267 202 247 188 216Z"/>
+<g transform="translate(75 65) scale(.79)" id="dog-face-proportions"><g id="ear-left">
+<path d="M239 145 Q208 116 176 131 Q146 144 143 193 Q140 252 163 292 Q179 308 201 295 Q217 273 227 220Z" fill="#AA6C40"/>
+<path d="M227 155 Q192 135 173 153 Q158 175 162 220 Q167 252 180 268 L200 262 Q222 218 227 155Z" fill="#CE9155"/>
+<path d="M169 233 Q178 272 196 277 Q178 303 164 277Z" fill="#8F5639" opacity=".75"/>
 </g>
-<g id="ear-right"><path fill="#a4693e" d="M462 137 490 127 523 146 543 185 546 232 526 283 502 300 481 278 471 214 450 160Z"/>
-<path fill="#c68a52" d="M462 137 490 127 523 146 543 185 507 208 482 193 450 160Z"/>
-<path fill="#865236" d="M543 185 546 232 526 283 502 300 493 253 507 208Z"/>
-<path fill="#e0a36a" d="M490 127 462 137 450 160 482 193 507 208Z"/>
-<path fill="#9a593b" d="M523 239 517 261 507 268 503 247 514 219Z"/>
+<g id="ear-right">
+<path d="M464 142 Q493 116 526 132 Q554 150 556 200 Q559 256 540 287 Q527 310 506 296 Q487 278 474 220Z" fill="#A66C41"/>
+<path d="M478 159 Q516 133 536 157 Q546 182 538 232 Q533 261 516 278 L495 262 Q477 219 478 159Z" fill="#D79A5F"/>
+<path d="M539 236 Q529 273 509 280 Q530 307 541 274Z" fill="#925B3C" opacity=".74"/>
 </g>
-<path fill="#bf874f" d="m233 149 48-38 64-21 65 12 52 31 42 55 7 62-30 60-55 48-67 19-71-14-59-35-41-59-2-60Z"/>
-<!-- Superficies poligonales grandes, sin contornos ni demasiados triángulos. -->
-<path fill="#f3c68b" d="m233 149 48-38 64-21-14 116-101 29-42-26Z"/>
-<path fill="#ddac70" d="m345 90 65 12 52 31-60 84-71-11Z"/>
-<path fill="#ddac70" d="m462 133 42 55 7 62-109-33Z"/>
-<path fill="#f3c68b" d="m281 111 64-21-14 116-101 29Z"/>
-<path fill="#ddac70" d="m188 209 42 26 33 97-34-24-41-59Z"/>
-<path fill="#ddac70" d="m230 235 101-29 71 11-40 107-99 8Z"/>
-<path fill="#bf874f" d="m402 217 109 33-30 60-55 48-64-34Z"/>
-<path fill="#ddac70" d="m263 332 99-8 64 34-67 19-71-14Z"/>
-<path fill="#f3c68b" d="m345 90 57 127-71-11Z"/>
-<!-- Mejillas discretas y hocico que se lee claramente como oso. -->
-<path fill="#ffe9b5" d="m333 150 23-12 25 13 4 40-23 39-24-23Z"/>
- <path fill="#fff2d2" d="m356 138 25 13 4 40-23 39Z"/><path fill="#fff0cc" d="m248 275 46-32 54 7 13 18 25-17 49-4 36 35-13 52-56 27-50-4-57-1-48-30Z"/>
-<path fill="#fff0cc" d="m248 275 46-32 54 7 13 18-16 72-50 16-48-30Z"/>
-<path fill="#fff0cc" d="m361 268 25-17 49-4 36 35-13 52-56 27-57-21Z"/>
-<path fill="#fff0cc" d="m294 243 54 7 13 18-16 72-33-55Z"/>
-<path fill="#fff0cc" d="m386 251 49-4 36 35-49 5-61-19Z"/>
-<!-- Hocico claro, ancho, bajo y ligeramente proyectado. -->
-<path fill="#fff0cb" d="m300 277 45-14 55 9 34 31-19 43-47 22-51-12-28-27Z"/>
-<path fill="#ffe2ad" d="m345 263 55 9 34 31-19 43-47 22Z"/>
-<!-- Ojos: pequeños, brillantes y separados. -->
-<g id="eye-open"><path fill="#2d2522" d="m273 243 5-17 14-10 18 6 9 18-6 20-20 6-16-10Z"/><path fill="#2d2522" d="m391 239 10-19 20-6 14 11 4 19-11 19-21 3-15-12Z"/>
+
+<defs><linearGradient id="bobi-head-v21" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#FFE1A1"/><stop offset=".65" stop-color="#F7BC6C"/><stop offset="1" stop-color="#CD8A50"/></linearGradient></defs>
+<!-- Puppy skull with low cheeks and a narrower jaw, not a perfect circle -->
+<path d="M353 135 Q427 133 467 179 Q492 209 483 258 L488 294 Q478 331 440 350 Q409 365 354 363 Q299 364 264 350 Q225 330 220 291 L222 248 Q221 190 264 157 Q300 133 353 135Z" fill="url(#bobi-head-v21)" stroke="#C78D54" stroke-width="2"/>
+<path d="M229 218 Q262 151 348 137 L336 238 220 279Z" fill="#FFE8B0" opacity=".52"/>
+<path d="M348 137 Q429 132 469 181 L415 244 336 238Z" fill="#EFA85F" opacity=".34"/>
+<path d="M469 181 485 258 489 291 445 329 415 244Z" fill="#D99B54" opacity=".29"/>
+<!-- Small creamy muzzle surrounds one black nose -->
+<path d="M276 283 Q306 265 336 290 L351 303 Q371 278 412 285 Q444 291 445 318 Q436 353 354 354 Q281 350 260 325Z" fill="#FFF0CF"/>
+<path d="M277 299 Q305 279 352 307 L348 348 Q295 350 269 329Z" fill="#FFF9E5" opacity=".62"/>
+<path d="M354 307 Q403 284 442 309 L436 335 Q412 351 351 347Z" fill="#F4DEB9" opacity=".45"/>
+
+<g id="eye-open"><ellipse cx="295" cy="244" rx="25" ry="28" fill="#322822"/>
+<ellipse cx="413" cy="244" rx="25" ry="28" fill="#322822"/>
 <g id="eye-pupils"><path fill="#fff9df" d="m282 232 10-7 10 7-2 11-13 1Z"/><path fill="#fff9df" d="m400 228 11-7 11 8-3 12-12 0Z"/><path fill="#fff8e5" d="m309 252 4-3 4 4-3 4-5 0Z"/><path fill="#fff8e5" d="m427 248 4-4 4 4-2 5-5 0Z"/></g>
 <g id="heart-eyes" fill="#ff8294"><path d="M295 257 281 243Q275 234 284 231Q291 229 295 236Q302 227 309 232Q317 241 308 249Z"/><path d="M414 256 399 243Q393 234 403 230Q410 228 414 236Q422 226 429 232Q437 241 428 250Z"/><path fill="#fff7dc" d="m286 235 4-2 4 4-3 3Z"/><path fill="#fff7dc" d="m405 234 4-2 4 4-3 3Z"/></g>
 <g id="star-eyes" fill="#f7c4b2"><path d="m294 226 4.8 9.3 10.4 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.3 4.9 1.8-10.4-7.6-7.4 10.4-1.5Z"/><path d="m414 225 4.8 9.3 10.4 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.3 4.9 1.8-10.4-7.6-7.4 10.4-1.5Z"/><path fill="#fff9e6" d="m291 234 4-2 3 4-2 5-4-1Z"/><path fill="#fff9e6" d="m412 232 4-2 3 4-2 5-4-1Z"/></g>
@@ -1108,8 +1127,9 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 <g id="blush"><path fill="#e98783" d="m259 285 25-4 11 12-19 9-18-7Z"/><path fill="#e98783" d="m426 294 12-12 24 6 2 8-22 10Z"/><path d="M268 286 283 285 291 294 277 296Z" fill="#ffd1c6" opacity=".3"/>
       <path d="M433 286 446 285 458 294 442 298Z" fill="#ffd1c6" opacity=".3"/></g>
 <!-- Nariz negra y boca sencillas, nunca sonrisa humana grande. -->
+<path fill="none" stroke="#885c46" stroke-width="4" stroke-linecap="round" d="M354 317v10"/>
 <path fill="#2e2522" d="m332 295 22-7 25 7-8 17-20 7-17-8Z"/><path fill="#635047" d="m332 295 22-7 25 7-24 11Z"/>
-<path fill="none" stroke="#885c46" stroke-width="4" stroke-linecap="round" d="M354 316v10"/>
+
 <g id="mouth-happy"><path d="M354 326Q341 343 323 330M354 326Q370 343 388 330" fill="none" stroke="#4d3329" stroke-width="5" stroke-linecap="round"/></g>
 <g id="mouth-neutral"><path d="m338 334 35 0" fill="none" stroke="#4d3329" stroke-width="5" stroke-linecap="round"/></g>
 <g id="mouth-sad"><path d="M337 344 Q354 330 371 344" fill="none" stroke="#4d3329" stroke-width="4" stroke-linecap="round"/></g>
@@ -1195,7 +1215,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
 <path fill="#f6c88f" d="M311 343 338 365 347 412 353 459 310 414Z"/>
 <path fill="#edbe86" d="M257 429 310 414 322 531 289 515 267 483Z"/>
 <path fill="#f0c18c" d="M310 414 353 459 341 506 322 531Z"/>
-</g>
+<g id="bobi-side-collar"><path d="M299 357 Q341 365 393 349 L399 369 Q348 384 295 379Z" fill="#A82F33" stroke="#8F2529" stroke-width="2"/><path d="M302 365 Q343 371 392 356" fill="none" stroke="#E35A5C" stroke-width="3"/></g></g>
    <!-- Pierna proxima centrada bajo el vientre y pie compacto de oso. -->
    <g id="side-near-leg">
     <path fill="#b77c4b" d="M314 474 359 468 377 506 365 549 341 561 307 540 303 510Z"/>
@@ -1212,28 +1232,28 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
    </g>
    </g></g>
    <!-- Cabeza de perfil 90 grados: una sola cara lateral y un unico ojo. -->
-   <g id="profile-head"><g transform="translate(53 43) scale(.84)" id="dog-profile-head-proportions"><g id="profile-head-position" transform="translate(16 0)">
+   <g id="profile-head"><g transform="translate(83 67) scale(.76)" id="dog-profile-head-proportions"><g id="profile-head-position" transform="translate(16 0)">
     <!-- Diadema trasera: la cabeza oculta el tramo que va por su interior. -->
     
     <!-- Oreja detras del craneo, como una verdadera protuberancia redonda. -->
     <!-- La oreja visible se superpone a la superficie lateral del cráneo, no queda enterrada bajo él. -->
 
     <!-- Craneos redondo: masa esferica, facetas conservadas. -->
-    <path fill="#bf874f" d="M350 99 Q386 93 430 116 L461 144 482 177 494 212 489 252 478 284 451 321 415 347 373 364 327 363 285 346 249 321 226 291 Q209 265 211 236 C198 180 278 100 350 99Z"/>
+    <path fill="#CD9358" d="M350 99 Q386 93 430 116 L461 144 482 177 494 212 489 252 478 284 451 321 415 347 373 364 327 363 285 346 249 321 226 291 Q209 265 211 236 C198 180 278 100 350 99Z"/>
     <path fill="#f3c68b" d="M230.926 167.415 C257.645 130.608 305.36 99.62 350 99 L344 198Z"/>
     <path fill="#f3c68b" d="M350 99 Q386 93 430 116 L419 197 344 198Z"/>
-    <path fill="#ddac70" d="M430 116 461 144 482 177 494 212 419 197Z"/>
-    <path fill="#bf874f" d="M494 212 489 252 478 284 420 288 419 197Z"/>
+    <path fill="#F6BC71" d="M430 116 461 144 482 177 494 212 419 197Z"/>
+    <path fill="#CD9358" d="M494 212 489 252 478 284 420 288 419 197Z"/>
     <path fill="#f3c68b" d="M230.926 167.415 344 198 302 302 249 321 226 291 Q209 265 211 236 C206.06 214.72 214.549 189.974 230.926 167.415Z"/>
     <path fill="#f3c68b" d="M344 198 419 197 420 288 415 347 373 364 327 363 302 302Z"/>
-    <path fill="#ddac70" d="M420 288 478 284 451 321 415 347 373 364Z"/>
-    <path fill="#ddac70" d="M249 321 302 302 327 363 285 346Z"/>
+    <path fill="#F6BC71" d="M420 288 478 284 451 321 415 347 373 364Z"/>
+    <path fill="#F6BC71" d="M249 321 302 302 327 363 285 346Z"/>
     <!-- Oreja próxima: nace DEL LATERAL del cráneo. El borde inferior
          se funde con su superficie; la otra oreja permanece oculta en este 90°. -->
-    <g id="side-near-ear" aria-label="Oreja larga y caída de perro de perfil"><path fill="#a26941" d="M385 130 392 110 412 99 437 111 455 143 470 187 464 238 447 271 425 269 412 238 408 191 390 163Z"/>
-<path fill="#da9e62" d="m392 110 20-11 25 12 18 32-40 40-25-20-5-33Z"/>
-<path fill="#895238" d="m455 143 15 44-6 51-17 33-22-2-13-31 3-55Z"/>
-<path fill="#bd7b49" d="m415 183 40-40 15 44-22 29-33-3Z"/>
+    <g id="side-near-ear" aria-label="Oreja caída de cachorro">
+<path d="M404 148 Q435 132 461 164 Q480 191 478 227 Q473 271 454 291 Q439 297 427 281 Q416 254 410 207Z" fill="#A76B42"/>
+<path d="M413 162 Q447 144 460 176 Q469 198 459 241 L449 274 Q428 266 420 234Z" fill="#D6995A"/>
+<path d="M462 213 Q467 258 451 281 Q437 288 427 272 Q449 258 462 213Z" fill="#925735" opacity=".8"/>
 </g>
 
 
@@ -1259,7 +1279,7 @@ body{min-height:100vh;background-color:#9cd8d5;background-image:url("data:image/
     <!-- Boca de perfil: la línea central bajo la nariz se bifurca en
          dos comisuras pequeñas, siempre dentro del pelaje claro.
          La vista derecha es un reflejo exacto de la izquierda. -->
-    <g class="side-mouth-rest" transform="translate(18 -2)"><path fill="none" stroke="#4d3329" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="M185 311 L186 323 M186 323 Q177 328 168 321 M186 323 Q207 333 232 319"/></g>
+    <g class="side-mouth-rest" transform="translate(18 -2)"><path fill="none" stroke="#4d3329" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" d="M185 313 L186 323 M186 323 Q177 328 168 321 M186 323 Q207 333 232 319"/></g>
 <g transform="translate(18 -2)" class="side-speaking-sad" aria-label="Boca triste lateral hablando">
  <path d="M175 324 Q187 308 200 324 Q187 334 175 324Z" fill="#2d2522" stroke="#4d3329" stroke-width="2.2" stroke-linejoin="round"/>
 </g>
