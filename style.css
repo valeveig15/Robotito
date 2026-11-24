@@ -3428,3 +3428,127 @@ body.mode-night .world.panda-reference-world .world-scene{background:linear-grad
 #readingDrawResult{font-weight:750;color:#466a5a}
 #readingStatus{min-height:18px;font-size:12px;color:#6d646c}
 @media(max-width:560px){.reading-circle-form,.reading-rating-form{grid-template-columns:1fr}}
+
+
+/* 2026-11-21 · Anatomía integrada + expresiones sin capas duplicadas.
+   Cada gesto es mutuamente excluyente y la cabeza de Roji mantiene sus rasgos. */
+.robotito.avatar-custom .avatar-character .avatar-upper-eyelids,
+.robotito.avatar-custom .avatar-character .avatar-love-eyes,
+.robotito.avatar-custom .avatar-character .avatar-excited-eyes,
+.robotito.avatar-custom .avatar-character .avatar-closed-eyes,
+.robotito.avatar-custom .avatar-character .avatar-tears,
+.robotito.avatar-custom .avatar-character .avatar-anger-mark,
+.robotito.avatar-custom .avatar-character .avatar-sweat-mark,
+.robotito.avatar-custom .avatar-character .avatar-question-mark,
+.robotito.avatar-custom .avatar-character .avatar-hunger-cloud,
+.robotito.avatar-custom .avatar-character .avatar-speaking-mouth{
+  opacity:0;pointer-events:none;
+}
+.robotito.avatar-custom .avatar-character .avatar-upper-eyelids{transform-box:fill-box;transform-origin:center 32%}
+.robotito.avatar-custom.mood-sleepy:not(.sleeping) .avatar-character .avatar-upper-eyelids,
+.robotito.avatar-custom.mood-bored:not(.sleeping) .avatar-character .avatar-upper-eyelids{opacity:1}
+.robotito.avatar-custom.mood-sleepy:not(.sleeping) .avatar-character .avatar-upper-eyelids{transform:translateY(9px)}
+.robotito.avatar-custom.mood-bored:not(.sleeping) .avatar-character .avatar-upper-eyelids{transform:translateY(4px)}
+/* Never squash eyes so that a second pupil peeks through the lid. */
+.robotito.avatar-custom.mood-sleepy .avatar-character .avatar-eye-group{transform:none}
+.robotito.avatar-custom.sleeping .avatar-character .avatar-eye-group{opacity:0!important;visibility:hidden!important;animation:none!important}
+.robotito.avatar-custom.sleeping .avatar-character .avatar-upper-eyelids{opacity:0!important}
+.robotito.avatar-custom.sleeping .avatar-character .avatar-closed-eyes{opacity:1!important}
+.robotito.avatar-custom.sleeping .avatar-character .avatar-speaking-mouth{opacity:0!important}
+.robotito.avatar-custom .avatar-character .avatar-closed-eyes{transition:opacity .12s ease}
+.robotito.avatar-custom.heart-eyes .avatar-character .avatar-eye-group,
+.robotito.avatar-custom.pet-happy .avatar-character .avatar-eye-group{opacity:1}
+.robotito.avatar-custom.heart-eyes .animal-avatar-heart-eyes,
+.robotito.avatar-custom.pet-happy .animal-avatar-heart-eyes{display:none!important}
+.robotito.avatar-custom:is(.heart-eyes,.mood-affectionate):not(.sleeping) .avatar-character .avatar-love-eyes{opacity:1}
+.robotito.avatar-custom.mood-excited:not(.sleeping) .avatar-character .avatar-excited-eyes{opacity:1}
+.robotito.avatar-custom:is(.heart-eyes,.mood-affectionate,.mood-excited) .avatar-character :is(.avatar-iris,.avatar-pupil,.avatar-eye-shine,.avatar-eye-star){opacity:0}
+.robotito.avatar-custom .avatar-character .avatar-love-eyes,
+.robotito.avatar-custom .avatar-character .avatar-excited-eyes{transform-box:fill-box;transform-origin:center}
+.robotito.avatar-custom.mood-sad:not(.sleeping) .avatar-character .avatar-tears{opacity:1}
+.robotito.avatar-custom.mood-sad .avatar-character .avatar-tear-left{animation:customTearFall 1.6s ease-in infinite}
+.robotito.avatar-custom.mood-sad .avatar-character .avatar-tear-right{animation:customTearFall 1.6s ease-in -.75s infinite}
+@keyframes customTearFall{
+  0%{opacity:0;transform:translateY(-8px) scale(.8)}
+  16%{opacity:1}75%{opacity:1}
+  100%{opacity:0;transform:translateY(22px) scale(1.1)}
+}
+.robotito.avatar-custom.mood-angry .avatar-character .avatar-anger-mark,
+.robotito.avatar-custom.mood-annoyed .avatar-character .avatar-anger-mark{opacity:1;animation:customAngerPulse .8s ease-in-out infinite alternate}
+@keyframes customAngerPulse{from{transform:scale(.88)}to{transform:scale(1.02)}}
+.robotito.avatar-custom.mood-scared .avatar-character .avatar-sweat-mark{opacity:1}
+.robotito.avatar-custom.mood-confused .avatar-character .avatar-question-mark{opacity:1}
+.robotito.avatar-custom.mood-hungry .avatar-character .avatar-hunger-cloud{opacity:1;animation:customHungerFloat 2s ease-in-out infinite alternate}
+@keyframes customHungerFloat{to{transform:translateY(-5px)}}
+.robotito.avatar-custom.mood-curious .avatar-character .avatar-brow{opacity:1!important;stroke-width:4.2!important}
+.robotito.avatar-custom.speaking:not(.sleeping) .avatar-character .avatar-mouth,
+.robotito.avatar-custom.speaking:not(.sleeping) .avatar-character .avatar-tongue{opacity:0!important}
+.robotito.avatar-custom.speaking:not(.sleeping) .avatar-character .avatar-speaking-mouth{
+  opacity:1;transform-box:fill-box;transform-origin:center;
+  animation:customSpeakMouth .24s ease-in-out infinite alternate;
+}
+@keyframes customSpeakMouth{from{transform:scaleY(.55)}to{transform:scaleY(1.07)}}
+/* Igui's eye should not have an extra white dot crossing pupil and iris. */
+.robotito.avatar-iguana .avatar-character .avatar-eye-shine,
+.robotito.avatar-iguana .avatar-character .avatar-eye-star{opacity:0!important}
+.robotito.avatar-iguana .avatar-character .avatar-iris{fill:#d4bd4c}
+.robotito.avatar-iguana .avatar-character .avatar-pupil{fill:#253c22}
+.robotito.avatar-red-panda .avatar-character .avatar-whiskers{opacity:.22}
+.robotito.avatar-cat .avatar-character .avatar-whiskers{opacity:.78}
+.robotito.avatar-cat .avatar-character .avatar-tail,
+.robotito.avatar-red-panda .avatar-character .avatar-tail,
+.robotito.avatar-iguana .avatar-character .avatar-tail{transform-origin:9% 18%}
+/* Species landscapes: preserve the art but put each animal in its habitat. */
+.world[data-avatar="iguana"]:not(.approved-art-world) .world-scene{
+  background:linear-gradient(180deg,#92d2a8 0%,#cce8a4 40%,#669c62 70%,#355e40 100%);
+}
+.world[data-avatar="iguana"]:not(.approved-art-world) .world-scene::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 5% 13%,rgba(21,83,48,.46) 0 17%,transparent 18%),
+             radial-gradient(ellipse at 90% 12%,rgba(27,101,51,.46) 0 23%,transparent 24%),
+             linear-gradient(105deg,transparent 0 17%,rgba(43,100,49,.24) 18% 20%,transparent 22% 79%,rgba(37,95,42,.3) 80% 83%,transparent 84%);
+}
+.world[data-avatar="iguana"]:not(.approved-art-world) .bamboo{opacity:1;filter:saturate(1.45) hue-rotate(16deg)}
+.world[data-avatar="red-panda"]:not(.approved-art-world) .world-scene{
+  background:linear-gradient(180deg,#bde1dd,#dff0cb 46%,#80ae83 70%,#59826f);
+}
+.world[data-avatar="red-panda"]:not(.approved-art-world) .bamboo{opacity:1}
+.world[data-avatar="cat"]:not(.approved-art-world) .world-scene{
+  background:linear-gradient(180deg,#e5e8f6,#f6e7ea 54%,#e8cbb7 72%,#d6b79e);
+}
+@media(prefers-reduced-motion:reduce){
+  .robotito.avatar-custom .avatar-character .avatar-tears *,
+  .robotito.avatar-custom .avatar-character .avatar-anger-mark,
+  .robotito.avatar-custom .avatar-character .avatar-hunger-cloud,
+  .robotito.avatar-custom .avatar-character .avatar-speaking-mouth{animation:none!important}
+}
+
+/* Expression icons now live next to each character's face, not in a second floating badge. */
+.robotito.avatar-custom .animal-avatar-mood{display:none!important}
+
+
+/* Species-specific outdoor and indoor habitats, without changing avatar artwork. */
+.world[data-habitat]:not(.approved-art-world) .world-scene{
+  background:var(--habitat-background,linear-gradient(180deg,#d3f0ec,#9bc6a8 65%,#639568));
+}
+.world[data-habitat="jungle"]{--habitat-background:linear-gradient(180deg,#a0d8ad,#cce8a8 42%,#709c61 70%,#375e40)}
+.world[data-habitat="forest"]{--habitat-background:linear-gradient(180deg,#b8dfd1,#dbedc5 40%,#87b28d 68%,#557a62)}
+.world[data-habitat="polar"]{--habitat-background:linear-gradient(180deg,#b1d6ec,#e9f6ff 52%,#dbecf3 72%,#accad5)}
+.world[data-habitat="wetland"]{--habitat-background:linear-gradient(180deg,#b0e2dc,#cbe9bf 47%,#80b69a 69%,#5b9697)}
+.world[data-habitat="savanna"]{--habitat-background:linear-gradient(180deg,#ffe0a7,#f8eab0 46%,#d6be70 69%,#a68d4b)}
+.world[data-habitat="meadow"]{--habitat-background:linear-gradient(180deg,#b8e2f8,#e8f6d3 49%,#9acb78 70%,#6ea056)}
+.world[data-habitat="desert"]{--habitat-background:linear-gradient(180deg,#f6d9af,#ffe9bd 45%,#e4b87d 68%,#b99068)}
+.world[data-habitat="ocean"]{--habitat-background:linear-gradient(180deg,#75c9e1,#79dce8 45%,#3495b8 70%,#206387)}
+.world[data-habitat="fantasy"]{--habitat-background:linear-gradient(180deg,#d8c7f5,#f0dff5 49%,#a9caac 69%,#7e9c91)}
+.world[data-habitat="home"]{--habitat-background:linear-gradient(180deg,#e7e7f4,#f9ebed 50%,#e6c9b6 72%,#c7a992)}
+.world[data-habitat="polar"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="desert"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="ocean"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="home"]:not(.approved-art-world) .bamboo{opacity:0!important}
+.world[data-habitat="jungle"]:not(.approved-art-world) .bamboo,
+.world[data-habitat="forest"]:not(.approved-art-world) .bamboo{opacity:.88}
+.world[data-habitat="ocean"]:not(.approved-art-world) .world-scene::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 20% 32%,rgba(255,255,255,.25),transparent 27%),
+             radial-gradient(ellipse at 83% 66%,rgba(255,255,255,.13),transparent 18%);
+}

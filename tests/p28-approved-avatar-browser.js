@@ -1,9 +1,10 @@
 "use strict";
 const assert=require("node:assert/strict");
 const {runBrowserTest}=require("./browser-test-harness.js");
-const APPROVED=["panda","brown-bear","polar-bear","dog","monkey"];
+const APPROVED=["panda","brown-bear","polar-bear","dog","monkey","cat","red-panda","iguana"];
 const LANDSCAPES={panda:"environment","brown-bear":"pardo-grass-anchored",
- "polar-bear":"snow-particles",dog:"park-grounded-trunks",monkey:"jungle-branches"};
+ "polar-bear":"snow-particles",dog:"park-grounded-trunks",monkey:"jungle-branches",
+ cat:"environment","red-panda":"environment",iguana:"environment"};
 runBrowserTest("p28-approved-avatars",async test=>{
  const {page,baseURL}=test;
  // Observe before the interaction: short transitions can finish before a
@@ -27,7 +28,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
   const transition=await page.evaluate(()=>window.__p28Transition);
   assert.equal(transition.observed,true,"Missing approved-avatar transition: "+JSON.stringify(transition));
  };
- test.phase("load-five-exact-svg-references");
+ test.phase("load-seven-exact-svg-references");
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>document.documentElement.dataset.robotitoUiReady==="true");
  await page.locator('[data-start-language="es"]').click();
@@ -77,7 +78,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
    visible:window.ROBOTITO_APPROVED_AVATAR.current.avatar.dataset.mood};
  });
  assert.deepEqual(moodRace,{savedMood:"embarrassed",changedAvatar:false,currentRecovery:true,visible:"avergonzado"});
- test.phase("load-five-exact-svg-references");
+ test.phase("load-seven-exact-svg-references");
  for(const id of APPROVED){
   await page.waitForFunction(id=>window.ROBOTITO_APPROVED_AVATAR?.current?.id===id,id,{timeout:20000});
   const meta=await page.evaluate(({id,landscape})=>{
@@ -96,6 +97,31 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.id,id);
   assert.equal(meta.landscape,true,"Correct approved environment "+id);
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
+  // Stable markers from the user's own animal SVGs, not the generic species renderer.
+  const identityChecks={
+    dog:["#bb-soft-head","#reference-face-idle image","#tail","#dog-profile-head-proportions"],
+    cat:["#mc-soft-head","#reference-face-idle image","#tail","#michi-profile-head-lowered"],
+    "red-panda":["#rj-soft-head","#reference-face-idle image","#roji-front-tail","#side-panda-eye-patch"],
+    iguana:["#ig-soft-head","#reference-face-idle image","#igui-front-tail","#profile-head-anatomy-v2"]
+  };
+  if(identityChecks[id]){
+    const identity=await page.evaluate(selectors=>{
+      const svg=window.ROBOTITO_APPROVED_AVATAR.current.stage;
+      return {found:selectors.map(selector=>svg.querySelectorAll(selector).length),
+       heads:svg.querySelectorAll('#head').length};
+    },identityChecks[id]);
+    assert.ok(identity.found.every(n=>n===1),"Distinct user-approved animal features: "+id+" "+JSON.stringify(identity));
+    assert.equal(identity.heads,1,"Never render a second underlying face: "+id);
+  }
+  if(["dog","cat","red-panda","iguana"].includes(id)){
+    const atlas=await page.evaluate(()=>{
+      const art=window.ROBOTITO_APPROVED_AVATAR.current;
+      return {moods:Object.keys(art.atlas||{}).length,
+       visible:(art.shadow.querySelector("#head #reference-face-idle image")?.getAttribute("href")||"").slice(0,23)};
+    });
+    assert.equal(atlas.moods,15,"Exactly 15 textured emotions: "+id);
+    assert.equal(atlas.visible,"data:image/webp;base64,","Image must be the user's original face atlas: "+id);
+  }
   assert.ok(meta.polygons>150,"Not a simplified recolored stock avatar: "+id);
   assert.equal(meta.hasStyle,true);
   assert.equal(meta.noScripts,true,"Original standalone JS/buttons must never be reexecuted");
@@ -111,7 +137,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
   await page.locator("#changeAvatarBtn").click();
   const index=APPROVED.indexOf(id),next=APPROVED[index+1];
   if(next)await page.locator('#avatarChoices [data-avatar-id="'+next+'"]').click();
-  else await page.locator('#avatarChoices [data-avatar-id="cat"]').click();
+  else await page.locator('#avatarChoices [data-avatar-id="chameleon"]').click();
  }
  test.phase("non-reference-avatar-keeps-previous-renderer");
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current===null);
@@ -142,7 +168,7 @@ runBrowserTest("p28-approved-avatars",async test=>{
  assert.equal(await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.current?.avatar.classList.contains("speaking")),true);
  await page.evaluate(()=>window.ROBOTITO_APPROVED_AVATAR.speak(false));
  assert.deepEqual(test.report.pageErrors,[]);
- test.report.result={sourceAvatars:5,worlds:5,actions:["highfive","pet"],moods:["happy","embarrassed"],
+ test.report.result={sourceAvatars:8,worlds:8,actions:["highfive","pet"],moods:["happy","embarrassed"],
    sizes:[360,430,1280],lateActionCleanup:true,lateMoodRecovery:true,noSeparatedPages:true,physicalReview:false};
- console.log("P28 "+test.engineName+" exact user-approved avatar SVG worlds and app integration passed");
+ console.log("P28 "+test.engineName+" original user-authored avatar SVG worlds and app integration passed");
 }).catch(e=>{console.error(e);process.exitCode=1;});

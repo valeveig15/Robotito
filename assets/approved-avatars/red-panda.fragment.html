@@ -1,0 +1,1157 @@
+<!-- Roji V2.10, original user-created SVG, no standalone scripts. -->
+<style>
+:root{font-family:ui-rounded,"Trebuchet MS",system-ui,-apple-system,Arial,sans-serif;color:#302d29;background:#f7f5eb;font-synthesis:none}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}body{background:radial-gradient(circle at 12% 0%,#fffdf6 5%,transparent 46%),#f6f4ea}
+main{width:min(1190px,96%);margin:24px auto 40px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:0 0 16px}.top h1{font-size:clamp(23px,3vw,32px);letter-spacing:-1.3px;margin:0}.top p{margin:4px 0 0;color:#827d70;font-size:13px}.pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 14px;background:#e4f1df;color:#326a49;font-size:12px;font-weight:800}.dot{height:8px;width:8px;background:#74ba5f;border-radius:100%;box-shadow:0 0 0 4px #cce9ba}
+.layout{display:grid;grid-template-columns:minmax(0,1.33fr) minmax(305px,.8fr);gap:20px;align-items:start}
+.stage-shell{background:#fff;border:1px solid #e8e5d9;overflow:hidden;border-radius:26px;box-shadow:0 15px 48px #655f4430}.stage{position:relative;background:#b3d8b8;aspect-ratio:700 / 635;overflow:hidden}.stage svg{width:100%;height:100%;display:block;touch-action:none;user-select:none}.stage button.tiny{position:absolute;z-index:2;right:15px;top:15px}.stage .cornerlabel{position:absolute;z-index:1;left:19px;top:18px;color:#326d42;background:#f8f9ebd9;border:1px solid #e8f3d0;border-radius:99px;font-size:12px;font-weight:900;padding:8px 12px;pointer-events:none}
+.tiny{border:0;border-radius:999px;box-shadow:0 5px 15px #24411d21;background:#fffde8;color:#4a6638;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
+.stage-footer{padding:13px 20px;background:white;display:flex;justify-content:space-between;gap:10px;align-items:center}.stage-footer .status{font-size:13px;color:#666052}.stage-footer strong{color:#3e6a34}.stage-footer .hint{font-size:12px;color:#a5a092}
+.panel{display:flex;flex-direction:column;gap:13px}.panel-section{padding:18px 19px;background:#fff;border-radius:20px;border:1px solid #e9e6db;box-shadow:0 8px 28px #69644a10}.panel-section h2{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#8d897b;margin:0 0 13px}.buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.btn{font:inherit;min-width:0;border:1px solid #ece7da;background:#faf9f3;color:#514937;padding:9px 6px;border-radius:13px;font-weight:750;font-size:12px;cursor:pointer;transition:transform .13s,background .13s,border-color .13s}.btn:hover{transform:translateY(-2px);border-color:#9db98d;background:#f3f9e9}.btn.active{border-color:#6f9b62;background:#e2f2d7;color:#33612d}.btn .emoji{font-size:19px;display:block;margin-bottom:2px}.button-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.viewbtn{font-size:12px;padding:9px 7px;background:#f7f7f1;border:1px solid #ece7da;border-radius:11px;font-weight:750;cursor:pointer}.viewbtn.active{background:#e4f2d8;color:#396c33;border-color:#83b177}
+.aux{display:flex;justify-content:space-between;gap:8px;align-items:center}.toggle{display:flex;align-items:center;gap:9px;color:#655e50;font-size:13px;cursor:pointer}.toggle input{accent-color:#609457;width:17px;height:17px}.say{display:flex;gap:8px}.say input{width:100%;min-width:0;border-radius:11px;border:1px solid #e3decf;background:#faf9f5;padding:11px 12px;font:inherit;font-size:12px;outline-color:#80ab69}.say button{border:0;background:#79ac5d;color:white;font-weight:800;border-radius:11px;padding:0 15px;cursor:pointer}.panel .desc{font-size:12px;line-height:1.55;color:#807a70;margin:12px 0 0}.codehint{margin-top:10px;background:#f5f3ed;border-radius:10px;padding:9px 10px;color:#655c52;font-size:11px;white-space:pre-wrap;line-height:1.6}
+@media(max-width:830px){.layout{grid-template-columns:1fr}.panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.panel-section:last-child{grid-column:1 / -1}.stage{aspect-ratio:700 / 575}.top{padding:0 3px}}
+@media(max-width:530px){main{width:96%;margin:14px auto 24px}.panel{display:flex}.panel-section{padding:13px}.stage{aspect-ratio:700 / 640}.stage-shell{border-radius:20px}.stage-footer .hint{display:none}.buttons{grid-template-columns:repeat(3,1fr)}.top h1{font-size:24px}.pill{font-size:10px}}
+/* El personaje está formado únicamente por polígonos SVG articulables. */
+#avatar{transform-origin:350px 480px;animation:idle-rock 4.2s ease-in-out infinite}#head{transform-origin:350px 293px;animation:head-idle 4.1s ease-in-out infinite}#tail{transform-origin:467px 449px;animation:tail-wag 3.0s ease-in-out infinite}#torso{transform-origin:348px 378px;animation:breathe 2.8s ease-in-out infinite}#ear-left{transform-origin:233px 155px;animation:ear-twitch 7s ease-in-out infinite}#ear-right{transform-origin:473px 152px;animation:ear-twitch 7s ease-in-out -1s infinite}#left-arm{transform-origin:270px 359px}#right-arm{transform-origin:433px 359px}#left-leg{transform-origin:309px 473px}#right-leg{transform-origin:399px 473px}.limb{animation:limb-idle 3.8s ease-in-out infinite}.limb.other{animation-delay:-1.8s}#eye-pupils{transition:transform .12s ease-out}#eye-open{transform-origin:350px 242px}#eye-closed{opacity:0}#tears,#sleep-marks,#anger-mark,#sweat-mark,#tongue,#question-mark{opacity:0}#brows-angry,#brows-sad,#brows-curious{opacity:0}#blush{opacity:.11;transition:opacity .2s}#mouth-happy{opacity:1}#mouth-neutral,#mouth-sad,#mouth-o,#mouth-angry{opacity:0}#mouth-speak{opacity:0}
+#stage-svg #back-view,#stage-svg #side-view{display:none}
+#stage-svg[data-view="espalda"] #front-view,#stage-svg[data-view="espalda"] #side-view{display:none}
+#stage-svg[data-view="espalda"] #back-view{display:block}
+#stage-svg[data-view="perfil"] #front-view,#stage-svg[data-view="perfil"] #back-view{display:none}
+#stage-svg[data-view="perfil"] #side-view{display:block}
+#stage-svg[data-view="derecha"] #front-view,#stage-svg[data-view="derecha"] #back-view{display:none}
+#stage-svg[data-view="derecha"] #side-view{display:block}
+#stage-svg[data-view="derecha"] #side-shape{transform:translate(700px,0) scale(-1,1)}
+#avatar[data-mood="tranquilo"] #mouth-happy{opacity:0}#avatar[data-mood="tranquilo"] #mouth-neutral{opacity:1}
+#avatar[data-mood="triste"] #mouth-happy,#avatar[data-mood="triste"] #mouth-neutral{opacity:0}#avatar[data-mood="triste"] #mouth-sad,#avatar[data-mood="triste"] #tears,#avatar[data-mood="triste"] #brows-sad{opacity:1}
+#avatar[data-mood="enojado"] #mouth-happy,#avatar[data-mood="enojado"] #mouth-neutral{opacity:0}#avatar[data-mood="enojado"] #mouth-angry,#avatar[data-mood="enojado"] #anger-mark,#avatar[data-mood="enojado"] #brows-angry{opacity:1}
+#avatar[data-mood="asustado"] #mouth-happy,#avatar[data-mood="asustado"] #mouth-neutral{opacity:0}#avatar[data-mood="asustado"] #mouth-o,#avatar[data-mood="asustado"] #sweat-mark{opacity:1}
+#avatar[data-mood="sorprendido"] #mouth-happy,#avatar[data-mood="sorprendido"] #mouth-neutral{opacity:0}#avatar[data-mood="sorprendido"] #mouth-o{opacity:1}
+#avatar[data-mood="enamorado"] #blush{opacity:1}
+#avatar[data-mood="hambriento"] #tongue{opacity:1}
+#avatar[data-mood="curioso"] #brows-curious,#avatar[data-mood="confundido"] #question-mark{opacity:1}
+#avatar[data-mood="confundido"] #mouth-happy,#avatar[data-mood="curioso"] #mouth-happy,#avatar[data-mood="cansado"] #mouth-happy,#avatar[data-mood="aburrido"] #mouth-happy{opacity:0}
+#avatar[data-mood="confundido"] #mouth-neutral,#avatar[data-mood="curioso"] #mouth-neutral,#avatar[data-mood="cansado"] #mouth-neutral,#avatar[data-mood="aburrido"] #mouth-neutral{opacity:1}
+#avatar[data-mood="avergonzado"] #blush{opacity:1}
+#avatar[data-mood="cansado"] #eye-open{transform:scaleY(.56)}
+#avatar[data-mood="aburrido"] #eye-open{transform:scaleY(.75)}
+
+#avatar[data-mood="dormido"] #eye-open{opacity:0}#avatar[data-mood="dormido"] #eye-closed,#avatar[data-mood="dormido"] #sleep-marks{opacity:1}#avatar[data-mood="dormido"] #mouth-happy{opacity:0}#avatar[data-mood="dormido"] #mouth-neutral{opacity:1}
+#avatar.blink #eye-open{transform:scaleY(.04)}
+#avatar.speaking #mouth-happy,#avatar.speaking #mouth-neutral,#avatar.speaking #mouth-o,#avatar.speaking #mouth-angry{opacity:0}#avatar.speaking #mouth-speak{opacity:1;animation:speak .22s ease-in-out infinite alternate}
+#avatar.action-saludar #right-arm{animation:wave .35s ease-in-out 7 alternate}
+#avatar.action-bailar{animation:dance .45s ease-in-out infinite alternate}#avatar.action-bailar #left-arm{animation:dance-left .45s ease-in-out infinite alternate}#avatar.action-bailar #right-arm{animation:dance-right .45s ease-in-out infinite alternate}#avatar.action-bailar #head{animation:dance-head .45s ease-in-out infinite alternate}
+#avatar.action-saltar{animation:jump .75s ease-in-out 3}#avatar.action-saltar #tail{animation:tail-wag .3s ease-in-out infinite alternate}
+#avatar.action-aplaudir #left-arm{animation:clap-left .3s ease-in-out 8 alternate}#avatar.action-aplaudir #right-arm{animation:clap-right .3s ease-in-out 8 alternate}
+#avatar.action-acariciar #head{animation:pet .33s ease-in-out 6 alternate}
+#avatar.action-caminar #left-leg{animation:walk 0.48s ease-in-out 8 alternate}#avatar.action-caminar #right-leg{animation:walk .48s ease-in-out -0.48s 8 alternate}#avatar.action-caminar{animation:walk-body .48s ease-in-out 8 alternate}
+#avatar.action-chocar #right-arm{animation:highfive .5s ease-in-out 5 alternate}
+
+#avatar[data-mood="dormido"] #head{animation:sleep-head 3.5s ease-in-out infinite}#avatar[data-mood="dormido"] #torso{animation:breathe 3.5s ease-in-out infinite}
+#sleep-marks{animation:floathearts 2.6s ease-in-out infinite alternate}
+#shadow{transform-origin:350px 551px;animation:shadow-idle 4.2s ease-in-out infinite}
+
+
+@keyframes idle-rock{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-5px) rotate(.6deg)}}
+@keyframes head-idle{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(2deg)}}
+@keyframes tail-wag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(13deg)}}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.014,1.027)}}
+@keyframes limb-idle{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(3deg)}}
+@keyframes ear-twitch{0%,78%,86%,100%{transform:rotate(0)}81%{transform:rotate(-8deg)}}
+@keyframes shadow-idle{0%,100%{transform:scale(1)}50%{transform:scale(.94)}}
+@keyframes dance{to{transform:rotate(5deg) translateY(-13px)}}@keyframes dance-left{to{transform:rotate(-45deg)}}@keyframes dance-right{to{transform:rotate(45deg)}}@keyframes dance-head{to{transform:rotate(-7deg)}}
+@keyframes jump{0%,100%{transform:translateY(0)}42%,58%{transform:translateY(-68px)}}
+@keyframes pet{to{transform:rotate(8deg) translateY(4px)}}
+@keyframes speak{to{transform:scaleY(.6)}}@keyframes floathearts{to{transform:translateY(-12px)}}
+@media(prefers-reduced-motion:reduce){#avatar,#avatar *,#shadow{animation:none!important;transition:none!important}}
+
+/* =======================================================
+   BRUNO V4: mejoras de animación sobre el diseño ORIGINAL.
+   ======================================================= */
+#avatar #heart-eyes,#avatar #star-eyes,#avatar #belly-rumble,
+#avatar #hunger-sign,#avatar #clap-impact,
+#avatar #right-paw-pad,#avatar #left-paw-pad{opacity:0;pointer-events:none}
+#avatar #eye-pupils{transition:transform .13s ease-out,opacity .2s ease}
+#avatar[data-mood="enamorado"] #heart-eyes,
+#avatar[data-mood="emocionado"] #star-eyes,
+#avatar[data-mood="hambriento"] #belly-rumble,
+#avatar[data-mood="hambriento"] #hunger-sign {opacity:1}
+#avatar[data-mood="enamorado"] #eye-pupils,
+#avatar[data-mood="emocionado"] #eye-pupils{opacity:0}
+#avatar[data-mood="enamorado"] #hearts,
+#avatar[data-mood="emocionado"] #sparkle-mark{opacity:0}
+#avatar #heart-eyes path:nth-child(-n/**/+2){transform-box:fill-box;transform-origin:center;animation:heart-pulse 1.15s ease-in-out infinite alternate}
+#avatar #heart-eyes path:nth-child(2){animation-delay:-.34s}
+#avatar #star-eyes path:nth-child(-n/**/+2){transform-box:fill-box;transform-origin:center;animation:star-twinkle 1.05s ease-in-out infinite alternate}
+#avatar #star-eyes path:nth-child(2){animation-delay:-.43s}
+#avatar[data-mood="enamorado"] #head{animation:love-tilt 2.5s ease-in-out infinite}
+#avatar[data-mood="emocionado"] #head{animation:excited-head .5s ease-in-out infinite alternate}
+#avatar[data-mood="triste"] #head{animation:sad-head 2.8s ease-in-out infinite alternate}
+#avatar[data-mood="triste"] #mouth-sad{opacity:1}
+#avatar[data-mood="triste"] #tears path{transform-box:fill-box;transform-origin:center;animation:tear-fall 1.5s ease-in infinite}
+#avatar[data-mood="triste"] #tears path:nth-child(2){animation-delay:-.72s}
+#avatar[data-mood="triste"] #eye-open{transform:scaleY(.96)}
+#avatar[data-mood="hambriento"] #mouth-happy{opacity:0}
+#avatar[data-mood="hambriento"] #mouth-o{opacity:1}
+#avatar[data-mood="hambriento"] #head{animation:hunger-head 2s ease-in-out infinite alternate}
+#avatar[data-mood="hambriento"] #torso{animation:stomach-rumble 1.05s ease-in-out infinite}
+#avatar[data-mood="hambriento"] #belly-rumble{animation:belly-pulse .7s ease-in-out infinite alternate}
+#avatar[data-mood="hambriento"] #hunger-sign{animation:hunger-float 2.2s ease-in-out infinite}
+#avatar[data-mood="hambriento"] #left-arm{animation:hunger-left 1.9s ease-in-out infinite alternate}
+#avatar[data-mood="hambriento"] #right-arm{animation:hunger-right 1.9s ease-in-out infinite alternate}
+#avatar #left-leg,#avatar #right-leg{transform-box:view-box}
+#avatar #left-foot,#avatar #right-foot{transform-box:view-box}
+#avatar #left-foot{transform-origin:286px 534px}
+#avatar #right-foot{transform-origin:432px 534px}
+#avatar #right-paw-pad,#avatar #left-paw-pad{transition:opacity .12s ease}
+#avatar.action-saludar #right-paw-pad,
+#avatar.action-chocar #right-paw-pad,
+#avatar.action-aplaudir #right-paw-pad,
+#avatar.action-aplaudir #left-paw-pad{opacity:1}
+/* El saludo realiza un levantamiento progresivo y luego dos vaivenes discretos. */
+#avatar.action-saludar #right-arm{animation:greet-soft 2.55s cubic-bezier(.35,0,.65,1) 1 both}
+#avatar.action-saludar #head{animation:greet-nod 2.55s ease-in-out 1 both}
+/* Las manos se encuentran frente al abdomen y se separan tres veces. */
+#avatar.action-aplaudir #left-arm{animation:clap-left-v4 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #right-arm{animation:clap-right-v4 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #clap-impact{animation:clap-impact-v4 2.8s linear 1 both}
+/* Paso alternado: pies, piernas, brazos, tronco y sombra coordinados. */
+#avatar.action-caminar{animation:walk-bounce-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #left-leg{animation:walk-leg-left-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #right-leg{animation:walk-leg-right-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #left-foot{animation:walk-foot-left-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #right-foot{animation:walk-foot-right-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #left-arm{animation:walk-arm-left-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #right-arm{animation:walk-arm-right-v4 .76s ease-in-out 6 both}
+#avatar.action-caminar #head{animation:walk-head-v4 .76s ease-in-out 6 both}
+/* Chocar cinco: una sola mano sube, espera y vuelve a bajar. */
+#avatar.action-chocar #right-arm{animation:high-five-hold-v4 3.25s cubic-bezier(.26,.15,.54,.95) 1 both}
+#avatar.action-chocar #head{animation:high-five-look-v4 3.25s ease-in-out 1 both}
+@keyframes heart-pulse{0%{transform:scale(.90)}100%{transform:scale(1.08)}}
+@keyframes star-twinkle{0%{transform:scale(.87) rotate(-8deg)}100%{transform:scale(1.08) rotate(8deg)}}
+@keyframes love-tilt{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(4deg)}}
+@keyframes excited-head{to{transform:rotate(3.5deg) translateY(-3px)}}
+@keyframes sad-head{from{transform:rotate(-2deg) translateY(4px)}to{transform:rotate(1.5deg) translateY(8px)}}
+@keyframes tear-fall{0%{transform:translateY(-2px);opacity:0}22%{opacity:.90}74%{opacity:.90}100%{transform:translateY(10px);opacity:0}}
+@keyframes hunger-head{to{transform:rotate(-2.8deg) translateY(5px)}}
+@keyframes stomach-rumble{0%,100%{transform:scale(1,1)}40%{transform:scale(1.012,1.027)}70%{transform:scale(.993,1.006)}}
+@keyframes belly-pulse{to{opacity:.3}}
+@keyframes hunger-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes hunger-left{to{transform:rotate(-18deg)}}
+@keyframes hunger-right{to{transform:rotate(18deg)}}
+@keyframes greet-soft{
+0%{transform:rotate(0)}16%{transform:rotate(-107deg)}28%{transform:rotate(-113deg)}
+38%{transform:rotate(-105deg)}50%{transform:rotate(-113deg)}60%{transform:rotate(-108deg)}
+72%{transform:rotate(-112deg)}83%{transform:rotate(-108deg)}100%{transform:rotate(0)}
+}
+@keyframes greet-nod{0%,100%{transform:rotate(0)}43%{transform:rotate(3deg)}68%{transform:rotate(-2deg)}}
+@keyframes clap-left-v4{0%,100%{transform:rotate(0)}15%,34%,53%,72%{transform:translateY(-28px) rotate(-54deg)}23%,42%,61%{transform:translateY(-22px) rotate(-36deg)}87%{transform:translateY(-8px) rotate(-15deg)}}
+@keyframes clap-right-v4{0%,100%{transform:rotate(0)}15%,34%,53%,72%{transform:translateY(-28px) rotate(54deg)}23%,42%,61%{transform:translateY(-22px) rotate(36deg)}87%{transform:translateY(-8px) rotate(15deg)}}
+@keyframes clap-impact-v4{0%,12%,18%,31%,37%,50%,56%,69%,75%,100%{opacity:0}15%,34%,53%,72%{opacity:1}}
+@keyframes walk-bounce-v4{0%,50%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-7px) rotate(1deg)}75%{transform:translateY(-7px) rotate(-1deg)}}
+@keyframes walk-leg-left-v4{0%,100%{transform:rotate(19deg) translate(4px,0)}25%{transform:rotate(5deg) translate(-4px,-9px)}50%{transform:rotate(-19deg) translate(-5px,-14px)}75%{transform:rotate(-2deg) translate(3px,-4px)}}
+@keyframes walk-leg-right-v4{0%,100%{transform:rotate(-19deg) translate(-5px,-14px)}25%{transform:rotate(-2deg) translate(-3px,-4px)}50%{transform:rotate(19deg) translate(4px,0)}75%{transform:rotate(5deg) translate(3px,-9px)}}
+@keyframes walk-foot-left-v4{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg)}75%{transform:rotate(-4deg)}}
+@keyframes walk-foot-right-v4{0%,100%{transform:rotate(12deg)}25%{transform:rotate(-4deg)}50%{transform:rotate(0)}}
+@keyframes walk-arm-left-v4{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+@keyframes walk-arm-right-v4{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-18deg)}}
+@keyframes walk-head-v4{0%,50%,100%{transform:rotate(0)}25%{transform:rotate(-1.8deg)}75%{transform:rotate(1.8deg)}}
+@keyframes high-five-hold-v4{0%{transform:rotate(0)}18%{transform:rotate(-112deg)}22%,75%{transform:rotate(-108deg)}100%{transform:rotate(0)}}
+@keyframes high-five-look-v4{0%,100%{transform:rotate(0)}23%,78%{transform:rotate(2.8deg)}}
+@media(prefers-reduced-motion:reduce){#avatar.action-saludar #right-arm,#avatar.action-chocar #right-arm,#avatar.action-aplaudir #left-arm,#avatar.action-aplaudir #right-arm,#avatar.action-caminar #left-leg,#avatar.action-caminar #right-leg{animation:none!important}}
+
+/* ===========================================================
+   BRUNO V5 — retoques sobre V4 + tristeza y pies poligonales.
+   Muñecas independientes: la palma permanece hacia el espectador.
+   =========================================================== */
+#left-hand,#right-hand{transform-box:view-box}
+#left-hand{transform-origin:192px 491px}
+#right-hand{transform-origin:520px 492px}
+#anger-mark{transform-box:view-box;transform-origin:478px 201px}
+#question-mark{transform-box:view-box;transform-origin:517px 132px}
+#avatar[data-mood="enojado"] #anger-mark{animation:anger-pop-v5 .48s cubic-bezier(.18,1.4,.4,1) both}
+#avatar[data-mood="confundido"] #question-mark{animation:question-float-v5 2.1s ease-in-out infinite}
+#avatar[data-mood="dormido"] #head{animation:sleepy-nod-v5 3.2s ease-in-out 1 both}
+/* Saludo: brazo levanta la palma hacia afuera; muñeca mantiene los dedos arriba. */
+#avatar.action-saludar #right-arm{animation:greet-arm-v5 2.55s ease-in-out 1 both}
+#avatar.action-saludar #right-hand{animation:greet-wrist-v5 2.55s ease-in-out 1 both}
+/* Chocar 5: una sola mano, extendida hacia adelante, pausa y regreso. */
+#avatar.action-chocar #right-arm{animation:highfive-arm-v5 3.25s ease-in-out 1 both}
+#avatar.action-chocar #right-hand{animation:highfive-wrist-v5 3.25s ease-in-out 1 both}
+/* Aplausos pausados, brazos simétricos, palmas verticales y enfrentadas. */
+#avatar.action-aplaudir #left-arm{animation:clap-left-v5 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #right-arm{animation:clap-right-v5 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #left-hand{animation:clap-left-wrist-v5 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #right-hand{animation:clap-right-wrist-v5 2.8s ease-in-out 1 both}
+/* Marcha lenta y de pasos cortos: cuerpo estable, brazos acompañan sin sacudirse. */
+#avatar.action-caminar{animation:walk-body-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #left-leg{animation:walk-leg-left-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #right-leg{animation:walk-leg-right-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #left-foot{animation:walk-foot-left-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #right-foot{animation:walk-foot-right-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #left-arm{animation:walk-arm-left-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #right-arm{animation:walk-arm-right-v5 .98s ease-in-out 5 both}
+#avatar.action-caminar #head{animation:walk-head-v5 .98s ease-in-out 5 both}
+@keyframes anger-pop-v5{
+ 0%{transform:scale(.55) rotate(-10deg);opacity:0}
+ 65%{transform:scale(1.09) rotate(2deg);opacity:1}
+ 100%{transform:scale(1) rotate(0deg);opacity:1}
+}
+@keyframes question-float-v5{
+ 0%,100%{transform:translateY(0) rotate(-6deg)}
+ 50%{transform:translateY(-7px) rotate(6deg)}
+}
+@keyframes sleepy-nod-v5{
+ 0%{transform:rotate(0deg) translateY(0px)}
+ 24%{transform:rotate(4deg) translateY(2px)}
+ 48%{transform:rotate(10deg) translateY(5px)}
+ 68%{transform:rotate(7deg) translateY(6px)}
+ 84%{transform:rotate(8.5deg) translateY(5px)}
+ 100%{transform:rotate(8deg) translateY(5px)}
+}
+@keyframes greet-arm-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 15%{transform:rotate(-108deg)}25%,34%{transform:rotate(-111deg)}
+ 45%{transform:rotate(-105deg)}55%,65%{transform:rotate(-112deg)}
+ 75%{transform:rotate(-107deg)}85%{transform:rotate(-95deg)}
+}
+@keyframes greet-wrist-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 15%{transform:rotate(108deg)}25%,34%{transform:rotate(111deg)}
+ 45%{transform:rotate(105deg)}55%,65%{transform:rotate(112deg)}
+ 75%{transform:rotate(107deg)}85%{transform:rotate(95deg)}
+}
+@keyframes highfive-arm-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 20%{transform:rotate(-110deg)}24%,76%{transform:rotate(-110deg)}
+ 87%{transform:rotate(-70deg)}
+}
+@keyframes highfive-wrist-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 20%{transform:rotate(110deg)}24%,76%{transform:rotate(110deg)}
+ 87%{transform:rotate(70deg)}
+}
+@keyframes clap-left-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 14%,35%,56%{transform:translateY(-27px) rotate(-57deg)}
+ 24%,45%,66%{transform:translateY(-17px) rotate(-38deg)}
+ 78%{transform:translateY(-8px) rotate(-18deg)}
+}
+@keyframes clap-right-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 14%,35%,56%{transform:translateY(-27px) rotate(57deg)}
+ 24%,45%,66%{transform:translateY(-17px) rotate(38deg)}
+ 78%{transform:translateY(-8px) rotate(18deg)}
+}
+@keyframes clap-left-wrist-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 14%,35%,56%{transform:rotate(57deg)}
+ 24%,45%,66%{transform:rotate(38deg)}
+ 78%{transform:rotate(18deg)}
+}
+@keyframes clap-right-wrist-v5{
+ 0%,100%{transform:rotate(0deg)}
+ 14%,35%,56%{transform:rotate(-57deg)}
+ 24%,45%,66%{transform:rotate(-38deg)}
+ 78%{transform:rotate(-18deg)}
+}
+@keyframes walk-body-v5{
+ 0%,50%,100%{transform:translateY(0) rotate(0deg)}
+ 25%{transform:translateY(-3px) rotate(.45deg)}
+ 75%{transform:translateY(-3px) rotate(-.45deg)}
+}
+@keyframes walk-leg-left-v5{
+ 0%,100%{transform:translate(0,0) rotate(-5deg)}
+ 25%{transform:translate(0,-3px) rotate(0deg)}
+ 50%{transform:translate(2px,-6px) rotate(6deg)}
+ 75%{transform:translate(1px,-3px) rotate(0deg)}
+}
+@keyframes walk-leg-right-v5{
+ 0%,100%{transform:translate(-2px,-6px) rotate(6deg)}
+ 25%{transform:translate(-1px,-3px) rotate(0deg)}
+ 50%{transform:translate(0,0) rotate(-5deg)}
+ 75%{transform:translate(0,-3px) rotate(0deg)}
+}
+@keyframes walk-foot-left-v5{
+ 0%,100%{transform:rotate(3deg)}
+ 50%{transform:rotate(-5deg)}
+}
+@keyframes walk-foot-right-v5{
+ 0%,100%{transform:rotate(-5deg)}
+ 50%{transform:rotate(3deg)}
+}
+@keyframes walk-arm-left-v5{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes walk-arm-right-v5{0%,100%{transform:rotate(6deg)}50%{transform:rotate(-6deg)}}
+@keyframes walk-head-v5{0%,50%,100%{transform:rotate(0deg)}25%{transform:rotate(-.8deg)}75%{transform:rotate(.8deg)}}
+
+/* Palmas de oso redibujadas sólo en los gestos, con cinco polígonos acolchados. */
+#left-hand-palm,#right-hand-palm{opacity:0;pointer-events:none}
+#avatar.action-saludar #right-hand-rest,
+#avatar.action-chocar #right-hand-rest,
+#avatar.action-aplaudir #right-hand-rest,
+#avatar.action-aplaudir #left-hand-rest{opacity:0}
+#avatar.action-saludar #right-hand-palm,
+#avatar.action-chocar #right-hand-palm,
+#avatar.action-aplaudir #right-hand-palm,
+#avatar.action-aplaudir #left-hand-palm{opacity:1}
+
+/* V6: símbolos, brazos delante de la cabeza y sueño progresivo. */
+#avatar[data-mood="enojado"] #anger-mark{animation:anger-pop-v5 .48s cubic-bezier(.18,1.4,.4,1) both}
+#avatar[data-mood="hambriento"] #hunger-sign{animation:hunger-float 3s ease-in-out infinite}
+#avatar[data-mood="dormido"] #head{animation:sleepy-head-v6 8s ease-in-out 1 both}
+#avatar[data-mood="dormido"] #eye-open{opacity:1;animation:sleepy-eyes-v6 8s linear 1 both;transform-origin:350px 243px}
+#avatar[data-mood="dormido"] #eye-closed{opacity:0;animation:sleepy-closed-v6 8s linear 1 both}
+#avatar[data-mood="dormido"] #sleep-marks{opacity:0;animation:sleepy-zzz-v6 8s ease-in-out 1 both}
+#avatar[data-mood="dormido"] #ear-left{animation:ear-twitch-v6 6.1s ease-in-out infinite}
+#avatar[data-mood="dormido"] #ear-right{animation:ear-twitch-v6 7.4s ease-in-out -2s infinite}
+#ear-left{animation:ear-twitch-v6 5.9s ease-in-out infinite}
+#ear-right{animation:ear-twitch-v6 7.1s ease-in-out -2.4s infinite}
+#avatar.action-saludar #right-arm{animation:greet-arm-v6 3s ease-in-out 1 both}
+#avatar.action-saludar #right-hand{animation:greet-wrist-v6 3s ease-in-out 1 both}
+#avatar.action-aplaudir #left-hand{animation:clap-left-wrist-v6 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #right-hand{animation:clap-right-wrist-v6 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #left-hand-palm,#avatar.action-aplaudir #right-hand-palm{opacity:1}
+@keyframes ear-twitch-v6{0%,72%,88%,100%{transform:rotate(0)}77%{transform:rotate(-3deg)}82%{transform:rotate(1.5deg)}}
+@keyframes sleepy-head-v6{0%{transform:rotate(0)}14%{transform:rotate(6deg) translateY(3px)}19%{transform:rotate(-2deg)}34%{transform:rotate(10deg) translateY(7px)}40%{transform:rotate(1deg)}53%{transform:rotate(12deg) translateY(9px)}60%{transform:rotate(3deg)}75%{transform:rotate(13deg) translateY(9px)}100%{transform:rotate(14deg) translateY(9px)}}
+@keyframes sleepy-eyes-v6{0%,10%,20%,28%,40%,46%,59%,67%{opacity:1;transform:scaleY(1)}13%,17%,32%,37%,49%,55%,70%{opacity:1;transform:scaleY(.09)}77%,100%{opacity:0;transform:scaleY(.04)}}
+@keyframes sleepy-closed-v6{0%,76%{opacity:0}79%,100%{opacity:1}}
+@keyframes sleepy-zzz-v6{0%,75%{opacity:0;transform:translateY(5px)}85%,100%{opacity:1;transform:translateY(-7px)}}
+@keyframes greet-arm-v6{0%,100%{transform:rotate(0)}15%{transform:rotate(-113deg)}25%{transform:rotate(-105deg)}37%{transform:rotate(-119deg)}49%{transform:rotate(-103deg)}61%{transform:rotate(-117deg)}73%{transform:rotate(-107deg)}85%{transform:rotate(-92deg)}}
+@keyframes greet-wrist-v6{0%,100%{transform:rotate(0)}15%{transform:rotate(113deg)}25%{transform:rotate(105deg)}37%{transform:rotate(119deg)}49%{transform:rotate(103deg)}61%{transform:rotate(117deg)}73%{transform:rotate(107deg)}85%{transform:rotate(92deg)}}
+@keyframes clap-left-wrist-v6{0%,100%{transform:rotate(0)}14%,35%,56%{transform:rotate(57deg) scaleX(-1)}24%,45%,66%{transform:rotate(38deg) scaleX(-1)}78%{transform:rotate(18deg) scaleX(-1)}}
+@keyframes clap-right-wrist-v6{0%,100%{transform:rotate(0)}14%,35%,56%{transform:rotate(-57deg) scaleX(-1)}24%,45%,66%{transform:rotate(-38deg) scaleX(-1)}78%{transform:rotate(-18deg) scaleX(-1)}}
+
+/* =========================================================
+   V7 · refinamientos exclusivos solicitados sobre Roji V6
+   ========================================================= */
+/* Pequeño movimiento vivo e independiente de cada oreja, sin sacudidas. */
+#ear-left{animation:ear-life-left-v7 4.85s ease-in-out infinite !important}
+#ear-right{animation:ear-life-right-v7 5.35s ease-in-out -2.1s infinite !important}
+
+@keyframes ear-life-left-v7{
+  0%,62%,100%{transform:rotate(0)}
+  67%{transform:rotate(-5.5deg)}
+  73%{transform:rotate(2.6deg)}
+  78%{transform:rotate(-1.2deg)}
+  86%{transform:rotate(0)}
+}
+@keyframes ear-life-right-v7{
+  0%,61%,100%{transform:rotate(0)}
+  66%{transform:rotate(5.7deg)}
+  73%{transform:rotate(-2.7deg)}
+  80%{transform:rotate(.8deg)}
+  88%{transform:rotate(0)}
+}
+/* Signo de enojo, pequeño y claramente manga, aparece sin exrojirse agresivamente. */
+#avatar[data-mood="enojado"] #anger-mark{animation:anger-entry-v7 .28s ease-out 1 both}
+@keyframes anger-entry-v7{from{opacity:0;transform:scale(.89)}to{opacity:1;transform:scale(1)}}
+
+/* Cabeceadas espaciadas con progresión lenta: primeros intentos rápidos,
+   luego recuperación más débil y finalmente caída sostenida. */
+#avatar[data-mood="dormido"] #head{animation:sleep-nods-v7 11.5s linear 1 both !important}
+#avatar[data-mood="dormido"] #eye-open{opacity:1;animation:sleep-open-v7 11.5s linear 1 both !important;transform-origin:350px 243px}
+#avatar[data-mood="dormido"] #eye-closed{opacity:0;animation:sleep-closed-v7 11.5s linear 1 both !important}
+#avatar[data-mood="dormido"] #sleep-marks{opacity:0;animation:sleep-zzz-v7 11.5s ease-in-out 1 both !important}
+@keyframes sleep-nods-v7{
+  0%{transform:rotate(0deg) translateY(0);animation-timing-function:ease-in}
+  9%{transform:rotate(7deg) translateY(4px);animation-timing-function:ease-out}
+  14%{transform:rotate(-1.6deg) translateY(0);animation-timing-function:ease-in-out}
+  31%{transform:rotate(11deg) translateY(7px);animation-timing-function:ease-out}
+  39%{transform:rotate(1deg) translateY(2px);animation-timing-function:ease-in-out}
+  70%{transform:rotate(15deg) translateY(10px);animation-timing-function:ease-out}
+  80%{transform:rotate(6deg) translateY(6px);animation-timing-function:ease-in-out}
+  92%,100%{transform:rotate(17deg) translateY(12px)}
+}
+@keyframes sleep-open-v7{
+  0%,5%,15%,23%,41%,50%{opacity:1;transform:scaleY(1)}
+  8%,12%,28%,34%,60%,65%{opacity:1;transform:scaleY(.08)}
+  36%{opacity:1;transform:scaleY(.7)}
+  75%{opacity:1;transform:scaleY(.19)}
+  88%,100%{opacity:0;transform:scaleY(.025)}
+}
+@keyframes sleep-closed-v7{0%,85%{opacity:0}89%,100%{opacity:1}}
+@keyframes sleep-zzz-v7{0%,87%{opacity:0;transform:translateY(7px)}95%,100%{opacity:1;transform:translateY(-6px)}}
+
+/* El saludo tiene un ángulo apenas mayor (±3 grados) con gesto suave. */
+#avatar.action-saludar #right-arm{animation:greet-arm-v7 3s ease-in-out 1 both}
+#avatar.action-saludar #right-hand{animation:greet-wrist-v7 3s ease-in-out 1 both}
+@keyframes greet-arm-v7{
+  0%,100%{transform:rotate(0)}
+  15%{transform:rotate(-116deg)}25%{transform:rotate(-102deg)}
+  37%{transform:rotate(-122deg)}49%{transform:rotate(-100deg)}
+  61%{transform:rotate(-120deg)}73%{transform:rotate(-104deg)}
+  85%{transform:rotate(-92deg)}
+}
+@keyframes greet-wrist-v7{
+  0%,100%{transform:rotate(0)}
+  15%{transform:rotate(116deg)}25%{transform:rotate(102deg)}
+  37%{transform:rotate(122deg)}49%{transform:rotate(100deg)}
+  61%{transform:rotate(120deg)}73%{transform:rotate(104deg)}
+  85%{transform:rotate(92deg)}
+}
+/* Al aplaudir se ven los DORSOS (pelaje), no las almohadillas rosadas. */
+#avatar.action-aplaudir #left-hand-palm,#avatar.action-aplaudir #right-hand-palm,
+#avatar.action-aplaudir #left-paw-pad,#avatar.action-aplaudir #right-paw-pad{opacity:0 !important}
+#avatar.action-aplaudir #left-hand-rest,#avatar.action-aplaudir #right-hand-rest{opacity:1 !important}
+#avatar.action-aplaudir #left-hand{animation:clap-left-wrist-v7 2.8s ease-in-out 1 both}
+#avatar.action-aplaudir #right-hand{animation:clap-right-wrist-v7 2.8s ease-in-out 1 both}
+@keyframes clap-left-wrist-v7{0%,100%{transform:rotate(0)}14%,35%,56%{transform:rotate(57deg)}24%,45%,66%{transform:rotate(38deg)}78%{transform:rotate(18deg)}}
+@keyframes clap-right-wrist-v7{0%,100%{transform:rotate(0)}14%,35%,56%{transform:rotate(-57deg)}24%,45%,66%{transform:rotate(-38deg)}78%{transform:rotate(-18deg)}}
+@media(prefers-reduced-motion:reduce){
+  #ear-left,#ear-right,#avatar[data-mood="dormido"] #head,#avatar[data-mood="dormido"] #eye-open,
+  #avatar[data-mood="dormido"] #eye-closed,#avatar[data-mood="dormido"] #sleep-marks{animation:none!important}
+}
+
+
+/* V12 — la anchura se define mediante trazados específicos, no escala toda la copa. */
+
+/* V8 — Corregidos: auriculares anclados, voz fija y verdadero perfil articulado. */
+#avatar.speaking #mouth-speak{
+  opacity:1;
+  animation:mouth-fixed-v8 .27s cubic-bezier(.42,0,.58,1) infinite alternate !important;
+  transform-box:view-box;
+  transform-origin:354px 337px;
+}
+@keyframes mouth-fixed-v8{0%{transform:scaleY(.32)}100%{transform:scaleY(.86)}}
+/* Los auriculares frontales van dentro de #head, y los laterales dentro de #profile-head. */
+
+
+/* El antiguo rabito frontal causaba una pieza flotante en los perfiles. */
+#stage-svg[data-view="perfil"] #avatar > #tail,
+#stage-svg[data-view="derecha"] #avatar > #tail,
+#stage-svg[data-view="perfil"] #shadow,
+#stage-svg[data-view="derecha"] #shadow{display:none}
+#stage-svg[data-view="perfil"] #avatar.action-caminar,
+#stage-svg[data-view="derecha"] #avatar.action-caminar{
+ animation:side-bob-v8 .9s ease-in-out infinite !important;
+}
+#side-near-leg{transform-origin:354px 480px}
+#side-far-leg{transform-origin:408px 480px}
+#side-near-arm{transform-origin:362px 371px}
+#side-far-arm{transform-origin:389px 369px}
+#side-near-foot{transform-origin:326px 534px}
+#side-far-foot{transform-origin:420px 534px}
+#profile-head{transform-origin:374px 337px}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-leg,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-leg{animation:side-step-near-v8 .9s ease-in-out infinite}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-leg,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-leg{animation:side-step-far-v8 .9s ease-in-out infinite}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-arm,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-arm{animation:side-arm-near-v8 .9s ease-in-out infinite}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-arm,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-arm{animation:side-arm-far-v8 .9s ease-in-out infinite}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-foot,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-foot{animation:side-foot-v8 .9s ease-in-out infinite}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-foot,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-foot{animation:side-foot-v8 .9s ease-in-out -.45s infinite}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #profile-head,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #profile-head{animation:side-head-v8 .9s ease-in-out infinite}
+@keyframes side-bob-v8{0%,50%,100%{transform:translateY(0)}25%,75%{transform:translateY(-2px)}}
+@keyframes side-step-near-v8{0%,100%{transform:translate(16px,0) rotate(-4deg)}25%{transform:translate(0,-11px) rotate(1deg)}50%{transform:translate(-20px,-2px) rotate(6deg)}75%{transform:translate(-3px,-8px) rotate(0deg)}}
+@keyframes side-step-far-v8{0%,100%{transform:translate(-23px,-2px) rotate(6deg)}25%{transform:translate(-3px,-8px) rotate(0deg)}50%{transform:translate(17px,0) rotate(-5deg)}75%{transform:translate(0,-11px) rotate(1deg)}}
+@keyframes side-foot-v8{0%,100%{transform:rotate(6deg)}50%{transform:rotate(-8deg)}}
+@keyframes side-arm-near-v8{0%,100%{transform:rotate(5deg)}50%{transform:rotate(-6deg)}}
+@keyframes side-arm-far-v8{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(5deg)}}
+@keyframes side-head-v8{0%,50%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(1px) rotate(.8deg)}75%{transform:translateY(1px) rotate(-.8deg)}}
+#side-locomotion{transition:transform 2.45s linear;transform:translateX(0)}
+@media(prefers-reduced-motion:reduce){
+ #stage-svg #side-locomotion{transition:none}
+ #stage-svg[data-view="perfil"] #avatar.action-caminar,
+ #stage-svg[data-view="derecha"] #avatar.action-caminar,
+ #stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-leg,
+ #stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-leg{animation:none!important}
+ #avatar.speaking #mouth-speak{animation:none!important;transform:scaleY(.6)}
+}
+
+
+/* ===== BRUNO V16: geometria lateral y acciones reconocibles ===== */
+#side-near-ear{transform-box:view-box;transform-origin:396px 119px;animation:ear-side-life-v16 5.2s ease-in-out infinite}
+#side-tail{transform-box:view-box;transform-origin:466px 452px;animation:tail-side-life-v16 4.8s ease-in-out infinite}
+@keyframes ear-side-life-v16{0%,65%,100%{transform:rotate(0)}70%{transform:rotate(-4deg)}75%{transform:rotate(1deg)}80%{transform:rotate(0)}}
+@keyframes tail-side-life-v16{0%,76%,100%{transform:rotate(0)}83%{transform:rotate(3deg)}90%{transform:rotate(-2deg)}}
+#side-far-leg{transform-origin:386px 479px}
+#side-near-leg{transform-origin:341px 481px}
+#side-near-foot{transform-origin:323px 536px}
+#side-far-foot{transform-origin:387px 532px}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-leg,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-leg{animation:side-near-walk-v16 .95s ease-in-out infinite !important}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-leg,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-leg{animation:side-far-walk-v16 .95s ease-in-out infinite !important}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-foot,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-foot{animation:side-toe-walk-v16 .95s ease-in-out infinite !important}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-foot,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-foot{animation:side-toe-walk-v16 .95s ease-in-out -.475s infinite !important}
+@keyframes side-near-walk-v16{0%,100%{transform:translate(10px,0) rotate(-2deg)}25%{transform:translate(0,-7px) rotate(1deg)}50%{transform:translate(-12px,0) rotate(4deg)}75%{transform:translate(0,-5px) rotate(0)}}
+@keyframes side-far-walk-v16{0%,100%{transform:translate(-11px,0) rotate(4deg)}25%{transform:translate(0,-5px) rotate(0)}50%{transform:translate(9px,0) rotate(-2deg)}75%{transform:translate(0,-7px) rotate(1deg)}}
+@keyframes side-toe-walk-v16{0%,100%{transform:rotate(2deg)}45%,60%{transform:rotate(-4deg)}}
+/* Acciones visibles con gesto y efecto, sobre el dibujo que ya elegiste. */
+.gesture-overlay{opacity:0;pointer-events:none}
+
+
+
+
+
+
+
+
+/* Repaired truncated legacy reduced-motion rule */
+
+/* V17: ambas copas coinciden con las orejas del oso. La diadema y las piezas
+   quedan dentro de las cabezas para seguir cada movimiento sin desfasarse. */
+
+
+
+/* Roji V19: breve saludo de cinco con la palma dirigida hacia delante */
+#avatar.action-chocar #right-arm{animation:highfive-v19 2.85s cubic-bezier(.45,0,.55,1) 1 both !important}
+#avatar.action-chocar #right-hand{animation:highfive-wrist-v19 2.85s cubic-bezier(.45,0,.55,1) 1 both !important}
+#avatar.action-chocar #head{animation:high-five-look-v4 2.85s ease-in-out 1 both !important}
+@keyframes highfive-v19{0%,100%{transform:rotate(0)}18%{transform:rotate(-109deg)}25%,70%{transform:rotate(-110deg)}86%{transform:rotate(-45deg)}}
+@keyframes highfive-wrist-v19{0%,100%{transform:rotate(0)}18%{transform:rotate(109deg)}25%,70%{transform:rotate(110deg)}86%{transform:rotate(45deg)}}
+/* Marcha suave: paso corto de perfil, sin saltos ni rotaciones bruscas */
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-leg,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-leg{animation:side-near-step-v19 1s ease-in-out infinite!important}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-leg,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-leg{animation:side-far-step-v19 1s ease-in-out infinite!important}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-near-arm,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-near-arm{animation:side-near-arm-v19 1s ease-in-out infinite!important}
+#stage-svg[data-view="perfil"] #avatar.action-caminar #side-far-arm,
+#stage-svg[data-view="derecha"] #avatar.action-caminar #side-far-arm{animation:side-far-arm-v19 1s ease-in-out infinite!important}
+@keyframes side-near-step-v19{0%,100%{transform:translate(9px,0) rotate(-2deg)}25%{transform:translate(0,-6px) rotate(0)}50%{transform:translate(-10px,0) rotate(3deg)}75%{transform:translate(0,-4px) rotate(0)}}
+@keyframes side-far-step-v19{0%,100%{transform:translate(-10px,0) rotate(3deg)}25%{transform:translate(0,-4px) rotate(0)}50%{transform:translate(9px,0) rotate(-2deg)}75%{transform:translate(0,-6px) rotate(0)}}
+@keyframes side-near-arm-v19{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
+@keyframes side-far-arm-v19{0%,100%{transform:rotate(5deg)}50%{transform:rotate(-4deg)}}
+@media(prefers-reduced-motion:reduce){#avatar.action-chocar #right-arm,#avatar.action-chocar #right-hand{animation:none!important}}
+
+/* Paleta panda · entorno de bambú */
+body{background:radial-gradient(circle at 8% 0%,#fffdf7 8%,transparent 55%),#eef6ee}
+.stage-shell{border-color:#d3e5d5}
+.btn.active,.viewbtn.active{background:#e5f3e5;border-color:#80ad8a;color:#2d7047}
+.say button{background:#4e9e6b}.stage .cornerlabel{color:#327c50;background:#f3fff0d9}.top h1{letter-spacing:-1px}
+
+
+/* Roji V2: paleta panda estricta + paisaje hasta los bordes de toda la pantalla. */
+html{min-height:100%;background:#d4ece2}
+:root{background:#d4ece2!important}
+body{min-height:100vh;display:flow-root;padding-bottom:1px;background-color:#d4ece2!important;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201400%20900%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%0A%3Crect%20width%3D%221400%22%20height%3D%22900%22%20fill%3D%22%23d4ece2%22%2F%3E%0A%3Cpath%20d%3D%22M0%200H1400V460L1140%20300%20890%20400%20680%20285%20430%20377%20210%20250%200%20380Z%22%20fill%3D%22%23c0e1d4%22%2F%3E%0A%3Cpath%20d%3D%22M0%20520L190%20310%20345%20467%20520%20293%20750%20503%20950%20315%201180%20420%201400%20270V900H0Z%22%20fill%3D%22%23b3d7bc%22%2F%3E%0A%3Cpath%20d%3D%22M0%20620%20200%20440%20390%20560%20600%20420%20850%20585%201150%20450%201400%20585V900H0Z%22%20fill%3D%22%239fcca9%22%2F%3E%0A%3Cpath%20d%3D%22M0%20750%20240%20620%20460%20690%20760%20570%201010%20710%201400%20560V900H0Z%22%20fill%3D%22%2383b88a%22%2F%3E%0A%3Cpath%20d%3D%22M0%20830%20420%20742%20760%20805%201100%20733%201400%20800V900H0Z%22%20fill%3D%22%236da476%22%2F%3E%0A%3Cg%20fill%3D%22%23528c67%22%20opacity%3D%22.7%22%3E%0A%3Cpath%20d%3D%22M74%20900V25H99V900Z%20M195%20900V160H217V900Z%20M1302%20900V65H1327V900Z%20M1190%20900V165H1212V900Z%22%2F%3E%0A%3C%2Fg%3E%3Cg%20fill%3D%22%23347b59%22%20opacity%3D%22.67%22%3E%0A%3Cpath%20d%3D%22M97%20180%20218%20117%20169%20182%2099%20197Z%20M76%20233%200%20182%200%20231%2076%20246Z%20M96%20410%20246%20337%20179%20415%2097%20429Z%20M75%20545%200%20491%200%20550%2075%20566Z%20M219%20323%20342%20270%20292%20344%20220%20346Z%20M196%20610%2090%20556%20146%20618%20197%20631Z%20M1304%20187%201170%20125%201223%20192%201302%20209Z%20M1325%20265%201400%20214%201400%20266%201325%20279Z%20M1305%20421%201157%20366%201219%20442%201305%20450Z%20M1324%20550%201400%20492%201400%20555%201324%20572Z%20M1192%20305%201070%20240%201125%20323%201192%20327Z%20M1210%20609%201316%20558%201262%20619%201210%20636Z%22%2F%3E%0A%3C%2Fg%3E%3Cg%20fill%3D%22%2380bc88%22%20opacity%3D%22.55%22%3E%3Cpath%20d%3D%22M55%20900%2075%2075H97L97%20900Z%20M1315%20900V115H1333L1344%20900Z%22%2F%3E%3C%2Fg%3E%0A%3C%2Fsvg%3E")!important;background-position:center center!important;background-repeat:no-repeat!important;background-size:cover!important;background-attachment:scroll!important}
+.stage{background-color:#d6ece2!important}
+.stage svg{width:100%;height:100%;display:block}
+/* Facetas y ojos conservan el aspecto low-poly original. */
+#brows-angry,#brows-curious{fill:#21272c}
+#brows-sad{stroke:#41494e}
+#eye-closed path{stroke:#bfc5c8}
+#mouth-happy path,#mouth-neutral path,#mouth-sad path,#mouth-angry path{stroke:#21272c}
+#question-mark text{fill:#ffe5bb;stroke:#853f2d;stroke-width:5px;paint-order:stroke}
+#side-near-foot path[stroke],#side-far-foot path[stroke]{stroke:#141b20}
+
+/* ================================================================
+   SOMBRAS PROPORCIONALES Y ANIMADAS — VERSION NUEVA
+   Separadas del cuerpo: permanecen en el suelo al saltar.
+   La sombra lateral sigue el desplazamiento real, sin levitar.
+   ================================================================ */
+#shadow, #side-shadow {
+  transform-box: view-box;
+  filter: blur(2.6px);
+  transform-origin: 352px 559px;
+  animation: ground-idle-realistic 4.2s ease-in-out infinite;
+}
+#side-shadow-track {
+  display: none;
+  transform: translateX(0px);
+  transition: transform 2.45s linear;
+  pointer-events: none;
+}
+#stage-svg[data-view="perfil"] #side-shadow-track,
+#stage-svg[data-view="derecha"] #side-shadow-track { display:block; }
+#stage-svg.shadow-walking #shadow {
+  animation: ground-step-front .98s ease-in-out infinite;
+}
+#stage-svg.shadow-walking #side-shadow {
+  animation: ground-step-side 1s ease-in-out infinite;
+}
+#stage-svg.shadow-jumping #shadow,
+#stage-svg.shadow-jumping #side-shadow {
+  animation: ground-jump-realistic .75s ease-in-out 3 both;
+}
+#stage-svg.shadow-dancing #shadow,
+#stage-svg.shadow-dancing #side-shadow {
+  animation: ground-dance-realistic .45s ease-in-out infinite alternate;
+}
+@keyframes ground-idle-realistic {
+  0%, 100% { transform: scale(1); opacity: .32; }
+  50% { transform: scale(.97); opacity: .29; }
+}
+/* Alternancia de apoyos: variaciones discretas en eje y anchura. */
+@keyframes ground-step-front {
+  0%, 50%, 100% { transform: translateX(0) scale(1); opacity: .36; }
+  25% { transform: translateX(-7px) scale(.91,.92); opacity: .30; }
+  75% { transform: translateX(7px) scale(.91,.92); opacity: .30; }
+}
+@keyframes ground-step-side {
+  0%, 50%, 100% { transform: translateX(0) scale(1); opacity: .36; }
+  25% { transform: translateX(-6px) scale(.90,.94); opacity: .29; }
+  75% { transform: translateX(6px) scale(.90,.94); opacity: .29; }
+}
+/* El personaje sube, pero su sombra no: se contrae y pierde intensidad. */
+@keyframes ground-jump-realistic {
+  0%,100% { transform: scale(1); opacity: .36; }
+  42%,58% { transform: scale(.57,.76); opacity: .15; }
+}
+@keyframes ground-dance-realistic {
+  from { transform: translateX(-5px) scale(1); opacity:.34; }
+  to { transform: translateX(5px) scale(.91,.89); opacity:.26; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #shadow,#side-shadow {animation:none !important;transform:none !important;opacity:.32 !important;}
+  #side-shadow-track {transition:none !important;}
+}
+
+
+/* VERSIÓN SIGUIENTE — SOMBRAS DE CONTACTO EXACTAS, SIN PIES FLOTANTES.
+   La sombra amplia permanece SOBRE EL SUELO y se separa al saltar;
+   los pequeños contactos se encuentran justo bajo las plantas de los pies. */
+#shadow, #side-shadow { filter:blur(1.7px); }
+#ground-front-contacts, #ground-side-contacts{pointer-events:none;opacity:.92}
+#ground-front-contacts ellipse, #ground-side-contacts ellipse{filter:blur(1.1px)}
+#ground-front-contacts{display:block}
+#stage-svg[data-view="perfil"] #ground-front-contacts,
+#stage-svg[data-view="derecha"] #ground-front-contacts{display:none}
+#ground-front-contacts .contact-left, #ground-side-contacts .contact-left,
+#ground-front-contacts .contact-right, #ground-side-contacts .contact-right {
+ transform-box:view-box;
+ transform-origin:center;
+}
+#stage-svg.shadow-walking #ground-front-contacts .contact-left,
+#stage-svg.shadow-walking #ground-side-contacts .contact-left {animation:contact-step-left .98s ease-in-out infinite}
+#stage-svg.shadow-walking #ground-front-contacts .contact-right,
+#stage-svg.shadow-walking #ground-side-contacts .contact-right {animation:contact-step-right .98s ease-in-out infinite}
+#stage-svg.shadow-jumping #ground-front-contacts,
+#stage-svg.shadow-jumping #ground-side-contacts {animation:contact-lift .75s ease-in-out 3 both}
+#stage-svg.shadow-dancing #ground-front-contacts,
+#stage-svg.shadow-dancing #ground-side-contacts {animation:contact-dance .45s ease-in-out infinite alternate}
+@keyframes contact-step-left {0%,100%{transform:translate(0,0);opacity:1}25%{transform:translate(-5px,0);opacity:.22}50%{transform:translate(0,0);opacity:.75}75%{transform:translate(5px,0);opacity:1}}
+@keyframes contact-step-right {0%,100%{transform:translate(0,0);opacity:.75}25%{transform:translate(5px,0);opacity:1}50%{transform:translate(0,0);opacity:1}75%{transform:translate(-5px,0);opacity:.22}}
+@keyframes contact-lift {0%,100%{opacity:.92}18%{opacity:.1}42%,58%{opacity:0}82%{opacity:.2}}
+@keyframes contact-dance {from{opacity:.85}to{opacity:.45}}
+@media(prefers-reduced-motion:reduce){#ground-front-contacts,#ground-side-contacts,#ground-front-contacts ellipse,#ground-side-contacts ellipse{animation:none!important}}
+
+
+/* Roji V5 - rubor de timidez poligonal, frontal y lateral. */
+#avatar #blush, #avatar #shy-profile-blush {opacity:0; transition:opacity .32s ease-in-out;pointer-events:none;}
+#avatar[data-mood="avergonzado"] #blush, #avatar[data-mood="avergonzado"] #shy-profile-blush {opacity:.64;}
+#avatar[data-mood="enamorado"] #blush {opacity:.38;}
+
+/* Símbolos limpios para enamorado/emocionado en TODOS los personajes. */
+#avatar #heart-eyes > path:nth-of-type(n+3),
+#avatar #star-eyes > path:nth-of-type(n+3){display:none!important}
+#avatar[data-mood="enamorado"] #eye-pupils,
+#avatar[data-mood="emocionado"] #eye-pupils{opacity:0!important}
+
+/* V4 / Familia: misma expresión curiosa para los seis personajes. */
+#avatar[data-mood="curioso"] #brows-curious {opacity:1!important}
+#avatar[data-mood="curioso"] #brows-curious path {stroke-width:5!important;stroke-linecap:round!important;fill:none!important}
+
+/* === BOCA EMOCIONAL AL HABLAR: tristeza y enojo (sin alterar otras emociones) === */
+#avatar #mouth-speak-sad, #avatar #mouth-speak-angry {display:none; pointer-events:none}
+#avatar.speaking[data-mood="triste"] #mouth-speak,
+#avatar.speaking[data-mood="enojado"] #mouth-speak {display:none!important}
+#avatar.speaking[data-mood="triste"] #mouth-sad {opacity:0!important}
+#avatar.speaking[data-mood="triste"] #mouth-speak-sad,
+#avatar.speaking[data-mood="enojado"] #mouth-speak-angry {display:inline!important;opacity:1!important;transform-box:view-box;transform-origin:354px 346px;animation:hablar-emocional .29s ease-in-out infinite alternate!important}
+/* La boca conserva su curva y comisuras descendentes, pero se abre al hablar. */
+@keyframes hablar-emocional {from{transform:scaleY(.65)}to{transform:scaleY(1.10)}}
+#avatar .side-mouth-rest {display:inline}
+#avatar .side-speaking-sad, #avatar .side-speaking-angry {display:none;pointer-events:none}
+#avatar.speaking[data-mood="triste"] .side-mouth-rest,
+#avatar.speaking[data-mood="enojado"] .side-mouth-rest {display:none!important}
+#avatar.speaking[data-mood="triste"] .side-speaking-sad,
+#avatar.speaking[data-mood="enojado"] .side-speaking-angry {display:inline!important;transform-box:fill-box;transform-origin:center;animation:hablar-emocional-lateral .29s ease-in-out infinite alternate}
+@keyframes hablar-emocional-lateral {from{transform:scaleY(.70)}to{transform:scaleY(1.06)}}
+@media(prefers-reduced-motion:reduce){
+ #avatar.speaking[data-mood="triste"] #mouth-speak-sad,
+ #avatar.speaking[data-mood="enojado"] #mouth-speak-angry,
+ #avatar.speaking[data-mood="triste"] .side-speaking-sad,
+ #avatar.speaking[data-mood="enojado"] .side-speaking-angry {animation:none!important;transform:none!important}
+}
+
+/* Corrección transversal: hambre y habla son estados de boca mutuamente exclusivos.
+   La boca de hambre se muestra solo en silencio; al hablar la sustituye
+   exactamente una boca animada, y al terminar se restaura la boca de hambre. */
+#avatar.speaking[data-mood="hambriento"] #mouth-o {opacity:0!important;visibility:hidden!important}
+#avatar.speaking[data-mood="hambriento"] #mouth-speak {opacity:1!important;visibility:visible!important;display:inline!important}
+#avatar.speaking[data-mood="hambriento"] #mouth-speak-sad,
+#avatar.speaking[data-mood="hambriento"] #mouth-speak-angry {display:none!important;opacity:0!important}
+/* La boca de perfil también es única durante la conversación. */
+#avatar.speaking[data-mood="hambriento"] .side-mouth-rest {display:none!important}
+#avatar.speaking[data-mood="hambriento"] .side-speaking-hungry {display:inline!important;opacity:1!important;animation:hablar-hambre-lateral .26s ease-in-out infinite alternate}
+#avatar:not(.speaking) .side-speaking-hungry {display:none!important}
+@keyframes hablar-hambre-lateral {from{transform:scaleY(.70)}to{transform:scaleY(1.08)}}
+@media(prefers-reduced-motion:reduce){#avatar.speaking[data-mood="hambriento"] .side-speaking-hungry {animation:none!important}}
+
+
+/* V NUEVA — Hambre y habla: prioridad completa a la boca que habla.
+   Es imprescindible ocultar también la lengua suelta de hambre, no solo #mouth-o.
+   En silencio la regla de hambre original restaura boca abierta y lengua. */
+#avatar.speaking #tongue,
+#avatar.speaking #mouth-o {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#avatar.speaking[data-mood="hambriento"] #mouth-speak {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+/* La boca lateral en reposo queda escondida al hablar hambriento. */
+#avatar.speaking[data-mood="hambriento"] .side-mouth-rest {display:none!important}
+#avatar.speaking[data-mood="hambriento"] .side-speaking-hungry {display:inline!important}
+
+
+/* ROJI V1 — Panda rojo: ambiente montañoso y cola anillada reactiva. */
+:root{background:#accdb1!important;color:#2c352d}
+body{background:#b2d3c1!important;background-image:linear-gradient(180deg,#d9eee3 0%,#93c4a0 100%)!important}
+.stage-shell{border:0;box-shadow:none;background:transparent}
+.stage{background:#b8ddd7}
+.stage-footer{background:#f6f7eeed}
+.panel-section{background:#fffdf4f2;border-color:#e0e8d5}
+.btn.active,.viewbtn.active{background:#fce6c9!important;border-color:#d78a55!important;color:#80402e!important}
+.pill{background:#fff1d9!important;color:#8d4828!important}
+.dot{background:#d67e40!important;box-shadow:0 0 0 4px #f7d9b0!important}
+#avatar #tail{transform-box:view-box;transform-origin:455px 448px;animation:roji-wag 4s ease-in-out infinite alternate}
+#avatar #side-tail{transform-box:view-box;transform-origin:445px 449px;animation:roji-wag-side 4.4s ease-in-out infinite alternate}
+#avatar[data-mood="emocionado"] #tail,#avatar[data-mood="feliz"] #tail{animation-duration:2.2s}
+#avatar[data-mood="emocionado"] #side-tail,#avatar[data-mood="feliz"] #side-tail{animation-duration:2.6s}
+#avatar[data-mood="triste"] #tail,#avatar[data-mood="triste"] #side-tail{animation-duration:6s;animation-timing-function:ease-in-out}
+#avatar[data-mood="dormido"] #tail,#avatar[data-mood="dormido"] #side-tail{animation:roji-rest-tail 9s ease-in-out 1 both}
+#avatar.action-saltar #tail,#avatar.action-saltar #side-tail{animation-duration:.9s}
+@keyframes roji-wag {0%{transform:rotate(-7deg) translateY(1px)}50%{transform:rotate(5deg) translateY(-4px)}100%{transform:rotate(-3deg) translateY(-1px)}}
+@keyframes roji-wag-side {0%{transform:rotate(-8deg)}50%{transform:rotate(5deg)}100%{transform:rotate(-2deg)}}
+@keyframes roji-rest-tail {0%{transform:rotate(1deg)}25%{transform:rotate(-5deg)}50%{transform:rotate(2deg)}100%{transform:rotate(-12deg)}}
+#avatar #panda-eye-patches,#avatar #side-panda-eye-patch{pointer-events:none}
+@media(prefers-reduced-motion:reduce){#avatar #tail,#avatar #side-tail{animation:none!important}}
+
+/* VERSIÓN NUEVA · La tristeza no dibuja cejas en mamíferos. */
+#avatar[data-mood="triste"] #brows-sad {opacity:0!important;visibility:hidden!important}
+
+
+/* APOYO REALISTA V1: pies plantados; la respiración y la cabeza mantienen vida,
+   pero el cuerpo ya no sube y baja como si flotara durante el reposo. */
+#avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {
+  animation:grounded-still-v1 4.2s ease-in-out infinite!important;
+  transform-origin:350px 578px!important;
+}
+@keyframes grounded-still-v1 {
+  0%,100% {transform:rotate(-.18deg)}
+  50% {transform:rotate(.18deg)}
+}
+#ground-front-contacts ellipse, #ground-side-contacts ellipse {filter:blur(.45px)}
+#shadow, #side-shadow {filter:blur(2.0px)}
+/* El salto conserva sombra sobre el piso y borra el contacto durante el vuelo. */
+#stage-svg.shadow-jumping #ground-front-contacts,
+#stage-svg.shadow-jumping #ground-side-contacts {animation:contact-lift .75s ease-in-out 3 both}
+@media(prefers-reduced-motion:reduce) {
+ #avatar:not(.action-saltar):not(.action-caminar):not(.action-bailar) {animation:none!important;transform:none!important}
+}
+
+
+/* Roji V2.3: identifiable red-panda facial mask and striped bushy tail.
+   Original head contour, ears, muzzle, eye coordinates are unchanged. */
+#avatar #panda-eye-patches{opacity:1;pointer-events:none}
+#avatar #roji-cream-bib{pointer-events:none}
+#avatar #roji-front-tail,#avatar #roji-side-tail{transform-box:fill-box;transform-origin:left center}
+
+/* V2.6: tail stays bushy, torso has a continuous cream bib; keep Roji original skull. */
+#avatar #roji-cream-bib{pointer-events:none}
+#avatar #panda-eye-patches,#avatar #roji-red-panda-cheek-stripes{pointer-events:none}
+#avatar[data-mood="dormido"] #eye-open{opacity:0!important;visibility:hidden!important}
+#avatar[data-mood="dormido"] #eye-closed{opacity:1!important;visibility:visible!important}
+</style>
+<div class="stage"><svg aria-label="Roji, panda rojo low-poly animado, en un bosque de bambú" data-view="frente" id="stage-svg" preserveaspectratio="xMidYMid slice" role="img" viewbox="0 0 700 635" xmlns="http://www.w3.org/2000/svg">
+<defs><clippath clippathunits="userSpaceOnUse" id="mouth-safe-area"><path d="M321 321 Q352 315 388 321 L391 352 Q371 368 353 365 Q328 366 319 350Z"></path></clippath></defs>
+<g id="environment">
+<path d="M0 0H700V635H0Z" fill="#b8ddd7"></path>
+<path d="M0 0H700V205L586 172 488 205 390 145 247 191 126 157 0 198Z" fill="#d8ece1"></path>
+<path d="M0 306 92 194 163 275 272 128 391 300 496 175 602 290 700 188V635H0Z" fill="#8bb7a7"></path>
+<path d="M78 238 92 194 163 275 127 265Z M247 157 272 128 330 206 283 197Z M470 211 496 175 557 237 523 230Z M668 231 700 188V276Z" fill="#e3e8d8" opacity=".84"></path>
+<path d="M0 377 113 305 221 347 342 264 467 351 582 282 700 335V635H0Z" fill="#679f83"></path>
+<path d="M0 450 121 386 243 427 355 362 483 431 597 363 700 419V635H0Z" fill="#4f866e"></path>
+<path d="M0 498 142 446 251 473 369 439 485 462 606 434 700 477V635H0Z" fill="#78a36a"></path>
+<path d="M0 534 157 482 297 510 461 476 592 489 700 460V635H0Z" fill="#90ae72"></path>
+<path d="M0 583 141 556 270 585 404 549 550 565 700 537V635H0Z" fill="#78a060"></path>
+<!-- Green pines; vertical trunks rooted in the meadow. -->
+<g id="roji-pine-left">
+<path d="M83 206 94 206 94 541 83 541Z" fill="#73513d"></path><path d="M83 206 88 205 88 541 83 541Z" fill="#98704d"></path>
+<path d="M88 93 35 225 68 211 23 288 66 273 13 359 91 338 155 360 116 279 157 288 112 211 145 224Z" fill="#315e52"></path>
+<path d="M88 94 35 225 68 211 23 288 66 273 13 359 89 339Z" fill="#407864"></path>
+<path d="M88 150 58 238 93 229 123 254 112 211Z" fill="#63947a"></path>
+<path d="M88 237 41 317 89 302 138 319 116 279Z" fill="#4a7d64"></path>
+<path d="M69 526 83 515 94 514 108 528 96 538 79 538Z" fill="#5a8f5a"></path>
+</g>
+<g id="roji-pine-right">
+<path d="M616 182 628 182 628 543 616 543Z" fill="#73513d"></path><path d="M616 182 622 182 622 543 616 543Z" fill="#98704d"></path>
+<path d="M622 82 568 226 604 214 556 292 604 280 544 365 621 340 700 367 650 278 688 289 640 214 677 225Z" fill="#315e52"></path>
+<path d="M622 82 568 226 604 214 556 292 604 280 544 365 622 341Z" fill="#407864"></path>
+<path d="M622 159 597 240 626 226 667 248 640 214Z" fill="#63947a"></path>
+<path d="M622 237 577 326 624 313 675 330 650 278Z" fill="#4a7d64"></path>
+<path d="M603 526 614 515 629 515 640 529 628 541 613 538Z" fill="#5a8f5a"></path>
+</g>
+<!-- Bamboo shoots rooted in foreground soil; none of the leaves float. -->
+<g id="bamboo-left">
+<path d="M167 525 171 307 180 304 177 526Z" fill="#3c8161"></path><path d="M171 307 175 305 173 526 167 525Z" fill="#8bc17d"></path>
+<path d="M168 349 180 349 180 354 168 354Z M168 410 179 410 178 415 168 415Z M167 468 177 468 177 473 167 473Z" fill="#356f55"></path>
+<path d="M176 337Q210 316 234 325L202 341 175 341Z" fill="#428966"></path>
+<path d="M172 371Q147 347 128 353L148 375 172 377Z" fill="#66a578"></path>
+<path d="M174 413Q208 397 231 406L194 423 174 420Z" fill="#428966"></path>
+<path d="M171 457Q147 436 128 445L150 464 171 464Z" fill="#66a578"></path>
+</g>
+<g id="bamboo-right">
+<path d="M521 530 525 315 534 311 531 531Z" fill="#3c8161"></path><path d="M525 315 529 313 527 531 521 530Z" fill="#8bc17d"></path>
+<path d="M521 362 534 362 534 367 521 367Z M522 425 532 425 532 430 522 430Z M522 486 532 486 532 491 522 491Z" fill="#356f55"></path>
+<path d="M530 353Q555 332 580 338L550 361 530 358Z" fill="#428966"></path>
+<path d="M526 394Q500 375 483 381L502 404 526 401Z" fill="#66a578"></path>
+<path d="M528 452Q555 435 575 445L550 461 528 460Z" fill="#428966"></path>
+</g>
+<path d="M0 584 65 561 117 580 189 556 249 578 318 561 390 583 457 556 532 572 600 556 700 569V635H0Z" fill="#75a062"></path>
+<path d="M30 572 38 556 44 573 53 561 56 576Z M133 562 139 551 147 565 152 557 156 568Z M552 563 558 550 564 564 576 555 580 568Z M649 561 655 550 661 563 674 554 676 568Z" fill="#427b57"></path>
+<path d="M53 555 69 551 78 555 82 564 74 571 54 572 44 566Z M620 552 638 549 648 557 645 565 623 569 612 560Z" fill="#acba99"></path>
+<path d="M56 554 69 551 78 555 70 560 48 560Z M623 552 638 549 648 557 633 559 612 560Z" fill="#e2dfcb"></path>
+</g>
+<ellipse cx="354.0" cy="581.4" fill="#3e6746" id="shadow" opacity=".30" rx="90.0" ry="8.0"></ellipse>
+<g id="side-shadow-track"><ellipse cx="355.0" cy="566.9" fill="#567c3a" id="side-shadow" opacity=".31" rx="54.2" ry="6.8"></ellipse>
+<g aria-label="Apoyos laterales" id="ground-side-contacts"><ellipse class="contact-left" cx="327.5" cy="569.3" rx="31.5" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-left" cx="327.5" cy="569.2" rx="23.0" ry="2.1" fill="#40653a" opacity=".36"/><ellipse class="contact-right" cx="382.5" cy="562.3" rx="28.5" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-right" cx="382.5" cy="562.2" rx="20.8" ry="2.1" fill="#40653a" opacity=".36"/></g></g>
+<g aria-label="Contacto de las patas con el suelo" id="ground-front-contacts"><ellipse class="contact-left" cx="283.0" cy="580.3" rx="38.0" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-left" cx="283.0" cy="580.2" rx="27.7" ry="2.1" fill="#40653a" opacity=".36"/><ellipse class="contact-right" cx="425.0" cy="580.3" rx="38.0" ry="3.6" fill="#40653a" opacity=".55"/><ellipse class="contact-right" cx="425.0" cy="580.2" rx="27.7" ry="2.1" fill="#40653a" opacity=".36"/></g>
+<g data-mood="feliz" id="avatar">
+ <!-- Cola larga, tupida y anillada, característica del panda rojo. --> 
+<g id="tail"><g aria-label="Cola de panda rojo larga, tupida y con anillos" id="roji-front-tail"><defs><clipPath id="roji-front-tail-mask-v29"><path d="M444 428 C479 394 503 399 536 410 C568 420 592 438 621 441 C636 444 646 435 651 431 C667 432 674 452 662 470 C650 488 627 490 604 482 C574 475 552 449 525 446 C491 439 469 469 448 477Z"/></clipPath></defs>
+<path d="M444 428 C479 394 503 399 536 410 C568 420 592 438 621 441 C636 444 646 435 651 431 C667 432 674 452 662 470 C650 488 627 490 604 482 C574 475 552 449 525 446 C491 439 469 469 448 477Z" fill="#cb7841" stroke="#773a28" stroke-width="3.5" stroke-linejoin="round"/>
+<g clip-path="url(#roji-front-tail-mask-v29)" aria-label="Anillos alternados crema y rojizos, sin punta que parezca una oreja">
+<path d="M472 407 L492 409 L506 456 L484 474Z" fill="#f0bf87"/>
+<path d="M508 407 L529 407 L541 454 L519 453Z" fill="#913f30"/>
+<path d="M543 412 L562 423 L570 468 L550 456Z" fill="#f4ca96"/>
+<path d="M578 430 L599 442 L601 480 L580 470Z" fill="#99432f"/>
+<path d="M612 440 L632 441 L646 473 L624 480Z" fill="#f2c28b"/>
+<path d="M641 432 L655 427 L664 460 L651 470Z" fill="#853b30"/>
+<path d="M452 440 Q479 424 497 424 M513 426 Q533 418 550 437 M568 446 Q589 458 608 458" stroke="#f5c98d" stroke-width="4" opacity=".3" fill="none" stroke-linecap="round"/>
+</g></g></g>
+<g id="front-view">
+<!-- Patas traseras: pies completos, apoyados en el suelo, siempre bípedo. -->
+<g class="limb" id="left-leg">
+<!-- Pierna plantígrada construida exclusivamente con facetas poligonales. -->
+<path d="M277 464 L310 466 L340 482 L349 512 L337 547 L308 559 L255 552 L237 527 L250 488 Z" fill="#30282a"></path>
+<path d="M277 464 L310 466 L328 491 L302 526 L249 515 L250 488 Z" fill="#49312c"></path>
+<path d="M310 466 L340 482 L349 512 L302 526 L328 491 Z" fill="#5c3a32"></path>
+<path d="M249 515 L302 526 L337 547 L308 559 L255 552 L237 527 Z" fill="#211e20"></path>
+<g id="left-foot">
+<!-- Planta robusta, cuatro dedos cortos: todas las superficies son polígonos. -->
+<path d="M257 507 L302 507 L331 520 L346 540 L349 558 L338 570 L315 579 L252 579 L228 572 L217 557 L226 539 Z" fill="#302728"></path>
+<path d="M257 507 L302 507 L331 520 L307 545 L259 550 L226 539 Z" fill="#644139"></path>
+<path d="M302 507 L331 520 L346 540 L349 558 L320 552 L307 545 Z" fill="#48322c"></path>
+<path d="M226 539 L259 550 L255 576 L228 572 L217 557 Z" fill="#805742"></path>
+<path d="M259 550 L307 545 L320 552 L349 558 L338 570 L315 579 L255 579 L255 576 Z" fill="#3d2b29"></path>
+<!-- Hendiduras cortas y angulosas que distinguen los dedos, sin contornos curvos. -->
+<path d="M247 562 L252 561 L253 576 L248 577 Z M279 560 L284 559 L286 578 L281 579 Z M314 556 L319 557 L322 574 L317 577 Z" fill="#302728" opacity=".72"></path>
+</g></g>
+<g class="limb other" id="right-leg">
+<path d="M362 475 L397 461 L426 465 L451 491 L464 524 L453 552 L400 559 L366 545 L351 509 Z" fill="#30282a"></path>
+<path d="M362 475 L397 461 L426 465 L451 491 L449 519 L388 529 L351 509 Z" fill="#49312c"></path>
+<path d="M397 461 L426 465 L451 491 L464 524 L449 519 Z" fill="#5c3a32"></path>
+<path d="M388 529 L449 519 L464 524 L453 552 L400 559 L366 545 Z" fill="#211e20"></path>
+<g id="right-foot">
+<!-- Planta robusta, cuatro dedos cortos: todas las superficies son polígonos. -->
+<path d="M451 507 L406 507 L377 520 L362 540 L359 558 L370 570 L393 579 L456 579 L480 572 L491 557 L482 539 Z" fill="#302728"></path>
+<path d="M451 507 L406 507 L377 520 L401 545 L449 550 L482 539 Z" fill="#644139"></path>
+<path d="M406 507 L377 520 L362 540 L359 558 L388 552 L401 545 Z" fill="#48322c"></path>
+<path d="M482 539 L449 550 L453 576 L480 572 L491 557 Z" fill="#805742"></path>
+<path d="M449 550 L401 545 L388 552 L359 558 L370 570 L393 579 L453 579 L453 576 Z" fill="#3d2b29"></path>
+<!-- Hendiduras cortas y angulosas que distinguen los dedos, sin contornos curvos. -->
+<path d="M461 562 L456 561 L455 576 L460 577 Z M429 560 L424 559 L422 578 L427 579 Z M394 556 L389 557 L386 574 L391 577 Z" fill="#302728" opacity=".72"></path>
+</g></g>
+<!-- Cuerpo ancho, bajo y redondeado, sin ropa ni rasgos humanos. -->
+<g id="torso"><g transform="translate(40 0) scale(.88 1)" aria-label="proporciones estilizadas">
+<path d="m277 342 57-30 48-3 63 36 37 72-7 73-44 41-78 15-86-20-44-48-4-62Z" fill="#30282a"></path>
+<path d="m277 342 57-30-7 89-107 15Z" fill="#49312c"></path><path d="m334 312 48-3 63 36-63 65-55-9Z" fill="#5c3a32"></path>
+<path d="m445 345 37 72-7 73-93-80Z" fill="#211e20"></path><path d="m220 416 107-15 26 145-86-20-44-48Z" fill="#3c2926"></path>
+<path d="m382 410 93 80-44 41-78 15-26-145Z" fill="#704533"></path>
+<!-- Parche crema del pecho: rombos y triángulos grandes. -->
+
+
+<!-- Pecho rojizo entre brazos oscuros, con abdomen pequeño -->
+<path d="M316 356 Q347 344 388 357 Q428 378 438 424 L429 482 Q406 520 363 526 Q310 524 278 482 L275 412 Q289 372 316 356Z" fill="#cd6a3c"/>
+<path d="M317 355 360 356 352 437 276 413Z" fill="#EE8B45" opacity=".58"/>
+<path d="M360 356 389 357 429 415 353 437Z" fill="#F5A15B" opacity=".40"/>
+<path d="M353 437 429 415 430 483 364 524Z" fill="#B64C2C" opacity=".35"/>
+<path d="M276 413 353 437 364 524 Q313 516 282 482Z" fill="#E87E3A" opacity=".38"/>
+
+<g id="roji-cream-bib" pointer-events="none">
+ <path d="M319 354 Q336 359 353 356 Q372 360 386 356 L397 378 Q387 394 372 400 L364 418 L352 407 L339 420 L330 398 Q316 391 310 373Z" fill="#ffe4b7" opacity=".96"/>
+ <path d="M313 363 Q331 369 347 361L350 398Q323 390 313 363Z" fill="#fff2d5" opacity=".77"/>
+ <path d="M319 384 Q337 400 354 404 Q373 400 391 386 L399 439 384 477 355 503 325 480 310 440Z" fill="#ecae79" opacity=".60"/><path d="M321 411 Q338 425 356 433 L351 484 Q331 470 318 448Z" fill="#f4cd9e" opacity=".33"/><path d="M334 446 Q355 454 380 440" fill="none" stroke="#fef0d7" opacity=".55" stroke-width="2.4"/>
+</g>
+<g fill="none" id="belly-rumble" opacity=".75" stroke="#a6a9a4" stroke-linecap="round" stroke-width="4"><path d="M317 439q-14 11 0 22m72-26q15 12-1 23M350 452q-8 10 0 20"></path></g>
+</g>
+<!-- Brazos y manos son patas de oso, sin dedos humanos. -->
+<g class="limb" id="left-arm"><g transform="translate(109 78) scale(.60 .78)" aria-label="proporciones estilizadas"><path d="M269 346 Q246 335 229 341 Q208 350 194 383 L160 462 Q153 480 171 492 Q189 505 210 490 L244 421 Q263 384 269 346Z" fill="#6d3b31"></path><path d="M229 341 Q246 335 269 346 L246 412 Q227 389 194 383Z" fill="#854a38"></path><path d="M194 383 Q226 390 246 412 L210 490 Q187 499 160 462Z" fill="#9a5740"></path><g id="left-hand"><g id="left-hand-rest"><path d="M166 461 Q187 450 211 463 Q231 475 232 493 Q219 515 194 518 Q171 514 155 495 Q151 481 166 461Z" fill="#322826"></path><path d="M168 462 Q187 454 211 465 L222 483 Q191 485 165 499 Q151 483 168 462Z" fill="#523833"></path><path d="M170 502Q183 509 190 506 M193 510Q205 513 211 504 M214 501Q223 503 228 493" stroke="#1d191a" stroke-width="4" fill="none" stroke-linecap="round"></path><g fill="#697073" id="left-paw-pad"><path d="M177 487Q188 478 202 491Q208 500 200 505Q185 509 177 500Z"></path><circle cx="166" cy="478" r="4.6"></circle><circle cx="180" cy="474" r="4.8"></circle><circle cx="194" cy="479" r="4.2"></circle></g></g><g id="left-hand-palm">
+<path d="M213 476 L208 466 L195 462 L181 465 L169 476 L164 493 L173 507 L191 516 L211 511 L224 499 L223 486 Z" fill="#9a5740"></path>
+<path d="M213 476 L208 466 L195 462 L181 465 L190 488 L219 495 L223 486 Z" fill="#211e20"></path>
+<path d="M181 465 L169 476 L164 493 L190 488 Z" fill="#3c2926"></path>
+<path d="M219 495 L190 488 L164 493 L173 507 L191 516 L211 511 Z" fill="#704533"></path>
+<g fill="#747a7b">
+<path d="M213 477 L210 472 L205 472 L202 477 L205 483 L211 482Z"></path>
+<path d="M202 469 L199 464 L193 465 L191 472 L195 477 L200 476Z"></path>
+<path d="M187 469 L180 468 L176 472 L176 479 L182 482 L187 478Z"></path>
+<path d="M173 479 L169 482 L168 489 L174 492 L178 489 L177 483Z"></path>
+<path d="M208 493 L195 486 L180 492 L178 503 L190 511 L204 507 L212 500Z"></path>
+</g></g></g></g>
+<g class="limb other" id="right-arm"><g transform="translate(174 78) scale(.60 .78)" aria-label="proporciones estilizadas"><path d="M433 346 Q457 335 474 341 Q495 350 510 383 L545 462 Q552 480 533 492 Q515 505 493 490 L459 421 Q440 384 433 346Z" fill="#6d3b31"></path><path d="M474 341 Q457 335 433 346 L456 412 Q477 389 510 383Z" fill="#854a38"></path><path d="M510 383 Q478 390 456 412 L493 490 Q517 499 545 462Z" fill="#9a5740"></path><g id="right-hand"><g id="right-hand-rest"><path d="M540 461 Q520 450 496 463 Q475 475 474 493 Q487 515 513 518 Q535 514 553 495 Q557 481 540 461Z" fill="#322826"></path><path d="M538 462 Q520 454 496 465 L485 483 Q516 485 542 499 Q555 483 538 462Z" fill="#523833"></path><path d="M538 502Q525 509 518 506 M515 510Q503 513 497 504 M494 501Q485 503 480 493" stroke="#1d191a" stroke-width="4" fill="none" stroke-linecap="round"></path><g fill="#697073" id="right-paw-pad"><path d="M505 489Q515 476 530 488Q537 502 525 507Q510 509 505 498Z"></path><circle cx="541" cy="480" r="4.5"></circle><circle cx="527" cy="475" r="4.7"></circle><circle cx="513" cy="477" r="4.2"></circle></g></g><g id="right-hand-palm">
+<path d="M499 476 L504 466 L517 462 L531 465 L543 476 L548 493 L539 507 L521 516 L501 511 L488 499 L489 486 Z" fill="#9a5740"></path>
+<path d="M499 476 L504 466 L517 462 L531 465 L522 488 L493 495 L489 486 Z" fill="#211e20"></path>
+<path d="M531 465 L543 476 L548 493 L522 488 Z" fill="#3c2926"></path>
+<path d="M493 495 L522 488 L548 493 L539 507 L521 516 L501 511 Z" fill="#704533"></path>
+<g fill="#747a7b">
+<path d="M499 477 L502 472 L507 472 L510 477 L507 483 L501 482Z"></path>
+<path d="M510 469 L513 464 L519 465 L521 472 L517 477 L512 476Z"></path>
+<path d="M525 469 L532 468 L536 472 L536 479 L530 482 L525 478Z"></path>
+<path d="M539 479 L543 482 L544 489 L538 492 L534 489 L535 483Z"></path>
+<path d="M504 493 L517 486 L532 492 L534 503 L522 511 L508 507 L500 500Z"></path>
+</g></g></g></g>
+<!-- Cabeza facetada casi circular; orejas pequeñas, redondas y altas. -->
+<g id="head"><g id="roji-head-refined" transform="translate(48 38) scale(.86)">
+<g id="ear-left" aria-label="Oreja izquierda redondeada de panda rojo">
+<path d="M210 191 Q188 173 190 145 Q190 116 211 110 Q234 106 252 124 Q266 139 273 172 L269 203Z" fill="#f9e8d0"/>
+<path d="M201 153 Q201 123 215 121 Q239 120 251 140 L259 176 246 195 208 188Z" fill="#c66a36"/>
+<path d="M210 154 Q210 135 221 133 Q236 134 245 152 L247 173 232 182 211 173Z" fill="#f0c5a1"/>
+<path d="M210 153 221 133 232 155 211 173Z" fill="#ffe9d1" opacity=".65"/>
+<path d="M193 145 Q191 117 211 110 Q200 133 202 162Z" fill="#fff2dd"/>
+</g>
+<g id="ear-right" aria-label="Oreja derecha redondeada de panda rojo">
+<path d="M424 178 Q430 144 449 127 Q467 107 489 113 Q514 119 513 146 Q510 176 486 198 L440 204Z" fill="#f9e8d0"/>
+<path d="M443 175 457 140 Q470 122 489 125 Q501 133 500 151 L490 187 456 197Z" fill="#c66a36"/>
+<path d="M458 174 465 149 Q476 135 487 137 Q494 147 490 168 L475 182Z" fill="#f0c5a1"/>
+<path d="M475 150 487 137 Q494 147 490 168 L479 172Z" fill="#ffe9d1" opacity=".6"/>
+<path d="M489 113 Q515 119 513 146 L499 167 Q508 132 489 113Z" fill="#fff2dd"/>
+</g>
+
+<defs><linearGradient id="roji-head-v22" x1=".1" x2=".9" y1="0" y2="1"><stop offset="0" stop-color="#FFAE56"/><stop offset=".55" stop-color="#EF7A32"/><stop offset="1" stop-color="#C9572B"/></linearGradient></defs>
+<!-- Flattened forehead and tapered cheeks, with red panda face markings -->
+<path d="M350 120 Q408 113 448 145 Q487 179 488 233 L479 281 498 298 466 326 Q435 355 392 362 Q351 368 310 359 Q258 349 230 320 L204 302 218 276 Q207 217 242 170 Q282 121 350 120Z" fill="url(#roji-head-v22)" stroke="#B75530" stroke-width="2"/>
+<path d="M230 191 285 140 352 120 341 218 230 258Z" fill="#FFA653" opacity=".38"/>
+<path d="M352 120 Q430 111 467 170 L424 223 341 218Z" fill="#F8853A" opacity=".42"/>
+<path d="M467 170 Q496 216 480 282 L414 301 424 223Z" fill="#D7622B" opacity=".36"/>
+<!-- small authentic eyebrow patches, no vertical white forehead stripe -->
+<path d="M267 191 Q290 168 318 183 L325 198 Q295 191 273 209Z" fill="#FFF3DB"/>
+<path d="M385 185 Q413 167 436 193 L432 209 Q414 196 391 200Z" fill="#FFF1D4"/>
+<!-- White cheek fans, orange bridge left visible -->
+<path d="M216 266 Q240 251 272 265 L313 292 324 316 306 339 272 348 243 338 216 318 202 301Z" fill="#FFF2DE"/>
+<path d="M484 266 Q459 248 429 265 L394 291 379 317 403 344 437 349 462 331 496 299Z" fill="#FFEED6"/>
+<path d="M217 292 265 301 300 333 Q264 337 227 316Z M482 291 437 303 411 337 Q448 333 477 317Z" fill="#E5B18A" opacity=".32"/>
+<path d="M308 291 Q328 277 351 287 Q382 274 401 290 Q425 303 408 333 Q389 353 350 351 Q307 352 291 327 Q292 303 308 291Z" fill="#FFF4E1"/>
+<path d="M303 313 Q321 294 350 301 L350 349 Q314 347 296 330Z" fill="#FFFBEF" opacity=".48"/>
+<g id="roji-forehead-mark" pointer-events="none">
+ <path d="M262 204Q288 186 321 203M383 202Q416 187 443 206" fill="none" stroke="#fff8e9" stroke-width="7.5" stroke-linecap="round" opacity=".82"/>
+</g>
+<g id="panda-eye-patches" aria-label="Máscara oscura característica de panda rojo" pointer-events="none">
+ <path d="M258 223Q264 205 285 201L316 213Q327 233 321 257Q312 275 292 277Q273 272 261 256Z" fill="#703528" opacity=".92"/>
+ <path d="M384 216Q395 202 420 201Q442 207 449 231L443 259Q432 279 410 276Q390 266 384 247Z" fill="#703528" opacity=".92"/>
+ <path d="M262 253Q268 266 280 274Q294 287 306 281Q290 291 275 281Z" fill="#fff1d5" opacity=".9"/>
+ <path d="M443 252Q437 267 426 277Q411 286 398 280Q414 291 429 281Z" fill="#fff1d5" opacity=".9"/>
+</g>
+
+<g id="roji-red-panda-cheek-stripes" pointer-events="none">
+ <path d="M242 263 Q259 249 272 255 Q281 268 289 280 Q270 288 253 277Z" fill="#fff8e7" opacity=".98"/>
+ <path d="M458 263 Q441 249 428 255 Q419 268 411 280 Q430 288 447 277Z" fill="#fff8e7" opacity=".98"/>
+ <path d="M254 277 Q270 293 290 292" fill="none" stroke="#edc99d" stroke-width="3" opacity=".65"/>
+ <path d="M446 277 Q430 293 410 292" fill="none" stroke="#edc99d" stroke-width="3" opacity=".65"/>
+</g>
+<g id="eye-open"><path d="m273 243 5-17 14-10 18 6 9 18-6 20-20 6-16-10Z" fill="#101519" stroke="#525b60" stroke-width="2"></path><path d="m391 239 10-19 20-6 14 11 4 19-11 19-21 3-15-12Z" fill="#101519" stroke="#525b60" stroke-width="2"></path>
+<g id="eye-pupils"><path d="m282 232 10-7 10 7-2 11-13 1Z" fill="#fff9e7"></path><path d="m400 228 11-7 11 8-3 12-12 0Z" fill="#fff9e7"></path><path d="m309 252 4-3 4 4-3 4-5 0Z" fill="#fff5e5"></path><path d="m427 248 4-4 4 4-2 5-5 0Z" fill="#fff5e5"></path></g>
+<g fill="#ff8294" id="heart-eyes"><path d="M295 257 281 243Q275 234 284 231Q291 229 295 236Q302 227 309 232Q317 241 308 249Z"></path><path d="M414 256 399 243Q393 234 403 230Q410 228 414 236Q422 226 429 232Q437 241 428 250Z"></path><path d="m286 235 4-2 4 4-3 3Z" fill="#fff7dc"></path><path d="m405 234 4-2 4 4-3 3Z" fill="#fff7dc"></path></g>
+<g fill="#ffe07b" id="star-eyes"><path d="m294 226 4.8 9.3 10.4 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.3 4.9 1.8-10.4-7.6-7.4 10.4-1.5Z"></path><path d="m414 225 4.8 9.3 10.4 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.3 4.9 1.8-10.4-7.6-7.4 10.4-1.5Z"></path><path d="m291 234 4-2 3 4-2 5-4-1Z" fill="#fff9e6"></path><path d="m412 232 4-2 3 4-2 5-4-1Z" fill="#fff9e6"></path></g>
+</g>
+<g id="eye-closed"><path d="M277 243Q297 259 317 241M392 242Q413 258 434 240" fill="none" stroke="#bfc5c8" stroke-linecap="round" stroke-width="6"></path></g>
+<g fill="#60372b" id="brows-angry"><path d="m270 213 45 10-4 8-44-11Zm119 11 46-14 2 9-45 13Z"></path></g>
+<g fill="#60372b" id="brows-sad" stroke="#41494e" stroke-linecap="round" stroke-width="5.2"><path d="M277 202 Q292 199 309 193"></path><path d="M397 193 Q414 199 430 202"></path></g>
+<g fill="#60372b" id="brows-curious"><path d="M264 197 Q287 182 312 195" fill="none" stroke="#293238" stroke-linecap="round" stroke-width="5"></path><path d="M393 195 Q418 182 445 197" fill="none" stroke="#293238" stroke-linecap="round" stroke-width="5"></path></g>
+<g id="blush"><path d="m259 285 25-4 11 12-19 9-18-7Z" fill="#ed8493"></path><path d="m426 294 12-12 24 6 2 8-22 10Z" fill="#ed8493"></path><path d="M268 286 283 285 291 294 277 296Z" fill="#ffd1c6" opacity=".3"></path>
+<path d="M433 286 446 285 458 294 442 298Z" fill="#ffd1c6" opacity=".3"></path></g>
+<!-- Nariz negra y boca sencillas, nunca sonrisa humana grande. -->
+<path d="M354 315v11" fill="none" stroke="#41494e" stroke-linecap="round" stroke-width="4"></path>
+<path d="M340 297 Q352 290 365 296 L370 304 Q366 314 355 316 Q345 315 340 306Z" fill="#23272a"/><path d="M343 298 Q353 293 363 298 L354 302Z" fill="#4a4d4a"/>
+
+<g id="mouth-happy"><path d="M354 326Q341 343 323 330M354 326Q370 343 388 330" fill="none" stroke="#21272c" stroke-linecap="round" stroke-width="5"></path></g>
+<g id="mouth-neutral"><path d="m338 334 35 0" fill="none" stroke="#21272c" stroke-linecap="round" stroke-width="5"></path></g>
+<g id="mouth-sad"><path d="M337 344 Q354 330 371 344" fill="none" stroke="#21272c" stroke-linecap="round" stroke-width="4"></path></g>
+<g id="mouth-o"><path d="m354 328c-13 0-15 11-15 21s8 14 15 14 15-7 15-17-5-18-15-18Z" fill="#141b20"></path><path d="m342 352q11-9 23 0v7h-23Z" fill="#d98d7b"></path></g>
+<g id="mouth-angry"><path d="M325 340Q354 328 384 340" fill="none" stroke="#21272c" stroke-linecap="round" stroke-width="6"></path></g>
+<g clip-path="url(#mouth-safe-area)" id="mouth-speak"><path d="m334 327 40 0 0 22q-20 22-40 0Z" fill="#141b20"></path><path d="m341 348 26 0-8 12-11-1Z" fill="#d88d7a"></path></g>
+<!-- Comisuras invertidas: boca de tristeza y enojo durante la voz. -->
+<g aria-label="Boca triste al hablar" id="mouth-speak-sad">
+<path d="M333 353 Q354 323 375 353 Q368 363 354 359 Q340 363 333 353Z" fill="#141b20"></path>
+<path d="M333 353 Q354 323 375 353" fill="none" stroke="#21272c" stroke-linecap="round" stroke-width="3.5"></path>
+<path d="M345 355 Q354 352 363 355 L359 359 350 359Z" fill="#d98d7b" opacity=".88"></path>
+</g>
+<g aria-label="Boca enojada al hablar" id="mouth-speak-angry">
+<path d="M333 348 Q354 330 375 348 L370 358 Q354 350 338 358Z" fill="#141b20"></path>
+<path d="M333 348 Q354 330 375 348" fill="none" stroke="#21272c" stroke-linecap="round" stroke-width="4.5"></path>
+<path d="M342 354 Q354 350 366 354" fill="none" opacity=".73" stroke="#d98d7b" stroke-width="2.6"></path>
+</g>
+<g id="tongue"><path d="m338 348 31-1-7 14-8 5-12-8Z" fill="#dc8176"></path></g>
+<g id="tears"><path d="M274 266 270 274 271 281 276 284 281 279 279 272Z" fill="#83d1dc"></path><path d="M438 267 443 275 442 282 438 285 433 280 435 273Z" fill="#83d1dc"></path></g>
+<g fill="#fff1c7" font-family="Arial,sans-serif" font-weight="900" id="sleep-marks"><text font-size="34" transform="rotate(-12 476 127)" x="476" y="127">Z</text><text font-size="24" transform="rotate(-12 511 100)" x="511" y="100">z</text></g>
+<g id="anger-mark" aria-label="Símbolo rojo de enojo"><text x="451" y="221" font-family="Noto Color Emoji, Apple Color Emoji, Segoe UI Emoji, sans-serif" font-size="54">💢</text></g>
+<g id="sweat-mark" transform="translate(-4 0)"><path d="m487 210 14-31 10 30-7 16-14-3Z" fill="#7bd0df"></path></g>
+<g aria-label="Confundido" id="question-mark"><text font-family="Trebuchet MS,system-ui,sans-serif" font-size="75" font-weight="900" paint-order="stroke" x="488" y="166" fill="#ffe5bb" stroke="#853f2d" stroke-width="5">?</text></g>
+<g aria-label="Roji imagina hojas y tallos de bambú" id="hunger-sign">
+<!-- Nube de pensamiento. -->
+<path d="M480 178 Q450 161 463 124 Q469 103 492 98 Q503 78 534 88 Q563 91 574 119 Q588 144 566 164 Q550 181 520 177 Q496 189 480 178Z" fill="#fffaf0" stroke="#cfb592" stroke-width="3.5"></path>
+<circle cx="470" cy="191" fill="#fffaf0" r="6" stroke="#cfb592" stroke-width="2"></circle>
+<circle cx="457" cy="203" fill="#fffaf0" r="3.5"></circle>
+<!-- Tarro facetado de cerámica con tapita, sello de panal y miel auténticamente dorada. -->
+<g id="bamboo-snack" transform="translate(0 0)"><g id="roji-bamboo-snack" transform="translate(1 1)">
+<path d="M513 159 517 112 526 109 523 160Z" fill="#44885b"></path>
+<path d="M518 115 526 109 523 160 519 161Z" fill="#87bd72"></path>
+<path d="M530 165 535 99 544 97 540 161Z" fill="#4c9560"></path>
+<path d="M535 99 544 97 540 161 536 163Z" fill="#9bd182"></path>
+<path d="M511 134 525 133 525 138 511 140Z M530 128 543 126 542 131 530 133Z M528 146 541 145 541 149 529 151Z" fill="#36784e"></path>
+<path d="M520 120 Q501 98 491 105 Q494 124 520 124Z" fill="#4a9664"></path>
+<path d="M522 133 Q549 104 558 115 Q555 134 522 138Z" fill="#368653"></path>
+<path d="M528 150 Q501 137 492 143 Q504 157 530 156Z" fill="#6ba966"></path>
+<path d="M534 112 Q547 93 561 98 Q559 117 534 117Z" fill="#79b46a"></path>
+</g></g></g>
+</g></g>
+<!-- Expresiones de acción, independientes del rostro normal. -->
+<g fill="none" id="clap-impact" stroke="#fff3bd" stroke-linecap="round" stroke-width="5"><path d="M352 474v-14M332 480l-12-10m51 10 12-10M352 517v12"></path></g>
+</g></g></g></g>
+<!-- V13 — PERFIL REAL A 90 GRADOS: cabeza y auriculares rediseñados.
+     Al cambiar a derecha se refleja horizontalmente EL MISMO dibujo: anatomía simétrica. -->
+<g id="side-view">
+<g id="side-locomotion">
+<g id="side-shape">
+<!-- Cola corta pero proporcionada: un muñón redondo facetado que
+        sobresale detrás de la cadera, sin parecer la cola de un mono. -->
+<g aria-label="Cola lateral tupida de panda rojo" id="side-tail"><g aria-label="Cola esponjosa con anillos" id="roji-side-tail"><defs><clipPath id="roji-side-tail-mask-v29"><path d="M435 428 C467 400 497 400 533 414 C566 424 595 441 621 444 C639 448 646 437 653 431 C667 433 673 451 662 470 C650 488 624 489 602 483 C574 474 546 447 520 446 C489 442 464 470 446 480Z"/></clipPath></defs>
+<path d="M435 428 C467 400 497 400 533 414 C566 424 595 441 621 444 C639 448 646 437 653 431 C667 433 673 451 662 470 C650 488 624 489 602 483 C574 474 546 447 520 446 C489 442 464 470 446 480Z" fill="#cb7841" stroke="#773a28" stroke-width="3.5" stroke-linejoin="round"/>
+<g clip-path="url(#roji-side-tail-mask-v29)" aria-label="Anillos alternados crema y rojizos, sin punta que parezca una oreja">
+<path d="M472 407 L492 409 L506 456 L484 474Z" fill="#f0bf87"/>
+<path d="M508 407 L529 407 L541 454 L519 453Z" fill="#913f30"/>
+<path d="M543 412 L562 423 L570 468 L550 456Z" fill="#f4ca96"/>
+<path d="M578 430 L599 442 L601 480 L580 470Z" fill="#99432f"/>
+<path d="M612 440 L632 441 L646 473 L624 480Z" fill="#f2c28b"/>
+<path d="M641 432 L655 427 L664 460 L651 470Z" fill="#853b30"/>
+<path d="M452 440 Q479 424 497 424 M513 426 Q533 418 550 437 M568 446 Q589 458 608 458" stroke="#f5c98d" stroke-width="4" opacity=".3" fill="none" stroke-linecap="round"/>
+</g></g></g>
+<!-- Brazo lejano queda tapado parcialmente por el cuerpo. -->
+<g id="side-far-arm"><g transform="translate(-46 0)">
+<path d="M423 354 441 354 453 373 460 421 453 464 434 477 416 465 407 410Z" fill="#30282a"></path>
+<path d="M423 354 441 354 449 390 409 413 407 410Z" fill="#49312c"></path>
+<path d="M428 455 450 449 453 464 434 477 419 465Z" fill="#5c3a32"></path>
+</g>
+</g>
+<!-- Pierna lejana: delgada en proyeccion lateral, casi superpuesta. -->
+<g id="side-far-leg">
+<path d="M368 467 412 469 426 516 412 541 379 547 353 524Z" fill="#30282a"></path>
+<path d="M368 467 412 469 417 514 369 527 353 524Z" fill="#49312c"></path>
+<g id="side-far-foot">
+<path d="M366 516 411 516 426 534 430 551 414 560 349 561 335 548 343 531Z" fill="#302728"></path>
+<path d="M366 516 411 516 426 534 377 540 343 531Z" fill="#644139"></path>
+<path d="M343 531 377 540 430 551 414 560 349 561 335 548Z" fill="#48322c"></path>
+<path d="M346 544 351 555M365 547 367 557" fill="none" opacity=".65" stroke="#141b20" stroke-width="2.8"></path>
+</g>
+</g>
+<!-- Cuerpo: la barriga BEIGE coincide con el borde anterior (izquierdo)
+        de la silueta; no queda franja marron delante de ella. -->
+<g id="side-torso">
+<!-- Silueta: pecho/vientre convexos, espalda más recta y angulosa.
+         La espalda no forma una esfera; desciende del hombro a la cadera. -->
+<path d="M310 352 367 326 422 342 449 372 462 410 462 467 454 499 433 526 370 540 307 526 281 505 261 475 253 434 260 395 277 365Z" fill="#30282a"></path>
+<path d="M310 352 367 326 363 428 253 434 260 395 277 365Z" fill="#49312c"></path>
+<path d="M367 326 422 342 449 372 363 428Z" fill="#5c3a32"></path>
+<path d="M449 372 462 410 462 467 363 428Z" fill="#211e20"></path>
+<path d="M253 434 363 428 370 540 307 526 281 505 261 475Z" fill="#3c2926"></path>
+<path d="M363 428 462 467 454 499 433 526 370 540Z" fill="#704533"></path>
+<!-- Barriga: curva anterior continua, sin franja marrón en el frente. -->
+<path d="M289 359 315 354 345 369 360 403 362 452 354 494 334 519 296 519 281 505 261 475 253 434 260 395 277 365Z" fill="#AE522E"></path>
+<path d="M289 359 315 354 307 422 253 434 260 395 277 365Z" fill="#D96F38"></path>
+<path d="M315 354 345 369 360 403 362 452 307 422Z" fill="#E18A4A"></path>
+<path d="M307 422 362 452 354 494 334 519 307 475Z" fill="#C86138"></path>
+<path d="M253 434 307 422 307 475 296 519 281 505 261 475Z" fill="#50332b"></path>
+</g>
+<!-- Pierna proxima centrada bajo el vientre y pie compacto de oso. -->
+<g id="side-near-leg">
+<path d="M317 469 370 468 383 511 372 548 333 553 305 529Z" fill="#30282a"></path>
+<path d="M317 469 370 468 369 512 317 528 305 529Z" fill="#49312c"></path>
+<path d="M317 528 369 512 383 511 372 548 333 553Z" fill="#5c3a32"></path>
+<g id="side-near-foot">
+<path d="M324 519 367 521 378 537 380 555 368 566 291 568 275 557 280 542 302 527Z" fill="#302728"></path>
+<path d="M324 519 367 521 378 537 332 546 280 542 302 527Z" fill="#644139"></path>
+<path d="M280 542 332 546 380 555 368 566 291 568 275 557Z" fill="#48322c"></path>
+<path d="M275 557 291 568 299 568 288 546 280 542Z" fill="#805742"></path>
+<path d="M293 550 296 562M310 552 312 564M326 553 329 565" fill="none" opacity=".64" stroke="#141b20" stroke-linecap="round" stroke-width="2.8"></path>
+</g>
+</g>
+<g id="side-near-arm"><g transform="translate(-34 0)">
+<path d="M389 358 411 354 432 366 445 389 447 423 435 464 417 488 389 494 367 479 359 450 366 398Z" fill="#30282a"></path>
+<path d="M389 358 411 354 432 366 437 396 431 419 362 421 366 398Z" fill="#49312c"></path>
+<path d="M362 421 431 419 447 423 435 464 417 488 389 494 367 479 359 450Z" fill="#5c3a32"></path>
+<path d="M377 467 413 464 425 477 416 492 393 499 370 489Z" fill="#211e20"></path>
+<path d="M377 467 413 464 425 477 394 490 370 489Z" fill="#3c2926"></path>
+</g>
+</g>
+<!-- Cabeza de perfil 90 grados: una sola cara lateral y un unico ojo. -->
+<g id="profile-head"><g id="profile-head-position" transform="translate(54 38) scale(.88)"><g id="roji-far-ear" opacity=".85"><path d="M335 160 Q335 126 347 111 Q362 100 377 131 L379 175Z" fill="#ffe5c6"></path><path d="M349 146 Q352 125 357 123 L370 146Z" fill="#b65d39"></path></g>
+
+<path d="M352 124 Q424 115 468 173 Q499 216 478 275 Q458 324 408 347 Q350 365 294 344 Q238 334 221 295 Q213 249 236 202 Q275 134 352 124Z" fill="#ED7934" stroke="#B95833" stroke-width="2"/>
+<path d="M234 214 303 143 352 125 340 240 219 270Z" fill="#FFA95B" opacity=".52"/>
+<path d="M352 125 Q431 119 471 183 L414 243 340 240Z" fill="#D86A31" opacity=".31"/>
+<path d="M226 278 Q249 265 278 281 L313 304 Q314 326 291 338 Q253 335 228 313Z" fill="#FFF1D9"/>
+<path d="M228 299 211 309 228 320 230 332 254 330Z" fill="#FFF1D9"/>
+<path d="M266 200 Q290 181 312 193 L318 203 Q291 198 279 215Z" fill="#FFE8C9"/>
+
+<g aria-label="Oreja de oso visible de perfil" id="side-near-ear"><path d="M383 151 Q382 117 395 101 Q410 87 430 114 L448 139 439 164Z" fill="#fff1df"/>
+<path d="M397 146 398 107 424 132 432 151Z" fill="#ba643a"></path>
+<path d="M403 140 407 121 423 138 428 150Z" fill="#e8ae74"></path></g>
+<!-- Oreja VISIBLE superpuesta al lateral del craneo: silueta circular perfecta. -->
+<!-- Mejilla, proyeccion frontal del craneo en color beige. -->
+<path d="M218 250 247 239 282 245 318 270 337 296 330 324 305 341 270 349 236 335 216 314 204 289 209 271Z" fill="#fae4ca"></path>
+<path d="M218 250 247 239 279 286 269 346 236 335 216 314 204 289 209 271Z" fill="#fff0d8"></path>
+<path d="M247 239 282 245 318 270 337 296 330 324 305 341 269 346 279 286Z" fill="#ead2b5"></path>
+<!-- Hocico compacto: el extremo solo sobresale ligeramente del cráneo.
+         Nariz y boca quedan en la punta, sin morro de perro ni proyección larga. -->
+<path d="M236 270 259 265 277 277 288 291 291 309 283 323 264 334 237 334 216 327 201 313 198 297 205 283 220 274Z" fill="#fff3df"></path>
+<path d="M236 270 259 265 259 286 262 333 237 334 216 327 201 313 198 297 205 283 220 274Z" fill="#fff6e6"></path>
+<path d="M259 265 277 277 288 291 291 309 283 323 264 334 262 333 259 286Z" fill="#edceb2"></path>
+<!-- Ojo único de perfil, sin cejas. -->
+<path d="M283 198 Q304 180 323 194 L326 205 308 199 292 207Z" fill="#fff2dd"/><g id="side-panda-eye-patch"><path d="M267 220 Q278 199 305 196 Q326 199 338 220 L327 245 309 262 277 256 259 243Z" fill="#fff0d7"/>
+<path d="M282 221 299 205 318 222 311 261 292 281 280 261Z" fill="#a75130"></path>
+<path d="M281 205 305 201 317 211 300 216Z" fill="#f9d7ab"></path></g><path d="M283 221 294 215 307 218 317 229 321 243 316 258 306 267 291 266 280 256 276 242 278 231Z" fill="#231b19" stroke="#596166" stroke-width="1.8"></path>
+<path d="M284 228 295 221 307 227 308 240 298 246 287 241Z" fill="#fff9ea"></path>
+<path d="M309 254 313 251 317 255 314 259 310 258Z" fill="#fff5e5"></path>
+<!-- Nariz de tamaño normal en el extremo frontal del hocico. -->
+<path d="M197 288 207 281 222 283 232 291 228 303 215 308 201 303 196 296Z" fill="#141b20"></path>
+<path d="M197 288 207 281 222 283 232 291 215 295Z" fill="#41494e"></path>
+<!-- Boca de perfil: la línea central bajo la nariz se bifurca en
+         dos comisuras pequeñas, siempre dentro del pelaje claro.
+         La vista derecha es un reflejo exacto de la izquierda. -->
+<g class="side-mouth-rest"><path d="M215 311 L215 316 M215 316 Q209 320 204 316 M215 316 Q225 323 235 316" fill="none" stroke="#21272c" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"></path></g>
+<g aria-label="Boca triste lateral hablando" class="side-speaking-sad">
+<path d="M203 320 Q215 304 228 320 Q215 330 203 320Z" fill="#141b20" stroke="#21272c" stroke-linejoin="round" stroke-width="2.2"></path>
+</g>
+<g aria-label="Boca enojada lateral hablando" class="side-speaking-angry">
+<path d="M203 319 Q215 307 228 319 L223 325 Q215 321 207 325Z" fill="#141b20" stroke="#21272c" stroke-linejoin="round" stroke-width="2.5"></path>
+</g>
+<g aria-label="Una sola boca lateral animada cuando tiene hambre y habla" class="side-speaking-hungry" style="display:none" transform-origin="center">
+<path d="M177 321 Q186 312 198 321 Q200 327 193 331 Q183 335 177 327Z" fill="#1e2528" stroke="#1e2528" stroke-linejoin="round" stroke-width="1.8"></path>
+</g>
+
+<!-- Copa proximal sobre el craneo, por delante del plano de la oreja. -->
+<!-- Rubor de timidez en perfil, ligado a la cabeza (visible en ambos lados). -->
+<g id="shy-profile-blush" pointer-events="none">
+<path d="M247 287 261 284 277 293 274 304 259 311 245 303Z" fill="#ed8493"></path>
+<path d="M247 287 261 284 274 293 256 297Z" fill="#ffd7d2" opacity=".3"></path>
+<path d="M259 311 274 304 277 293 269 306Z" fill="#c75971" opacity=".22"></path>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+ Espalda omitida: Roji solo gira a los lados para caminar. 
+</g>
+</svg></div>

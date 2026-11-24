@@ -455,6 +455,8 @@ function setVoicePlaybackStatus(status){
     muted:"La voz permanece en silencio durante Modo Clase o un silencio solicitado.",
     recording:"Terminá o descartá la muestra antes de probar una voz."};
   state.voicePlaybackStatus=status;
+  // Sync the speaking mouth for both approved and generated SVG avatars.
+  robot?.classList.toggle("speaking",status==="playing");
   window.ROBOTITO_APPROVED_AVATAR?.speak?.(status==="playing");
   uiSet($("#voicePlaybackStatus"),messages[status]??messages.failed);
   if($("#stopVoiceBtn"))$("#stopVoiceBtn").disabled=!state.speaking;
@@ -2292,7 +2294,26 @@ function applyAvatar(id,{persist=true}={}){
     robot.dataset.avatar=avatar.id;
     robot.dataset.speciesMotion=speciesProfile(avatar.id).motion||"bounce";
   }
-  $("#world")?.classList.toggle("panda-reference-world",avatar.id==="panda");
+  const avatarWorld=$("#world");
+  if(avatarWorld){
+    avatarWorld.classList.toggle("panda-reference-world",avatar.id==="panda");
+    avatarWorld.dataset.avatar=avatar.id;
+    // Distinct landscapes by species; the selected avatar's SVG stays unchanged.
+    const habitatGroups={
+      jungle:["iguana","chameleon","monkey","gorilla","panther","tiger","peacock","sloth"],
+      forest:["panda","red-panda","brown-bear","koala","squirrel","rabbit","fox","wolf","deer","owl","skunk","raccoon","hedgehog","beaver"],
+      polar:["polar-bear","penguin"],
+      wetland:["frog","turtle","crocodile","flamingo","swan","hippopotamus","otter"],
+      savanna:["lion","zebra","giraffe","elephant","kangaroo"],
+      meadow:["horse","cow","sheep","goat","pig"],
+      desert:["armadillo"],
+      ocean:["dolphin"],
+      fantasy:["dinosaur","unicorn"],
+      home:["dog","cat","hamster","mouse","robot"]
+    };
+    avatarWorld.dataset.habitat=Object.entries(habitatGroups)
+      .find(([,species])=>species.includes(avatar.id))?.[0]||"forest";
+  }
   setAvatarVisual($("#animalAvatarEmoji"),avatar,"avatar-main-svg");
   // No visible animal-species caption: the avatar art is its own presentation.
   setAvatarVisual($("#startupMascot"),avatar,"avatar-startup-svg");

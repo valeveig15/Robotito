@@ -1,0 +1,95 @@
+name: Avatar preview screenshots
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'previews/*.html'
+      - '.github/workflows/avatar-preview-screenshots.yml'
+permissions:
+  contents: write
+jobs:
+  capture:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Prepare Chromium without redundant browser download
+        run: |
+          npm ci --ignore-scripts
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "Using preinstalled Google Chrome"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - name: Capture actual SVG in browser
+        run: |
+          node <<'JS'
+          const {chromium}=require('playwright');
+          const path=require('path');
+          const fs=require('fs');
+          (async()=>{
+            const browser=await chromium.launch({headless:true,channel:fs.existsSync('/usr/bin/google-chrome')?'chrome':undefined});
+            const page=await browser.newPage({viewport:{width:1200,height:1100},deviceScaleFactor:1});
+            fs.mkdirSync('previews/captures',{recursive:true});
+            async function capture(name,file,states){
+              await page.goto('file://'+path.resolve('previews/'+file));
+              await page.locator('#stage-svg #avatar').waitFor();
+              await page.locator('button.btn[data-mood="triste"]').waitFor();
+              const frame=page.locator('.stage');
+              const required={
+                'michi-v31':['#mc-soft-head','#reference-face-idle image','#tail','#profile-head'],
+                'roji-v36':['#rj-soft-head','#reference-face-idle image','#roji-front-tail','#side-panda-eye-patch'],
+                'bobi-v35':['#bb-soft-head','#reference-face-idle image','#tail','#dog-profile-head-proportions'],
+                'igui-v24':['#ig-soft-head','#reference-face-idle image','#igui-front-tail','#profile-head-anatomy-v2']
+              };
+              for(const sel of required[name]||[]){
+                if(await page.locator('#stage-svg '+sel).count()!==1)throw new Error('Missing identity feature '+name+': '+sel);
+              }
+              if(await page.locator('#stage-svg #avatar').count()!==1)throw new Error('Missing true SVG: '+name);
+              await frame.screenshot({path:'previews/captures/'+name+'-frente.png',animations:'disabled'});
+              // Close-up of the authentic atlas face (not a regenerated vector face).
+              const portrait=page.locator('#portrait-toggle');
+              if(await portrait.count()){
+                await portrait.click();
+                await frame.screenshot({path:'previews/captures/'+name+'-rostro.png',animations:'disabled'});
+                await portrait.click();
+              }
+              await page.screenshot({path:'previews/captures/'+name+'-pagina.png',fullPage:true,animations:'disabled'});
+              for(const state of states){
+                await page.locator('button.btn[data-mood="'+state+'"]').click();
+                await frame.screenshot({path:'previews/captures/'+name+'-'+state+'.png',animations:'disabled'});
+              }
+              const stage=page.locator('#stage-svg');
+              await stage.evaluate(node=>node.dataset.view='perfil');
+              await frame.screenshot({path:'previews/captures/'+name+'-perfil.png',animations:'disabled'});
+              await stage.evaluate(node=>node.dataset.view='frente');
+            }
+            await capture('michi-v31','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
+            await capture('roji-v36','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('bobi-v35','bobi-review.html',['triste','enamorado','dormido','curioso']);
+            await capture('igui-v24','igui-review.html',['triste','enamorado','dormido','asustado']);
+            await browser.close();
+          })().catch(err=>{console.error(err);process.exit(1)});
+          JS
+      - name: Save screenshots in same review branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add previews/captures/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Capture four fidelity-refined animal avatars and profile views in Chromium"
+            git fetch origin "${{ github.event.pull_request.head.ref }}"
+            git rebase "origin/${{ github.event.pull_request.head.ref }}"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: michi-v31-roji-v36-bobi-v35-igui-v24-capture
+          path: previews/captures/*.png
