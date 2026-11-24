@@ -99,10 +99,10 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.shadow,true,"Grounded physical shadow "+id);
   // Stable markers from the user's own animal SVGs, not the generic species renderer.
   const identityChecks={
-    dog:["#bobi-head-v21","#bobi-neck-bridge","#bobi-single-muzzle","#bobi-left-toes","#bobi-right-toes","#tail"],
-    cat:["#michi-face-v17","#michi-single-pink-nose","#michi-whiskers"],
-    "red-panda":["#roji-head-refined","#panda-eye-patches","#roji-cream-bib","#roji-front-tail"],
-    iguana:["#head-anatomy-v2","#igui-attached-dewlap","#igui-tail-spines"]
+    dog:["#bb-soft-head","#reference-face-idle image","#tail","#dog-profile-head-proportions"],
+    cat:["#mc-soft-head","#reference-face-idle image","#tail","#michi-profile-head-lowered"],
+    "red-panda":["#rj-soft-head","#reference-face-idle image","#roji-front-tail","#side-panda-eye-patch"],
+    iguana:["#ig-soft-head","#reference-face-idle image","#igui-front-tail","#profile-head-anatomy-v2"]
   };
   if(identityChecks[id]){
     const identity=await page.evaluate(selectors=>{
@@ -112,6 +112,15 @@ runBrowserTest("p28-approved-avatars",async test=>{
     },identityChecks[id]);
     assert.ok(identity.found.every(n=>n===1),"Distinct user-approved animal features: "+id+" "+JSON.stringify(identity));
     assert.equal(identity.heads,1,"Never render a second underlying face: "+id);
+  }
+  if(["dog","cat","red-panda","iguana"].includes(id)){
+    const atlas=await page.evaluate(()=>{
+      const art=window.ROBOTITO_APPROVED_AVATAR.current;
+      return {moods:Object.keys(art.atlas||{}).length,
+       visible:(art.shadow.querySelector("#head #reference-face-idle image")?.getAttribute("href")||"").slice(0,22)};
+    });
+    assert.equal(atlas.moods,15,"Exactly 15 textured emotions: "+id);
+    assert.equal(atlas.visible,"data:image/webp;base64,","Image must be the user's original face atlas: "+id);
   }
   assert.ok(meta.polygons>150,"Not a simplified recolored stock avatar: "+id);
   assert.equal(meta.hasStyle,true);
