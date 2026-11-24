@@ -43,6 +43,15 @@ jobs:
               await page.locator('#stage-svg #avatar').waitFor();
               await page.locator('button.btn[data-mood="triste"]').waitFor();
               const frame=page.locator('.stage');
+              const required={
+                'michi-v22':['#michi-single-pink-nose','#michi-whiskers','#michi-cat-throat'],
+                'roji-v26':['#panda-eye-patches','#roji-cream-bib','#roji-front-tail'],
+                'bobi-v22':['#bobi-neck-bridge','#tail','#head'],
+                'igui-v11':['#igui-attached-dewlap','#igui-tail-spines','#eye-open']
+              };
+              for(const sel of required[name]||[]){
+                if(await page.locator('#stage-svg '+sel).count()!==1)throw new Error('Missing identity feature '+name+': '+sel);
+              }
               if(await page.locator('#stage-svg #avatar').count()!==1)throw new Error('Missing true SVG: '+name);
               await frame.screenshot({path:'previews/captures/'+name+'-frente.png',animations:'disabled'});
               await page.screenshot({path:'previews/captures/'+name+'-pagina.png',fullPage:true,animations:'disabled'});
@@ -50,11 +59,15 @@ jobs:
                 await page.locator('button.btn[data-mood="'+state+'"]').click();
                 await frame.screenshot({path:'previews/captures/'+name+'-'+state+'.png',animations:'disabled'});
               }
+              const stage=page.locator('#stage-svg');
+              await stage.evaluate(node=>node.dataset.view='perfil');
+              await frame.screenshot({path:'previews/captures/'+name+'-perfil.png',animations:'disabled'});
+              await stage.evaluate(node=>node.dataset.view='frente');
             }
-            await capture('michi-v21','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
-            await capture('roji-v25','roji-review.html',['triste','enamorado','dormido','confundido']);
-            await capture('bobi-v21','bobi-review.html',['triste','enamorado','dormido','curioso']);
-            await capture('igui-v10','igui-review.html',['triste','enamorado','dormido','asustado']);
+            await capture('michi-v22','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
+            await capture('roji-v26','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('bobi-v22','bobi-review.html',['triste','enamorado','dormido','curioso']);
+            await capture('igui-v11','igui-review.html',['triste','enamorado','dormido','asustado']);
             await browser.close();
           })().catch(err=>{console.error(err);process.exit(1)});
           JS
@@ -64,12 +77,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add previews/captures/*.png
           if ! git diff --cached --quiet; then
-            git commit -m "Capture Michi V21 Roji V2.5 Bobi V21 and Igui V10 in Chromium"
+            git commit -m "Capture four fidelity-refined animal avatars and profile views in Chromium"
             git fetch origin "${{ github.event.pull_request.head.ref }}"
             git rebase "origin/${{ github.event.pull_request.head.ref }}"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v21-roji-v25-bobi-v21-igui-v10-capture
+          name: michi-v22-roji-v26-bobi-v22-igui-v11-capture
           path: previews/captures/*.png
