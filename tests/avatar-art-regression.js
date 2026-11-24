@@ -44,7 +44,9 @@ assert.ok(redPanda.includes("avatar-tail-bushy"),"Roji retains striped panda tai
 const dog=fs.readFileSync(path.join(root,"assets/approved-avatars/dog.fragment.html"),"utf8");
 assert.ok(dog.includes('id="bobi-neck-bridge"'),"Bobi neck connects with torso");
 assert.ok(!dog.includes('M264 563v10M286 563v11'),"Bobi toes are shapes, not sketch lines");
-assert.equal(count(dog,/m300 277 45-14 55 9 34 31-19 43-47 22-51-12-28-27Z/g),1,"no duplicate Bobi snout polygon");
+assert.equal(count(dog,/id="bobi-single-muzzle"/g),1,"Bobi has one cream muzzle, not a second face");
+assert.equal(count(dog,/id="bobi-left-toes"/g),1,"Bobi left toes are rounded shapes");
+assert.equal(count(dog,/id="bobi-right-toes"/g),1,"Bobi right toes are rounded shapes");
 const bridge=fs.readFileSync(path.join(root,"approved-avatar-bridge.js"),"utf8");
 assert.ok(bridge.includes('setAttribute("preserveAspectRatio","xMidYMid meet")'),"show whole approved avatar");
 assert.ok(bridge.includes("approvedTearFall"),"approved tears fall");
