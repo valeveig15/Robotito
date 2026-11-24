@@ -45,7 +45,7 @@ jobs:
               const frame=page.locator('.stage');
               const required={
                 'michi-v24':['#michi-single-pink-nose','#michi-whiskers','#michi-cat-throat'],
-                'roji-v29':['#panda-eye-patches','#roji-cream-bib','#roji-front-tail','#roji-front-tail-mask-v29'],
+                'roji-v210':['#panda-eye-patches','#roji-cream-bib','#roji-front-tail','#roji-front-tail-mask-v29'],
                 'bobi-v25':['#bobi-neck-bridge','#bobi-single-muzzle','#bobi-left-toes','#bobi-right-toes','#tail','#head'],
                 'igui-v13':['#igui-attached-dewlap','#igui-tail-spines','#igui-cheek-scales','#eye-open']
               };
@@ -65,7 +65,7 @@ jobs:
               await stage.evaluate(node=>node.dataset.view='frente');
             }
             await capture('michi-v24','michi-review.html',['triste','enamorado','dormido','enojado','curioso']);
-            await capture('roji-v29','roji-review.html',['triste','enamorado','dormido','confundido']);
+            await capture('roji-v210','roji-review.html',['triste','enamorado','dormido','confundido']);
             await capture('bobi-v25','bobi-review.html',['triste','enamorado','dormido','curioso']);
             await capture('igui-v13','igui-review.html',['triste','enamorado','dormido','asustado']);
             await browser.close();
@@ -84,5 +84,5 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: michi-v24-roji-v29-bobi-v25-igui-v13-capture
+          name: michi-v24-roji-v210-bobi-v25-igui-v13-capture
           path: previews/captures/*.png
