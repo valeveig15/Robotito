@@ -14,9 +14,9 @@
     "polar-bear":a("#f4fbff","#ffffff","#b9d8e8","mammal","round","small"),
     "dog":a("#c98550","#f2c08d","#6b3f2d","mammal","floppy","wag","patch"),
     "monkey":a("#8c5a3c","#e6b982","#563523","primate","round","curl"),
-    "cat":a("#8c8792","#d8d2da","#4e4655","mammal","point","long","forehead"),
-    "red-panda":a("#b94d2e","#f3c79f","#482a28","mammal","point","bushy","mask"),
-    "iguana":a("#66a65c","#b8d990","#315f3c","reptile","none","long","scales"),
+    "cat":a("#ed922f","#ffeac6","#9d5c2f","mammal","point","long","forehead"),
+    "red-panda":a("#e46a30","#fff0d5","#64392c","mammal","point","bushy","mask"),
+    "iguana":a("#82cd2a","#b8e64b","#458526","reptile","none","long","scales"),
     "chameleon":a("#62b77b","#b8e3a4","#315f4d","reptile","crest","curl","scales"),
     "armadillo":a("#a56e54","#d0a17b","#63483c","mammal","small","long","shell"),
     "penguin":a("#303744","#f7f8fa","#f0a43c","bird","none","feather","tuxedo"),
@@ -259,9 +259,12 @@
   }
 
   function polishedRender(avatar,extraClass){
-    const svg=render(avatar,extraClass);
-    if(!svg)return svg;
-    const p=profiles[avatar&&avatar.id]||profiles.panda;
+    const original=render(avatar,extraClass);
+    if(!original)return original;
+    const id=avatar&&avatar.id;
+    const programmed=window.ROBOTITO_FACE_PROGRAM?.compact?.(id)||"";
+    const svg=programmed?original.replace(/<g class="avatar-eye-group avatar-eye-left">[\s\S]*?<path class="avatar-tongue tongue-svg"[^>]*\/>/,programmed):original;
+    const p=profiles[id]||profiles.panda;
     const bodyFacets='<g class="avatar-facets avatar-body-facets" pointer-events="none"><path d="M66 145 109 125 95 178 61 187Z" fill="#fff"/><path d="m109 125 47 25-28 31-33-3Z" fill="'+p.accent+'"/><path d="m61 187 34-9 15 57-43-23Z" fill="'+p.belly+'"/><path d="m128 181 28-31 7 58-53 27Z" fill="'+p.accent+'"/></g>';
     const headFacets='<g class="avatar-facets avatar-head-facets" pointer-events="none"><path d="m51 64 37-35 18 48-50 17Z" fill="#fff"/><path d="m88 29 31-5-13 53Z" fill="'+p.belly+'"/><path d="m119 24 48 39-32 18-29-4Z" fill="'+p.accent+'"/><path d="m56 94 50-17 4 61-42-17Z" fill="'+p.body+'"/><path d="m106 77 29 4 28 39-53 18Z" fill="'+p.belly+'"/></g>';
     return svg
