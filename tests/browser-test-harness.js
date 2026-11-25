@@ -27,11 +27,12 @@ async function startServer(){
 async function runBrowserTest(suite,run,{
   engineName=process.env.ROBOTITO_BROWSER_ENGINE||"chromium",seed=process.env.ROBOTITO_TEST_SEED||"17",
   directory=process.env.ROBOTITO_TEST_ARTIFACT_DIR||path.join(root,"test-results"),
-  viewport={width:1280,height:900},timeoutMs=180000,persistentProfile=false
+  viewport={width:1280,height:900},timeoutMs=180000,cleanupTimeoutMs=30000,persistentProfile=false
 }={}){
   if(!/^[a-z0-9-]+$/.test(suite))throw Error("Invalid browser suite name");
   if(!["chromium","firefox","webkit"].includes(engineName))throw Error("Unsupported browser engine: "+engineName);
   if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1)throw Error("Invalid browser suite timeout");
+  if(!Number.isSafeInteger(cleanupTimeoutMs)||cleanupTimeoutMs<1)throw Error("Invalid browser cleanup timeout");
   const basename=suite+"-"+engineName+"-"+hashSeed(seed);
   const report={suite,engine:engineName,seed,status:"running",physicalHardware:false,
     externalResources:"stubbed",startedAt:new Date().toISOString(),activeCase:{phase:"setup"},
@@ -46,10 +47,11 @@ async function runBrowserTest(suite,run,{
   };
   const forceShutdown=()=>{
     if(forcedExit)return;
+    report.cleanup={stage:"starting",startedAt:new Date().toISOString(),timeoutMs:cleanupTimeoutMs};
     forcedExit=setTimeout(()=>{
-      report.status="failed";report.cleanupError="Browser did not close within 10 seconds";
+      report.status="failed";report.cleanupError="Browser cleanup exceeded "+cleanupTimeoutMs+" ms during "+report.cleanup.stage;
       persist();process.exit(1);
-    },10000);
+    },cleanupTimeoutMs);
     forcedExit.unref();
   };
   let rejectDeadline;
@@ -104,14 +106,18 @@ async function runBrowserTest(suite,run,{
     clearTimeout(deadline);
     persist();forceShutdown();
     if(context){
+      report.cleanup.stage="trace";
       try{
         const trace=report.status==="failed"?path.join(directory,basename+"-trace.zip"):undefined;
         await context.tracing.stop(trace?{path:trace}:{});
         if(trace)report.artifacts.trace=path.basename(trace);
       }catch(e){report.traceError=String(e.message);}
     }
-    try{await context?.close();await browser?.close();}catch(e){error=error||e;report.status="failed";report.cleanupError=String(e);}
+    try{report.cleanup.stage="context";await context?.close();report.cleanup.stage="browser";await browser?.close();}
+    catch(e){error=error||e;report.status="failed";report.cleanupError=String(e);}
+    report.cleanup.stage="server";
     await server?.close();
+    report.cleanup.stage="complete";report.cleanup.elapsedMs=Date.now()-Date.parse(report.cleanup.startedAt);
     clearTimeout(forcedExit);persist();
   }
   if(error)throw error;
