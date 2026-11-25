@@ -1,6 +1,6 @@
 # P12 — Modo Clase: grabación, silencio y recuperación
 
-Revisión: 23/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176). **Recorrido de software implementado y comprobado; duración prolongada y hardware físico pendientes.** Ver [P01-P12-AUDIT.md](P01-P12-AUDIT.md).
+Revisión: 25/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176). **Recorrido de software implementado y comprobado; duración prolongada y hardware físico pendientes.** Ver [P01-P12-AUDIT.md](P01-P12-AUDIT.md).
 
 ## Funcionalidad y correcciones
 
@@ -21,10 +21,12 @@ Revisión: 23/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176
 | Suite | Evidencia |
 | --- | --- |
 | `tests/p12-class-recovery-browser.js` | 20 comprobaciones: secuencia, propietario, recarga, reserva entre pestañas, fallo transaccional, respaldo, anonimato, eliminación y migración. |
-| `tests/p12-class-capture-browser.js` | 11 comprobaciones: MediaRecorder real con señal generada, escritura sin conexión, recarga/reproducción, cuota fallida, prefijo parcial, eventos tardíos y liberación de pistas. |
+| `tests/p12-class-capture-browser.js` | Cuatro comprobaciones de captura nativa, escritura sin conexión y recarga/reproducción, más siete de fallos provocados de cuota/grabador y liberación de pistas. Si falta MediaRecorder en WebKit/Linux, verifica cuatro condiciones de rechazo seguro en lugar de afirmar captura nativa. |
 | P04, P07, P10/P11 y P05 | Cancelación, privacidad de audios, backup/migración, silencio de clase, reproducción y seis idiomas. |
 
 La señal proviene de AudioContext, sin micrófono físico ni voz humana. Los fallos de cuota son provocados; no equivalen a un corte eléctrico. Un motor de navegador no certifica el sistema operativo móvil correspondiente.
+
+El WebKit 26.0 para Linux usado por Playwright 1.56.1 no expone MediaRecorder: se comprobó tanto en localhost seguro como en los artefactos de CI. En ese entorno se exige respuesta `unsupported`, ausencia de archivos/fragmentos, grabador inactivo y conservación de la pista compartida. El informe JSON distingue `nativeCapture: unavailable` de las pruebas efectivamente aprobadas. Chromium, Firefox y el job separado `webkit-native-class` en macOS exigen la API nativa; si falta, fallan. Los fallos de almacenamiento se prueban con un grabador simulado y se identifican por separado. Esta matriz no certifica Safari/iPhone físicos.
 
 La migración de fragmentos antiguos con Blob se prueba en un perfil normal descartable, separado de cualquier perfil personal. Las grabaciones nuevas guardan ArrayBuffer en IndexedDB. El recorrido real de captura incluye una interacción de usuario antes de iniciar audio y volver a reproducirlo.
 

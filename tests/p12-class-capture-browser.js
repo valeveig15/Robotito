@@ -10,17 +10,26 @@ runBrowserTest("p12-class-capture",async test=>{
   await page.locator('[data-tab="class"]').click();
  };
  await activate();
+ const nativeRecorder=await page.evaluate(()=>typeof window.MediaRecorder==="function");
+ test.report.capabilities={mediaRecorder:nativeRecorder};
+ // The pinned Linux WebKit build exposes no MediaRecorder, even on localhost.
+ // Exercise its real unsupported path; require native capture on other hosts,
+ // including the separate WebKit/macOS CI job. Never substitute a fake here.
+ assert.ok(nativeRecorder||(test.engineName==="webkit"&&process.platform==="linux"),"Native MediaRecorder unexpectedly unavailable");
+ test.report.nativeCapture={status:nativeRecorder?"pending":"unavailable",checks:0};
  test.phase("actual-media-recorder-offline");
- await page.evaluate(async()=>{
+ await page.evaluate(async nativeRecorder=>{
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
-  window.auditAudioContext=new AudioContext();await auditAudioContext.resume();
+  window.auditAudioContext=new AudioContext();if(nativeRecorder)await auditAudioContext.resume();
   const oscillator=auditAudioContext.createOscillator(),destination=auditAudioContext.createMediaStreamDestination();
   oscillator.connect(destination);oscillator.start();state.stream=destination.stream;
   state.started=true;state.captureEpoch=1;state.captureRevision=1;state.captureSuspended=false;
- });
+ },nativeRecorder);
  test.phase("offline-recording-start");
  await context.setOffline(true);
- assert.equal(await page.evaluate(async()=>(await ROBOTITO_CLASS_AUDIO.start("Physics","Waves","actual-session")).ok),true);checks++;
+ const started=await page.evaluate(()=>ROBOTITO_CLASS_AUDIO.start("Physics","Waves","actual-session"));
+ if(nativeRecorder){
+ assert.equal(started.ok,true,JSON.stringify(started));checks++;
  await page.waitForTimeout(1800);
  test.phase("finish-offline-recording");
  const recorded=await page.evaluate(async()=>{
@@ -38,6 +47,23 @@ runBrowserTest("p12-class-capture",async test=>{
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();await ROBOTITO_CLASS_AUDIO.render();
   const player=document.querySelector("#classRecordingsList audio");await player.play();const played=!player.paused;player.pause();return played;
  });assert.equal(replay,true);checks++;
+ test.report.nativeCapture={status:"passed",checks:4};
+ }else{
+ test.phase("native-recorder-unavailable");
+ assert.deepEqual(started,{ok:false,reason:"unsupported"});checks++;
+ const unsupported=await page.evaluate(async()=>({
+  busy:ROBOTITO_CLASS_AUDIO.isBusy(),recording:ROBOTITO_CLASS_AUDIO.isRecording(),
+  pending:(await ROBOTITO_CLASS_JOURNAL.list("Ada")).length,
+  saved:(await ROBOTITO_CLASS_AUDIO.listRecordings()).length,
+  live:state.stream.getTracks().every(track=>track.readyState==="live")
+ }));
+ assert.deepEqual({busy:unsupported.busy,recording:unsupported.recording},{busy:false,recording:false});checks++;
+ assert.deepEqual({pending:unsupported.pending,saved:unsupported.saved},{pending:0,saved:0});checks++;
+ assert.equal(unsupported.live,true);checks++;
+ test.report.unsupportedCapture={status:"passed",checks:4,reason:"MediaRecorder absent in this browser build"};
+ await page.evaluate(async()=>{state.stream.getTracks().forEach(track=>track.stop());await auditAudioContext.close();});
+ await context.setOffline(false);
+ }
  test.phase("storage-failure-and-track-cleanup");
  checks+=await page.evaluate(async()=>{
   let checks=0;const check=(ok,msg)=>{if(!ok)throw Error(msg);checks++;};
@@ -66,5 +92,6 @@ runBrowserTest("p12-class-capture",async test=>{
   check(state.stream.getTracks().every(track=>track.readyState==="live"),"Recorder failure does not stop Robotito's shared microphone");
   window.MediaRecorder=real;state.started=false;state.stream.getTracks().forEach(track=>track.stop());state.stream=null;await ctx.close();return checks;
  });
- test.report.checks=checks;console.log("P12 actual MediaRecorder, offline storage, replay and failure cleanup:",checks,"checks; generated audio only");
+ test.report.checks=checks;test.report.simulatedFailureChecks=7;
+ console.log("P12",nativeRecorder?"native recording/offline/replay":"unsupported native recorder", "and simulated storage/track failures:",checks,"checks; generated audio only");
 }).catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,6 +1,6 @@
 # Robotito — revisión de los puntos 1 al 12
 
-Fecha: 23/11/2026. Fuente: `Robotito_82_pedidos_completos-1.docx` y pedido expreso de revisar los doce puntos. Cambios: [PR #176](https://github.com/valeveig15/Robotito/pull/176).
+Fecha: 25/11/2026. Fuente: `Robotito_82_pedidos_completos-1.docx` y pedido expreso de revisar los doce puntos. Cambios: [PR #176](https://github.com/valeveig15/Robotito/pull/176).
 
 Se revisaron código, integración, datos, documentación y pruebas de cada punto. Se corrigieron fallos concretos en traducción de recordatorios, aislamiento de audios, reproducción por fecha, reglas y recuperación de clases interrumpidas. Los doce puntos **no se declaran completamente certificados**: varias condiciones requieren personas, corpus independientes, modelos disponibles y dispositivos físicos.
 
@@ -30,10 +30,10 @@ Se revisaron código, integración, datos, documentación y pruebas de cada punt
 | `npm run test:p05:browser` | Recordatorios en seis idiomas y texto literal sin inyección HTML. |
 | `npm run test:p07:browser` | Memoria, backup binario, migración, transacciones, propietario y privacidad de audio. |
 | `npm run test:p10-p11` / `npm run test:p10-p11:browser` | Autorización/reproducción, gestión, prioridades, condiciones, silencio de clase y dos pestañas. |
-| `npm run test:p12:browser` | 20 comprobaciones de recuperación y 11 de captura de señal generada, fallos y reproducción. |
-| CI `cross-browser.yml` | Matrices, suites extendidas y permisos en Firefox/WebKit; Chromium en regresión. |
+| `npm run test:p12:browser` | 20 comprobaciones de recuperación; cuatro de captura nativa/reproducción o rechazo seguro si falta la API en WebKit/Linux, y siete de fallos provocados. El informe distingue cada recorrido. |
+| CI `cross-browser.yml` | Matrices, suites extendidas y permisos en Firefox/WebKit; grabación nativa WebKit en macOS; Chromium en regresión. |
 
-Las verificaciones focalizadas se ejecutaron durante cada incremento. La batería completa `npm run test:ci` pasó localmente el 23/11/2026, incluida la corrección de la prueba antigua que permitía borrar audio sin atribuir desde otro historial. Los resultados definitivos de integración son los checks asociados al **HEAD final** del [PR #176](https://github.com/valeveig15/Robotito/pull/176/checks); un resultado de un commit anterior no autoriza integrar uno nuevo. No se suman aserciones repetidas como participantes, frases independientes u horas grabadas.
+Las verificaciones focalizadas se ejecutaron durante cada incremento. La batería completa `npm run test:ci` pasó localmente el 24/11/2026, incluida la corrección de la prueba antigua que permitía borrar audio sin atribuir desde otro historial. La revisión del 25/11 añade regresión de cierre bloqueado y distingue la ausencia de MediaRecorder en WebKit/Linux; el job macOS exige grabación nativa. Los resultados definitivos de integración son los checks asociados al **HEAD final** del [PR #176](https://github.com/valeveig15/Robotito/pull/176/checks); un resultado de un commit anterior no autoriza integrar uno nuevo. No se suman aserciones repetidas como participantes, frases independientes u horas grabadas.
 
 ## Compatibilidad y condiciones conservadas
 
