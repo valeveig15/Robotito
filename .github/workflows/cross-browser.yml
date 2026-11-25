@@ -66,7 +66,7 @@ jobs:
   webkit-native-class:
     # Linux WebKit 26.0 has no MediaRecorder. Require real encoding/replay on
     # Apple's media stack too; a missing native API fails this job explicitly.
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 10
     env:
       ROBOTITO_BROWSER_ENGINE: webkit
