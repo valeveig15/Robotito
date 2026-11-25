@@ -50,6 +50,9 @@ function paintApproved(stage,id){
  muzzle.innerHTML=approvedMuzzle(c,id);
  smile.parentNode.insertBefore(muzzle,smile);
  assign(nodes["eye-open"],approvedEyes(c));
+ // Heart and star eye layers are children of eye-open in legacy SVG; reattach them
+ // after redrawing the base eyes so that emotion changes still work.
+ nodes["eye-open"].append(nodes["heart-eyes"],nodes["star-eyes"]);
  assign(nodes["eye-closed"],
   '<path d="M270 242Q294 259 318 242M390 242Q414 259 438 242" fill="none" stroke="'+c.line+'" stroke-width="6.6" stroke-linecap="round"/>');
  assign(nodes["heart-eyes"],'<path d="M294 253 275 237Q270 226 280 224Q289 222 294 232Q303 219 312 225Q321 234 311 244Z" fill="#fb718c"/>'
