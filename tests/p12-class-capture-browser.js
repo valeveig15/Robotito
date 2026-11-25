@@ -17,11 +17,21 @@ runBrowserTest("p12-class-capture",async test=>{
  // including the separate WebKit/macOS CI job. Never substitute a fake here.
  assert.ok(nativeRecorder||(test.engineName==="webkit"&&process.platform==="linux"),"Native MediaRecorder unexpectedly unavailable");
  test.report.nativeCapture={status:nativeRecorder?"pending":"unavailable",checks:0};
+ if(nativeRecorder)await page.evaluate(()=>{
+  const start=MediaRecorder.prototype.start;window.auditNativeEvents=[];
+  MediaRecorder.prototype.start=function(...args){
+   window.auditNativeRecorder=this;
+   this.addEventListener("dataavailable",event=>auditNativeEvents.push({event:"data",bytes:event.data.size,type:event.data.type}));
+   this.addEventListener("error",event=>auditNativeEvents.push({event:"error",name:event.error?.name,message:event.error?.message}));
+   return start.apply(this,args);
+  };
+ });
  test.phase("actual-media-recorder-offline");
  await page.evaluate(async nativeRecorder=>{
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();
   window.auditAudioContext=new AudioContext();if(nativeRecorder)await auditAudioContext.resume();
   const oscillator=auditAudioContext.createOscillator(),destination=auditAudioContext.createMediaStreamDestination();
+  window.auditOscillator=oscillator;
   oscillator.connect(destination);oscillator.start();state.stream=destination.stream;
   state.started=true;state.captureEpoch=1;state.captureRevision=1;state.captureSuspended=false;
  },nativeRecorder);
@@ -30,14 +40,44 @@ runBrowserTest("p12-class-capture",async test=>{
  const started=await page.evaluate(()=>ROBOTITO_CLASS_AUDIO.start("Physics","Waves","actual-session"));
  if(nativeRecorder){
  assert.equal(started.ok,true,JSON.stringify(started));checks++;
+ const clockAtStart=await page.evaluate(()=>auditAudioContext.currentTime);
  await page.waitForTimeout(1800);
  test.phase("finish-offline-recording");
+ test.report.captureInput=await page.evaluate(()=>({clock:auditAudioContext.currentTime,contextState:auditAudioContext.state,sampleRate:auditAudioContext.sampleRate,
+  recorderState:auditNativeRecorder.state,mimeType:auditNativeRecorder.mimeType,events:auditNativeEvents.slice(),
+  tracks:state.stream.getTracks().map(track=>({kind:track.kind,readyState:track.readyState,muted:track.muted,enabled:track.enabled,settings:track.getSettings()}))}));
+ test.report.captureInput.clockAtStart=clockAtStart;
  const recorded=await page.evaluate(async()=>{
   const row=await ROBOTITO_CLASS_AUDIO.stop();
   return {complete:row?.complete,bytes:row?.size,owner:row?.owner,session:row?.sessionId,
    live:state.stream.getTracks().every(track=>track.readyState==="live"),pending:(await ROBOTITO_CLASS_JOURNAL.list("Ada")).length};
  });
- assert.ok(recorded.bytes>100);checks++;
+ test.report.captureOutput={...recorded,events:await page.evaluate(()=>auditNativeEvents)};
+ if(!(recorded.bytes>100)){
+  // Keep the original failure, but compare native codecs with and without a
+  // muted output branch so CI evidence identifies input-clock/encoder faults.
+  test.report.nativeProbe=await page.evaluate(async()=>{
+   const results=[];let sink;
+   for(const connectOutput of [false,true]){
+    if(connectOutput){sink=auditAudioContext.createGain();sink.gain.value=0;auditOscillator.connect(sink);sink.connect(auditAudioContext.destination);}
+    for(const mimeType of ["audio/webm;codecs=opus","audio/mp4",""]){
+     if(mimeType&&!MediaRecorder.isTypeSupported(mimeType))continue;
+     const row={mimeType,connectOutput,clockStart:auditAudioContext.currentTime,bytes:0,events:[]};results.push(row);
+     let recorder;
+     try{
+      recorder=new MediaRecorder(state.stream,mimeType?{mimeType}:undefined);
+      recorder.ondataavailable=event=>{row.bytes+=event.data.size;row.events.push({bytes:event.data.size,type:event.data.type});};
+      recorder.onerror=event=>{row.error=event.error?.name+": "+event.error?.message;};
+      recorder.start(1500);await new Promise(resolve=>setTimeout(resolve,2000));
+      await new Promise(resolve=>{let timer=setTimeout(resolve,3000);recorder.onstop=()=>{clearTimeout(timer);resolve();};recorder.stop();});
+     }catch(error){row.error=String(error);}
+     row.clockEnd=auditAudioContext.currentTime;
+    }
+   }
+   sink?.disconnect();return results;
+  });
+ }
+ assert.ok(recorded.bytes>100,JSON.stringify({input:test.report.captureInput,output:test.report.captureOutput,probe:test.report.nativeProbe}));checks++;
  assert.deepEqual({...recorded,bytes:0},{complete:true,bytes:0,owner:"Ada",session:"actual-session",live:true,pending:0});checks++;
  await context.setOffline(false);
  test.phase("reload-and-replay");
