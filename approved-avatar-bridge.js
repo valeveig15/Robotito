@@ -146,6 +146,9 @@ async function activate(id,{mood="calm",language="es"}={}){
   shadow.appendChild(overrides);
   const stage=shadow.querySelector("#stage-svg"),avatar=shadow.querySelector("#avatar");
   if(!stage||!avatar)throw new Error("Invalid approved avatar "+id);
+  // Replace original facial features with editable SVG paths, retaining the approved world and body.
+  if(!window.ROBOTITO_FACE_PROGRAM?.paintApproved?.(stage,id))
+   throw new Error("Procedural face unavailable "+id);
   stage.setAttribute("aria-hidden","true");
   const robot=getRobot();
   host.setAttribute("aria-label",robot?.getAttribute("aria-label")||"Robotito");
