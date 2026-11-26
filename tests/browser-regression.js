@@ -482,8 +482,14 @@ const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
       if(!migrated||migrated.type!=="audios")throw new Error("Legacy audio migration failed");
       const bytesAfter=new Uint8Array(await (await store.getBlob(migrated.blobId)).arrayBuffer());
       if(bytesAfter.join(",")!=="11,22,33,44,55")throw new Error("Legacy audio was modified");
-      await window.ROBOTITO_CLASS_AUDIO.removeRecording(recordId);
-      if(await store.getRecord("class-audio:"+recordId))throw new Error("Audio delete failed");
+      let rejected=false;
+      try{await window.ROBOTITO_CLASS_AUDIO.removeRecording(recordId);}catch{rejected=true;}
+      if(!rejected||migrated.owner!=="legacy:unassigned"||!await store.getRecord(migrated.id))
+        throw new Error("Current history must not delete unassigned legacy audio");
+      // Remove only this fixture through the explicitly scoped storage API.
+      await store.editRecord(migrated.id,{owner:migrated.owner,expectedVersion:migrated.version,remove:true});
+      if(await store.getRecord(migrated.id)||await store.getBlob(migrated.blobId))
+        throw new Error("Scoped audio delete must remove metadata and bytes");
       return {records:210,languages:languages.length};
     });
     console.log("Robotito browser IndexedDB integration:",JSON.stringify(integration));

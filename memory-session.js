@@ -112,7 +112,7 @@ async function render(){
  const current=owner(),epoch=generation,requested=viewLegacy?"legacy:unassigned":current;
  label(byId("memoryOwner"),viewLegacy?"Archivo anterior sin atribuir (solo lectura)":store.isEphemeral(current)?"Sesión temporal: se descarta al recargar o cambiar de visitante.":current.startsWith("visitor:")?"Visitante con consentimiento: historial pseudónimo, identidad sin confirmar.":"Historial de {name}",{name:current});
  const type=byId("memoryType")?.value||"memories",rootList=byId("memoryList");if(!rootList)return;
- const rows=await store.queryRecords({owner:requested,type,limit:Infinity});
+ const rows=(await store.queryRecords({owner:requested,type,limit:Infinity})).filter(row=>!["class-recorder-draft","class-recorder-part"].includes(row.source));
  if(current!==owner()||epoch!==generation||requested!==(viewLegacy?"legacy:unassigned":owner()))return;
  rootList.replaceChildren();
  if(!rows.length){const empty=document.createElement("p");label(empty,"No hay registros en este historial y categoría.");rootList.append(empty);}

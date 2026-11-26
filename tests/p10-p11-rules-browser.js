@@ -43,7 +43,7 @@ runBrowserTest("p10-p11-rules",async test=>{
  assert.ok(typeof state.triggers==="string");
  test.phase("p10-p11-ui-cancel");
  await page.locator("#temporalRuleList .memory-row").first()
-  .locator("button").click();
+  .locator("button.danger").click();
  await page.waitForFunction(()=>document.querySelectorAll("#temporalRuleList .memory-row").length===1);
  assert.equal(await page.locator("#temporalRuleList .memory-row").count(),1);
  test.phase("p10-p11-safe-headless");

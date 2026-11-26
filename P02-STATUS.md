@@ -38,6 +38,7 @@ La batería completa `npm run test:ci` pasó en Chromium. Las pruebas nuevas ver
 - 3.600 turnos con contexto máximo de 20 entradas y 2.500 recuerdos reales de IndexedDB que sobreviven a recarga y se eliminan correctamente.
 - Nueve muestras de preparación de la aplicación en tres tamaños; p50/p95/máximo se conservan en JSON como tiempos de CI, sin extrapolarlos a teléfonos físicos.
 - El propio ejecutor fue probado con un fallo intencional y un plazo vencido; ambos conservan estado de error y cierran el servidor.
+- Revisión del 25/11: el cierre de trazas, contexto, navegador y servidor tiene un plazo independiente de 30 segundos y registra la etapa y duración. El límite de ejecución de cada suite no cambia. Una regresión provoca un bloqueo de la traza después de pasar el cuerpo de la prueba y exige salida fallida; nunca se conserva un verde si el cierre queda atascado.
 
 **Las doce horas son tiempo simulado en una prueba acelerada**, no doce horas de navegador abierto. La red, la visibilidad y parte de las capacidades de voz/permisos se simulan. No hay micrófonos, cámaras, personas reales ni certificación de precisión acústica en estas cifras. La CI exige aprobación de Chromium, Firefox y WebKit en el HEAD que se integra; no permite omitir las comprobaciones por diferencias entre motores.
 

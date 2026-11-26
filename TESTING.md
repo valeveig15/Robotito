@@ -4,13 +4,18 @@
 
 - `npm test`: core regression, planner checks and three seeded generative matrices.
 - `npm run test:browser`: Chromium integration, IndexedDB binary migration, source contracts and four responsive viewports.
-- `npm run test:ci`: both suites.
+- `npm run test:ci`: Node regression, Chromium integration, generated matrices and all registered feature browser suites.
+- `npm run test:p12:browser`: recoverable class audio in IndexedDB, reload/privacy/quota faults and real MediaRecorder with generated audio. Linux WebKit without MediaRecorder must reject capture without creating data; reports mark native capture unavailable. Chromium, Firefox and the separate macOS WebKit job require native capture/replay. Storage/recorder fault injection remains explicitly simulated.
 - `npm run test:semantic`: structured semantic-frame and legacy-adapter regression.
 - `npm run test:audio`: temporal acoustic classification, uncertain-event abstention and avatar-reaction regression.
 - `ROBOTITO_TEST_SEED=123 npm run test:universal`: reproduce a specific generative run.
 - `ROBOTITO_TEST_SEED=42 npm run test:browser:scenarios`: reproduce real Chromium fault, viewport and audio-state combinations.
 
 GitHub Actions runs the checks for pushes and pull requests. The browser scenario suite also covers simulated denied microphone permission and rejected/unavailable capture, offline IndexedDB round trips, hidden-tab interruptions, class/mute audio suppression and mobile layout under combined simulated faults. Historical regression entries can assert per-clause `expectedActions` in addition to the top-level semantic frame. **A passing automated suite is evidence only for the cases and environments actually tested**; it does not prove perfect natural-language understanding, sound classification or device support.
+
+The 26 November P01–P12 review, new regression cases and remaining acceptance limits are recorded in [P01-P12-AUDIT.md](P01-P12-AUDIT.md). [P12-STATUS.md](P12-STATUS.md) distinguishes committed audio recovery from uncommitted fragments, anonymous RAM sessions and physical long-duration recording.
+
+P12 keeps native offline emulation for Chromium/Firefox. Playwright WebKit's offline flag also rejects local Blob reads, so its capture test aborts HTTP(S) requests instead. Negative and positive controls require an actual network failure and readable local bytes. Reports identify this simulation explicitly; it is not a physical airplane-mode test.
 
 ## Central dialogue
 

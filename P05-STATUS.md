@@ -46,4 +46,8 @@ Se inspeccionó el inicio a 390 × 844 y la interfaz alemana a 1440 × 1000. La 
 3. Proveer y medir una alternativa privada para texto libre cuando esas APIs no existan. Su ausencia no se sustituye por traducción ficticia ni envío de datos sin consentimiento. Las traducciones del catálogo propio siguen funcionando sin esa alternativa.
 4. Ampliar el corpus independiente de órdenes y conversación en seis idiomas. Las familias finitas comprobadas no garantizan entender todas las formulaciones humanas ni traducir cualquier texto.
 
-Los seis bloques de [PENDIENTES-PERMANENTES.md](PENDIENTES-PERMANENTES.md) se conservan. Esta revisión atiende el punto 05 pedido expresamente por la usuaria; no certifica los pendientes físicos de P03/P04 ni inicia el punto 06.
+Los seis bloques de [PENDIENTES-PERMANENTES.md](PENDIENTES-PERMANENTES.md) se conservan. La revisión original del 8/11 atendió P05; la revisión posterior solicitada de los doce puntos figura en [P01-P12-AUDIT.md](P01-P12-AUDIT.md), sin certificar los pendientes físicos de P03/P04.
+
+## Corrección del 23/11/2026
+
+La auditoría encontró descripciones de recordatorios que permanecían en español. Se corrigieron los cuatro tipos de plantilla, estados y cancelación con enlaces dinámicos al idioma actual; nombres y mensajes originales se conservan literalmente. `tests/p05-ui-localization-browser.js` reproduce el fallo anterior y comprueba los seis idiomas, incluidos texto con acentos y etiquetas HTML inertes. Los mensajes nuevos de reglas y recuperación de clases también están en el catálogo de seis idiomas. Se conserva el alcance de traducción libre y pronunciación pendiente descrito arriba.

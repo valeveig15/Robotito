@@ -62,3 +62,29 @@ jobs:
           path: test-results/
           if-no-files-found: error
           retention-days: 14
+
+  webkit-native-class:
+    # Linux WebKit 26.0 has no MediaRecorder. Require real encoding/replay on
+    # Apple's media stack too; a missing native API fails this job explicitly.
+    runs-on: macos-15-intel
+    timeout-minutes: 10
+    env:
+      ROBOTITO_BROWSER_ENGINE: webkit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install webkit
+      - name: Verify native class recording, offline replay and recovery
+        run: npm run test:p12:browser
+      - name: Retain native WebKit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-webkit-macos-class-evidence
+          path: test-results/
+          if-no-files-found: error
+          retention-days: 14

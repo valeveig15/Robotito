@@ -357,7 +357,7 @@ function discardRecognition(){
   pendingRecognitionMeta=null;
 }
 function restartRecognitionAfterSpeech(){
-  if(!state.started||state.speechBlocked||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||document.hidden||state.captureSuspended||!state.recognitionWanted)return;
+  if(!state.started||state.speechBlocked||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||document.hidden||state.captureSuspended||!state.recognitionWanted)return;
   clearTimeout(state.speechRestartTimer);
   
   setListenState(state.languageMode==="en"?"reconnecting…":state.languageMode==="pt"?"reconectando…":"reconectando…");
@@ -526,7 +526,7 @@ function speakResponse(text,forcedLang=null,{preview=false}={}){
     notify(status);
     const epoch=state.captureEpoch;
     if(isMobileSpeech()&&window.RobotitoLocalASR?.active){
-      setTimeout(()=>{if(state.started&&state.captureEpoch===epoch&&!document.hidden&&!state.captureSuspended&&!state.speaking&&!state.speechBlocked&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.enrollmentActive)window.RobotitoLocalASR.pause(false);},320);
+      setTimeout(()=>{if(state.started&&state.captureEpoch===epoch&&!document.hidden&&!state.captureSuspended&&!state.speaking&&!state.speechBlocked&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.classAudioPlaybackActive&&!state.enrollmentActive)window.RobotitoLocalASR.pause(false);},320);
     }else{
       restartRecognitionAfterSpeech();
     }
@@ -1091,6 +1091,7 @@ function clearCaptureIdentity(){
   resetEyes();
 }
 function stopSenses(reason="captureStopped"){
+  if(typeof window!=="undefined")window.ROBOTITO_TEMPORAL_RULES?.resetEvidence?.();
   state.started=false;
   state.captureEpoch=(state.captureEpoch||0)+1;
   state.captureRevision=(state.captureRevision||0)+1;
@@ -1143,7 +1144,7 @@ function reconcileCaptureState(){
   }else{
     if(!state.captureReady)return;
     try{Promise.resolve(state.audioContext?.resume?.()).catch(()=>{});}catch{}
-    if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.pause(Boolean(state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive));
+    if(window.RobotitoLocalASR?.active)window.RobotitoLocalASR.pause(Boolean(state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive));
     else if(!state.speaking)startListeningCycle(false);
   }
 }
@@ -1232,7 +1233,7 @@ async function startSenses(){
         stream:state.stream,
         lang:state.languageMode,
         onTranscript:(text,meta)=>{
-          if(!current()||document.hidden||state.captureSuspended||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive)return;
+          if(!current()||document.hidden||state.captureSuspended||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive)return;
           if((state.stream?.getTracks?.()||[]).some(t=>t.readyState==="ended"||t.muted||t.enabled===false))return;
           updateDetectedLanguage(text);
           processSpeechResult(text,meta);
@@ -1240,7 +1241,7 @@ async function startSenses(){
         statusCallback:(text,kind)=>{if(current()&&!state.captureSuspended)setListenState(text,kind);}
       }).then(ready=>{
         if(!ready||!current()||state.captureSuspended)return;
-        if(state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive)window.RobotitoLocalASR.pause(true);
+        if(state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive)window.RobotitoLocalASR.pause(true);
         uiSet($("#systemStatus"),startupText("startupListening"));
       }).catch(err=>{
         if(!current())return;
@@ -1447,13 +1448,13 @@ function setupAudio(stream){
       // Stream permissions can be revoked without stopping the Robotito UI.
       // Drop the PCM and all cached evidence before a stale buffer can count.
       if(!microphoneGate?.isLive()){soundModel?.clearAudio();return;}
-      if(state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classMode||state.sleeping||document.hidden||state.captureSuspended)
+      if(state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||state.classMode||state.sleeping||document.hidden||state.captureSuspended)
         soundModel.clearAudio();
       else soundModel.pushPCM(samples,rate);
     };
     const allowedToCapture=()=>state.started&&state.audioContext===ctx&&
       microphoneGate?.isLive()&&soundModelToggle?.checked&&
-      soundModel?.getStatus().state==="ready"&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&
+      soundModel?.getStatus().state==="ready"&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.classAudioPlaybackActive&&
       !state.classMode&&!state.sleeping&&!document.hidden&&!state.captureSuspended;
     // This is used only if AudioWorklet is absent or cannot initialize.
     // Unlike polling AnalyserNode, ScriptProcessor delivers ordered,
@@ -1589,13 +1590,14 @@ function setupAudio(stream){
       classifier:window.ROBOTITO_AUDIO_EVENT_MODEL||null,
       onEvent:event=>{
         const now=Date.now();
-        const suppressed=state.classMode||state.sleeping||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||
+        const suppressed=state.classMode||state.sleeping||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||
           document.hidden||state.captureSuspended||!microphoneGate?.isLive();
         const reaction=reactionPolicy?.decide?.(event,{now,suppressed});
         if(!reaction){
           reactionTrial?.observeEvent(event.kind,{suppressed});
           return;
         }
+        if(reaction.kind==="clap")void window.ROBOTITO_TEMPORAL_RULES?.receive?.({kind:"audio:clap",verified:true,permission:true,at:now,epoch:state.captureEpoch});
         if(reaction.action==="clap"){
           robot.classList.add("clapping");
           reactionTrial?.observeEvent(event.kind,{action:"clap"});
@@ -1671,13 +1673,13 @@ function setupAudio(stream){
         state.ambientRms=state.ambientRms*.96+rms*.04;
       }
       state.voiceThreshold=clamp(Math.max(.028,state.ambientRms*2.35),.028,.07);
-      if(microphoneGate?.isLive()&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&rms>state.voiceThreshold&&
+      if(microphoneGate?.isLive()&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.classAudioPlaybackActive&&rms>state.voiceThreshold&&
          Date.now()-(state.recentVoicePrints.at(-1)?.t||0)>85){
         state.recentVoicePrints.push({t:Date.now(),vector:makeVoicePrint(freq,time,ctx.sampleRate),rms});
         state.recentVoicePrints=state.recentVoicePrints.filter(x=>Date.now()-x.t<45000);
       }
       const status=perception?.process({rms,flat,zcr,low,mid,high,centroid,harmonic},
-        {now:Date.now(),suppress:state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classMode||state.sleeping||
+        {now:Date.now(),suppress:state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||state.classMode||state.sleeping||
           document.hidden||!microphoneGate?.isLive()})
         ||{kind:"unknown",musicConfidence:0};
       const i18n=window.ROBOTITO_I18N;
@@ -1688,10 +1690,11 @@ function setupAudio(stream){
       const heard=$("#heardLabel");if(heard)uiSet(heard,state.audioKind);
       if(microphoneGate?.isLive()&&rms>.04)state.lastHeardAt=Date.now();
       const dance=!!reactionPolicy?.updateMusic?.(status,{
-        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||
+        now:Date.now(),suppressed:state.sleeping||state.classMode||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||
           document.hidden||!microphoneGate?.isLive()
       });
       robot.classList.toggle("dancing",dance);
+      if(dance)void window.ROBOTITO_TEMPORAL_RULES?.receive?.({kind:"audio:music",verified:true,permission:true,at:Date.now(),epoch:state.captureEpoch});
       reactionTrial?.observeDance(robot.classList.contains("dancing"));
       prevSpectrum=freq.slice();
     };
@@ -1734,7 +1737,7 @@ function flushRecognitionChunks(){
   const meta=pendingRecognitionMeta;
   pendingRecognitionText="";
   pendingRecognitionMeta=null;
-  if(!state.started||document.hidden||state.captureSuspended||state.speaking||state.speechBlocked||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||
+  if(!state.started||document.hidden||state.captureSuspended||state.speaking||state.speechBlocked||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||
      (state.stream?.getTracks?.()||[]).some(t=>t.readyState==="ended"||t.muted||t.enabled===false))return;
   if(text){
     updateDetectedLanguage(text);
@@ -1836,7 +1839,7 @@ function createSpeechRecognition(){
   r.interimResults=true;
   r.maxAlternatives=5;
   const current=()=>state.recognition===r&&state.started&&!document.hidden&&
-    !state.captureSuspended&&!state.speechBlocked&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive;
+    !state.captureSuspended&&!state.speechBlocked&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.classAudioPlaybackActive;
 
   r.onstart=()=>{
     if(!current())return;
@@ -1917,7 +1920,7 @@ function createSpeechRecognition(){
 }
 
 function startListeningCycle(userGesture=false){
-  if(!state.started||document.hidden||state.captureSuspended||state.speechBlocked||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||!state.recognitionWanted)return;
+  if(!state.started||document.hidden||state.captureSuspended||state.speechBlocked||state.speaking||state.voiceSampleCaptureActive||state.voiceSamplePlaybackActive||state.classAudioPlaybackActive||!state.recognitionWanted)return;
   discardRecognition();
   const r=createSpeechRecognition();
   if(!r){
@@ -4299,6 +4302,8 @@ async function handleSpeech(rawText,{plan=null,atomic=false,channel="voice"}={})
     say("¿Cómo explicarías con tus palabras "+topic+"?");
     return;
   }
+  const playback=await window.ROBOTITO_CLASS_PLAYBACK?.handle?.(rawText,{plan:interpretation,owner,language:state.languageMode||"es"});
+  if(playback?.handled){if(playback.text)say(playback.text);return;}
   const recalled=await window.ROBOTITO_MEMORY_RETRIEVAL?.search?.(rawText,{
     owner,language:state.languageMode||"es",plan:interpretation
   });
@@ -4500,6 +4505,10 @@ async function detectLoop(){
     state.lastFaceInferenceMs=elapsed;
     if(elapsed<0||elapsed>2500||!Array.isArray(dets)){revoke();return;}
     state.lastDetections=dets;
+    if(typeof window!=="undefined"){
+      if(dets.length<=1)void window.ROBOTITO_TEMPORAL_RULES?.receive?.({kind:dets.length?"vision:person":"vision:empty",verified:true,permission:true,at:Date.now(),epoch:state.captureEpoch});
+      else window.ROBOTITO_TEMPORAL_RULES?.resetEvidence?.();
+    }
     if(dets.length===1){
       state.lastSeenAt=Date.now();
       uiSet($("#seenLabel"),"1 persona");
@@ -6552,7 +6561,10 @@ async function init(){
   setInterval(taskReminderTick,30000);
   window.ROBOTITO_TEMPORAL_RULES?.attach?.({
     say:text=>{if(!document.hidden&&!state.classMode)say(text);},
-    owner:activeMemoryOwner
+    owner:activeMemoryOwner,
+    canRun:()=>!state.classMode&&!state.sleeping&&!state.speaking&&!state.voiceSampleCaptureActive&&!state.voiceSamplePlaybackActive&&!state.classAudioPlaybackActive&&!state.enrollmentActive,
+    canObserve:event=>state.started&&!state.captureSuspended&&event?.epoch===state.captureEpoch&&
+      Boolean(state.stream?.getTracks?.().some(track=>track.kind===(event.kind.startsWith("audio:")?"audio":"video")&&track.readyState==="live"))
   });
   setInterval(routinePromptTick,60000);
   setTimeout(routinePromptTick,12000);
