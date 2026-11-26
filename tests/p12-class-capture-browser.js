@@ -72,10 +72,14 @@ runBrowserTest("p12-class-capture",async test=>{
  test.phase("reload-and-replay");
  await page.reload();await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
  await activate();
+ await setOffline(true);
  const replay=await page.evaluate(async()=>{
   state.currentVoicePerson="Ada";state.lastVoiceConfirmedAt=Date.now();await ROBOTITO_MEMORY.ready();await ROBOTITO_CLASS_AUDIO.render();
-  const player=document.querySelector("#classRecordingsList audio");await player.play();const played=!player.paused;player.pause();return played;
- });assert.equal(replay,true);checks++;
+  const requestBlocked=await fetch(location.href,{cache:"no-store"}).then(()=>false,()=>true);
+  const player=document.querySelector("#classRecordingsList audio");await player.play();const played=!player.paused;player.pause();return {played,requestBlocked};
+ });assert.deepEqual(replay,{played:true,requestBlocked:true});checks++;
+ test.report.network.replayRequestBlocked=replay.requestBlocked;
+ await setOffline(false);
  test.report.nativeCapture={status:"passed",checks:4};
  }else{
  test.phase("native-recorder-unavailable");
