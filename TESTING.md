@@ -13,7 +13,9 @@
 
 GitHub Actions runs the checks for pushes and pull requests. The browser scenario suite also covers simulated denied microphone permission and rejected/unavailable capture, offline IndexedDB round trips, hidden-tab interruptions, class/mute audio suppression and mobile layout under combined simulated faults. Historical regression entries can assert per-clause `expectedActions` in addition to the top-level semantic frame. **A passing automated suite is evidence only for the cases and environments actually tested**; it does not prove perfect natural-language understanding, sound classification or device support.
 
-The 25 November P01–P12 review, new regression cases and remaining acceptance limits are recorded in [P01-P12-AUDIT.md](P01-P12-AUDIT.md). [P12-STATUS.md](P12-STATUS.md) distinguishes committed audio recovery from uncommitted fragments, anonymous RAM sessions and physical long-duration recording.
+The 26 November P01–P12 review, new regression cases and remaining acceptance limits are recorded in [P01-P12-AUDIT.md](P01-P12-AUDIT.md). [P12-STATUS.md](P12-STATUS.md) distinguishes committed audio recovery from uncommitted fragments, anonymous RAM sessions and physical long-duration recording.
+
+P12 keeps native offline emulation for Chromium/Firefox. Playwright WebKit's offline flag also rejects local Blob reads, so its capture test aborts HTTP(S) requests instead. Negative and positive controls require an actual network failure and readable local bytes. Reports identify this simulation explicitly; it is not a physical airplane-mode test.
 
 ## Central dialogue
 

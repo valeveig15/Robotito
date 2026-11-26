@@ -2,6 +2,12 @@
 const assert=require("node:assert/strict"),{runBrowserTest}=require("./browser-test-harness.js");
 runBrowserTest("p12-class-capture",async test=>{
  const {page,baseURL,context}=test;let checks=0;
+ // Playwright WebKit's offline flag rejects local Blob reads too (including
+ // FileReader). Abort HTTP(S) instead, with explicit network/local controls.
+ // Chromium/Firefox retain their native offline emulation.
+ const httpPattern=/^https?:\/\//,blockHttp=route=>route.abort("internetdisconnected");
+ const setOffline=enabled=>test.engineName!=="webkit"?context.setOffline(enabled):
+  enabled?context.route(httpPattern,blockHttp):context.unroute(httpPattern,blockHttp);
  await page.goto(baseURL,{waitUntil:"domcontentloaded"});await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
  // Firefox/WebKit require an actual user activation before starting Web Audio.
  // Use the application's tab control rather than disabling autoplay policies.
@@ -36,7 +42,14 @@ runBrowserTest("p12-class-capture",async test=>{
   state.started=true;state.captureEpoch=1;state.captureRevision=1;state.captureSuspended=false;
  },nativeRecorder);
  test.phase("offline-recording-start");
- await context.setOffline(true);
+ await setOffline(true);
+ const network=await page.evaluate(async()=>({
+  requestBlocked:await fetch(location.href,{cache:"no-store"}).then(()=>false,()=>true),
+  localBlobReadable:await new Blob(["local bytes"]).text()==="local bytes"
+ }));
+ test.report.network={mode:test.engineName==="webkit"?"http-requests-aborted":"browser-offline-emulation",...network};
+ assert.equal(network.requestBlocked,true,"HTTP must actually fail during recording");checks++;
+ assert.equal(network.localBlobReadable,true,"Offline simulation must preserve local Blob reads");checks++;
  const started=await page.evaluate(()=>ROBOTITO_CLASS_AUDIO.start("Physics","Waves","actual-session"));
  if(nativeRecorder){
  assert.equal(started.ok,true,JSON.stringify(started));checks++;
@@ -53,33 +66,9 @@ runBrowserTest("p12-class-capture",async test=>{
    live:state.stream.getTracks().every(track=>track.readyState==="live"),pending:(await ROBOTITO_CLASS_JOURNAL.list("Ada")).length};
  });
  test.report.captureOutput={...recorded,events:await page.evaluate(()=>auditNativeEvents)};
- if(!(recorded.bytes>100)){
-  // Keep the original failure, but compare native codecs with and without a
-  // muted output branch so CI evidence identifies input-clock/encoder faults.
-  test.report.nativeProbe=await page.evaluate(async()=>{
-   const results=[];let sink;
-   for(const connectOutput of [false,true]){
-    if(connectOutput){sink=auditAudioContext.createGain();sink.gain.value=0;auditOscillator.connect(sink);sink.connect(auditAudioContext.destination);}
-    for(const mimeType of ["audio/webm;codecs=opus","audio/mp4",""]){
-     if(mimeType&&!MediaRecorder.isTypeSupported(mimeType))continue;
-     const row={mimeType,connectOutput,clockStart:auditAudioContext.currentTime,bytes:0,events:[]};results.push(row);
-     let recorder;
-     try{
-      recorder=new MediaRecorder(state.stream,mimeType?{mimeType}:undefined);
-      recorder.ondataavailable=event=>{row.bytes+=event.data.size;row.events.push({bytes:event.data.size,type:event.data.type});};
-      recorder.onerror=event=>{row.error=event.error?.name+": "+event.error?.message;};
-      recorder.start(1500);await new Promise(resolve=>setTimeout(resolve,2000));
-      await new Promise(resolve=>{let timer=setTimeout(resolve,3000);recorder.onstop=()=>{clearTimeout(timer);resolve();};recorder.stop();});
-     }catch(error){row.error=String(error);}
-     row.clockEnd=auditAudioContext.currentTime;
-    }
-   }
-   sink?.disconnect();return results;
-  });
- }
- assert.ok(recorded.bytes>100,JSON.stringify({input:test.report.captureInput,output:test.report.captureOutput,probe:test.report.nativeProbe}));checks++;
+ assert.ok(recorded.bytes>100,JSON.stringify({input:test.report.captureInput,output:test.report.captureOutput}));checks++;
  assert.deepEqual({...recorded,bytes:0},{complete:true,bytes:0,owner:"Ada",session:"actual-session",live:true,pending:0});checks++;
- await context.setOffline(false);
+ await setOffline(false);
  test.phase("reload-and-replay");
  await page.reload();await page.waitForFunction(()=>ROBOTITO_MEMORY.active);
  await activate();
@@ -102,7 +91,7 @@ runBrowserTest("p12-class-capture",async test=>{
  assert.equal(unsupported.live,true);checks++;
  test.report.unsupportedCapture={status:"passed",checks:4,reason:"MediaRecorder absent in this browser build"};
  await page.evaluate(async()=>{state.stream.getTracks().forEach(track=>track.stop());await auditAudioContext.close();});
- await context.setOffline(false);
+ await setOffline(false);
  }
  test.phase("storage-failure-and-track-cleanup");
  checks+=await page.evaluate(async()=>{

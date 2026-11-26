@@ -1,6 +1,6 @@
 # P12 — Modo Clase: grabación, silencio y recuperación
 
-Revisión: 25/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176). **Recorrido de software implementado y comprobado; duración prolongada y hardware físico pendientes.** Ver [P01-P12-AUDIT.md](P01-P12-AUDIT.md).
+Revisión: 26/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176). **Recorrido de software implementado y comprobado; duración prolongada y hardware físico pendientes.** Ver [P01-P12-AUDIT.md](P01-P12-AUDIT.md).
 
 ## Funcionalidad y correcciones
 
@@ -21,10 +21,12 @@ Revisión: 25/11/2026, [PR #176](https://github.com/valeveig15/Robotito/pull/176
 | Suite | Evidencia |
 | --- | --- |
 | `tests/p12-class-recovery-browser.js` | 20 comprobaciones: secuencia, propietario, recarga, reserva entre pestañas, fallo transaccional, respaldo, anonimato, eliminación y migración. |
-| `tests/p12-class-capture-browser.js` | Cuatro comprobaciones de captura nativa, escritura sin conexión y recarga/reproducción, más siete de fallos provocados de cuota/grabador y liberación de pistas. Si falta MediaRecorder en WebKit/Linux, verifica cuatro condiciones de rechazo seguro en lugar de afirmar captura nativa. |
+| `tests/p12-class-capture-browser.js` | Dos controles de red/lectura local, cuatro comprobaciones de captura nativa, escritura sin conexión y recarga/reproducción, más siete de fallos provocados de cuota/grabador y liberación de pistas: 13 en total. Si falta MediaRecorder en WebKit/Linux, verifica cuatro condiciones de rechazo seguro en lugar de afirmar captura nativa. |
 | P04, P07, P10/P11 y P05 | Cancelación, privacidad de audios, backup/migración, silencio de clase, reproducción y seis idiomas. |
 
 La señal proviene de AudioContext, sin micrófono físico ni voz humana. Los fallos de cuota son provocados; no equivalen a un corte eléctrico. Un motor de navegador no certifica el sistema operativo móvil correspondiente.
+
+La emulación `context.setOffline(true)` de este WebKit impide leer incluso un Blob local de cinco bytes: fallan `arrayBuffer`, `Response` y `FileReader`, con o sin interceptación de solicitudes. Se reprodujo el fallo fuera del grabador. Para probar captura sin red, WebKit bloquea HTTP(S) con `internetdisconnected`; dos controles exigen que falle una petición y que siga funcionando la lectura local. Chromium/Firefox conservan la emulación nativa. El JSON identifica el método usado, reloj de audio, códec y fragmentos recibidos. Esto simula pérdida de red HTTP; no certifica modo avión físico ni caída de otros protocolos.
 
 El WebKit 26.0 para Linux usado por Playwright 1.56.1 no expone MediaRecorder: se comprobó tanto en localhost seguro como en los artefactos de CI. En ese entorno se exige respuesta `unsupported`, ausencia de archivos/fragmentos, grabador inactivo y conservación de la pista compartida. El informe JSON distingue `nativeCapture: unavailable` de las pruebas efectivamente aprobadas. Chromium, Firefox y el job separado `webkit-native-class` en macOS exigen la API nativa; si falta, fallan. Los fallos de almacenamiento se prueban con un grabador simulado y se identifican por separado. Esta matriz no certifica Safari/iPhone físicos.
 
