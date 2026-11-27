@@ -2,8 +2,9 @@
   "name": "robotito-regression",
   "private": true,
   "scripts": {
-    "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:p01 && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:p08 && npm run test:p09 && npm run test:generative && npm run test:p10-p11 && npm run test:p15 && npm run test:p18 && npm run test:p20 && npm run test:p19 && npm run test:p22 && npm run test:p21 && npm run test:p23 && npm run test:p24 && npm run test:p25 && npm run test:p26 && npm run test:p29 && npm run test:p30-p32 && npm run test:p36-p38 && npm run test:p60-p75 && npm run test:p39-p40",
+    "test": "npm run test:core && npm run test:audio:matrix && npm run test:kit && npm run test:regressions && npm run test:properties:matrix && npm run test:planner && npm run test:p01 && npm run test:semantic && npm run test:memory && npm run test:p04 && npm run test:p08 && npm run test:p09 && npm run test:generative && npm run test:p10-p11 && npm run test:p15 && npm run test:p18 && npm run test:p20 && npm run test:p19 && npm run test:p22 && npm run test:p21 && npm run test:p23 && npm run test:p24 && npm run test:p25 && npm run test:p26 && npm run test:p29 && npm run test:p30-p32 && npm run test:p36-p38 && npm run test:p60-p75 && npm run test:p39-p40 && npm run test:avatars",
     "test:core": "node tests/core-regression.js",
+    "test:avatars": "node tests/procedural-avatar-faces-regression.js",
     "test:browser": "node tests/browser-regression.js",
     "test:browser:performance": "node tests/browser-performance-smoke.js",
     "test:p04:physical": "node tests/p04-physical-device-smoke.js",

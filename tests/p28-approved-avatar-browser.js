@@ -91,7 +91,13 @@ runBrowserTest("p28-approved-avatars",async test=>{
      role:document.querySelector("#approvedAvatarHost").getAttribute("role"),
      originalHidden:document.querySelector("#robotito").getAttribute("aria-hidden"),
      geometry:document.querySelector("#approvedAvatarHost").getBoundingClientRect().width,
-     sourceView:stage.getAttribute("viewBox"),shadow:!!stage.querySelector("#shadow")};
+     sourceView:stage.getAttribute("viewBox"),shadow:!!stage.querySelector("#shadow"),
+     faceSource:stage.dataset.faceSource,
+     faceNose:stage.querySelectorAll("#front-view #procedural-muzzle").length,
+     faceEyes:stage.querySelectorAll("#front-view #eye-open #eye-pupils").length,
+     faceHeart:stage.querySelectorAll("#front-view #eye-open #heart-eyes").length,
+     faceStar:stage.querySelectorAll("#front-view #eye-open #star-eyes").length,
+     noFaceImages:stage.querySelectorAll("#front-view #head image,#front-view #head foreignObject").length===0};
   },{id,landscape:LANDSCAPES[id]});
   assert.equal(meta.id,id);
   assert.equal(meta.landscape,true,"Correct approved environment "+id);
@@ -103,6 +109,12 @@ runBrowserTest("p28-approved-avatars",async test=>{
   assert.equal(meta.role,"img");
   assert.ok(meta.geometry>250);
   assert.equal(meta.sourceView,"0 0 700 635");
+  assert.equal(meta.faceSource,"procedural-svg","Face must be generated as SVG "+id);
+  assert.equal(meta.faceNose,1);
+  assert.equal(meta.faceEyes,1);
+  assert.equal(meta.faceHeart,1,"Heart emotion must survive redraw "+id);
+  assert.equal(meta.faceStar,1,"Star emotion must survive redraw "+id);
+  assert.equal(meta.noFaceImages,true,"Faces must not contain image crops "+id);
   test.phase("approved-avatar-moods-and-actions",APPROVED.indexOf(id),{avatar:id});
   await expectTransition({mood:"avergonzado"},()=>page.evaluate(()=>setMood("embarrassed")));
   await expectTransition({mood:"feliz"},()=>page.evaluate(()=>setMood("happy")));
@@ -117,6 +129,27 @@ runBrowserTest("p28-approved-avatars",async test=>{
  await page.waitForFunction(()=>window.ROBOTITO_APPROVED_AVATAR.current===null);
  assert.equal(await page.locator("#robotito").getAttribute("aria-hidden"),null);
  assert.equal(await page.locator("#world").evaluate(el=>el.classList.contains("approved-art-world")),false);
+ test.phase("three-additional-faces-are-native-svg");
+ for(const id of ["cat","red-panda","iguana"]){
+  if(id!=="cat"){
+   await page.locator("#changeAvatarBtn").click();
+   await page.locator('#avatarChoices [data-avatar-id="'+id+'"]').click();
+  }
+  await page.waitForFunction(id=>document.querySelector("#robotito")?.dataset.avatar===id,id);
+  const face=await page.evaluate(()=>{
+   const root=document.querySelector("#robotito");
+   const svg=root.querySelector(".avatar-character");
+   return {ids:root.dataset.avatar, count:svg?.querySelectorAll('[data-avatar-face="programmed"]').length||0,
+    raster:svg?.querySelectorAll("image,foreignObject,canvas").length||0,
+    mouths:svg?.querySelectorAll(".avatar-mouth").length||0,
+    eyes:svg?.querySelectorAll(".avatar-eye-group").length||0};
+  });
+  assert.equal(face.ids,id);
+  assert.equal(face.count,1,"Missing vector face: "+id);
+  assert.equal(face.raster,0,"Raster used in "+id);
+  assert.equal(face.mouths,1);
+  assert.equal(face.eyes,2);
+ }
  test.phase("layout-after-viewport-and-language-switch");
  await page.locator("#changeAvatarBtn").click();
  await page.locator('#avatarChoices [data-avatar-id="polar-bear"]').click();
